@@ -1,0 +1,7 @@
+.DS_Store
+
+/build
+/solver/build
+/solver/test.cbf
+/solver/test.sol
+/lean_packages
