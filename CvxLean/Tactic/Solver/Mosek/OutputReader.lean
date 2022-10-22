@@ -153,7 +153,7 @@ def readSolSymmMatrixVariableLines (lines : List String)
 -- Read solution.
 
 def readOutput (path : String) 
-  : MetaM Sol.Result' := do
+  : MetaM Sol.Result := do
   let handle ← IO.FS.Handle.mk path IO.FS.Mode.read
   let content ← IO.FS.Handle.readToEnd handle 
   let lines := String.splitOn content "\n\n"
@@ -177,8 +177,8 @@ def readOutput (path : String)
       let solSymmMatrixVariableStr := lines.get! 3 
       let solSymmMatrixVariableLines := solSymmMatrixVariableStr.splitOn "\n"
       let solSymmMatrixVariables ← readSolSymmMatrixVariableLines solSymmMatrixVariableLines
-      return (Sol.Result'.mk solSummary solConstraints solVariables solSymmMatrixVariables)
+      return (Sol.Result.mk solSummary solConstraints solVariables solSymmMatrixVariables)
     else 
-      return (Sol.Result'.mk solSummary solConstraints solVariables [])
+      return (Sol.Result.mk solSummary solConstraints solVariables [])
 
 end Mosek

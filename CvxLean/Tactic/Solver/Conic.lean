@@ -9,7 +9,6 @@ import CvxLean.Lib.Missing.ToExpr
 import CvxLean.Meta.Missing.Expr
 import CvxLean.Meta.Minimization
 import CvxLean.Syntax.Minimization
-
 import CvxLean.Tactic.Solver.Float.Coeffs
 import CvxLean.Tactic.Solver.Float.FloatToReal
 import CvxLean.Tactic.Solver.Generation
@@ -62,7 +61,7 @@ unsafe def getTotalDim (goalExprs : SolutionExpr) : MetaM Nat := do
 
 /-- -/
 unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
-  : MetaM Sol.Result := do 
+  : MetaM Sol.Response := do 
   let totalDim ← getTotalDim goalExprs
 
   let mut cbf := CBF.Problem.empty
@@ -105,20 +104,20 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
   let out ← IO.Process.output { cmd := "mosek", args := #[inputPath] }
   if out.exitCode != 0 then
     dbg_trace ("MOSEK exited with code " ++ toString out.exitCode)
-    return Sol.Result.failure out.exitCode.toNat
+    return Sol.Response.failure out.exitCode.toNat
   
   let res := out.stdout
   IO.println res
 
   -- Read output.
   let outputPath := "solver/test.sol"
-  let sol : Sol.Result' ← Mosek.readOutput outputPath
+  let sol : Sol.Result ← Mosek.readOutput outputPath
   IO.println sol.symmMatrixVars
  
-  return (Sol.Result.success sol)
+  return (Sol.Response.success sol)
 
 /-- TODO: Move to Generation? -/
-unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result') : MetaM Expr := do
+unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Expr := do
   let vars ← getVars goalExprs
 
   -- Generate solution of the correct shape.
