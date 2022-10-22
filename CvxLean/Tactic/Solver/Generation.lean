@@ -70,7 +70,7 @@ def generateSymmMatrixFromVariables (n : Nat) (smvs : List Sol.SymmMatrixVariabl
   return res
 
 /-- -/
-def generateSymmMatrix (n : Nat) (S : Sol.Result') 
+def generateSymmMatrix (n : Nat) (S : Sol.Result) 
   : MetaM (Lean.Name × (Array (Array Float)) × Lean.Name × (Array (Array Float))) := do 
   let l ← generateSymmMatrixFromVariables n S.symmMatrixVars
   if l.length != 1 then 
