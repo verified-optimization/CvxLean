@@ -120,16 +120,16 @@ unsafe def evalSolve : CommandElab := fun stx =>
       -- Call the solver on prob.reduced and get a point in E.
       let coeffsData ← determineCoeffsFromExpr probReducedExpr
       trace[Meta.debug] "coeffsData: {coeffsData}"
-      let solPointResult ← Meta.conicSolverFromValues probReducedExpr coeffsData
-      trace[Meta.debug] "solPointResult: {solPointResult}"
+      let solPointResponse ← Meta.conicSolverFromValues probReducedExpr coeffsData
+      trace[Meta.debug] "solPointResponse: {solPointResponse}"
       
-      match solPointResult with 
-      | Sol.Result.failure code => 
+      match solPointResponse with 
+      | Sol.Response.failure code => 
         trace[Meta.debug] "MOSEK failed with code {code}"
         pure ()
 
       -- Mosek finished successfully.
-      | Sol.Result.success solPoint =>
+      | Sol.Response.success solPoint =>
         trace[Meta.debug] "solPoint.summary: {solPoint.summary}"
 
         -- Add status to the environment. 

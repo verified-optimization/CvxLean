@@ -14,7 +14,6 @@ import CvxLean.Tactic.Solver.Float.FloatToReal
 import CvxLean.Tactic.Solver.Generation
 import CvxLean.Tactic.Solver.InferDimension
 import CvxLean.Tactic.Solver.Mosek.CBF
-import CvxLean.Tactic.Solver.Mosek.OutputReader
 
 attribute [-instance] coeDecidableEq
 
@@ -111,10 +110,14 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
 
   -- Read output.
   let outputPath := "solver/test.sol"
-  let sol : Sol.Result ← Mosek.readOutput outputPath
-  IO.println sol.symmMatrixVars
- 
-  return (Sol.Response.success sol)
+  let handle ← IO.FS.Handle.mk outputPath IO.FS.Mode.read
+  let output ← IO.FS.Handle.readToEnd handle 
+
+  match Sol.Parser.parse output with 
+  | Except.ok res => return Sol.Response.success res
+  | Except.error err => 
+      dbg_trace ("MOSEK output parsing failed. " ++ err)
+      return Sol.Response.failure 1
 
 /-- TODO: Move to Generation? -/
 unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Expr := do
