@@ -335,6 +335,13 @@ def result : Parsec Result :=
   vars           <* ws <*>
   symmMatrixVars <* endOfLine
 
+/-- Parse using `result` and handle errors. -/
+def parse (s : String) : Except String Result :=
+  match result s.mkIterator with
+  | Parsec.ParseResult.success _ res => Except.ok res
+  | Parsec.ParseResult.error it err  => 
+    Except.error s!"Error at offset {it.i.byteIdx}: {err}."
+
 end Parser 
 
 end Sol
