@@ -2,6 +2,7 @@ import Lean
 import CvxLean.Syntax.Options
 
 namespace CvxLean
+
 open Lean
 
 syntax (name := namedConstraint) "{** " term " ** " ident " **}": term
@@ -13,10 +14,9 @@ namespace Meta
 def mkLabel (name : Name) (e : Expr) := 
   mkMData (MData.empty.setName `CvxLeanLabel name) e
 
-
 variable [MonadControlT MetaM m] [Monad m]
 
-/-- -/
+/-- Get the name and expression from metadata labelled with `CvxLeanLabel`. -/
 def decomposeLabel (e : Expr) : m (Name × Expr) := do
   match e with
   | Expr.mdata m e =>
@@ -25,7 +25,7 @@ def decomposeLabel (e : Expr) : m (Name × Expr) := do
     | none => decomposeLabel e
   | _           => return (`_, e)
 
-/-- -/
+/-- Like `CvxLean.Meta.decomposeLabel` but only returns the label name. -/
 def getLabelName (e : Expr) : m Name := do
   return (← decomposeLabel e).1
 
@@ -35,7 +35,7 @@ namespace Elab
 
 open Lean.Elab
 
-/-- -/
+/-- Notation for attaching a name label to a term. -/
 @[termElab namedConstraint] 
 def elabNamedConstraint : Term.TermElab := fun stx expectedType? => do
   match stx with
@@ -50,9 +50,10 @@ def elabNamedConstraint : Term.TermElab := fun stx expectedType? => do
 end Elab
 
 namespace Delab
-open Lean.PrettyPrinter.Delaborator
-open SubExpr
 
+open Lean.PrettyPrinter.Delaborator SubExpr
+
+/-- Display labelled terms using the `{** term ** name **}` syntax. -/
 @[delab mdata] def delabNamedConstraint : Delab := do
   -- Omit delaboration if pretty printing option is disabled.
   if not (pp.CvxLean.labels.get (← getOptions)) then failure
