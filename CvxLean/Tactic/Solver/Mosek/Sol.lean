@@ -4,7 +4,7 @@ import Lean.Data.Json.Parser
 /-!
 # Solution format definition and parser
 
-See <https://docs.mosek.com/latest/rmosek/sol-format.html>. 
+See <https://docs.mosek.com/latest/toolbox/sol-format.html>. 
 -/ 
 
 namespace Sol
@@ -47,13 +47,13 @@ namespace StatusKey
 
 instance : ToString StatusKey where 
   toString 
-    | StatusKey.UN => "UN"
-    | StatusKey.BS => "BS"
-    | StatusKey.SB => "SB"
-    | StatusKey.LL => "LL"
-    | StatusKey.UL => "UL"
-    | StatusKey.EQ => "EQ"
-    | _            => "**"
+  | StatusKey.UN => "UN"
+  | StatusKey.BS => "BS"
+  | StatusKey.SB => "SB"
+  | StatusKey.LL => "LL"
+  | StatusKey.UL => "UL"
+  | StatusKey.EQ => "EQ"
+  | _            => "**"
 
 end StatusKey
 
@@ -150,8 +150,8 @@ namespace Response
 
 instance : ToString Response where
   toString 
-    | success res  => toString res
-    | failure code => s!"MOSEK failed with code {code}."
+  | success res  => toString res
+  | failure code => s!"MOSEK failed with code {code}."
 
 end Response
 
