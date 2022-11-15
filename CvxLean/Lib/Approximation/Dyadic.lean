@@ -51,10 +51,16 @@ instance : Zero Dyadic where
   zero := zero
 
 def neg (x : Dyadic) : Dyadic := 
-  mk (-x.m) x.e
+  mk' (-x.m) x.e
 
 instance : Neg Dyadic where 
   neg := neg 
+
+lemma neg_m (x : Dyadic) : (-x).m = -(x.m) := rfl
+
+lemma neg_e (x : Dyadic) : (-x).e = x.e := rfl
+
+lemma neg_zero : (-0 : Dyadic) = 0 := rfl
 
 def abs (x : Dyadic) : Dyadic := 
   mk (if x.m < 0 then -x.m else x.m) x.e
@@ -86,11 +92,29 @@ def le (x y : Dyadic) : Prop :=
 instance : LE Dyadic where 
   le := le
 
+lemma le_refl (x : Dyadic) : x ≤ x := Int.le_refl _
+
+lemma neg_le_neg {x y : Dyadic} : x ≤ y → -y ≤ -x := by
+  simp [LE.le, Dyadic.le, neg_e, neg_m, ←Int.neg_mul_eq_neg_mul]
+  exact Int.neg_le_neg
+
+lemma le_of_neg_le_neg {x y : Dyadic} : -x ≤ -y → y ≤ x := by 
+  simp [LE.le, Dyadic.le, neg_e, neg_m, ←Int.neg_mul_eq_neg_mul]
+  exact Int.le_of_neg_le_neg
+
 def lt (x y : Dyadic) : Prop := 
-  x ≤ y ∧ x ≠ y
+  x ≤ y ∧ ¬(x ≥ y)
 
 instance : LT Dyadic where 
   lt := lt
+
+lemma neg_lt_neg {x y : Dyadic} : x < y → -y < -x := by
+  simp [LT.lt, Dyadic.lt]
+  exact fun hpos hneg => ⟨neg_le_neg hpos, fun hc => hneg (le_of_neg_le_neg hc)⟩
+
+lemma lt_of_neg_lt_neg {x y : Dyadic} : -y < -x → x < y := by
+  simp [LT.lt, Dyadic.lt]
+  exact fun hpos hneg => ⟨le_of_neg_le_neg hpos, fun hc => hneg (neg_le_neg hc)⟩
 
 instance : DecidableRel (LE.le : Dyadic → Dyadic → Prop) := 
   fun x y => Int.decLe _ _
@@ -125,5 +149,56 @@ theorem roundUp_upper_bound (prec : Nat) (d : Dyadic) :
 def roundDown_lower_bound (prec : Nat) (d : Dyadic) : 
   roundDown prec d ≤ d := 
   sorry
+
+/- Division. -/
+
+-- NOTE: THESE ARE WRONG.
+
+def divUp  (prec : Nat) (x y : Dyadic) : Dyadic := 
+  let x' := roundUp prec x 
+  let y' := roundDown prec y
+  mk (x'.m / y'.m) (x'.e - y'.e)
+
+def divDown (prec : Nat) (x y : Dyadic) : Dyadic := 
+  let x' := roundDown prec x 
+  let y' := roundUp prec y
+  mk (x'.m / y'.m) (x'.e - y'.e)
+
+/- Square root. -/
+
+private def sqrtIteration : Nat → Nat → Dyadic → Dyadic 
+  |    _,   0, x => Dyadic.mk 1 (((Nat.log2 x.m.natAbs) + x.e) / 2 + 1)
+  | prec, n+1, x => 
+      let y := sqrtIteration prec n x
+      (Dyadic.mk 1 (-1)) * roundUp prec (y + (divUp prec x y))
+
+#eval sqrtIteration 1 1 (2 : Dyadic)
+#eval sqrtIteration 10 0 (2 : Dyadic)
+#eval sqrtIteration 10 10 (2 : Dyadic)
+#eval divUp 10 (2 : Dyadic) (sqrtIteration 10 0 (2 : Dyadic))
+#eval let y := Dyadic.mk 3 (1)
+   (divUp 10 2 y)
+  -- (Dyadic.mk 1 (-1)) * roundUp 10 (y + (divUp 10 2 y))
+
+mutual 
+  def sqrtUp (prec : Nat) (x : Dyadic) : Dyadic := 
+    if 0 < x then sqrtIteration prec prec x else 
+    if x < 0 then -sqrtDown prec (-x) else 0
+
+  def sqrtDown (prec : Nat) (x : Dyadic) : Dyadic := 
+    if 0 < x then divDown prec x (sqrtIteration prec prec x) else 
+    if x < 0 then -sqrtUp prec (-x) else 0 
+end
+termination_by' measure (fun x => 
+  match x with 
+  | PSum.inl x => if x < 0 then 1 else 0
+  | PSum.inr x => if x < 0 then 1 else 0) 
+decreasing_by 
+  have hneg : ¬(-x < 0) := by
+    { intros hc; rw [←neg_zero] at hc; 
+      exact (by assumption : ¬(0 < x)) (lt_of_neg_lt_neg hc) }
+  show (if -x < 0 then 1 else 0) < (if x < 0 then 1 else 0) <;> 
+  rw [if_pos (by assumption : x < 0), if_neg hneg] <;> 
+  norm_num 
 
 end Dyadic
