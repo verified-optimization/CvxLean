@@ -118,4 +118,12 @@ def roundUp (prec : Nat) (d : Dyadic) : Dyadic :=
 def roundDown (prec : Nat) (d : Dyadic) : Dyadic := 
   if d < 0 then - roundUpPos prec (-d) else roundDownPos prec d
 
+theorem roundUp_upper_bound (prec : Nat) (d : Dyadic) : 
+  d ≤ roundUp prec d := 
+  sorry
+
+def roundDown_lower_bound (prec : Nat) (d : Dyadic) : 
+  roundDown prec d ≤ d := 
+  sorry
+
 end Dyadic

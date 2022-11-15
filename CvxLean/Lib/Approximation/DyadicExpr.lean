@@ -6,13 +6,19 @@ inductive DyadicExpr
   | var   : Nat → DyadicExpr
   | neg   : DyadicExpr → DyadicExpr
   | inv   : DyadicExpr → DyadicExpr
-  --| abs   : DyadicExpr → DyadicExpr
   | sqrt  : DyadicExpr → DyadicExpr
   | exp   : DyadicExpr → DyadicExpr
   | log   : DyadicExpr → DyadicExpr
   | pow   : DyadicExpr → Nat → DyadicExpr
   | add   : DyadicExpr → DyadicExpr → DyadicExpr
   | mul   : DyadicExpr → DyadicExpr → DyadicExpr
+
+inductive ArithExpr 
+  | val   : Nat → Nat → Dyadic → ArithExpr
+  | var   : Nat → ArithExpr
+  | neg   : ArithExpr → ArithExpr
+  | add   : ArithExpr → ArithExpr → ArithExpr
+  | mul   : ArithExpr → ArithExpr → ArithExpr
 
 namespace DyadicExpr 
 
@@ -35,6 +41,21 @@ def approx (prec : Nat)
   | add e₁ e₂, xs => none 
   | mul e₁ e₂, xs => none
 
-open Lean
-
 end DyadicExpr
+
+inductive ArithForm 
+  | le : DyadicExpr → DyadicExpr → ArithForm
+  | and : ArithForm → ArithForm → ArithForm
+
+namespace ArithForm
+
+def approx (prec : Nat) 
+  : ArithForm → List (Option (Interval Dyadic)) → Prop
+  | le e₁ e₂, xs => match 
+      (DyadicExpr.approx prec e₁ xs, DyadicExpr.approx prec e₂ xs) with
+    | (some I₁, some I₂) => Dyadic.roundUp prec I₁.b ≤ Dyadic.roundDown prec I₂.a
+    | _ => False
+  | and f₁ f₂, xs => approx prec f₁ xs ∧ approx prec f₂ xs
+
+end ArithForm
+

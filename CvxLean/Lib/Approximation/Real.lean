@@ -1,12 +1,27 @@
 import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Approximation.DyadicExpr 
 
+class RealLike (α) extends Neg α, Inv α, Add α, Mul α, LE α where
+  sqrt : α → α
+  exp : α → α
+  log : α → α
+  pow : α → Nat → α
+  ofDyadic : Dyadic → α
+  ofDyadic_eq : ∀ x y, (ofDyadic x = ofDyadic y) ↔ (x = y)
+  ofDyadic_le : ∀ x y, (ofDyadic x ≤ ofDyadic y) ↔ (x ≤ y)
+
 noncomputable def Real.ipow (x : Real) (p : Int) : Real := 
   if p ≥ 0 then x ^ p.natAbs
   else 1 / (x ^ (-p).natAbs)
 
 noncomputable def Dyadic.toReal (x : Dyadic) : Real := 
   (@CommRingₓ.intCast Real _ x.m) * (Real.ipow 2 x.e)
+
+theorem Dyadic.toRealOfNat (x : Nat) : Dyadic.toReal (OfNat.ofNat x) = x :=
+  sorry
+
+theorem Dyadic.toReal_le (x y : Dyadic) : (x.toReal ≤ y.toReal) ↔ (x ≤ y) := 
+  sorry
 
 namespace DyadicExpr
 
@@ -30,7 +45,9 @@ def boundedByOpt (x : Real) : Option (Interval Dyadic) → Prop
   | some I => boundedBy x I
 
 def boundedByList (xs : List Real) (Is : List (Option (Interval Dyadic))) : Prop := 
-  xs.length = Is.length ∧ ∀ i, boundedByOpt (xs.get! i) (Is.get! i)
+  xs.length = Is.length ∧ 
+  ∀ i (hxs : Nat.lt i xs.length) (hIs : Nat.lt i Is.length), 
+    boundedByOpt (xs.get ⟨i, hxs⟩) (Is.get ⟨i, hIs⟩)
 
 open Interval
 
@@ -62,36 +79,39 @@ theorem approx_correct (prec : Nat)
   | add e₁ e₂ => sorry
   | mul e₁ e₂ => sorry
 
-
-
 end DyadicExpr
 
-open Lean
+namespace ArithForm
 
-def crazy (e : Expr) : Option DyadicExpr := 
-  match e with 
-  | Expr.app (Expr.app (Expr.app (Expr.const `Nat.cast _) _) _) n => 
-      match n with 
-      | Expr.lit (Literal.natVal n) => some (DyadicExpr.num n)
-      | _ => none
-  -- | Expr.app (Expr.app (Expr.const `Add.Add _) e₁) e₂ => 
-  --   match crazy e₁, crazy e₂ with 
-  --   | some e₁, some e₂ => some (DyadicExpr.add e₁ e₂)
-  --   | _, _ => none
-  | _ => none
+def interpret : ArithForm → List Real → Prop 
+  | le e₁ e₂,  xs => (e₁.interpret xs) ≤ (e₂.interpret xs)
+  | and e₁ e₂, xs => (interpret e₁ xs) ∧ (interpret e₂ xs)
 
-def crazy2 (r : Real) : Option DyadicExpr := sorry
+theorem approx_correct (prec : Nat)
+  (f : ArithForm) (xs : List Real) (vs : List (Option (Interval Dyadic))) 
+  (hbounded : DyadicExpr.boundedByList xs vs) 
+  (happrox : f.approx prec vs) :
+  f.interpret xs := by 
+  induction f generalizing vs xs with
+  | le e₁ e₂ => 
+      have h₁ := DyadicExpr.approx_correct prec e₁ xs vs hbounded
+      have h₂ := DyadicExpr.approx_correct prec e₂ xs vs hbounded
+      revert h₁ h₂
+      revert happrox
+      simp only [approx]
+      match DyadicExpr.approx prec e₁ vs with 
+      | some I₁ => 
+          dsimp
+          match DyadicExpr.approx prec e₂ vs with 
+          | some I₂ => 
+              dsimp 
+              simp only [DyadicExpr.boundedBy]
+              intros happrox h₁ h₂ 
+              simp only [interpret]
+              sorry
+          | none => dsimp; intros hf; contradiction
+      | none => dsimp; intros hf; contradiction
+      
+  | and => sorry
 
-
-def crazy3 (r : Real) : MetaM (Option DyadicExpr) := sorry
-
-/-
-Basically every atom will need a translation to 
--/
-
-#check Meta.inferType
-
-axiom correct : ∀ (r : Real), 
-  if let some de := crazy2 r then 
-    DyadicExpr.interpret de [] = r
-  else True
+end ArithForm
