@@ -1,6 +1,22 @@
 import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Approximation.DyadicExpr 
 
+-- TODO: wrong, negative case.
+noncomputable def Lean.Rat.toReal (x : Lean.Rat) : Real :=  
+  (x.num.natAbs : Real) / (x.den : Real)
+
+lemma sqrtRatIter_correct (x : Lean.Rat) : 
+  Real.sqrt x.toReal < (sqrtRatIter n prec x).toReal := by 
+  induction n with 
+  | zero => 
+      simp only [sqrtRatIter, Lean.Rat.toReal]
+      sorry
+  | succ n ih => sorry
+
+-- lemma sqrtRat_correct (x : Real) : 
+--   sqrtRatUp prec x ≤ sqrt x ∧ sqrt x ≤ sqrtRatDown prec x := by 
+--   sorry 
+
 class RealLike (α) extends Neg α, Inv α, Add α, Mul α, LE α where
   sqrt : α → α
   exp : α → α
@@ -50,6 +66,8 @@ def boundedByList (xs : List Real) (Is : List (Option (Interval Dyadic))) : Prop
     boundedByOpt (xs.get ⟨i, hxs⟩) (Is.get ⟨i, hIs⟩)
 
 open Interval
+
+#check Lean.Rat
 
 theorem approx_correct (prec : Nat) 
   (e : DyadicExpr) (xs : List Real) (vs : List (Option (Interval Dyadic))) 

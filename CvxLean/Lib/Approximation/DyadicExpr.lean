@@ -13,12 +13,7 @@ inductive DyadicExpr
   | add   : DyadicExpr → DyadicExpr → DyadicExpr
   | mul   : DyadicExpr → DyadicExpr → DyadicExpr
 
-inductive ArithExpr 
-  | val   : Nat → Nat → Dyadic → ArithExpr
-  | var   : Nat → ArithExpr
-  | neg   : ArithExpr → ArithExpr
-  | add   : ArithExpr → ArithExpr → ArithExpr
-  | mul   : ArithExpr → ArithExpr → ArithExpr
+#check Inv
 
 namespace DyadicExpr 
 

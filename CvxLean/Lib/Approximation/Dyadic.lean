@@ -126,18 +126,20 @@ instance : DecidableRel (LT.lt : Dyadic → Dyadic → Prop) :=
 
 def roundUpPos (prec : Nat) (d : Dyadic) : Dyadic :=
   if d.e < 0 then
-    mk ((d.m * (Int.pow 2 prec)) / (Int.pow 2 d.e.natAbs) + 1) (-prec)
+    mk ((d.m * (Int.pow 2 prec) + 1) / (Int.pow 2 d.e.natAbs)) (-prec)
   else 
-    mk (d.m * (Int.pow 2 (d.e.natAbs + prec)) + 1) (-prec)
+    mk (d.m * (Int.pow 2 (d.e.natAbs + prec))) (-prec)
 
 def roundDownPos (prec : Nat) (d : Dyadic) : Dyadic :=
   if d.e < 0 then
-    mk ((d.m * (Int.pow 2 prec)) / (Int.pow 2 d.e.natAbs) - 1) (-prec)
+    mk ((d.m * (Int.pow 2 prec) - 1) / (Int.pow 2 d.e.natAbs)) (-prec)
   else 
-    mk (d.m * (Int.pow 2 (d.e.natAbs + prec)) - 1) (-prec)
+    mk (d.m * (Int.pow 2 (d.e.natAbs + prec))) (-prec)
 
 def roundUp (prec : Nat) (d : Dyadic) : Dyadic := 
   if d < 0 then - roundDownPos prec (-d) else roundUpPos prec d
+
+#eval roundUp 10 (Dyadic.mk 3 (-13))
 
 def roundDown (prec : Nat) (d : Dyadic) : Dyadic := 
   if d < 0 then - roundUpPos prec (-d) else roundDownPos prec d
@@ -155,14 +157,10 @@ def roundDown_lower_bound (prec : Nat) (d : Dyadic) :
 -- NOTE: THESE ARE WRONG.
 
 def divUp  (prec : Nat) (x y : Dyadic) : Dyadic := 
-  let x' := roundUp prec x 
-  let y' := roundDown prec y
-  mk (x'.m / y'.m) (x'.e - y'.e)
+  roundUp prec <| mk (x.m / y.m) (x.e - y.e)
 
 def divDown (prec : Nat) (x y : Dyadic) : Dyadic := 
-  let x' := roundDown prec x 
-  let y' := roundUp prec y
-  mk (x'.m / y'.m) (x'.e - y'.e)
+  roundDown prec <| mk (x.m / y.m) (x.e - y.e)
 
 /- Square root. -/
 
@@ -171,6 +169,8 @@ private def sqrtIteration : Nat → Nat → Dyadic → Dyadic
   | prec, n+1, x => 
       let y := sqrtIteration prec n x
       (Dyadic.mk 1 (-1)) * roundUp prec (y + (divUp prec x y))
+
+-- Should I just use Rat instead of daydic for everything>???
 
 #eval sqrtIteration 1 1 (2 : Dyadic)
 #eval sqrtIteration 10 0 (2 : Dyadic)
@@ -202,3 +202,47 @@ decreasing_by
   norm_num 
 
 end Dyadic
+
+open Lean
+
+instance : HPow Rat Nat Rat where 
+  hPow x n := mkRat (x.num ^ n) (x.den ^ n)
+
+def Rat.roundUp (prec : Nat) (x : Rat) : Rat := 
+  mkRat (Rat.ceil (x * (OfNat.ofNat (2 ^ prec)))) (2 ^ prec)
+
+def Rat.roundDown (prec : Nat) (x : Rat) : Rat := 
+  mkRat (Rat.floor (x * (OfNat.ofNat (2 ^ prec)))) (2 ^ prec)
+
+def Rat.divUp (prec : Nat) (x y : Rat) : Rat := 
+  Rat.roundUp prec (x / y)
+
+def Rat.divDown (prec : Nat) (x y : Rat) : Rat := 
+  Rat.roundDown prec (x / y)
+
+-- x / y
+-- 
+
+def sqrtRatIter : Nat → Nat → Rat → Rat 
+  | Nat.zero,   _,    x => x / 2
+  | Nat.succ n, prec, x => 
+      let y := sqrtRatIter n prec x
+      y - Rat.roundUp prec ((y - x / y) / 2)
+
+mutual 
+  def sqrtRatUp (prec : Nat) (x : Rat) : Rat := 
+    if 0 < x then sqrtRatIter prec prec x else 
+    if x < 0 then -sqrtRatDown prec (-x) else 0
+
+  def sqrtRatDown (prec : Nat) (x : Rat) : Rat := 
+    if 0 < x then Rat.divDown prec x (sqrtRatIter prec prec x) else 
+    if x < 0 then -sqrtRatUp prec (-x) else 0 
+end
+termination_by' measure (fun x => 
+  match x with 
+  | PSum.inl x => if x < 0 then 1 else 0
+  | PSum.inr x => if x < 0 then 1 else 0) 
+decreasing_by sorry
+
+
+#eval sqrtRatUp 10 (200000000 : Rat)
