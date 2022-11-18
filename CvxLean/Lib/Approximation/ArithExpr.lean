@@ -13,19 +13,19 @@ class Log (α : Type u) where
 
 open Lean
 
-inductive ArithVal 
+inductive ArithVal : Type u
   | num : Rat → ArithVal
   | vec {n} : (Fin n → Rat) → ArithVal
   | matrix {n m} : (Fin n → Fin m → Rat) → ArithVal
 
 inductive ArithExpr : Type u → Type (u + 1)
-  | val {α} : α → ArithExpr α
+  | val : ArithVal.{u} → ArithExpr ArithVal.{u}
   | var {α} : Nat → ArithExpr α
-  | neg [Neg α] : ArithExpr α → ArithExpr α
-  | inv [Inv α] : ArithExpr α → ArithExpr α
-  | sqrt [Sqrt α] : ArithExpr α → ArithExpr α
-  | exp [Exp α] : ArithExpr α → ArithExpr α
-  | log [Log α] : ArithExpr α → ArithExpr α
+  | neg {α} [Neg α] : ArithExpr α → ArithExpr α
+  | inv {α} [Inv α] : ArithExpr α → ArithExpr α
+  | sqrt {α} [Sqrt α] : ArithExpr α → ArithExpr α
+  | exp {α} [Exp α] : ArithExpr α → ArithExpr α
+  | log {α} [Log α] : ArithExpr α → ArithExpr α
   | pow {β α} [HPow β Nat α] : ArithExpr β → Nat → ArithExpr α 
   | add {β₁ β₂ α} [HAdd β₁ β₂ α] : ArithExpr β₁ → ArithExpr β₂ → ArithExpr α 
   | mul {β₁ β₂ α} [HMul β₁ β₂ α] : ArithExpr β₁ → ArithExpr β₂ → ArithExpr α 
