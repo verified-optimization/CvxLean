@@ -117,7 +117,7 @@ lemma mem_log {α} [Log α] [LE α] (x : α) (I : Interval? α)
   : x ∈ Log.log I ↔ Log.log x ∈ I := 
   sorry
 
-/- Values. -/
+/- Generic arithmetic values. -/
 
 inductive ArithVal (α : Type u) : Type u
   | scalar : α → ArithVal α
@@ -125,12 +125,6 @@ inductive ArithVal (α : Type u) : Type u
   | matrix (n m) : (Fin n → Fin m → α) → ArithVal α
 
 namespace ArithVal
-
-@[reducible]
-def carrier (α) : ArithVal α → Type u
-  | scalar _ => α
-  | vector n _ => Fin n → α
-  | matrix n m _ => Fin n → Fin m → α
 
 def elementWise (f : α → α) : ArithVal α → ArithVal α
   | scalar x => scalar (f x)
@@ -142,6 +136,10 @@ instance [Neg α] : Neg (ArithVal α) := ⟨elementWise Neg.neg⟩
 instance [Inv α] : Inv (ArithVal α) := ⟨elementWise Inv.inv⟩
 
 instance [Srt α] : Srt (ArithVal α) := ⟨elementWise Srt.srt⟩
+
+instance [Exp α] : Exp (ArithVal α) := ⟨elementWise Exp.exp⟩
+
+instance [Log α] : Log (ArithVal α) := ⟨elementWise Log.log⟩
 
 end ArithVal
 
@@ -162,7 +160,6 @@ class RealLike (R : Type u) extends
   ofRat_sub : ∀ {p q : Rat}, ofRat (p - q) = ofRat p - ofRat q
   ofRat_mul : ∀ {p q : Rat}, ofRat (p * q) = ofRat p * ofRat q
   ofRat_div : ∀ {p q : Rat}, ofRat (p / q) = ofRat p / ofRat q
-  -- lemmas
   zero_lt_one : (0 : R) < 1
   srt_zero : Srt.srt (0 : R) = 0
   srt_nonneg : ∀ (x : R), 0 ≤ Srt.srt x
@@ -183,6 +180,8 @@ def arithBound (R : Type u) [RealLike R] (f : R → R) (prec : Nat) [Bounded R f
   : ArithVal (Interval? Rat) → ArithVal (Interval? Rat) :=
   ArithVal.elementWise (Bounded.bound f prec)
 
+namespace Neg
+
 instance (R : Type u) [RealLike R] : Bounded R Neg.neg where 
   bound _ I := -I 
   bound_correct prec x I := by 
@@ -194,6 +193,10 @@ instance (R : Type u) [RealLike R] : Bounded R Neg.neg where
         simp [RealLike.ofRat_neg]
         exact ⟨RealLike.neg_le_neg a.2, RealLike.neg_le_neg a.1⟩
 
+end Neg
+
+namespace Inv
+
 instance (R : Type u) [RealLike R] : Bounded R Inv.inv where 
   bound _ I := I⁻¹ 
   bound_correct prec x I := by 
@@ -204,6 +207,8 @@ instance (R : Type u) [RealLike R] : Bounded R Inv.inv where
         intros a
         simp [RealLike.ofRat_inv]
         exact ⟨RealLike.inv_le_inv a.2, RealLike.inv_le_inv a.1⟩
+
+end Inv
 
 namespace Srt
 
@@ -274,75 +279,63 @@ lemma ratDown_lb (x : Rat) (prec n : Nat) (hx : (0 : R) < ofRat x) :
     sorry 
   . exfalso ; apply h ; rw [←ofRat_zero] at hx ; exact (ofRat_lt_ofRat_iff.2 hx)
     
-    
-
 end Srt
 
 /- Arithmetic expressions where numerical values can be scalars, vectors, or 
 matrices. -/
 
-@[class]
-inductive ArithType (R : Type u) : Type u → Type u
-  | Scalar : ArithType R R
-  | Vector (n : Nat) : ArithType R (Fin n → R)
-  | Matrix (m n : Nat) : ArithType R (Fin m → Fin n → R)
-
-inductive ArithExpr (B : Type u) : ∀ (γ : Type u) [ArithType B γ], Type (u + 1)
-  | val {α} [ArithType B α] : α → ArithExpr B α
-  | var {α} [ArithType B α] : Nat → ArithExpr B α
-  | neg {α} [ArithType B α] [Neg α] : ArithExpr B α → ArithExpr B α
-  | inv {α} [ArithType B α] [Inv α] : ArithExpr B α → ArithExpr B α
-  | srt {α} [ArithType B α] [Srt α] : ArithExpr B α → ArithExpr B α
-  | exp {α} [ArithType B α] [Exp α] : ArithExpr B α → ArithExpr B α
-  | log {α} [ArithType B α] [Log α] : ArithExpr B α → ArithExpr B α
-  | pow {β α} [ArithType B β] [ArithType B α] [HPow β Nat α] : ArithExpr B β → Nat → ArithExpr B α 
-  | add {β₁ β₂ α} [ArithType B β₁] [ArithType B β₂] [ArithType B α] [HAdd β₁ β₂ α] : ArithExpr B β₁ → ArithExpr B β₂ → ArithExpr B α 
-  | mul {β₁ β₂ α} [ArithType B β₁] [ArithType B β₂] [ArithType B α] [HMul β₁ β₂ α] : ArithExpr B β₁ → ArithExpr B β₂ → ArithExpr B α 
+inductive ArithExpr (R : Type u) 
+  | val : ArithVal R → ArithExpr R
+  | var : Nat → ArithExpr R
+  | neg : ArithExpr R → ArithExpr R
+  | inv : ArithExpr R → ArithExpr R
+  | srt : ArithExpr R → ArithExpr R
+  | exp : ArithExpr R → ArithExpr R
+  | log : ArithExpr R → ArithExpr R
+  | pow : ArithExpr R → Nat → ArithExpr R 
+  | add : ArithExpr R → ArithExpr R → ArithExpr R
+  | mul : ArithExpr R → ArithExpr R → ArithExpr R 
 
 namespace ArithExpr
 
-def sub {B β₁ β₂ α} [HAdd β₁ β₂ α] [ArithType B β₁] [ArithType B β₂] [ArithType B α] [Neg β₂] 
-  (e₁ : ArithExpr B β₁) (e₂ : ArithExpr B β₂) : ArithExpr B α := 
+def sub {R} (e₁ : ArithExpr R) (e₂ : ArithExpr R) : ArithExpr R := 
   add e₁ (neg e₂)
 
-def div {B β₁ β₂ α} [HMul β₁ β₂ α] [ArithType B β₁] [ArithType B β₂] [ArithType B α] [Inv β₂] 
-  (e₁ : ArithExpr B β₁) (e₂ : ArithExpr B β₂) : ArithExpr B α := 
+def div {R} (e₁ : ArithExpr R) (e₂ : ArithExpr R) : ArithExpr R := 
   mul e₁ (inv e₂)
 
 open ArithVal
 
-def interpret (R) [RealLike R] {n : Nat} {R'}
-  : ∀ (h : ArithType R R'), ArithExpr R R' → (∀ i : Fin n, ArithVal R) → ArithVal R
-  | ArithType.Scalar, val x, _ => scalar x
-  | ArithType.Vector m, val x, _ => vector m x
-  | ArithType.Matrix m n, val x, _ => matrix m n x
-  | T, var i, Is => if h : i < n then Is ⟨i, h⟩ else scalar 0
-  | T, neg e, Is => Neg.neg (interpret R T e Is)
-  | T, inv e, Is => Inv.inv (interpret R T e Is)
-  | T, srt e, Is => Srt.srt (interpret R T e Is)
-  | T, exp e, Is => Exp.exp (interpret R T e Is)
-  | T, log e, Is => Log.log (interpret R T e Is)
-  | ArithType.Scalar, add e₁ e₂, Is => 
-      match interpret R _ e₁ Is, interpret R _ e₂ Is with 
+def interpret (R) [RealLike R] {n : Nat}
+  : ArithExpr R → (∀ i : Fin n, ArithVal R) → ArithVal R
+  | val x, _ => x
+  | var i, Is => if h : i < n then Is ⟨i, h⟩ else scalar 0
+  | neg e, Is => Neg.neg (interpret R e Is)
+  | inv e, Is => Inv.inv (interpret R e Is)
+  | srt e, Is => Srt.srt (interpret R e Is)
+  | exp e, Is => Exp.exp (interpret R e Is)
+  | log e, Is => Log.log (interpret R e Is)
+  | add e₁ e₂, Is => 
+      match (interpret R e₁ Is), (interpret R e₂ Is) with 
         | scalar x, scalar y => scalar (x + y)
         | scalar x, vector n y => vector n (fun i => x + y i)
         | vector n x, scalar y => vector n (fun i => x i + y)
         | vector n x, vector m y => 
             if h : n = m then vector n (fun i => x i + y (h ▸ i)) else scalar 0
         | _, _ => scalar 0
-  | _, _, _ => sorry
+  | _, _ => sorry
 
-def approx (R) [RealLike R] {n : Nat} (prec : Nat) {R'}
-  : ∀ (h : ArithType Rat R'), ArithExpr Rat R' → (∀ i : Fin n, ArithVal (Interval? Rat)) → ArithVal (Interval? Rat)
-  | ArithType.Scalar, val x, _ => scalar <| some ⟨x, x⟩
-  | ArithType.Vector m, val x, _ => vector m <| fun i => some ⟨x i, x i⟩
-  | ArithType.Matrix m n, val x, _ => matrix m n <| fun i j => some ⟨x i j, x i j⟩
-  | T, var i, Is => if h : i < n then Is ⟨i, h⟩ else scalar none 
-  | T, neg e, Is => arithBound R Neg.neg prec (approx R prec T e Is)
-  | T, inv e, Is => arithBound R Inv.inv prec (approx R prec T e Is)
-  | T, srt e, Is => sorry
-  | T, exp e, Is => sorry
-  | T, log e, Is => sorry
-  | _, _, _ => sorry
+def approx (R) [RealLike R] {n : Nat} (prec : Nat) 
+  : ArithExpr Rat → (∀ i : Fin n, ArithVal (Interval? Rat)) → ArithVal (Interval? Rat)
+  | val (scalar x), _ => scalar <| some ⟨x, x⟩
+  | val (vector n x), _ => vector n <| fun i => some ⟨x i, x i⟩
+  | val (matrix n m x), _ => matrix n m <| fun i j => some ⟨x i j, x i j⟩
+  | var i, Is => if h : i < n then Is ⟨i, h⟩ else scalar none 
+  | neg e, Is => arithBound R Neg.neg prec (approx R prec T e Is)
+  | inv e, Is => arithBound R Inv.inv prec (approx R prec T e Is)
+  | srt e, Is => sorry
+  | exp e, Is => sorry
+  | log e, Is => sorry
+  | _, _ => sorry
 
 end ArithExpr
