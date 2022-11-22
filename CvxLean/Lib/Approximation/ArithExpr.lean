@@ -1,5 +1,7 @@
 import Mathlib.Algebra.Ring.Basic
 import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.NormCast
+import Std.Data.Nat.Gcd
 
 open Lean
 
@@ -14,6 +16,12 @@ class Exp (α : Type u) where
 class Log (α : Type u) where
   log : α → α
 
+/- Nat lemmas. -/
+
+namespace Nat 
+
+end Nat 
+
 /- Rounding rationals and lemmas. -/
 
 namespace Rat 
@@ -24,6 +32,80 @@ instance : HPow Rat Nat Rat where
 instance : Inv Rat where 
   inv := Rat.inv
 
+section Lemmas 
+
+lemma neg_zero : (-0 : Rat) = 0 := rfl
+
+lemma lt_of_neg_lt_neg {x y : Rat} : -x < -y → y < x := by 
+  sorry  
+
+lemma num_pos_iff_pos {x : Rat} : 0 < x ↔ 0 < x.num := by 
+  simp [LT.lt, Rat.lt, GT.gt]
+  exact @decide_eq_true_iff _ (Int.decLt _ _)
+
+lemma den_pos_of_nz_den {x : Rat} (hden : x.den ≠ 0) : (0 : Int) < x.den := by 
+  revert hden
+  induction x.den with 
+  | zero => intros h ; contradiction
+  | succ n ih => 
+      simp [Nat.cast_succ]
+      by_cases n = 0
+      . rw [h] ; simp
+      . exact Int.lt_add_one_of_le (Int.le_of_lt (ih h))
+
+lemma inv_pos_of_pos_nz_den {x : Rat} (hx : 0 < x) (hden : x.den ≠ 0) 
+  : 0 < x⁻¹ := by 
+  simp [Inv.inv, Rat.inv]
+  by_cases x.num < 0 <;> simp [h]
+  . by_contra
+    apply Int.lt_irrefl (0 : Int)
+    exact Int.lt_trans (num_pos_iff_pos.mp hx) h
+  . by_cases x.num = 0 <;> simp [h]
+    . exact hx
+    . simp [LT.lt, Rat.lt]
+      exact den_pos_of_nz_den hden
+
+-- TODO: move 
+lemma Int.ofNat_div (n m : Nat) 
+  : Int.ofNat (n / m) = Int.ofNat n / Int.ofNat m := rfl
+
+-- TODO: move 
+lemma Int.div_pos_of_le {x y : Int} (hy : 0 < y) (hle : y ≤ x) : 0 < x / y := by 
+  let ⟨n, hn⟩ := Int.eq_succ_of_zero_lt (Int.lt_of_lt_of_le hy hle)
+  let ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hy
+  rw [hn, hm, ←Int.ofNat_div]
+  have hif := And.intro (Nat.zero_lt_succ m) (hm ▸ (hn ▸ hle))
+  rw [Int.ofNat_le] at hif
+  rw [Nat.div_eq, if_pos hif]
+  apply Int.ofNat_succ_pos
+
+lemma mul_pos_of_pos_pos {x y : Rat} (hx : 0 < x) (hy : 0 < y) : 0 < x * y := by 
+  simp [HMul.hMul, Mul.mul, Rat.mul]
+  simp [LT.lt, Rat.lt]
+  apply Int.mul_pos;
+  { have hgcdpos : (0 : Int) < ↑(Nat.gcd (Int.natAbs x.num) y.den) := by
+    { have hxnz := (Int.ne_of_lt (num_pos_iff_pos.1 hx)).symm
+      have habs := Int.natAbs_pos_of_ne_zero hxnz
+      have hgcd : 0 < Nat.gcd (Int.natAbs x.num) y.den := 
+        Nat.gcd_pos_of_pos_left _ habs
+      let ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_lt hgcd).symm;
+      rw [hn] ; apply Int.ofNat_succ_pos }
+    apply Int.div_pos_of_le hgcdpos;
+    { let ⟨n, hn⟩ := Int.eq_succ_of_zero_lt (num_pos_iff_pos.1 hx);
+      let ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hgcdpos;
+      rw [hm, hn, Int.ofNat_le]
+      sorry } }
+  { sorry }
+
+lemma div_pos_of_pos_pos {x y : Rat} 
+  (hx : 0 < x) (hy : 0 < y) (hyden : y.den ≠ 0) : 0 < x / y := by 
+  simp [HDiv.hDiv, Div.div, Rat.div]
+  sorry
+
+end Lemmas 
+
+section Rounding
+
 def roundUp (prec : Nat) (x : Rat) : Rat := 
   let d := Nat.shiftLeft 2 prec
   mkRat (x * d).ceil d
@@ -32,25 +114,27 @@ def roundDown (prec : Nat) (x : Rat) : Rat :=
   let d := Nat.shiftLeft 2 prec
   mkRat (x * d).floor d
 
+lemma roundUp_ub (prec : Nat) (x : Rat) : x ≤ roundUp prec x := by 
+  cases x
+  simp [roundUp]
+  sorry
+
+lemma roundDown_lb (prec : Nat) (x : Rat) : roundDown prec x ≤ x := by 
+  sorry
+
 def divUp (prec : Nat) (x y : Rat) : Rat := 
   roundUp prec (x / y)
 
 def divDown (prec : Nat) (x y : Rat) : Rat := 
   roundDown prec (x / y)
 
-lemma roundUp_ub (prec : Nat) (x : Rat) : x ≤ roundUp prec x := by 
-  sorry
+lemma divUp_ub (prec : Nat) (x y : Rat) : x / y ≤ divUp prec x y :=
+  roundUp_ub prec (x / y)
 
-lemma roundDown_lb (prec : Nat) (x : Rat) : roundDown prec x ≤ x := by 
-  sorry
+lemma divDown_lb (prec : Nat) (x y : Rat) : divDown prec x y ≤ x / y :=
+  roundDown_lb prec (x / y)
 
-lemma neg_zero : (-0 : Rat) = 0 := rfl
-
-lemma lt_of_neg_lt_neg {x y : Rat} : -x < -y → y < x := by 
-  sorry  
-
-lemma div_pos_of_pos_pos {x y : Rat} (hx : 0 < x) (hy : 0 < y) : 0 < x / y := by 
-  sorry
+end Rounding
 
 end Rat
 
@@ -150,7 +234,6 @@ class RealLike (R : Type u) extends
   ofRat : Rat → R 
   ofRat_le_ofRat_iff : ∀ {p q : Rat}, p ≤ q ↔ ofRat p ≤ ofRat q
   ofRat_lt_ofRat_iff : ∀ {p q : Rat}, p < q ↔ ofRat p < ofRat q
-  ofRat_inj : ∀ {p q : Rat}, ofRat p = ofRat q → p = q
   ofRat_zero : ofRat 0 = 0
   ofRat_one : ofRat 1 = 1
   ofRat_ofNat : ∀ {n : Nat} [Nat.AtLeastTwo n], ofRat (OfNat.ofNat n) = OfNat.ofNat n
@@ -167,6 +250,15 @@ class RealLike (R : Type u) extends
   srt_lt_pos : ∀ {x : R}, 0 < x → Srt.srt x < x
   neg_le_neg : ∀ {x y : R}, x ≤ y → -y ≤ -x
   inv_le_inv : ∀ {x y : R}, x ≤ y → y⁻¹ ≤ x⁻¹
+
+namespace RealLike
+
+lemma pos_iff_pos_ofReal {R} [RealLike R] {x : Rat} 
+  : 0 < x ↔ (0 : R) < ofRat x := by
+  rw [←ofRat_zero]
+  exact ofRat_lt_ofRat_iff
+
+end RealLike
 
 /- Bounded function. -/
 
@@ -276,6 +368,8 @@ lemma ratDown_lb (x : Rat) (prec n : Nat) (hx : (0 : R) < ofRat x) :
   (0 : R) < ofRat (ratDown prec x) := by
   by_cases 0 < x 
   . simp [ratDown, h]
+    have hIter := ratIter_pos x prec prec hx
+    rw [←pos_iff_pos_ofReal] at hx hIter
     sorry 
   . exfalso ; apply h ; rw [←ofRat_zero] at hx ; exact (ofRat_lt_ofRat_iff.2 hx)
     
@@ -321,7 +415,9 @@ def interpret (R) [RealLike R] {n : Nat}
         | scalar x, vector n y => vector n (fun i => x + y i)
         | vector n x, scalar y => vector n (fun i => x i + y)
         | vector n x, vector m y => 
-            if h : n = m then vector n (fun i => x i + y (h ▸ i)) else scalar 0
+            if h : n = m then 
+              vector n (fun i => x i + y (h ▸ i)) 
+            else scalar 0
         | _, _ => scalar 0
   | _, _ => sorry
 
@@ -331,8 +427,8 @@ def approx (R) [RealLike R] {n : Nat} (prec : Nat)
   | val (vector n x), _ => vector n <| fun i => some ⟨x i, x i⟩
   | val (matrix n m x), _ => matrix n m <| fun i j => some ⟨x i j, x i j⟩
   | var i, Is => if h : i < n then Is ⟨i, h⟩ else scalar none 
-  | neg e, Is => arithBound R Neg.neg prec (approx R prec T e Is)
-  | inv e, Is => arithBound R Inv.inv prec (approx R prec T e Is)
+  | neg e, Is => arithBound R Neg.neg prec (approx R prec e Is)
+  | inv e, Is => arithBound R Inv.inv prec (approx R prec e Is)
   | srt e, Is => sorry
   | exp e, Is => sorry
   | log e, Is => sorry
