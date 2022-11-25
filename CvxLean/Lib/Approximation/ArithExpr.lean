@@ -142,6 +142,16 @@ lemma Int.div_pos_of_le {x y : Int} (hy : 0 < y) (hle : y ≤ x) : 0 < x / y := 
   rw [Nat.div_eq, if_pos hif]
   apply Int.ofNat_succ_pos
 
+lemma Nat.le_cast {x y : ℕ} (h : x ≤ y) 
+  : (Nat.cast x : Int) ≤ Nat.cast y := by
+  induction h with 
+  | refl => exact Int.le_refl _ 
+  | @step m _ ih => 
+      simp [Nat.cast_succ]
+      have hmaddone : (Nat.cast m : Int) ≤ Nat.cast m + 1 := 
+        Int.le_add_of_nonneg_right (Int.le_of_lt Int.zero_lt_one)
+      exact Int.le_trans ih hmaddone
+
 lemma mul_pos_of_pos_pos {x y : Rat} (hx : 0 < x) (hy : 0 < y) : 0 < x * y := by 
   simp [HMul.hMul, Mul.mul, Rat.mul]
   simp [LT.lt, Rat.lt]
@@ -154,14 +164,12 @@ lemma mul_pos_of_pos_pos {x y : Rat} (hx : 0 < x) (hy : 0 < y) : 0 < x * y := by
       let ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_lt hgcd).symm;
       rw [hn] ; apply Int.ofNat_succ_pos }
     apply Int.div_pos_of_le hgcdpos;
-    { let ⟨n, hn⟩ := Int.eq_succ_of_zero_lt (pos_iff_num_pos.1 hx);
-      let ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hgcdpos;
-      --rw [hm, hn, Int.ofNat_le]
+    { rw [←Int.ofNat_natAbs_eq_of_nonneg x.num (Int.le_of_lt (pos_iff_num_pos.1 hx))] 
+      rw [Int.ofNat_eq_cast]
+      apply Nat.le_cast;
       have hxnumne := (Int.ne_of_lt (pos_iff_num_pos.1 hx)).symm
-      have habspos := Int.natAbs_pos_of_ne_zero hxnumne
-      have dsfg := Nat.gcd_le_left y.den habspos;
-      rw [←Int.ofNat_natAbs_eq_of_nonneg x.num (Int.le_of_lt (pos_iff_num_pos.1 hx))] 
-      sorry } }
+      have habspos := Int.natAbs_pos_of_ne_zero hxnumne;
+      exact Nat.gcd_le_left y.den habspos; } }
   { sorry }
 
 lemma div_pos_of_pos_pos {x y : Rat} 
