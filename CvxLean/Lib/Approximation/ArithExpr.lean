@@ -34,7 +34,7 @@ instance : Inv Rat where
 
 section Lemmas 
 
-lemma neg_zer : (-0 : Rat) = 0 := rfl
+lemma neg_zero : (-0 : Rat) = 0 := rfl
 
 lemma neg_num {x : Rat} : (-x).num = -(x.num) := rfl
 
@@ -64,7 +64,9 @@ lemma neg_neg_of_pos {x : Rat} : 0 < x → -x < 0 := by
     simp [Rat.lt, hlt] at hpos
     exact (Int.not_le.mpr hpos) (Int.le_of_lt hlt)
 
-#check Int
+
+-- Neela is 
+
 
 lemma lt_of_neg_lt_neg {x y : Rat} : -x < -y → y < x := by 
   show Rat.lt _ _ → Rat.lt _ _
