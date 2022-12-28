@@ -42,141 +42,39 @@ lemma neg_neg (x : Rat) : -(-x) = x := by
   show Rat.neg (Rat.neg x) = x
   simp [Rat.neg]
 
-lemma neg_neg_of_pos {x : Rat} : 0 < x → -x < 0 := by 
-  show Rat.lt _ _ → Rat.lt _ _
-  intros hpos
-  by_cases (-x).num < 0 <;> simp [Rat.lt, h]
-  rename ¬(-x).num < 0 => hnotlt
-  by_cases (-x).num = 0 <;> simp [h]
-  . exfalso
-    simp [Rat.lt] at hpos 
-    have hnegxnum : -(x.num) = 0 := h  
-    have hc : x.num = 0 := Int.neg_zero ▸ Int.eq_neg_of_eq_neg hnegxnum.symm
-    exact (Int.ne_of_lt hpos) hc.symm
-  . exfalso 
-    have hgt : (-x).num > 0 := match Int.lt_trichotomy (-x).num 0 with 
-      | Or.inl hlt => absurd hlt hnotlt
-      | Or.inr (Or.inl heq) => absurd heq h
-      | Or.inr (Or.inr hgt) => hgt
-    have hgtnum : -(x.num) > 0 := (by rfl : (-x).num = -(x.num)) ▸ hgt
-    have hlt : x.num < 0 := 
-      Int.neg_neg x.num ▸ (Int.neg_zero ▸ Int.neg_lt_neg hgtnum)
-    simp [Rat.lt, hlt] at hpos
-    exact (Int.not_le.mpr hpos) (Int.le_of_lt hlt)
+lemma neg_neg_of_pos {x : Rat} : 0 < x → -x < 0 := 
+  sorry
 
+lemma lt_of_neg_lt_neg {x y : Rat} : -x < -y → y < x := 
+  sorry
 
--- Neela is 
+lemma pos_iff_num_pos {x : Rat} : 0 < x ↔ 0 < x.num := 
+  sorry
 
-
-lemma lt_of_neg_lt_neg {x y : Rat} : -x < -y → y < x := by 
-  show Rat.lt _ _ → Rat.lt _ _
-  intros hnn
-  by_cases y.num < 0 ∧ x.num ≥ 0 <;> simp [Rat.lt, h]
-  rename ¬(y.num < 0 ∧ x.num ≥ 0) => hnand
-  by_cases y.num = 0 <;> simp [h]
-  . by_contra hc 
-    simp [Rat.lt] at hnn
-    have hnlt : ¬((-x).num < 0) := fun hlt => by 
-      have hlt' : -x.num < 0 := (by rfl : (-x).num = -(x.num)) ▸ hlt
-      exact hc <| Int.neg_neg x.num ▸ (Int.neg_zero ▸ Int.neg_lt_neg hlt')
-    simp [hnlt] at hnn 
-    rename y.num = 0 => hyeq
-    by_cases (-x).num = 0 <;> simp [h] at hnn 
-    . have hgtnum : -(y.num) > 0 := (by rfl : (-y).num = -(y.num)) ▸ hnn
-      rw [hyeq, Int.neg_zero] at hgtnum
-      exact Int.lt_irrefl 0 hgtnum 
-    . rename ¬(-x).num = 0 => hxneq
-      by_cases (-x).num > 0 ∧ (-y).num ≤ 0 <;> simp [h] at hnn 
-      have hgt : (-x).num > 0 := match Int.lt_trichotomy (-x).num 0 with 
-        | Or.inl hlt => absurd hlt hnlt 
-        | Or.inr (Or.inl heq) => absurd heq hxneq 
-        | Or.inr (Or.inr hgt) => hgt
-      exact (Int.neg_zero ▸ hyeq ▸ neg_num ▸ not_and.mp h hgt) (Int.le_refl 0)
-  . rename ¬(y.num = 0) => hyneq
-    by_cases y.num > 0 ∧ x.num ≤ 0 <;> simp [h]
-    . simp [Rat.lt] at hnn 
-      have hnegynge : ¬((-y).num ≥ 0) := fun hlt => by 
-        rw [neg_num] at hlt
-        refine Int.lt_irrefl 0 (Int.lt_trans h.1 ?_)
-        refine Int.lt_iff_le_and_ne.mpr ⟨?_, hyneq⟩
-        exact Int.neg_neg y.num ▸ (Int.neg_zero ▸ Int.neg_le_neg hlt)
-      simp [hnegynge] at hnn
-      sorry 
-    . sorry 
-
-lemma pos_iff_num_pos {x : Rat} : 0 < x ↔ 0 < x.num := by 
-  simp [LT.lt, Rat.lt, GT.gt]
-  exact @decide_eq_true_iff _ (Int.decLt _ _)
-
-lemma den_pos_of_nz_den {x : Rat} (hden : x.den ≠ 0) : (0 : Int) < x.den := by 
-  revert hden
-  induction x.den with 
-  | zero => intros h ; contradiction
-  | succ n ih => 
-      simp [Nat.cast_succ]
-      by_cases n = 0
-      . rw [h] ; simp
-      . exact Int.lt_add_one_of_le (Int.le_of_lt (ih h))
+lemma den_pos_of_nz_den {x : Rat} (hden : x.den ≠ 0) : (0 : Int) < x.den := 
+  sorry
 
 lemma inv_pos_of_pos_nz_den {x : Rat} (hx : 0 < x) (hden : x.den ≠ 0) 
-  : 0 < x⁻¹ := by 
-  simp [Inv.inv, Rat.inv]
-  by_cases x.num < 0 <;> simp [h]
-  . by_contra
-    apply Int.lt_irrefl (0 : Int)
-    exact Int.lt_trans (pos_iff_num_pos.mp hx) h
-  . by_cases x.num = 0 <;> simp [h]
-    . exact hx
-    . simp [LT.lt, Rat.lt]
-      exact den_pos_of_nz_den hden
+  : 0 < x⁻¹ := 
+  sorry
 
 -- TODO: move 
 lemma Int.ofNat_div (n m : Nat) 
   : Int.ofNat (n / m) = Int.ofNat n / Int.ofNat m := rfl
 
 -- TODO: move 
-lemma Int.div_pos_of_le {x y : Int} (hy : 0 < y) (hle : y ≤ x) : 0 < x / y := by 
-  let ⟨n, hn⟩ := Int.eq_succ_of_zero_lt (Int.lt_of_lt_of_le hy hle)
-  let ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hy
-  rw [hn, hm, ←Int.ofNat_div]
-  have hif := And.intro (Nat.zero_lt_succ m) (hm ▸ (hn ▸ hle))
-  rw [Int.ofNat_le] at hif
-  rw [Nat.div_eq, if_pos hif]
-  apply Int.ofNat_succ_pos
+lemma Int.div_pos_of_le {x y : Int} (hy : 0 < y) (hle : y ≤ x) : 0 < x / y := 
+  sorry
 
 lemma Nat.le_cast {x y : ℕ} (h : x ≤ y) 
-  : (Nat.cast x : Int) ≤ Nat.cast y := by
-  induction h with 
-  | refl => exact Int.le_refl _ 
-  | @step m _ ih => 
-      simp [Nat.cast_succ]
-      have hmaddone : (Nat.cast m : Int) ≤ Nat.cast m + 1 := 
-        Int.le_add_of_nonneg_right (Int.le_of_lt Int.zero_lt_one)
-      exact Int.le_trans ih hmaddone
+  : (Nat.cast x : Int) ≤ Nat.cast y :=
+  sorry
 
-lemma mul_pos_of_pos_pos {x y : Rat} (hx : 0 < x) (hy : 0 < y) : 0 < x * y := by 
-  simp [HMul.hMul, Mul.mul, Rat.mul]
-  simp [LT.lt, Rat.lt]
-  apply Int.mul_pos;
-  { have hgcdpos : (0 : Int) < ↑(Nat.gcd (Int.natAbs x.num) y.den) := by
-    { have hxnz := (Int.ne_of_lt (pos_iff_num_pos.1 hx)).symm
-      have habs := Int.natAbs_pos_of_ne_zero hxnz
-      have hgcd : 0 < Nat.gcd (Int.natAbs x.num) y.den := 
-        Nat.gcd_pos_of_pos_left _ habs
-      let ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_lt hgcd).symm;
-      rw [hn] ; apply Int.ofNat_succ_pos }
-    apply Int.div_pos_of_le hgcdpos;
-    { rw [←Int.ofNat_natAbs_eq_of_nonneg x.num (Int.le_of_lt (pos_iff_num_pos.1 hx))] 
-      rw [Int.ofNat_eq_cast]
-      apply Nat.le_cast;
-      have hxnumne := (Int.ne_of_lt (pos_iff_num_pos.1 hx)).symm
-      have habspos := Int.natAbs_pos_of_ne_zero hxnumne;
-      exact Nat.gcd_le_left y.den habspos; } }
-  { sorry }
+lemma mul_pos_of_pos_pos {x y : Rat} (hx : 0 < x) (hy : 0 < y) : 0 < x * y :=
+  sorry
 
 lemma div_pos_of_pos_pos {x y : Rat} 
-  (hx : 0 < x) (hy : 0 < y) (hyden : y.den ≠ 0) : 0 < x / y := by 
-  simp [HDiv.hDiv, Div.div, Rat.div]
+  (hx : 0 < x) (hy : 0 < y) (hyden : y.den ≠ 0) : 0 < x / y := 
   sorry
 
 end Lemmas 
@@ -191,12 +89,10 @@ def roundDown (prec : Nat) (x : Rat) : Rat :=
   let d := Nat.shiftLeft 2 prec
   mkRat (x * d).floor d
 
-lemma roundUp_ub (prec : Nat) (x : Rat) : x ≤ roundUp prec x := by 
-  cases x
-  simp [roundUp]
+lemma roundUp_ub (prec : Nat) (x : Rat) : x ≤ roundUp prec x := 
   sorry
 
-lemma roundDown_lb (prec : Nat) (x : Rat) : roundDown prec x ≤ x := by 
+lemma roundDown_lb (prec : Nat) (x : Rat) : roundDown prec x ≤ x := 
   sorry
 
 def divUp (prec : Nat) (x y : Rat) : Rat := 
