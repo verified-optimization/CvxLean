@@ -4,4 +4,5 @@
 /solver/build
 /solver/test.cbf
 /solver/test.sol
+/arb/build
 /lean_packages
