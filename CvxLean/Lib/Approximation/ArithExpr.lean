@@ -26,6 +26,8 @@ end Nat
 
 namespace Rat 
 
+axiom den_nonzero : ∀ (x : Rat), x.den ≠ 0
+
 instance : HPow Rat Nat Rat where 
   hPow x n := mkRat (x.num ^ n) (x.den ^ n)
 
@@ -221,6 +223,7 @@ class RealLike (R : Type u) extends
   srt_nonneg : ∀ (x : R), 0 ≤ Srt.srt x
   srt_le : ∀ {x : R}, Srt.srt x ≤ x
   srt_lt_pos : ∀ {x : R}, 0 < x → Srt.srt x < x
+  srt_bound : ∀ {x b : R}, 0 < b → 0 < x → srt x < b → srt x < (b + x / b) / 2
   neg_le_neg : ∀ {x y : R}, x ≤ y → -y ≤ -x
   inv_le_inv : ∀ {x y : R}, x ≤ y → y⁻¹ ≤ x⁻¹
 
@@ -311,7 +314,7 @@ variable {R} [RealLike R]
 lemma srt_ub_of_pos_pos (x b : R) 
   (hsrt : srt x < b) (hb : 0 < b) (hx : 0 < x) :
   srt x < (b + x / b) / 2 :=
-  sorry 
+  srt_bound hb hx hsrt 
 
 lemma ratIter_bound (x : Rat) (prec n : Nat) (hx : (0 : R) < ofRat x) :
   srt (ofRat x) < (ofRat (ratIter n prec x) : R) := by 
@@ -342,7 +345,8 @@ lemma ratDown_lb (x : Rat) (prec n : Nat) (hx : (0 : R) < ofRat x) :
   by_cases 0 < x 
   . simp [ratDown, h]
     have hIter := ratIter_pos x prec prec hx
-    rw [←pos_iff_pos_ofReal] at hx hIter
+    rw [←pos_iff_pos_ofReal] at hx hIter ⊢
+    
     sorry 
   . exfalso ; apply h ; rw [←ofRat_zero] at hx ; exact (ofRat_lt_ofRat_iff.2 hx)
     
