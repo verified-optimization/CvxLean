@@ -1,6 +1,4 @@
 #include <lean/lean.h>
-#include <lean/lean_gmp.h>
-#include "flint/flint.h"
 #include "arb.h"
 
 // Rat -> Rat x Rat
@@ -9,38 +7,26 @@ lean_obj_res sqrt_bounds(lean_obj_arg x)
     lean_object * n = lean_ctor_get(x, 0);
     lean_object * d = lean_ctor_get(x, 1);
 
-    mpz_t num, den;
-    mpz_init(num);
-    mpz_init(den);
+    arb_t num, den;
+    arb_init(num);
+    arb_init(den);
     
-    // if (lean_is_mpz(n)) {
-    //     lean_extract_mpz_value(n, num);
-    // } else {
-        int num_i = 40;//lean_scalar_to_int(n);
-        mpz_set_si(num, num_i);
-    //}
-    // if (lean_is_mpz(d)) {
-    //     lean_extract_mpz_value(d, den);
-    // } else {
-        int den_i = 123;//lean_scalar_to_int(d);
-        mpz_set_si(den, den_i);
-    // }
+    // int num_i = lean_scalar_to_int(n);
+    // arb_set_si(num, num_i);
 
-    // fmpz_t x_f, num_f, den_f;
-    // fmpz_init(x_f);
-    // fmpz_init(num_f);
-    // fmpz_init(den_f);
-    // fmpz_set_mpz(num_f, num);
-    // fmpz_set_mpz(den_f, den);
-    // fmpz_divexact(x_f, num_f, den_f);
+    // int den_i = lean_scalar_to_int(d);
+    // arb_set_si(den, den_i);
 
-    arb_t x_a;
+    // arb_t x_a;
     // arb_init(x_a);
-    // arb_set_fmpz(x_a, x_f);
-
+    // arb_div(x_a, num, den, 10);
+    
     // arb_t sqrt_x_a;
     // arb_init(sqrt_x_a);
     // arb_sqrt(sqrt_x_a, x_a, 10);
+    
+    // arf_t lower_f, upper_f;
+    // arb_get_interval_arf(lower_f, upper_f, sqrt_x_a, 10);
 
     // fmpz_t lower_f, upper_f, one_f, exp_f;
     // fmpz_init(lower_f);
