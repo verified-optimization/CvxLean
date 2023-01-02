@@ -1,0 +1,82 @@
+{"version": 4,
+ "packagesDir": "./lake-packages",
+ "packages":
+ [{"git":
+   {"url": "https://github.com/xubaiw/CMark.lean",
+    "subDir?": null,
+    "rev": "2cc7cdeef67184f84db6731450e4c2b258c28fe8",
+    "name": "CMark",
+    "inputRev?": "main"}},
+  {"git":
+   {"url": "https://github.com/leanprover-community/mathlib3port.git",
+    "subDir?": null,
+    "rev": "0ef9b6d2572e49c015c955be6c551ba5d6894fe6",
+    "name": "mathlib3port",
+    "inputRev?": "0ef9b6d2572e49c015c955be6c551ba5d6894fe6"}},
+  {"git":
+   {"url": "https://github.com/leanprover/lake",
+    "subDir?": null,
+    "rev": "235383015cdcb0082777b0347b84dba01843c79c",
+    "name": "lake",
+    "inputRev?": "master"}},
+  {"git":
+   {"url": "https://github.com/leanprover/doc-gen4",
+    "subDir?": null,
+    "rev": "f221bbdcffe6a17bb310f0e9ee10767812b03e13",
+    "name": "doc-gen4",
+    "inputRev?": "main"}},
+  {"git":
+   {"url": "https://github.com/leanprover-community/lean3port.git",
+    "subDir?": null,
+    "rev": "cbd10f59b900e1b924e2ca9c9303c9892e355e63",
+    "name": "lean3port",
+    "inputRev?": "cbd10f59b900e1b924e2ca9c9303c9892e355e63"}},
+  {"git":
+   {"url": "https://github.com/mhuisi/lean4-cli",
+    "subDir?": null,
+    "rev": "5a858c32963b6b19be0d477a30a1f4b6c120be7e",
+    "name": "Cli",
+    "inputRev?": "nightly"}},
+  {"git":
+   {"url": "https://github.com/leanprover-community/mathlib4.git",
+    "subDir?": null,
+    "rev": "101a43099e50a85ec32c73b1167a8d35734ec94f",
+    "name": "mathlib",
+    "inputRev?": "101a43099e50a85ec32c73b1167a8d35734ec94f"}},
+  {"git":
+   {"url": "https://github.com/gebner/quote4",
+    "subDir?": null,
+    "rev": "7ac99aa3fac487bec1d5860e751b99c7418298cf",
+    "name": "Qq",
+    "inputRev?": "master"}},
+  {"git":
+   {"url": "https://github.com/gebner/aesop",
+    "subDir?": null,
+    "rev": "6f04ed73886f455a8ec41fbbae21ef6b870c61ff",
+    "name": "aesop",
+    "inputRev?": "master"}},
+  {"git":
+   {"url": "https://github.com/hargonix/LeanInk",
+    "subDir?": null,
+    "rev": "9f3101452135964ac9107ec8e9910bfd14022bbc",
+    "name": "leanInk",
+    "inputRev?": "doc-gen"}},
+  {"path": {"name": "ffi", "dir": "./ffi"}},
+  {"git":
+   {"url": "https://github.com/verified-optimization/optlibport.git",
+    "subDir?": null,
+    "rev": "495dc2b4a6202546569c2a841e3129f388ce2511",
+    "name": "optlibport",
+    "inputRev?": "495dc2b4a6202546569c2a841e3129f388ce2511"}},
+  {"git":
+   {"url": "https://github.com/xubaiw/Unicode.lean",
+    "subDir?": null,
+    "rev": "6dd6ae3a3839c8350a91876b090eda85cf538d1d",
+    "name": "Unicode",
+    "inputRev?": "main"}},
+  {"git":
+   {"url": "https://github.com/leanprover/std4",
+    "subDir?": null,
+    "rev": "2ace3a9803a96fd765d588b2a95fb6fafaf05bb3",
+    "name": "std",
+    "inputRev?": "main"}}]}
