@@ -2,40 +2,32 @@ import Lake
 open System Lake DSL
 
 def arbDir : FilePath := "/Users/ramonfernandezmir/Documents/PhD-code/verification-tools/arb"
+def flintDir : FilePath := "/Users/ramonfernandezmir/Documents/PhD-code/verification-tools/flint2"
 
 package ffi {
   srcDir := "lean"
   precompileModules := true
-  moreLinkArgs := #["-larb"]
+  moreLinkArgs := #["-larb", "-lflint"]
   moreLeancArgs := #[]
 }
 
-@[defaultTarget]
-lean_lib FFI
+@[default_target]
+lean_lib FFI where 
+  precompileModules := true
 
 target leanarb.o (pkg : Package) : FilePath := do
   let oFile := pkg.buildDir / "c" / "leanarb.o"
   let srcJob ← inputFile <| pkg.dir / "c" / "leanarb.c"
-  let flags := #[
-    "-I" ++ (← getLeanIncludeDir).toString,
-    "-O3", "-fPIC"]
+  let flags := #["-I" ++ (← getLeanIncludeDir).toString, "-fPIC"]
   buildFileAfterDep oFile srcJob (extraDepTrace := computeHash flags) fun srcFile => do
     compileO "leanarb.c" oFile srcFile flags "gcc" -- (← getLeanc)
 
 extern_lib libleanarb (pkg : Package) := do 
-  IO.FS.createDirAll (pkg.buildDir / "lib")
-  proc {
-    cmd := "cp"
-    args := #[
-      (arbDir / "libarb.a").toString,
-      (pkg.buildDir / "lib" / "libarb.a").toString ]
-  }
-
-  let name := nameToStaticLib "leanffi"
+  let name := nameToStaticLib "leanarb"
   let ffiO ← fetch <| pkg.target ``leanarb.o
-  buildStaticLib (pkg.buildDir / "src" / name) #[ffiO]
+  buildStaticLib (pkg.buildDir / defaultLibDir / name) #[ffiO]
 
-@[defaultTarget]
+@[default_target]
 lean_exe ffi {
   root := `Main
 }
