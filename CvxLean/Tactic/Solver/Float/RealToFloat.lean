@@ -1,6 +1,5 @@
 import CvxLean.Tactic.Solver.Float.RealToFloatExt
 import CvxLean.Lib.Missing.Real
-import CvxLean.Lib.Missing.Fin
 import CvxLean.Lib.Missing.Matrix 
 import CvxLean.Meta.Minimization
 import CvxLean.Meta.Missing.Expr

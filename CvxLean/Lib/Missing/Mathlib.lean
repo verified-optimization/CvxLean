@@ -5,33 +5,31 @@ import Lean
 attribute [-instance] coeDecidableEq
 
 macro "ℝ" : term => 
-  do return Lean.TSyntax.raw (← `(Real))
-macro "∑" i:Lean.Parser.Term.funBinder "," t:term : term => 
-  do return Lean.TSyntax.raw (← `(Finset.sum Finset.univ (fun $i => $t)))
+  `(Real)
+-- macro "∑" i:Lean.Parser.Term.funBinder "," t:term : term => 
+--   `(Finset.sum Finset.univ (fun $i => $t))
 macro "∑" i:Lean.Parser.Term.funBinder "in" s:term "," t:term : term => 
-  do return Lean.TSyntax.raw (← `(Finset.sum $s (fun $i => $t)))
+  `(Finset.sum $s (fun $i => $t))
 macro "∏" i:Lean.Parser.Term.funBinder "," t:term : term => 
-  do return Lean.TSyntax.raw (← `(Finset.prod Finset.univ (fun $i => $t)))
+  `(Finset.prod Finset.univ (fun $i => $t))
 macro "∏" i:Lean.Parser.Term.funBinder "in" s:term "," t:term : term => 
-  do return Lean.TSyntax.raw (← `(Finset.prod $s (fun $i => $t)))
+  `(Finset.prod $s (fun $i => $t))
 macro:75 l:term:75 " ⬝ " r:term:76 : term => 
-  do return Lean.TSyntax.raw (← `(Matrix.mul $l $r))
+  `(Matrix.mul $l $r)
 macro:75 l:term:75 " ⬝ᵥ " r:term:76 : term => 
-  do return Lean.TSyntax.raw (← `(Matrix.dotProduct $l $r))
+  `(Matrix.dotProduct $l $r)
 macro:50 l:term:50 " ∈ " r:term:51 : term => 
-  do return Lean.TSyntax.raw (← `(HasMem.Mem $l $r))
+  `(HasMem.Mem $l $r)
 macro:75 l:term:75 " • " r:term:76 : term => 
-  do return Lean.TSyntax.raw (← `(HasSmul.smul $l $r))
+  `(HasSmul.smul $l $r)
 
 macro "![" ts:term,* "]" : term => do
   let ts : Array (Lean.TSyntax _) := ts.getElems
   let res ← ts.foldrM (init := ← `(Matrix.vecEmpty)) fun t acc =>
       `(Matrix.vecCons $t $acc)
-  return res.raw
+  return res
 
 section Logic
-
-@[simp] theorem and_left_comm (a b c : Prop) : (a ∧ (b ∧ c)) = (b ∧ (a ∧ c)) := by rw [← and_assoc, and_comm a b, and_assoc]
 
 end Logic
 
@@ -68,11 +66,9 @@ end Nat
 
 namespace Pi
 
-attribute [-instance] Pi.hasZero
 instance hasZero' {I : Type} {f : I → Type} [∀ i, Zero (f i)] : Zero (∀ i : I, f i) :=
   ⟨fun _ => Zero.zero⟩
 
-attribute [-instance] Pi.hasOne
 instance hasOne' {I : Type} {f : I → Type} [∀ i, One (f i)] : One (∀ i : I, f i) :=
   ⟨fun _ => One.one⟩
 
@@ -115,24 +111,23 @@ end Lean
 
 section LinearOrder
 
-variable [LinearOrderₓ α]
+variable [LinearOrder α]
 
+set_option pp.all true
+
+attribute [-instance] LinearOrder.toDistribLattice
 instance (a b : α) : Decidable (a < b) :=
-  LinearOrderₓ.decidableLt a b
+  LinearOrder.decidable_lt a b
 
 instance (a b : α) : Decidable (a ≤ b) :=
-  LinearOrderₓ.decidableLe a b
+  LinearOrder.decidable_le a b
 
 instance (a b : α) : Decidable (a = b) :=
-  LinearOrderₓ.decidableEq a b
+  LinearOrder.decidable_eq a b
 
 end LinearOrder
 
 namespace Int
-
-attribute [-instance] Int.decidableLt
-instance Int.decidableLt' : LT Int :=
-  ⟨Int.Lt⟩
 
 attribute [-instance] Int.linearOrder Int.hasSub
 
@@ -149,26 +144,22 @@ instance Int.hasSAdd' : Add ℤ :=
   ⟨Int.add⟩
 
 instance Decidable.true' : Decidable True :=
-  isTrue trivialₓ
+  isTrue trivial
 
 instance Decidable.false' : Decidable False :=
   isFalse not_false
 
-def decidableNonneg' (a : ℤ) : Decidable (Nonneg a) :=
-  Int.casesOn a (fun a => Decidable.true') fun a => Decidable.false'
+def decidableNonneg' (a : ℤ) : Decidable (NonNeg a) :=
+  Int.decNonneg a
 
 instance decidableLe' (a b : ℤ) : Decidable (a ≤ b) :=
-  decidableNonneg' (b - a)
+  Int.decLe a b
 
 instance decidableLt' (a b : ℤ) : Decidable (a < b) :=
-  decidableNonneg' (b - (a + ofNat 1))
+  Int.decLt a b
 
 instance decidableEq' (a b : ℤ) : Decidable (a = b) :=
-match a, b with
-| ofNat a, ofNat b => by rw [ofNat_eq_ofNat_iff]; apply Nat.decidableEq'
-| negSucc a, ofNat b => Decidable.isFalse λ h => by cases h
-| ofNat a, negSucc b => Decidable.isFalse λ h => by cases h
-| negSucc a, negSucc b => by rw [negSucc_ofNat_inj_iff]; apply Nat.decidableEq'
+  Int.decEq a b 
 
 end Int
 

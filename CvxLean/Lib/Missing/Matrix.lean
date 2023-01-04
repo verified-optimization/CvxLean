@@ -38,7 +38,7 @@ def dotProduct [Mul α] [Add α] (v w : Fin n → α) : α :=
 -- TODO: temporary hack because mathbin breaks infixl
 -- infixl:72 " ⬝ᵥᶜ " => Matrix.Computable.dotProduct
 macro:72 l:term:72 " ⬝ᵥᶜ " r:term:73 : term => 
-  do return Lean.TSyntax.raw (← `(Matrix.Computable.dotProduct $l $r))
+  `(Matrix.Computable.dotProduct $l $r)
 
 def mulVec [Mul α] [Add α] (M : Matrix (Fin m) (Fin n) α) (v : (Fin n) → α) : Fin m → α
   | i => (fun j => M i j) ⬝ᵥᶜ v
@@ -58,7 +58,7 @@ instance [Add α] : Add (Matrix m n α) where
 instance [Sub α] : Sub (Matrix m n α) where
   sub A B i j := (A i j) - (B i j)
 
-instance [HasAbs α] : HasAbs (Matrix m n α) where
+instance [Abs α] : Abs (Matrix m n α) where
   abs A i j := abs (A i j)
 
 def mul [Mul α] [Add α] (M : Matrix (Fin l) (Fin m) α) (N : Matrix (Fin m) (Fin n) α) : Matrix (Fin l) (Fin n) α :=
@@ -67,7 +67,7 @@ fun i k => (fun j => M i j) ⬝ᵥᶜ (fun j => N j k)
 -- TODO: temporary hack because mathbin breaks infixl
 -- infixl:75 " ⬝ᶜ " => Matrix.Computable.mul
 macro:75 l:term " ⬝ᶜ " r:term : term => 
-  do return Lean.TSyntax.raw (← `(Matrix.Computable.mul $l $r))
+  `(Matrix.Computable.mul $l $r)
 
 def tr [Add α] (A : Matrix (Fin n) (Fin n) α) : α := 
   (Computable.vecToArray (fun i => A i i)).foldl (· + ·) 0
@@ -120,12 +120,12 @@ def print [ToString α] {n : Nat} (M : Matrix (Fin n) (Fin n) α)
   : IO String := do 
   let mut ret := "["
   for i in (List.finRange' n n) do 
-    ret := ret ++ (if i.val = 0 then "[" else ",[")
+    ret := ret.append (if i.val = 0 then "[" else ",[")
     for j in (List.finRange' n n) do
-      ret := ret ++ ToString.toString (M i j) 
-      ret := ret ++ (if j.val = n - 1 then "" else ",")
+      ret := ret.append (ToString.toString (M i j))
+      ret := ret.append (if j.val = n - 1 then "" else ",")
     
-    ret := ret ++ "]\n"
+    ret := ret.append "]\n"
   
   return ret
 
@@ -135,11 +135,11 @@ open Matrix
 
 instance [Fintype m] [LE α] : LE (Matrix m m α) := Pi.hasLe
 
-noncomputable def sum [Fintype m] [AddCommMonoidₓ α] (X : Matrix m m α) : α := 
+noncomputable def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
   ∑ i, (∑ j, X i j)
 
-def abs [HasAbs α] (X : Matrix m n α) : Matrix m n α := 
-  fun i j => HasAbs.abs (X i j)
+def abs [Abs α] (X : Matrix m n α) : Matrix m n α := 
+  fun i j => Abs.abs (X i j)
 
 noncomputable def posDefObjective [Fintype m] [OrderedSemiring α] (C X : Matrix m m α) : α :=
 trace (C ⬝ X)
@@ -147,10 +147,10 @@ trace (C ⬝ X)
 def affineConstraint [Fintype m] [OrderedSemiring α] (A X : Matrix m m α) (b : α) : Prop := 
 trace (A ⬝ X) = b
 
-instance [Preorderₓ α] : Preorderₓ (Matrix m n α) :=
-{ Le := fun A B => ∀ i j, A i j ≤ B i j
-  le_refl := fun _ _ _ => le_reflₓ _
-  le_trans := fun _ _ _ hAB hBC i j => le_transₓ (hAB i j) (hBC i j)
+instance [Preorder α] : Preorder (Matrix m n α) :=
+{ le := fun A B => ∀ i j, A i j ≤ B i j
+  le_refl := fun _ _ _ => le_refl _
+  le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
   lt_iff_le_not_le := fun _ _ => refl _ }
 
 end Matrix

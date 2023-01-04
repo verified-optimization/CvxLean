@@ -32,7 +32,7 @@ instance : ToExpr Float where
           mkApp (mkConst ``Float.neg) e 
         else 
           e 
-    | Parsec.ParseResult.error it err  => 
+    | Parsec.ParseResult.error _ _  => 
         mkApp (mkConst ``Float.ofNat) (toExpr (0 : Nat))
   toTypeExpr := mkConst ``Float
 
