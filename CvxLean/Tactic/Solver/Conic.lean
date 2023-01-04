@@ -1,5 +1,4 @@
 import CvxLean.Lib.Minimization
-import CvxLean.Lib.Missing.Fin
 import CvxLean.Lib.Missing.Array
 import CvxLean.Lib.Missing.Matrix
 import CvxLean.Lib.Missing.Float

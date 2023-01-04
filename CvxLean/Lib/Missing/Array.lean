@@ -2,10 +2,10 @@ import Mathlib.Data.List.Basic
 import Mathlib.Algebra.Group.Defs
 
 def Array.zeroes [Zero α] (n : Nat) : Array α := 
-  Array.mk (List.repeat' 0 n)
+  Array.mk (List.replicate n 0)
 
 def DArray.zeroes [Zero α] (a b : Nat) : Array (Array α) :=
-  Array.mk (List.repeat' (Array.zeroes a) b)
+  Array.mk (List.replicate b (Array.zeroes a))
 
 def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
   let mut bs := #[]
