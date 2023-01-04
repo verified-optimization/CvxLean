@@ -4,7 +4,7 @@
 
 void mpz_init_set_fmpz(mpz_t x, const fmpz_t y) {
     if (COEFF_IS_MPZ(*y)) {
-        mpz_init_set(x, y);
+        mpz_init_set(x, COEFF_TO_PTR(*y));
     } else {
         mpz_init_set_si(x, *y);
     }
