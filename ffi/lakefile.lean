@@ -1,14 +1,11 @@
 import Lake
 open System Lake DSL
 
-def arbDir : FilePath := "/Users/ramonfernandezmir/Documents/PhD-code/verification-tools/arb"
-def flintDir : FilePath := "/Users/ramonfernandezmir/Documents/PhD-code/verification-tools/flint2"
-
 package ffi {
   srcDir := "lean"
   precompileModules := true
-  moreLinkArgs := #["-larb", "-lflint"]
-  moreLeancArgs := #[]
+  moreLinkArgs := #["-larb", "-lflint", "-lmpfr", "-lgmp"]
+  moreLeancArgs := #["-D LEAN_USE_GMP 1"]
 }
 
 @[default_target]
@@ -18,7 +15,8 @@ lean_lib FFI where
 target leanarb.o (pkg : Package) : FilePath := do
   let oFile := pkg.buildDir / "c" / "leanarb.o"
   let srcJob ← inputFile <| pkg.dir / "c" / "leanarb.c"
-  let flags := #["-I" ++ (← getLeanIncludeDir).toString, "-fPIC"]
+  let flags := #[
+    "-I" ++ (← getLeanIncludeDir).toString, "-D LEAN_USE_GMP 1", "-fPIC"]
   buildFileAfterDep oFile srcJob (extraDepTrace := computeHash flags) fun srcFile => do
     compileO "leanarb.c" oFile srcFile flags "gcc" -- (← getLeanc)
 
