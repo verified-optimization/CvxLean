@@ -4,7 +4,7 @@ open System Lake DSL
 package CvxLean
 
 require optlibport from git
-  "https://github.com/verified-optimization/optlibport.git"@"495dc2b4a6202546569c2a841e3129f388ce2511"
+  "https://github.com/verified-optimization/optlibport.git"@"f727fd39188f575670d6f105f34b5eca0ee67e32"
 
 require ffi from "ffi"
 
