@@ -20,8 +20,17 @@ lean_obj_res sqrt_bounds(lean_obj_arg x)
     arb_init(num);
     arb_init(den);
     
-    int num_i = lean_scalar_to_int(n);
-    arb_set_si(num, num_i);
+    if (lean_is_scalar(n)) {
+        arb_set_si(num, lean_scalar_to_int(n));
+    } else if (lean_is_mpz(n)) {
+        mpz_t num_m;
+        mpz_init(num_m);
+        lean_extract_mpz_value(n, num_m);
+        fmpz_t num_fm;
+        fmpz_init(num_fm);
+        fmpz_set_mpz(num_fm, num_m);
+        arb_set_fmpz(num, num_fm);
+    } 
 
     int den_i = lean_scalar_to_int(d);
     arb_set_si(den, den_i);
