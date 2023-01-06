@@ -1,6 +1,18 @@
-import Lean 
+import Lean
 
 open Lean
 
-@[extern "sqrt_bounds"]
-opaque sqrtBounds : Rat → Rat × Rat
+structure Ball where 
+  center : Rat
+  radius : Rat
+
+instance : Inhabited Ball where
+  default := ⟨0, 0⟩
+
+instance : ToString Ball where
+  toString b := s!"[{b.center} +/- {b.radius}]"
+
+@[extern "ball_sqrt"]
+opaque Ball.sqrt : @&Nat → Ball → Ball
+
+
