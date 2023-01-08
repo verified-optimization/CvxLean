@@ -1,18 +1,26 @@
 import Lean
+import Std.Classes.SetNotation
 
 open Lean
 
-structure Ball where 
-  center : Rat
-  radius : Rat
+structure Ball (α) where 
+  center : α
+  radius : α
 
-instance : Inhabited Ball where
-  default := ⟨0, 0⟩
+instance (α) [LE α] [Add α] [Sub α] : Membership α (Ball α) where
+  mem x b := x ≥ (b.center - b.radius) ∧ x ≤ (b.center + b.radius)
 
-instance : ToString Ball where
+instance (α) [LE α] [Add α] [Sub α] : HasSubset (Ball α) where 
+  Subset b₁ b₂ := ∀ x ∈ b₁, x ∈ b₂
+
+instance (α) [Inhabited α] : Inhabited (Ball α) where
+  default := ⟨default, default⟩
+
+instance (α) [ToString α] : ToString (Ball α) where
   toString b := s!"[{b.center} +/- {b.radius}]"
 
+def Ball.map {α β} (f : α → β) (b : Ball α) : Ball β :=
+  ⟨f b.center, f b.radius⟩
+
 @[extern "ball_sqrt"]
-opaque Ball.sqrt : @&Nat → Ball → Ball
-
-
+opaque Ball.sqrt : @&Nat → (Ball Rat) → Ball Rat
