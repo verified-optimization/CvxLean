@@ -23,12 +23,12 @@ section SOConeLemmas
 
 variable (t v w : ℝ) (x : n → ℝ)
 
-noncomputable def rotateSoCone {n : ℕ} (t : ℝ) (x : Finₓ n.succ → ℝ) : 
-  ℝ × ℝ × (Finₓ n → ℝ) :=
+noncomputable def rotateSoCone {n : ℕ} (t : ℝ) (x : Fin n.succ → ℝ) : 
+  ℝ × ℝ × (Fin n → ℝ) :=
   ((t + x 0) / sqrt 2, (t - x 0) / sqrt 2, fun i => x i.succ)
 
-noncomputable def unrotateSoCone {n : ℕ} (v w : ℝ) (x : Finₓ n → ℝ) : 
-   ℝ × (Finₓ n.succ → ℝ) :=
+noncomputable def unrotateSoCone {n : ℕ} (v w : ℝ) (x : Fin n → ℝ) : 
+   ℝ × (Fin n.succ → ℝ) :=
 ((v + w) / sqrt 2, Matrix.vecCons ((v - w) / sqrt 2) x)
 
 end SOConeLemmas

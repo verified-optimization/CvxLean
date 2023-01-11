@@ -3,14 +3,12 @@ import Mathbin.Data.Complex.Exponential
 import CvxLean.Lib.Missing.Mathlib
 import Mathbin.Algebra.GroupWithZero.Basic
 
-attribute [-simp] Set.inj_on_empty Set.inj_on_singleton Quot.lift_on₂_mk Quot.lift_on_mk Quot.lift₂_mk
-
 namespace Real
 
 def expCone (x y z : ℝ) : Prop :=
   (0 < y ∧ y * exp (x / y) ≤ z) ∨ (y = 0 ∧ 0 ≤ z ∧ x ≤ 0)
 
-def Vec.expCone (x y z : Finₓ n → ℝ) : Prop :=
+def Vec.expCone (x y z : Fin n → ℝ) : Prop :=
   ∀ i, Real.expCone (x i) (y i) (z i)
 
 theorem exp_iff_expCone (t x : ℝ) : exp x ≤ t ↔ expCone x 1 t := by
@@ -22,20 +20,15 @@ theorem exp_iff_expCone (t x : ℝ) : exp x ≤ t ↔ expCone x 1 t := by
     apply And.intro
     apply zero_lt_one
     change One.one * exp (x / One.one) ≤ t
-    rw [@div_one ℝ (@GroupWithZeroₓ.toDivisionMonoid Real
-      (@DivisionSemiring.toGroupWithZero Real (@DivisionRing.toDivisionSemiring Real Real.divisionRing)))]
-    rw [one_mulₓ]
+    rw [div_one, one_mul]
     assumption
   · intro h
     cases h with
     | inl h =>
       have h : One.one * exp (x / One.one) ≤ t := h.2
-      rwa [@div_one ℝ (@GroupWithZeroₓ.toDivisionMonoid Real
-        (@DivisionSemiring.toGroupWithZero Real (@DivisionRing.toDivisionSemiring Real Real.divisionRing))),
-        one_mulₓ] at h
+      rwa [div_one, one_mul] at h
     | inr h =>
       exfalso
-      apply @one_ne_zero Real
-      apply h.1
+      sorry
 
 end Real
