@@ -8,6 +8,8 @@ package ffi {
   moreLeancArgs := #["-D LEAN_USE_GMP 1"]
 }
 
+require std from git "https://github.com/leanprover/std4" @ "main"
+
 @[default_target]
 lean_lib FFI where 
   precompileModules := true

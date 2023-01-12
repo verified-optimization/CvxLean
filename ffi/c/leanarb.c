@@ -1,6 +1,7 @@
 #include <lean/lean.h>
 #include <lean/lean_gmp.h>
 #include "arb.h"
+#include "arb_mat.h"
 
 // Set x to the value of y, handling mpz/si issues.
 void mpz_init_set_fmpz(mpz_t x, const fmpz_t y) {
@@ -46,6 +47,19 @@ lean_object * lean_ball_alloc_arb(arb_t x) {
     return res;
 }
 
+lean_object * lean_ball_mat_alloc_arb_mat(arb_mat_t X) {
+    lean_object * res = lean_alloc_array(arb_mat_nrows(X), arb_mat_nrows(X));
+    slong i, j;
+    for (i = 0; i < arb_mat_nrows(X); i++) {
+        lean_object * res_i = lean_alloc_array(arb_mat_ncols(X), arb_mat_ncols(X));
+        lean_array_set_core(res, i, res_i);
+        for (j = 0; j < arb_mat_ncols(X); j++) {
+            lean_object * x_i_j = lean_ball_alloc_arb(arb_mat_entry(X, i, j));
+            lean_array_set_core(res_i, j, x_i_j);
+        }
+    }
+}
+
 /* From lean_object to Arb types. */
 
 // Sets x to the value of o, which is an Int.
@@ -88,6 +102,22 @@ void arb_set_lean_ball(arb_t x, lean_object * o, slong prec) {
     mag_init_set_arf(arb_radref(x), rad_f);
 }
 
+void arb_mat_set_lean_ball_mat(arb_mat_t X, slong r, slong c, lean_object * o, slong prec) {
+    arb_mat_init(X, r, c);
+
+    slong i, j;
+    for (i = 0; i < r; i++) {
+        lean_object * o_i = lean_array_get_core(o, i);
+        for (j = 0; j < c; j++) {
+            lean_object * o_i_j = lean_array_get_core(o_i, j);
+            arb_set_lean_ball(arb_mat_entry(X, i, j), o_i_j, prec);
+        }
+    }
+}
+
+/* Computation. */
+
+// Square root.
 lean_obj_res ball_sqrt(uint32_t prec, lean_obj_arg ball) 
 {
     arb_t x;
@@ -95,6 +125,33 @@ lean_obj_res ball_sqrt(uint32_t prec, lean_obj_arg ball)
     arb_set_lean_ball(x, ball, prec);
     arb_sqrt(x, x, prec);
     lean_obj_res res = lean_ball_alloc_arb(x);
+
+    return res;
+}
+
+// Exponential.
+lean_obj_res ball_exp(uint32_t prec, lean_obj_arg ball)
+{
+    arb_t x;
+    arb_init(x);
+    arb_set_lean_ball(x, ball, prec);
+    arb_exp(x, x, prec);
+    lean_obj_res res = lean_ball_alloc_arb(x);
+
+    return res;
+}
+
+// Solve AX = B starting at T. 
+lean_obj_res ball_linear_system(uint32_t prec, slong n, slong m, lean_obj_arg A, lean_obj_arg B, lean_obj_arg T)
+{
+    arb_mat_t X_mat, A_mat, B_mat, T_mat, R_mat;
+    arb_mat_set_lean_ball_mat(A_mat, n, n, A, prec);
+    arb_mat_set_lean_ball_mat(B_mat, n, n, B, prec);
+    arb_mat_set_lean_ball_mat(T_mat, lean_array_size(T), lean_array_size(lean_array_get_core(T, 0)), T, prec);
+
+    arb_mat_solve_preapprox(X_mat, A_mat, B_mat, T_mat, R_mat, prec);
+
+    lean_obj_res res = lean_ball_mat_alloc_arb_mat(A_mat);
 
     return res;
 }
