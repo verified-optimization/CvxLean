@@ -22,31 +22,11 @@ instance (α) [ToString α] : ToString (Ball α) where
 def Ball.map {α β} (f : α → β) (b : Ball α) : Ball β :=
   ⟨f b.center, f b.radius⟩
 
-structure Vector (n : Nat) (α) where
-  a : Array α 
-  h : a.size = n := by decide
-
-def Vector.toFun {n} {α} : Vector n α → Fin n → α
-  | ⟨x, hx⟩ => fun ⟨i, hi⟩ => x.get ⟨i, hx.symm ▸ hi⟩
-
-def Matrix (r c : Nat) (α) := 
-  Vector r (Vector c α)
-
-def Matrix.mk (r c : Nat) 
-  (A : Array (Array α)) 
-  (h₁ : A.size = r := by decide)
-  (h₂ : ∀ i : Fin r, (A.get (h₁ ▸ i)).size = c) : Matrix r c α :=
-  sorry
-
-def Matrix.toFun {r c} {α} (x : Matrix r c α) : Fin r → Fin c → α :=
-  fun i => ((Vector.toFun x) i).toFun
-
-def v : Vector 2 Nat := Vector.mk #[1, 2]
-
-#check Matrix.mk
-
 @[extern "ball_sqrt"]
 opaque Ball.sqrt : @&Nat → (Ball Rat) → Ball Rat
 
+@[extern "ball_exp"]
+opaque Ball.exp : @&Nat → (Ball Rat) → Ball Rat
 
-
+@[extern "ball_linear_system"]
+opaque Ball.linearSystem : @&Nat → @&Nat → @&Nat → Array (Array (Ball Rat)) → Array (Array (Ball Rat)) → Array (Array (Ball Rat)) → Array (Array (Ball Rat))
