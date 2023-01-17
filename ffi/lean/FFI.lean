@@ -1,7 +1,7 @@
-import Lean
 import Std.Classes.SetNotation
+import Std.Data.Rat
 
-open Lean
+open Std
 
 structure Ball (α) where 
   center : α
@@ -17,7 +17,9 @@ instance (α) [Inhabited α] : Inhabited (Ball α) where
   default := ⟨default, default⟩
 
 instance (α) [ToString α] : ToString (Ball α) where
-  toString b := s!"[{b.center} +/- {b.radius}]"
+  toString b := s!"[{b.center} ± {b.radius}]"
+
+notation "[" center " ± " radius "]" => Ball.mk center radius
 
 def Ball.map {α β} (f : α → β) (b : Ball α) : Ball β :=
   ⟨f b.center, f b.radius⟩

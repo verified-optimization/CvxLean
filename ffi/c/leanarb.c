@@ -89,7 +89,7 @@ void fmpq_set_lean_rat(fmpq_t x, lean_object * o) {
     fmpq_set_fmpz_frac(x, num_f, den_f);
 }
 
-// Sets x to the value of o, which is a Ball.
+// Sets x to the value of o, which is a Ball Rat.
 void arb_set_lean_ball(arb_t x, lean_object * o, slong prec) {
     lean_object * mid = lean_ctor_get(o, 0);
     lean_object * rad = lean_ctor_get(o, 1);
@@ -105,6 +105,7 @@ void arb_set_lean_ball(arb_t x, lean_object * o, slong prec) {
     mag_init_set_arf(arb_radref(x), rad_f);
 }
 
+// Sets x to the value of o, which is a Array (Array (Ball Rat)).
 void arb_mat_set_lean_ball_mat(arb_mat_t X, size_t r, size_t c, lean_object * o, slong prec) {
     size_t i, j;
     assert(lean_array_size(o) == r);
