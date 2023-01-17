@@ -36,7 +36,7 @@ namespace Elab
 open Lean.Elab
 
 /-- Notation for attaching a name label to a term. -/
-@[termElab namedConstraint] 
+@[term_elab namedConstraint] 
 def elabNamedConstraint : Term.TermElab := fun stx expectedType? => do
   match stx with
   | `({** $t ** $id**}) =>

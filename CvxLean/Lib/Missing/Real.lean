@@ -12,7 +12,9 @@ namespace Real
 macro "π" : term => 
   `(Real.pi)
 
-variable (x y : ℝ)
+variable (x y : Real)
+
+noncomputable instance : Preorder Real := by infer_instance
 
 noncomputable instance : AddMonoidWithOne Real := by infer_instance
 

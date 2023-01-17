@@ -1,6 +1,5 @@
 import Mathbin.LinearAlgebra.Matrix.Default
 import Mathbin.LinearAlgebra.QuadraticForm.Basic
-
 import Mathlib.Data.Array.Defs
 
 import CvxLean.Lib.Missing.List
@@ -16,14 +15,14 @@ variable {α} [Zero α]
 namespace Computable
 
 @[to_additive Pi.hasVadd]
-instance Pi.hasSmul'  {I : Type} {f : I → Type v₁} [∀ i, HasSmul α <| f i] : HasSmul α (∀ i : I, f i) :=
+instance Pi.sMul'  {I : Type} {f : I → Type v₁} [∀ i, SMul α <| f i] : SMul α (∀ i : I, f i) :=
   ⟨fun s x => fun i => s • x i⟩
 
-instance [HasSmul R α] : HasSmul R (Matrix m n α) :=
-  Pi.hasSmul'
+instance [SMul R α] : SMul R (Matrix m n α) :=
+  Pi.sMul'
 
 @[to_additive "See also `add_monoid.to_add_action`"]
-instance (priority := 910) Mul.toHasSmul' (α : Type _) [Mul α] : HasSmul α α :=
+instance (priority := 910) Mul.toHasSmul' (α : Type _) [Mul α] : SMul α α :=
   ⟨(· * ·)⟩
 
 def vecToArray (v : Fin n → α) : Array α := 
@@ -114,38 +113,38 @@ fun A B C D i j => by
 end Computable
 
 -- Printing matrices.
-section Print
+-- section Print
 
-def print [ToString α] {n : Nat} (M : Matrix (Fin n) (Fin n) α) 
-  : IO String := do 
-  let mut ret := "["
-  for i in (List.finRange' n n) do 
-    ret := ret.append (if i.val = 0 then "[" else ",[")
-    for j in (List.finRange' n n) do
-      ret := ret.append (ToString.toString (M i j))
-      ret := ret.append (if j.val = n - 1 then "" else ",")
+-- def print [ToString α] {n : Nat} (M : Matrix (Fin n) (Fin n) α) 
+--   : IO String := do 
+--   let mut ret := "["
+--   for i in (List.finRange' n n) do 
+--     ret := ret.append (if i.val = 0 then "[" else ",[")
+--     for j in (List.finRange' n n) do
+--       ret := ret.append (ToString.toString (M i j))
+--       ret := ret.append (if j.val = n - 1 then "" else ",")
     
-    ret := ret.append "]\n"
+--     ret := ret.append "]\n"
   
-  return ret
+--   return ret
 
-end Print
+-- end Print
 
-open Matrix
+-- open Matrix
 
-instance [Fintype m] [LE α] : LE (Matrix m m α) := Pi.hasLe
+-- instance [Fintype m] [LE α] : LE (Matrix m m α) := Pi.hasLe
 
-noncomputable def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
-  ∑ i, (∑ j, X i j)
+-- noncomputable def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
+--   ∑ i, (∑ j, X i j)
 
-def abs [Abs α] (X : Matrix m n α) : Matrix m n α := 
-  fun i j => Abs.abs (X i j)
+-- def abs [Abs α] (X : Matrix m n α) : Matrix m n α := 
+--   fun i j => Abs.abs (X i j)
 
-noncomputable def posDefObjective [Fintype m] [OrderedSemiring α] (C X : Matrix m m α) : α :=
-trace (C ⬝ X)
+-- noncomputable def posDefObjective [Fintype m] [OrderedSemiring α] (C X : Matrix m m α) : α :=
+-- trace (C ⬝ X)
 
-def affineConstraint [Fintype m] [OrderedSemiring α] (A X : Matrix m m α) (b : α) : Prop := 
-trace (A ⬝ X) = b
+-- def affineConstraint [Fintype m] [OrderedSemiring α] (A X : Matrix m m α) (b : α) : Prop := 
+-- trace (A ⬝ X) = b
 
 instance [Preorder α] : Preorder (Matrix m n α) :=
 { le := fun A B => ∀ i j, A i j ≤ B i j

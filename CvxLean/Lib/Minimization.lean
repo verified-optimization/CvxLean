@@ -1,29 +1,26 @@
-import Mathbin.Data.Real.Basic
-import Mathbin.Order.Bounds
-import Mathbin.Order.BoundedOrder
-import Mathbin.Data.Set.Function
-
-attribute [-simp] Set.inj_on_empty Set.inj_on_singleton Quot.lift_on₂_mk Quot.lift_on_mk Quot.lift₂_mk
+import Mathlib.Order.Bounds.Basic
+import Mathlib.Data.Set.Function
 
 /-- Type of an optimization problem. -/
-structure Minimization (D : Type) (R : Type) :=
-(objFun : D → R)
-(constraints : D → Prop)
+structure Minimization (D : Type) (R : Type) where 
+  objFun : D → R
+  constraints : D → Prop
 
 namespace Minimization
 
-variable {D E R S : Type} [Preorderₓ R] [Preorderₓ S] (p : Minimization D R) (q : Minimization E R)
+variable {D E R S : Type} [Preorder R] [Preorder S] 
+variable (p : Minimization D R) (q : Minimization E R)
 
 /-- A feasible point is a point in the domain that satisfies the constraints. -/
-structure FeasPoint := 
-(point : D)
-(feasibility : p.constraints point)
+structure FeasPoint where 
+  point : D 
+  feasibility : p.constraints point
 
 /-- A solution is a feasible point that is also optimal. -/
-structure Solution :=
-(point : D)
-(feasibility : p.constraints point)
-(optimality : ∀ y : p.FeasPoint, p.objFun point ≤ p.objFun y.point)
+structure Solution where 
+  point : D 
+  feasibility : p.constraints point 
+  optimality : ∀ y : p.FeasPoint, p.objFun point ≤ p.objFun y.point
 
 section Reductions
 
@@ -43,8 +40,8 @@ def simple_reduction
       intro xhx
       cases xhx with
       | mk x hx =>
-        apply le_transₓ _ (h_objFun_f hx)
-        apply le_transₓ (h_objFun_g sol.feasibility)
+        apply le_trans _ (h_objFun_f hx)
+        apply le_trans (h_objFun_g sol.feasibility)
         exact sol.optimality {
           point := f x,
           feasibility := h_constraints_f hx } }
@@ -59,64 +56,64 @@ def decompose_constraint
   p.Solution := 
 simple_reduction p _ sol
   (fun x => (g x, x)) (fun x => x.2)
-  (fun {x} hx => le_reflₓ _)
-  (fun {x} hx => le_reflₓ _)
+  (fun {x} hx => le_refl _)
+  (fun {x} hx => le_refl _)
   (fun {x} hx => ⟨rfl, (hc _) ▸ hx⟩)
   (fun {x} hx => by {rw [hc, ←hx.1]; exact hx.2})
 
 /-- -/
 def eq_to_le_left
   (e: Equiv D (S × E)) (f : E → S) (c : D → Prop)
-  (hc : ∀ {x}, p.constraints x ↔ ((e x).1 = f (e x).2 ∧ c x))
-  (h_objFun : ∀ x r s, p.objFun (e.symm (r,x)) = p.objFun (e.symm (s,x))) 
-  (h_mono: ∀ x r s, r ≤ s → c (e.symm (r, x)) → c (e.symm (s, x))) 
+  (hc : ∀ {x}, p.constraints x ↔ ((e.toFun x).1 = f (e.toFun x).2 ∧ c x))
+  (h_objFun : ∀ x r s, p.objFun (e.symm.toFun (r,x)) = p.objFun (e.symm.toFun (s,x))) 
+  (h_mono: ∀ x r s, r ≤ s → c (e.symm.toFun (r, x)) → c (e.symm.toFun (s, x))) 
   (sol : Solution
     { objFun := p.objFun,
-      constraints := fun x => (e x).1 ≤ f (e x).2 ∧ c x } ) :
+      constraints := fun x => (e.toFun x).1 ≤ f (e.toFun x).2 ∧ c x } ) :
   p.Solution :=
 simple_reduction p _ sol
-  (fun x => x) (fun x => e.symm ⟨f (e x).2, (e x).2⟩)
-  (fun {x} hx => le_reflₓ _)
+  (fun x => x) (fun x => e.symm.toFun ⟨f (e.toFun x).2, (e.toFun x).2⟩)
+  (fun {x} hx => le_refl _)
   (fun {x} hx => by
-    rw [h_objFun _ _ ((e x).1)]
+    rw [h_objFun _ _ ((e.toFun x).1)]
     simp [le_of_eq])
-  (fun {x} hx => ⟨le_of_eqₓ (hc.1 hx).1, (hc.1 hx).2⟩)
+  (fun {x} hx => ⟨le_of_eq (hc.1 hx).1, (hc.1 hx).2⟩)
   (fun {x} hx => by
-    have : c (e.symm (f (e x).2, (e x).2)) := by
+    have : c (e.symm.toFun (f (e.toFun x).2, (e.toFun x).2)) := by
       apply h_mono
       apply hx.1
       simp [hx.2]
-    simp [hc, this])
+    simp_all )
 
 /-- -/
 def eq_to_le_right 
   (e: Equiv D (S × E)) (f : E → S) (c : D → Prop)
-  (hc : ∀ {x}, p.constraints x ↔ (f (e x).2 = (e x).1 ∧ c x))
-  (h_objFun : ∀ x r s, p.objFun (e.symm (r,x)) = p.objFun (e.symm (s,x))) 
-  (h_mono: ∀ x r s, r ≤ s → c (e.symm (s, x)) → c (e.symm (r, x))) 
+  (hc : ∀ {x}, p.constraints x ↔ (f (e.toFun x).2 = (e.toFun x).1 ∧ c x))
+  (h_objFun : ∀ x r s, p.objFun (e.symm.toFun ⟨r, x⟩) = p.objFun (e.symm.toFun ⟨s, x⟩)) 
+  (h_mono: ∀ x r s, r ≤ s → c (e.symm.toFun (s, x)) → c (e.symm.toFun ⟨r, x⟩)) 
   (sol : Solution
     { objFun := p.objFun,
-      constraints := fun x => f (e x).2 ≤ (e x).1 ∧ c x }) :
+      constraints := fun x => f (e.toFun x).2 ≤ (e.toFun x).1 ∧ c x }) :
   p.Solution :=
 simple_reduction p _ sol
-  (fun x => x) (fun x => e.symm ⟨f (e x).2, (e x).2⟩)
-  (fun {x} hx => le_reflₓ _)
+  (fun x => x) (fun x => e.symm.toFun ⟨f (e.toFun x).2, (e.toFun x).2⟩)
+  (fun {x} hx => le_refl _)
   (fun {x} hx => by
-    rw [h_objFun _ _ ((e x).1)]
+    rw [h_objFun _ _ ((e.toFun x).1)]
     simp [le_of_eq])
-  (fun {x} hx => ⟨le_of_eqₓ (hc.1 hx).1, (hc.1 hx).2⟩)
+  (fun {x} hx => ⟨le_of_eq (hc.1 hx).1, (hc.1 hx).2⟩)
   (fun {x} hx => by
-    have : c (e.symm (f (e x).2, (e x).2)) := by
+    have : c (e.symm.toFun (f (e.toFun x).2, (e.toFun x).2)) := by
       apply h_mono
       apply hx.1
       simp [hx.2]
-    simp [hc, this])
+    simp_all)
 
 /-- -/
 def linearization_mono {of : D → R} {cs : D → Prop}
   {S : Type}
   {g : D → S} {c : S → D → Prop} {f : S → D → R}
-  {hS : Preorderₓ S}
+  {hS : Preorder S}
   (hof : ∀ x, of x = f (g x) x)
   (hcs : ∀ x, cs x = c (g x) x)
   (h_mono_of: ∀ x r s, r ≤ s → f s x ≤ f r x)
@@ -127,16 +124,16 @@ def linearization_mono {of : D → R} {cs : D → Prop}
   Solution {objFun := of, constraints := cs} := 
 simple_reduction _ _ sol
   (fun x => (g x, x)) (fun x => x.2)
-  (fun {x} hx => le_of_eqₓ (hof _).symm)
+  (fun {x} hx => le_of_eq (hof _).symm)
   (fun {x} hx => by simp only [hof]; exact h_mono_of x.2 _ _ hx.1)
-  (fun {x} hx => by simp only [hcs] at hx; exact ⟨le_reflₓ _, hx⟩)
+  (fun {x} hx => by simp only [hcs] at hx; exact ⟨le_refl _, hx⟩)
   (fun {x} hx => by simp only [hcs]; exact h_mono_cs x.2 _ _ hx.1 hx.2)
 
 /-- -/
 def linearization_antimono {of : D → R} {cs : D → Prop}
   {S : Type}
   {g : D → S} {c : S → D → Prop} {f : S → D → R}
-  {hS : Preorderₓ S}
+  {hS : Preorder S}
   (hof : ∀ x, of x = f (g x) x)
   (hcs : ∀ x, cs x = c (g x) x)
   (h_mono_of: ∀ x r s, r ≤ s → f r x ≤ f s x)
@@ -147,16 +144,16 @@ def linearization_antimono {of : D → R} {cs : D → Prop}
   Solution {objFun := of, constraints := cs} := 
 simple_reduction _ _ sol
   (fun x => (g x, x)) (fun x => x.2)
-  (fun {x} hx => le_of_eqₓ (hof _).symm)
+  (fun {x} hx => le_of_eq (hof _).symm)
   (fun {x} hx => by simp only [hof]; exact h_mono_of x.2 _ _ hx.1)
-  (fun {x} hx => by simp only [hcs] at hx; exact ⟨le_reflₓ _, hx⟩)
+  (fun {x} hx => by simp only [hcs] at hx; exact ⟨le_refl _, hx⟩)
   (fun {x} hx => by simp only [hcs]; exact h_mono_cs x.2 _ _ hx.1 hx.2)
 
 /-- -/
 def graph_expansion_greatest {of : D → R} {cs : D → Prop}
   {S : Type}
   {g : D → S} {c d : S → D → Prop} {f : S → D → R}
-  {hS : Preorderₓ S}
+  {hS : Preorder S}
   (hg : ∀ x v, c v x → IsGreatest {y | d y x} (g x))
   (hof : ∀ x, of x = f (g x) x)
   (hcs : ∀ x, cs x = c (g x) x)
@@ -168,7 +165,7 @@ def graph_expansion_greatest {of : D → R} {cs : D → Prop}
   Solution {objFun := of, constraints := cs} :=
 simple_reduction _ _ sol
   (fun x => (g x, x)) (fun x => x.2)
-  (fun hx => le_of_eqₓ (hof _).symm)
+  (fun hx => le_of_eq (hof _).symm)
   (fun {x} hx => by simp only [hof]; exact h_mono_of x.2 _ _ ((hg x.2 x.1 hx.2).2 hx.1))
   (fun {x} hx => by simp only [hcs] at hx; exact ⟨(hg x (g x) hx).1, hx⟩)
   (fun {x} hx => by simp only [hcs]; exact h_mono_cs x.2 _ _ ((hg x.2 x.1 hx.2).2 hx.1) hx.2)
@@ -177,7 +174,7 @@ simple_reduction _ _ sol
 def graph_expansion_least {of : D → R} {cs : D → Prop}
   {S : Type}
   {g : D → S} {c d : S → D → Prop} {f : S → D → R}
-  {hS : Preorderₓ S}
+  {hS : Preorder S}
   (hg : ∀ x v, c v x → IsLeast {y | d y x} (g x))
   (hof : ∀ x, of x = f (g x) x)
   (hcs : ∀ x, cs x = c (g x) x)
@@ -189,7 +186,7 @@ def graph_expansion_least {of : D → R} {cs : D → Prop}
   Solution {objFun := of, constraints := cs} :=
 simple_reduction _ _ sol
   (fun x => (g x, x)) (fun x => x.2)
-  (fun hx => le_of_eqₓ (hof _).symm)
+  (fun hx => le_of_eq (hof _).symm)
   (fun {x} hx => by simp only [hof]; exact h_mono_of x.2 _ _ ((hg x.2 x.1 hx.2).2 hx.1))
   (fun {x} hx => by simp only [hcs] at hx; exact ⟨(hg x (g x) hx).1, hx⟩)
   (fun {x} hx => by simp only [hcs]; exact h_mono_cs x.2 _ _ ((hg x.2 x.1 hx.2).2 hx.1) hx.2)
@@ -198,7 +195,7 @@ simple_reduction _ _ sol
 def graph_expansion_least_forall {of : D → R} {cs : D → Prop}
   {I S : Type} [Inhabited I]
   {g : D → I → S} {h : D → I → S} {c d : S → D → Prop}
-  {hS : Preorderₓ S}
+  {hS : Preorder S}
   (hg : ∀ x v i, c v x → IsLeast {y | d y x} (g x i))
   (hcs : ∀ x, cs x = ∀ i, c (g x i) x)
   (h_mono_cs: ∀ x r s, r ≤ s → c s x → c r x)
@@ -210,38 +207,36 @@ def graph_expansion_least_forall {of : D → R} {cs : D → Prop}
     (fun y x => ∀ i, c (y i) x)
     (fun y x => ∀ i, d (y i) x)
     (fun y x => of x)
-    ⟨fun a b => a ≤ b, 
-      fun a b => a ≤ b ∧ ¬b ≤ a, 
-      fun a i => le_reflₓ (a i), 
-      fun a b c hab hbc i => le_transₓ (hab i) (hbc i),
-      fun a b => Iff.refl _⟩
+    ⟨fun a i => le_refl (a i), 
+     fun a b c hab hbc i => le_trans (hab i) (hbc i),
+     fun a b => Iff.refl _⟩
     (fun x v hc => ⟨fun i => (hg x (v i) i (hc i)).1, 
      fun v' c i => (hg x (v i) i (hc i)).2 (c i)⟩)
     (fun x => rfl)
     hcs
-    (fun x r s hrs => le_reflₓ _)
+    (fun x r s hrs => le_refl _)
     (fun x r s hrs hc i => h_mono_cs x (r i) (s i) (hrs i) (hc i))
     sol
 
 /-- Change domain to equivalent type. -/
 noncomputable def domain_equiv {D E : Type} (e : Equiv E D)
-  (R : Type) [Preorderₓ R]
+  (R : Type) [Preorder R]
   (f : D → R) (cs : D → Prop)
   (sol : Solution
-    { objFun := f ∘ (coeFn e),
-      constraints := cs ∘ (coeFn e)}) :
+    { objFun := f ∘ e.toFun,
+      constraints := cs ∘ e.toFun}) :
 Solution
   { objFun := f,
     constraints := cs } :=
-simple_reduction _ _ sol (coeFn e.symm) (coeFn e)
-  (fun hx => by simp [Function.comp, coeFn, CoeFun.coe])
+simple_reduction _ _ sol e.symm.toFun e.toFun
+  (fun hx => by simp [Function.comp])
   (fun hx => by simp)
-  (fun {x} hx => by simp [Function.comp, coeFn, CoeFun.coe]; exact hx)
+  (fun {x} hx => by simp [Function.comp]; exact hx)
   (fun {x} hx => by simp; exact hx)
 
 /-- -/
 def map_objective {D : Type}
-  (R S : Type) [Preorderₓ R] [Preorderₓ S]
+  (R S : Type) [Preorder R] [Preorder S]
   (f : D → R) (g : R → S) (cs : D → Prop)
   (hg: ∀ r s, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s)
   (sol : Solution
@@ -269,7 +264,7 @@ Solution {objFun := of, constraints := cs} :=
 simple_reduction _ _ sol f g
   (fun {x} hx => by simp [hfg x hx])
   (fun {x} hx => by simp)
-  (fun {x} hx => by simp [hfg x hx, hx])
+  (fun {x} hx => by simp [hfg x hx, hx]; exact hx)
   (fun {x} hx => hx)
 
 /-- -/
@@ -282,8 +277,8 @@ def rewrite_objective {cs : D → Prop}
       constraints := cs })  :
 Solution {objFun := f, constraints := cs} :=
 simple_reduction _ _ sol id id
-  (fun {x} hx => le_of_eqₓ (hfg x hx).symm)
-  (fun {x} hx => le_of_eqₓ (hfg x hx))
+  (fun {x} hx => le_of_eq (hfg x hx).symm)
+  (fun {x} hx => le_of_eq (hfg x hx))
   (fun {x} hx => hx)
   (fun {x} hx => hx)
 
