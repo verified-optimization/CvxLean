@@ -3,8 +3,8 @@ open System Lake DSL
 
 package CvxLean
 
-require optlibport from git
-  "https://github.com/verified-optimization/optlibport.git"@"f727fd39188f575670d6f105f34b5eca0ee67e32"
+require mathlibport from git
+  "https://github.com/leanprover-community/mathlib3port.git"@"f4e5dfe2aa778b4cc42620b6b58442504348d20d"
 
 require ffi from "ffi"
 

@@ -1,11 +1,11 @@
-import CvxLean.Lib.Missing.Mathlib
+import Mathbin.Data.Real.Basic
 
 namespace Real 
 
-def zeroCone (x : ℝ) : Prop :=
+def zeroCone (x : Real) : Prop :=
   x = 0
 
-def Vec.zeroCone (x : Fin n → ℝ) : Prop := 
+def Vec.zeroCone (x : Fin n → Real) : Prop := 
   ∀ i, Real.zeroCone (x i)
 
 end Real 

@@ -50,7 +50,7 @@ noncomputable def sum {m : Type} [Fintype m] (x : m → α) : α := ∑ i, x i
   the first `i + 1` elements of the given vector. -/
 -- TODO: Why can't I remove `noncomputable`?
 noncomputable def cumsum : Fin m → α := 
-  fun i => ∑ k, (take x (i + 1)) k
+  fun i => ∑ k, (take x (i.val + 1)) k
 
 end AddCommMonoid
 
@@ -68,21 +68,21 @@ end Semiring
 
 section Real
 
-variable {m : Type u} {n : Type v} (x y : m → ℝ)
+variable {m : Type u} {n : Type v} (x y : m → Real)
 
-noncomputable def exp : m → ℝ := 
+noncomputable def exp : m → Real := 
   fun i => Real.exp (x i)
 
-noncomputable def log : m → ℝ := 
+noncomputable def log : m → Real := 
   fun i => Real.log (x i)
 
-noncomputable def entr : m → ℝ := 
+noncomputable def entr : m → Real := 
   fun i => Real.entr (x i)
 
-noncomputable def huber [Fintype m] (x : m → ℝ) : m → ℝ := 
+noncomputable def huber [Fintype m] (x : m → Real) : m → Real := 
   fun i => Real.huber (x i)
 
-noncomputable def kl_div : m → ℝ := 
+noncomputable def kl_div : m → Real := 
   fun i => Real.kl_div (x i) (y i)
 
 end Real

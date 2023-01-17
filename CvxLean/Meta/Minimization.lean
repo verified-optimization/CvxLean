@@ -69,12 +69,12 @@ where
       if fVarId == p then return r else return none
     | some true, Expr.fvar fVarId, r :: _ :: _ => 
       if fVarId == p then return r else return none
-    | none, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.fst _) α) β) e, r :: rs => do
+    | none, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.fst _) _) _) e, r :: rs => do
       return ← decomposeProj e p (r :: rs) (first := true)
-    | _, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.snd _) α) β) e, r :: rs => do
+    | _, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.snd _) _) _) e, _ :: rs => do
       return ← decomposeProj e p rs (first := first == some true)
     | _, _, [] => return none
-    | _, _, r :: rs => return none
+    | _, _, _ :: _ => return none
 
 /-- Determine a list of variables described by a `domain`.
   Returns a list of variables, consisting of their name and type. -/
@@ -85,8 +85,8 @@ def decomposeDomain (domain : Expr) : m (List (Name × Expr)) := do
   | _ => do return [← decomposeLabel domain]
 
 /-- Get a HashSet of variable names in a given domain -/
-def getVariableNameSet (domain : Expr) : m (Std.HashSet Name) := do
-  let mut res : Std.HashSet Name := {}
+def getVariableNameSet (domain : Expr) : m (HashSet Name) := do
+  let mut res : HashSet Name := {}
   for (name, _) in ← decomposeDomain domain do
     res := res.insert name
   return res
@@ -139,8 +139,8 @@ def decomposeConstraints (e : Expr) : MetaM (List (Name × Expr)) := do
     return (← getLabelName e, e)
 
 /-- Get a HashSet of constraint names in a given domain -/
-def getConstraintNameSet (e : Expr) : MetaM (Std.HashSet Name) := do
-  let mut res : Std.HashSet Name := {}
+def getConstraintNameSet (e : Expr) : MetaM (HashSet Name) := do
+  let mut res : HashSet Name := {}
   for (name, _) in ← decomposeConstraints e do
     res := res.insert name
   return res
@@ -163,7 +163,7 @@ def composeAndWithProj : List Expr → (Expr × (Expr → List Expr))
     (res, prs)
 
 /-- Generates a name that is not yet contained in `set` -/
-partial def generateNewName (base : String) (set : Std.HashSet Name) : MetaM Name := do
+partial def generateNewName (base : String) (set : HashSet Name) : MetaM Name := do
   tryNumber 1 set
 where
   tryNumber (i : Nat) vars : MetaM Name := do
