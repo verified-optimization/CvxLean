@@ -5,8 +5,6 @@ import CvxLean.Tactic.Basic.ShowVars
 import CvxLean.Lib.Missing.List
 import CvxLean.Lib.Missing.Mathlib
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 namespace Meta

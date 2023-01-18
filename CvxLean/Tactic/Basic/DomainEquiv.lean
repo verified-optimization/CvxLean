@@ -2,8 +2,6 @@ import Lean
 import CvxLean.Lib.Minimization
 import CvxLean.Tactic.Basic.CleanUpComp
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 open Lean

@@ -1,8 +1,5 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
-import CvxLean.Lib.Missing.Mathlib
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 
