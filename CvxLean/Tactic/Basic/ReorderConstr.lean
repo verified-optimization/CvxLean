@@ -1,9 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Basic.ReplaceConstr
-import CvxLean.Lib.Missing.Mathlib
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 open Lean
@@ -14,7 +11,7 @@ open Std Lean.Meta
 
 /-- -/
 def reorderConstrsExpr (ids : Array Lean.Name) (e : Expr) : MetaM Expr := do
-  let mut constrs : HashMap Lean.Name Expr := {}
+  let mut constrs : Std.HashMap Lean.Name Expr := {}
   for c in ← decomposeConstraints e do
     if constrs.contains c.1 then throwError "Constraint names are not unique: {c.1}"
     constrs := constrs.insert c.1 c.2
@@ -47,7 +44,7 @@ def reorderConstrs (goal : MVarId) (ids : Array Lean.Name) : MetaM MVarId := do
   let simpRes ← simpTarget eqGoal
     {← Simp.Context.mkDefault 
       with simpTheorems := #[simpTheorems]}
-  if simpRes.isSome then throwError "Failed to prove reordering correct: {mkMVar eqGoal}"
+  if simpRes.1.isSome then throwError "Failed to prove reordering correct: {mkMVar eqGoal}"
   return newGoal
 
 end Meta

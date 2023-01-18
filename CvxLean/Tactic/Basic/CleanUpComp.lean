@@ -26,10 +26,10 @@ def cleanUpComp (goal : MVarId) : MetaM MVarId := do
   let newGoalType := {goalExprs with objFun := newObjFun, constraints := newConstraints}.toExpr
   MVarId.setType goal newGoalType
   let simpTheorems ← ({} : SimpTheorems).addDeclToUnfold ``Function.comp
-  let some newGoal ← simpTarget goal ({config := {}, simpTheorems := #[simpTheorems]})
-    | throwError "unexpected number of subgoals"
-
-  return newGoal
+  let simpContext := { config := {}, simpTheorems := #[simpTheorems] }
+  if let (some newGoal, _) ← simpTarget goal simpContext then 
+    return newGoal
+  else throwError "unexpected number of subgoals"
 
 end Meta
 

@@ -3,8 +3,6 @@ import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Basic.DomainEquiv
 import CvxLean.Lib.Missing.Mathlib
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 open Lean
@@ -41,7 +39,7 @@ syntax (name := renameOptVar) "rename_opt_var" "[" ident,* "]" : tactic
 partial def evalRenameOptVar : Tactic := fun stx => match stx with
 | `(tactic| rename_opt_var [$ids,*]) => do
   let goal ← getMainGoal
-  let names := Array.map Syntax.getId ids
+  let names := (ids.elemsAndSeps.map Syntax.getId).filter (· != Lean.Name.anonymous)
   replaceMainGoal [← Meta.renameOptVar goal names]
 | _ => throwUnsupportedSyntax
 
