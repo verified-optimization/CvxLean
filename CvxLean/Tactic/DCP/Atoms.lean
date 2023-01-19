@@ -4,9 +4,14 @@ import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Tactic.DCP.AtomSyntax
 import CvxLean.Lib.Missing.Real
 import CvxLean.Tactic.DCP.Dcp
-import CvxLean.Lib.Cones
 
-attribute [-instance] coeDecidableEq
+attribute [-instance] Nat.hasSub String.hasToString String.hasAppend 
+  Nat.hasToString Bool.inhabited Ne.decidable Prod.inhabited 
+  String.hasDecidableEq Nat.hasAdd
+
+attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
+  Real.linearOrderedField Real.hasNatCast 
+
 
 namespace CvxLean
 
@@ -48,7 +53,7 @@ def mkLetFVarsWith (e : Expr) (xs : Array Expr) (ts : Array Expr) : MetaM Expr :
 /-- Introduce new names for the proofs in the atom to speed up proof building later. -/
 def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   if atomData.solEqAtom.hasMVar then
-    throwError "has mvar {(toString atomData.solEqAtom)}"
+    throwError "has mvar {atomData.solEqAtom}"
   let solEqAtom ← addAtomDataDecl (id.mkStr "solEqAtom") atomData.solEqAtom
   let optimality ← addAtomDataDecl (id.mkStr "optimality") atomData.optimality
   let mut feasibility := #[]
@@ -67,7 +72,7 @@ def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM 
   }
 where 
   addAtomDataDecl (name : Lean.Name) (expr : Expr) : CommandElabM Expr := do
-    addDecl <| .defnDecl {
+    liftCoreM <| addDecl <| .defnDecl {
       name := name
       levelParams := []
       type := ← liftTermElabM (do return ← inferType expr)
@@ -291,7 +296,7 @@ def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind) (f : Arr
   for i in [:xs.size] do
     if argKinds[i]! != ArgKind.Constant then
       let ty := ← inferType xs[i]!
-      let name := Name.mkSimple ((toString (← getLocalDecl xs[i]!.fvarId!).userName) ++ "'")
+      let name := Name.mkSimple ((ToString.toString (← FVarId.getDecl xs[i]!.fvarId!).userName) ++ "'")
       argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
 
   withLocalDeclsD argDeclInfo fun ys => do
@@ -315,7 +320,7 @@ def withCopyOfMonoXs (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Exp
   for i in [:xs.size] do
     if argKinds[i]! != ArgKind.Constant ∧ argKinds[i]! != ArgKind.Neither then
       let ty := ← inferType xs[i]!
-      let name := (← getLocalDecl xs[i]!.fvarId!).userName
+      let name := (← FVarId.getDecl xs[i]!.fvarId!).userName
       argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
       monoXs := monoXs.push xs[i]!
       monoArgKind := monoArgKind.push argKinds[i]!
@@ -384,7 +389,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
             | none => throwError "vcondition not found: {n}"
 
 /-- -/
-@[commandElab atomCommand] def elabAtomCommand : CommandElab
+@[command_elab atomCommand] unsafe def elabAtomCommand : CommandElab
 | `(declare_atom $id [ $curv ] $args* : $expr :=
     vconditions $vconds*
     implementationVars $impVars*
@@ -397,17 +402,17 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     vconditionElimination $vcondElim*) => do
   let atomData ← liftTermElabM do 
     let curv ← elabCurvature curv.raw
-    let (argDecls, argKinds) ← elabArgKinds args
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls
-    let (vconds, vcondMap) ← elabVConditions argDecls vconds
-    let (impVars, impVarMap) ← elabImpVars argDecls impVars
+    let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
+    let (impVars, impVarMap) ← elabImpVars argDecls impVars.rawImpl
     let impObj ← elabImpObj argDecls impVars impObj.raw bodyTy
-    let impConstrs ← elabImpConstrs argDecls impVars impConstrs
-    let sols ← elabSols argDecls impVars impVarMap sols
+    let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
+    let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
     let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
-    let feas ← elabFeas argDecls vconds impConstrs sols feas
+    let feas ← elabFeas argDecls vconds impConstrs sols feas.rawImpl
     let opt ← elabOpt curv argDecls expr #[] impVars impObj impConstrs argKinds opt.raw
-    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim
+    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
     let atomData := {
       curvature := curv
@@ -450,12 +455,12 @@ def elabHom (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
       let zero := mkAppNBeta expr $ ← mapNonConstant xs argKinds 
         fun x => do return ← mkNumeral (← inferType x) 0
       let lhs ← mkAdd 
-        (← mkAppM ``HasSmul.smul #[κ, mkAppNBeta expr xs])
+        (← mkAppM ``SMul.smul #[κ, mkAppNBeta expr xs])
         zero
       let rhs ← mkAdd 
         (mkAppNBeta expr $ ← mapNonConstant xs argKinds 
-          fun x => mkAppM ``HasSmul.smul #[κ, x])
-        (← mkAppM ``HasSmul.smul #[κ, zero])
+          fun x => mkAppM ``SMul.smul #[κ, x])
+        (← mkAppM ``SMul.smul #[κ, zero])
       let ty ← mkEq lhs rhs
       let hom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars #[κ] hom
@@ -482,14 +487,14 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
 def elabBConds := elabVConditions
 
 /-- -/
-@[commandElab affineAtomCommand] def elabAffineAtomCommand : CommandElab
+@[command_elab affineAtomCommand] unsafe def elabAffineAtomCommand : CommandElab
 | `(declare_atom $id [ affine ] $args* : $expr := 
     bconditions $bconds*
     homogenity $hom
     additivity $add
     optimality $opt) => do
   let atomData ← liftTermElabM do 
-    let (argDecls, argKinds) ← elabArgKinds args
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls
     let vconds := #[]
     let impVars := #[]
@@ -498,7 +503,7 @@ def elabBConds := elabVConditions
     let sols := #[]
     let solEqAtom ← lambdaTelescope expr fun xs body => do return ← mkLambdaFVars xs $ ← mkEqRefl body
     let feas := #[]
-    let (bconds, _) ← elabBConds argDecls bconds
+    let (bconds, _) ← elabBConds argDecls bconds.rawImpl
     let hom ← elabHom argDecls expr argKinds hom.raw
     check hom -- Property is not saved. This is just a sanity check.
     let add ← elabAdd argDecls expr argKinds add.raw
@@ -551,11 +556,11 @@ def elabBConds := elabVConditions
 | _ => throwUnsupportedSyntax
 
 /-- -/
-@[commandElab coneAtomCommand] def elabConeAtomCommand : CommandElab
+@[command_elab coneAtomCommand] unsafe def elabConeAtomCommand : CommandElab
 | `(declare_atom $id [ cone ] $args* : $expr :=
       optimality $opt) => do
   let atomData ← liftTermElabM do 
-    let (argDecls, argKinds) ← elabArgKinds args
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls (ty := some (mkSort levelZero))
     let vconds := #[]
     let impVars := #[]

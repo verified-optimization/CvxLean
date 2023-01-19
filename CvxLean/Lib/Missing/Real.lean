@@ -1,11 +1,9 @@
-import Mathbin.Data.Real.Basic
+import Mathlib.Data.Real.Basic
 import Mathbin.Data.Complex.Exponential
 import Mathbin.Analysis.SpecialFunctions.Log.Basic
-import CvxLean.Lib.Missing.Mathlib
 import Mathbin.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.Algebra.Group.Defs
 
-attribute [-instance] coeDecidableEq
+attribute [-instance] coeDecidableEq Real.hasLe
 
 namespace Real
 

@@ -1,5 +1,8 @@
 import Mathbin.Data.Complex.Exponential
 
+attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
+  Real.linearOrderedField
+
 namespace Real
 
 def expCone (x y z : Real) : Prop :=
@@ -15,8 +18,7 @@ theorem exp_iff_expCone (t x : Real) : exp x ≤ t ↔ expCone x 1 t := by
   · intro hexp
     apply Or.intro_left
     apply And.intro
-    apply zero_lt_one
-    change 1 * exp (x / 1) ≤ t
+    apply Real.zero_lt_one
     rw [div_one, one_mul]
     assumption
   · intro h
@@ -25,6 +27,7 @@ theorem exp_iff_expCone (t x : Real) : exp x ≤ t ↔ expCone x 1 t := by
       have h : 1 * exp (x / 1) ≤ t := h.2
       rwa [div_one, one_mul] at h
     | inr h =>
-      sorry
+      exfalso
+      exact zero_ne_one h.1.symm
 
 end Real
