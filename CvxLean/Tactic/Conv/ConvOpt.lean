@@ -1,8 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Tactic.Conv.ShowVars
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 open Lean

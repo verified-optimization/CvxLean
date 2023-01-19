@@ -3,9 +3,9 @@ import CvxLean.Lib.Cones
 import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Missing.Matrix
 import CvxLean.Syntax.Minimization
-import Optbin.All
-import Mathbin.Algebra.Order.MonoidLemmasZeroLt
-import Mathbin.Algebra.Order.Group
+
+attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
+  Real.linearOrderedField Real.hasNatCast 
 
 namespace CvxLean
 
@@ -20,49 +20,48 @@ declare_atom expCone [cone] (x : ℝ)- (z : ℝ)+ : expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp
   rw [←exp_iff_expCone] at *
-  exact ((exp_le_exp.2 hx).transₓ hexp).transₓ hz
+  -- TODO: exp_le_exp
+  exact ((exp_strict_mono.le_iff_le.2 hx).trans hexp).trans hz
 
-declare_atom Vec.expCone [cone] (n : Nat)& (x : (Finₓ n) → ℝ)- (z : (Finₓ n) → ℝ)+ : Vec.expCone x 1 z :=
+declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp i
   unfold Vec.expCone at *
   apply (exp_iff_expCone _ _).1
-  exact ((exp_le_exp.2 (hx i)).transₓ ((exp_iff_expCone _ _).2 (hexp i))).transₓ (hz i)
+  -- TODO: exp_le_exp
+  exact ((exp_strict_mono.le_iff_le.2 (hx i)).trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
 
 declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
 optimality by
   intros x' hx hx0
-  exact hx0.transₓ hx
+  exact hx0.trans hx
 
-declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Finₓ n) → ℝ)+ : Vec.posOrthCone x :=
+declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
 optimality by
   intros x' hx hx0 i
-  exact (hx0 i).transₓ (hx i)
+  exact (hx0 i).trans (hx i)
 
-declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Finₓ m) (Finₓ n) ℝ)+ :
+declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
   Real.Matrix.posOrthCone M :=
 optimality by
   intros x' hx hx0 i j
-  exact (hx0 i j).transₓ (hx i j)
+  exact (hx0 i j).trans (hx i j)
 
-declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Finₓ n) → ℝ)? :
+declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
   rotatedSoCone v w x :=
 optimality by
   intros v' w' hv hw h
   unfold rotatedSoCone at *
   apply And.intro
-  · apply h.1.transₓ
-    apply ZeroLt.mul_le_mul_of_nonneg_right
-    apply ZeroLt.mul_le_mul_of_le_of_le hv hw h.2.1 (h.2.2.transₓ hw)
-    have : @Zero.zero Real (MulZeroClassₓ.toHasZero Real) = 0 := by
-      rfl
-    rw [this]
+  · apply h.1.trans
+    apply mul_le_mul_of_nonneg_right
+    apply mul_le_mul_of_le_of_le hv hw h.2.1 (h.2.2.trans hw)
     simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
     apply Nat.cast_le.2
     norm_num
-  · exact ⟨h.2.1.transₓ hv, h.2.2.transₓ hw⟩
+  · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
 
-declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Finₓ n) → ℝ)+ (w : (Finₓ n) → ℝ)+ (x : (Finₓ n) → (Finₓ m) → ℝ)? :
+declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Finₓ m) → ℝ)? :
   Vec.rotatedSoCone v w x :=
 optimality by
   unfold Vec.rotatedSoCone
@@ -76,22 +75,26 @@ optimality fun h => h
 end Cones
 
 -- NOTE: Workaround for nonterminating simp.
-attribute [-simp] Quot.lift_on_mk Quot.lift_on₂_mk Quot.lift₂_mk
+attribute [-simp] Quot.liftOn_mk Quot.liftOn₂_mk Quot.lift₂_mk
 
 -- Affine operations.
 section RealAffine
 
 open Real
 
+attribute [-instance] Real.hasAdd 
+
+#check OrderedAddCommGroup.add_le_add_left
+
 declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
 bconditions
 homogenity by
-  change _ = _ + _ + HasSmul.smul κ (Zero.zero + Zero.zero)
-  rw [smul_add, smul_add, smul_zero]
-  rfl
+  simp [smul_eq_mul]
+  change _ * _ = _ * _ + _ * _ + _ * _
+  rw [mul_add, MulZeroClass.mul_zero, add_zero]
 additivity by
-  simp only [add_zero, add_assoc, add_commₓ]
-  rw [add_commₓ x' y', ←add_assocₓ y y' x', add_commₓ _ x']
+  simp only [add_zero, add_assoc, add_comm]
+  rw [add_comm x' y', ←add_assoc y y' x', add_comm _ x']
 optimality fun _ _ => add_le_add
 
 declare_atom neg [affine] (x : ℝ)- : - x :=

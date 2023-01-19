@@ -1,3 +1,4 @@
+import Mathlib.Tactic.NormNum
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Missing.Meta
@@ -5,8 +6,6 @@ import CvxLean.Lib.Missing.Array
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 import CvxLean.Meta.Missing.Expr
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 
@@ -80,9 +79,10 @@ where
       | some fvarId => 
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- TODO: HACK! Very silly trick to prove 0 <= 2 and alike...
+        -- TODO: HACK! Trick to prove 0 <= 2 and alike...
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
-          let v ← Lean.Elab.Term.elabTerm (← `(by simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]; apply Nat.cast_le.2; norm_num)).raw (some bcondType)
+          let v ← Lean.Elab.Term.elabTerm (← 
+          `(by simp only [(@Nat.cast_zero Real _).symm, (@Nat.cast_one Real _).symm]; apply Nat.cast_le.2; norm_num)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
           let v ← instantiateMVars v
           return v
@@ -126,11 +126,11 @@ partial def mkNewVars (i : Nat) : Tree GraphAtomData Expr → Tree (Array Expr) 
     let (childNewVar, i') ← mkNewVars i childAtoms[k]! childArgs[k]!
     i := i'
     childNewVars := childNewVars.push $ childNewVar
-  let mut newVars := #[]
+  let mut newVars : Array LocalDecl := #[]
   for (n, ty) in atom.impVars do
     trace[Meta.debug] "new var type: {ty}"
     newVars := newVars.push $
-      LocalDecl.cdecl 0 (← mkFreshFVarId) (Name.mkNum n i) (mkAppNBeta ty args) Lean.BinderInfo.default
+      LocalDecl.cdecl 0 (← mkFreshFVarId) (Name.mkNum n i) (mkAppNBeta ty args) Lean.BinderInfo.default LocalDeclKind.default
     i := i + 1
   return (Tree.node newVars childNewVars, i)
 | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf (), i)
@@ -316,7 +316,7 @@ partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array E
     return Tree.node (optimality, vcondElim) childOptimality
   | Tree.leaf e, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ => do
     trace[Meta.debug] "Optimality Leaf {e}"
-    return Tree.leaf (← mkAppM ``le_reflₓ #[e], #[])
+    return Tree.leaf (← mkAppM ``le_refl #[e], #[])
   | _, _, _, _, _, _, _ => throwError "Tree mismatch"
 
 /-- -/
@@ -328,10 +328,10 @@ partial def mkNewConstrVars :  Tree (Array Expr) Unit → MetaM (Tree (Array Loc
     childNewConstrVar := childNewConstrVar.push $
       ← mkNewConstrVars childNewConstr[i]!
   -- Create variables
-  let mut newConstrVars := #[]
+  let mut newConstrVars : Array LocalDecl := #[]
   for ty in newConstr do
     newConstrVars := newConstrVars.push $
-      LocalDecl.cdecl 0 (← mkFreshFVarId) `h ty Lean.BinderInfo.default
+      LocalDecl.cdecl 0 (← mkFreshFVarId) `h ty Lean.BinderInfo.default LocalDeclKind.default
   return Tree.node newConstrVars childNewConstrVar
 | Tree.leaf _ => pure $ Tree.leaf ()
 
@@ -339,9 +339,9 @@ partial def mkNewConstrVars :  Tree (Array Expr) Unit → MetaM (Tree (Array Loc
 def mkOriginalConstrVars (originalVarsDecls : Array LocalDecl) 
   (constr : Array (Lean.Name × Expr)) : MetaM (Array LocalDecl) := do
 withExistingLocalDecls originalVarsDecls.toList do
-  let mut decls := #[]
+  let mut decls : Array LocalDecl := #[]
   for i in [:constr.size] do
-    decls := decls.push $ LocalDecl.cdecl 0 (← mkFreshFVarId) (Name.mkNum constr[i]!.1 i) constr[i]!.2 Lean.BinderInfo.default
+    decls := decls.push $ LocalDecl.cdecl 0 (← mkFreshFVarId) (Name.mkNum constr[i]!.1 i) constr[i]!.2 Lean.BinderInfo.default LocalDeclKind.default
   return decls
 
 /-- -/
@@ -387,7 +387,7 @@ def makeObjFunForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars :
       let (_, cprs) := Meta.composeAndWithProj constraints.toList
       let hProj := (cprs h).toArray
 
-      let objFunForward ← mkAppM ``le_of_eqₓ #[objFunEq.replaceFVars xs prs.toArray]
+      let objFunForward ← mkAppM ``le_of_eq #[objFunEq.replaceFVars xs prs.toArray]
 
       let objFunForward := objFunForward.replaceFVars
         ((originalConstrVars).map (mkFVar ·.fvarId)) hProj

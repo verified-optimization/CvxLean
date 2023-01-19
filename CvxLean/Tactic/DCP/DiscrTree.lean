@@ -32,7 +32,7 @@ inductive Trie (α : Type) where
   | node (vs : Array α) (children : Array (Key × Trie α)) : Trie α
 
 structure DiscrTree (α : Type) where
-  root : Std.PersistentHashMap Key (Trie α) := {}
+  root : PersistentHashMap Key (Trie α) := {}
 
 def Key.ctorIdx : Key → Nat
   | Key.star     => 0
@@ -388,7 +388,7 @@ unsafe def foldMUnsafe [Monad m] (initialKeys : Array Key)
     children.foldlM (init := s) λ s (k, t) =>
       t.foldMUnsafe (initialKeys.push k) f s
 
-@[implementedBy foldMUnsafe]
+@[implemented_by foldMUnsafe]
 opaque foldM [Monad m] (initalKeys : Array Key)
     (f : σ → Array Key → α → m σ) (init : σ) (t : Trie α) : m σ :=
   pure init

@@ -7,15 +7,22 @@ https://docs.mosek.com/modeling-cookbook/cqo.html#sec-cqo-rquadcone
 This file defines the second-order cone.
 -/
 
+attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
+  Real.linearOrderedField Real.monoid Real.addCommMonoid Real.hasNatCast
+
 namespace Real
 
 variable [Fintype m] [Fintype n]
 
-def soCone (t : Real) (x : n → Real) : Prop :=
-  sqrt (∑ i, x i ^ 2) ≤ t
+set_option pp.all true
 
+-- TODO: Notation
+def soCone (t : Real) (x : n → Real) : Prop :=
+  sqrt (Finset.sum Finset.univ <| fun i => x i ^ 2) ≤ t
+
+-- TODO: Notation
 def rotatedSoCone (v w : Real) (x : n → Real) : Prop :=
-  (∑ i, x i ^ 2) ≤ (v * w) * 2 ∧ 0 ≤ v ∧ 0 ≤ w
+  (Finset.sum Finset.univ <| fun i => x i ^ 2) ≤ (v * w) * 2 ∧ 0 ≤ v ∧ 0 ≤ w
 
 section SOConeLemmas
 
