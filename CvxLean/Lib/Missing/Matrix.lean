@@ -14,12 +14,12 @@ variable {α} [Zero α]
 -- Transform to arrays to compute. Avoiding mathbin matrix operations.
 namespace Computable
 
-@[to_additive Pi.hasVadd]
-instance Pi.sMul'  {I : Type} {f : I → Type v₁} [∀ i, SMul α <| f i] : SMul α (∀ i : I, f i) :=
-  ⟨fun s x => fun i => s • x i⟩
+-- @[to_additive Pi.hasVadd]
+-- instance Pi.sMul'  {I : Type} {f : I → Type v₁} [∀ i, SMul α <| f i] : SMul α (∀ i : I, f i) :=
+--   ⟨fun s x => fun i => s • x i⟩
 
-instance [SMul R α] : SMul R (Matrix m n α) :=
-  Pi.sMul'
+-- instance [SMul R α] : SMul R (Matrix m n α) :=
+--   Pi.sMul'
 
 @[to_additive "See also `add_monoid.to_add_action`"]
 instance (priority := 910) Mul.toHasSmul' (α : Type _) [Mul α] : SMul α α :=

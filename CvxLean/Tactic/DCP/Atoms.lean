@@ -455,12 +455,12 @@ def elabHom (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
       let zero := mkAppNBeta expr $ ← mapNonConstant xs argKinds 
         fun x => do return ← mkNumeral (← inferType x) 0
       let lhs ← mkAdd 
-        (← mkAppM ``SMul.smul #[κ, mkAppNBeta expr xs])
+        (← mkAppM ``HSMul.hSMul #[κ, mkAppNBeta expr xs])
         zero
       let rhs ← mkAdd 
         (mkAppNBeta expr $ ← mapNonConstant xs argKinds 
-          fun x => mkAppM ``SMul.smul #[κ, x])
-        (← mkAppM ``SMul.smul #[κ, zero])
+          fun x => mkAppM ``HSMul.hSMul #[κ, x])
+        (← mkAppM ``HSMul.hSMul #[κ, zero])
       let ty ← mkEq lhs rhs
       let hom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars #[κ] hom

@@ -1,11 +1,28 @@
 import CvxLean.Tactic.DCP.Atoms
 import CvxLean.Lib.Cones
 import CvxLean.Lib.Missing.Real
+import CvxLean.Lib.Missing.Vec
 import CvxLean.Lib.Missing.Matrix
 import CvxLean.Syntax.Minimization
 
 attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.hasNatCast 
+  Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
+  Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
+  Real.instMonoidWithZeroReal_1 Real.monoidWithZero Real.module 
+  Real.addCommMonoid
+
+instance : CovariantClass ℝ ℝ (· + ·) (· ≤ ·) := 
+  ⟨fun a b c h => OrderedAddCommGroup.add_le_add_left b c h a⟩
+
+instance : NegZeroClass ℝ := by infer_instance
+
+instance : MulZeroClass ℝ := by infer_instance
+
+instance : AddZeroClass ℝ := by infer_instance
+
+instance {n} : DistribSMul ℝ (Fin n → ℝ) := by infer_instance
+
+instance {n} : DistribMulAction ℝ (Fin n → ℝ) := by infer_instance
 
 namespace CvxLean
 
@@ -16,256 +33,227 @@ open Real
 
 -- Optimality for using a variable in the second argument
 -- will be hard to prove optimality for.
-declare_atom expCone [cone] (x : ℝ)- (z : ℝ)+ : expCone x 1 z :=
-optimality by
-  intros x' z' hx hz hexp
-  rw [←exp_iff_expCone] at *
-  -- TODO: exp_le_exp
-  exact ((exp_strict_mono.le_iff_le.2 hx).trans hexp).trans hz
+-- declare_atom expCone [cone] (x : ℝ)- (z : ℝ)+ : expCone x 1 z :=
+-- optimality by
+--   intros x' z' hx hz hexp
+--   rw [←exp_iff_expCone] at *
+--   -- TODO: exp_le_exp
+--   exact ((exp_strict_mono.le_iff_le.2 hx).trans hexp).trans hz
 
-declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
-optimality by
-  intros x' z' hx hz hexp i
-  unfold Vec.expCone at *
-  apply (exp_iff_expCone _ _).1
-  -- TODO: exp_le_exp
-  exact ((exp_strict_mono.le_iff_le.2 (hx i)).trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
+-- declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
+-- optimality by
+--   intros x' z' hx hz hexp i
+--   unfold Vec.expCone at *
+--   apply (exp_iff_expCone _ _).1
+--   -- TODO: exp_le_exp
+--   exact ((exp_strict_mono.le_iff_le.2 (hx i)).trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
 
-declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
-optimality by
-  intros x' hx hx0
-  exact hx0.trans hx
+-- declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
+-- optimality by
+--   intros x' hx hx0
+--   exact hx0.trans hx
 
-declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
-optimality by
-  intros x' hx hx0 i
-  exact (hx0 i).trans (hx i)
+-- declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
+-- optimality by
+--   intros x' hx hx0 i
+--   exact (hx0 i).trans (hx i)
 
-declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
-  Real.Matrix.posOrthCone M :=
-optimality by
-  intros x' hx hx0 i j
-  exact (hx0 i j).trans (hx i j)
+-- declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
+--   Real.Matrix.posOrthCone M :=
+-- optimality by
+--   intros x' hx hx0 i j
+--   exact (hx0 i j).trans (hx i j)
 
-declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
-  rotatedSoCone v w x :=
-optimality by
-  intros v' w' hv hw h
-  unfold rotatedSoCone at *
-  apply And.intro
-  · apply h.1.trans
-    apply mul_le_mul_of_nonneg_right
-    apply mul_le_mul_of_le_of_le hv hw h.2.1 (h.2.2.trans hw)
-    simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
-    apply Nat.cast_le.2
-    norm_num
-  · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
+-- declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
+--   rotatedSoCone v w x :=
+-- optimality by
+--   intros v' w' hv hw h
+--   unfold rotatedSoCone at *
+--   apply And.intro
+--   · apply h.1.trans
+--     apply mul_le_mul_of_nonneg_right
+--     apply mul_le_mul_of_le_of_le hv hw h.2.1 (h.2.2.trans hw)
+--     simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
+--     apply Nat.cast_le.2
+--     norm_num
+--   · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
 
-declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Finₓ m) → ℝ)? :
-  Vec.rotatedSoCone v w x :=
-optimality by
-  unfold Vec.rotatedSoCone
-  intros v' w' hv hw h i
-  apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
+-- declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
+--   Vec.rotatedSoCone v w x :=
+-- optimality by
+--   unfold Vec.rotatedSoCone
+--   intros v' w' hv hw h i
+--   apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
   
-declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : 
-  Matrix.PSDCone A :=
-optimality fun h => h
+-- declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : 
+--   Matrix.PSDCone A :=
+-- optimality fun h => h
 
-end Cones
+-- end Cones
 
--- NOTE: Workaround for nonterminating simp.
-attribute [-simp] Quot.liftOn_mk Quot.liftOn₂_mk Quot.lift₂_mk
+-- -- NOTE: Workaround for nonterminating simp.
+-- attribute [-simp] Quot.liftOn_mk Quot.liftOn₂_mk Quot.lift₂_mk
 
--- Affine operations.
-section RealAffine
+-- -- Affine operations.
+-- section RealAffine
 
-open Real
+-- open Real
 
-attribute [-instance] Real.hasAdd 
+-- declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
+-- bconditions
+-- homogenity by
+--   simp [mul_add]
+-- additivity by
+--   simp only [add_zero, add_assoc, add_comm]
+--   rw [add_comm x' y', ←add_assoc y y' x', add_comm _ x']
+-- optimality fun _ _ => add_le_add
 
-#check OrderedAddCommGroup.add_le_add_left
+-- declare_atom neg [affine] (x : ℝ)- : - x :=
+-- bconditions
+-- homogenity by
+--   simp [neg_zero, add_zero]
+-- additivity by
+--   rw [neg_add]
+--   simp
+-- optimality by
+--   intros x' hx
+--   apply neg_le_neg hx
 
-declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
+-- declare_atom maximizeNeg [affine] (x : ℝ)- : maximizeNeg x :=
+-- bconditions
+-- homogenity by
+--   simp [maximizeNeg, neg_zero, add_zero]
+-- additivity by
+--   unfold maximizeNeg
+--   rw [neg_add]
+--   simp
+-- optimality by
+--   intros x' hx
+--   apply neg_le_neg hx
+
+-- declare_atom sub [affine] (x : ℝ)+ (y : ℝ)- : x - y :=
+-- bconditions
+-- homogenity by
+--   change _ * _ + _ = _ * _ - _ * _ + _ * _
+--   ring
+-- additivity by
+--   ring
+-- optimality by
+--   intros x' y' hx hy
+--   apply sub_le_sub hx hy
+
+-- declare_atom mul1 [affine] (x : ℝ)& (y : ℝ)+ : x * y :=
+-- bconditions (hx : 0 ≤ x)
+-- homogenity by
+--   change _ * _ + _ = _ * (_ * _) + _ * _
+--   ring
+-- additivity by
+--   ring
+-- optimality by
+--   intros y' hy
+--   apply mul_le_mul_of_nonneg_left hy hx
+
+-- declare_atom mul2 [affine] (x : ℝ)+ (y : ℝ)& : x * y :=
+-- bconditions (hy : 0 ≤ y)
+-- homogenity by
+--   change _ * _ + _ = (_ * _) * _ + _ * _
+--   ring
+-- additivity by
+--   ring
+-- optimality by
+--   intros y' hx
+--   apply mul_le_mul_of_nonneg_right hx hy
+
+-- end RealAffine
+
+-- -- Affine operations on vectors.
+-- section VecAffine
+
+-- declare_atom Vec.nth [affine] (m : Nat)&  (x : Fin m → ℝ)? (i : Fin m)& : x i :=
+-- bconditions
+-- homogenity by
+--   rw [Pi.zero_apply]
+--   change _ * _ + _ = _ * _ + _ * _
+--   ring
+-- additivity by
+--   rw [Pi.zero_apply]
+--   change _ + _ = _ + _ + _
+--   ring
+-- optimality le_refl _
+
+-- declare_atom Vec.add [affine] (m : Nat)&  (x : Fin m → ℝ)+ (y : Fin m → ℝ)+ : x + y :=
+-- bconditions
+-- homogenity by
+--   simp [smul_add]
+-- additivity by
+--   ring
+-- optimality by
+--   intros x' y' hx hy i
+--   apply add_le_add (hx i) (hy i)
+
+-- declare_atom Vec.sub [affine] (m : Nat)& (x : Fin m → ℝ)+ (y : Fin m → ℝ)- : x - y :=
+-- bconditions
+-- homogenity by
+--   simp [smul_sub]
+-- additivity by
+--   ring
+-- optimality by
+--   intros x' y' hx hy i
+--   exact sub_le_sub (hx i) (hy i)
+
+-- declare_atom Vec.sum [affine] (m : Nat)& (x : Fin m → ℝ)+ : Vec.sum x :=
+-- bconditions
+-- homogenity by
+--   unfold Vec.sum
+--   simp only [Pi.zero_apply]
+--   rw [Finset.smul_sum, Finset.sum_const_zero, add_zero, smul_zero, add_zero]
+--   rfl
+-- additivity by
+--   unfold Vec.sum
+--   simp only [Pi.zero_apply, Pi.add_apply]
+--   rw [Finset.sum_const_zero, add_zero, Finset.sum_add_distrib]
+-- optimality by
+--   intro x' hx
+--   apply Finset.sum_le_sum
+--   intros _ _
+--   apply hx
+
+-- declare_atom div [affine] (x : ℝ)+ (y : ℝ)& : x / y :=
+-- bconditions (hy : (0 : ℝ) ≤ y)
+-- homogenity by
+--   simp [mul_div]
+-- additivity by
+--   simp [add_div]
+-- optimality by
+--   intros x' hx
+--   by_cases h : 0 = y
+--   · rw [← h, div_zero, div_zero]
+--   · rw [div_le_div_right]
+--     apply hx
+--     apply lt_of_le_of_ne hy h
+
+theorem Matrix.dotProduct_zero {m} [Fintype m] (x : m → ℝ) 
+  : Matrix.dotProduct x 0 = 0 := by
+  simp [Matrix.dotProduct]
+
+theorem Matrix.dotProduct_smul {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
+  : Matrix.dotProduct x (a • y) = a • Matrix.dotProduct x y := by
+  unfold Matrix.dotProduct ; rw [Finset.smul_sum]
+  apply congr_arg ; ext i ; simp ; ring
+
+theorem Matrix.dotProduct_add {m} [Fintype m] (x : m → ℝ) (y y' : m → ℝ) 
+  : Matrix.dotProduct x (y + y') = Matrix.dotProduct x y + Matrix.dotProduct x y' := by
+  unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
+  apply congr_arg ; ext i ; simp ; ring
+
+declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
 bconditions
 homogenity by
-  simp [smul_eq_mul]
-  change _ * _ = _ * _ + _ * _ + _ * _
-  rw [mul_add, MulZeroClass.mul_zero, add_zero]
+  rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero] 
+  rw [Matrix.dotProduct_smul]
 additivity by
-  simp only [add_zero, add_assoc, add_comm]
-  rw [add_comm x' y', ←add_assoc y y' x', add_comm _ x']
-optimality fun _ _ => add_le_add
-
-declare_atom neg [affine] (x : ℝ)- : - x :=
-bconditions
-homogenity by
-  change HasSmul.smul κ (-x) + -Zero.zero = 
-    -HasSmul.smul κ x + HasSmul.smul κ (-Zero.zero)
-  simp
-  rw [smul_zero, smul_neg, add_zeroₓ]
-  rfl
-additivity by
-  rw [neg_add]
-  simp
-  rfl
-optimality by
-  intros x' hx
-  apply neg_le_neg hx
-
-declare_atom maximizeNeg [affine] (x : ℝ)- : maximizeNeg x :=
-bconditions
-homogenity by
-  change HasSmul.smul κ (-x) + -Zero.zero = 
-    -HasSmul.smul κ x + HasSmul.smul κ (-Zero.zero)
-  simp
-  rw [smul_zero, smul_neg, add_zeroₓ]
-  rfl
-additivity by
-  unfold maximizeNeg
-  rw [neg_add]
-  simp
-  rfl
-optimality by
-  intros x' hx
-  apply neg_le_neg hx
-
-declare_atom sub [affine] (x : ℝ)+ (y : ℝ)- : x - y :=
-bconditions
-homogenity by
-  rw [smul_sub, sub_self, smul_zero]
-  rfl
-additivity by
-  rw [sub_add_comm, add_commₓ, add_sub, add_sub_assoc, sub_sub, add_commₓ y' y, 
-    add_sub, sub_self, add_zeroₓ]
-optimality by
-  intros x' y' hx hy
-  apply @sub_le_sub Real _ _ 
-    (@OrderedAddCommGroup.to_covariant_class_left_le Real Real.orderedAddCommGroup) 
-  exact hx
-  exact hy
-
-declare_atom mul1 [affine] (x : ℝ)& (y : ℝ)+ : x * y :=
-bconditions (hx : 0 ≤ x)
-homogenity by
-  change HasSmul.smul κ (x * y) + x * Zero.zero
-    = x * HasSmul.smul κ y + HasSmul.smul κ (x * Zero.zero)
-  rw [_root_.mul_zero, smul_zero, add_zeroₓ, add_zeroₓ, mul_smul_comm]
-additivity by
-  change x * y + x * y' = x * (y + y') + x * Zero.zero
-  rw [mul_addₓ, _root_.mul_zero, add_zeroₓ]
-optimality by
-  intros y' hy
-  apply ZeroLt.mul_le_mul_of_nonneg_left hy hx
-
-declare_atom mul2 [affine] (x : ℝ)+ (y : ℝ)& : x * y :=
-bconditions (hy : 0 ≤ y)
-homogenity by
-  change HasSmul.smul κ (x * y) + Zero.zero * y 
-    = (HasSmul.smul κ x) * y + HasSmul.smul κ (Zero.zero * y)
-  rw [_root_.zero_mul, smul_zero, add_zeroₓ, add_zeroₓ,
-    _root_.mul_comm, _root_.mul_comm _ y, mul_smul_comm]
-additivity by
-  change x * y + x' * y = (x + x') * y + Zero.zero * y
-  rw [add_mulₓ, _root_.zero_mul, add_zeroₓ]
-optimality by
-  intros y' hx
-  apply ZeroLt.mul_le_mul_of_nonneg_right hx hy
-
-end RealAffine
-
--- Affine operations on vectors.
-section VecAffine
-
-declare_atom Vec.nth [affine] (m : Nat)&  (x : Finₓ m → ℝ)? (i : Finₓ m)& : x i :=
-bconditions
-homogenity by
-  change HasSmul.smul κ (x i) + Zero.zero
-    = HasSmul.smul κ x i + HasSmul.smul κ Zero.zero
-  rw [smul_zero, add_zeroₓ, add_zeroₓ]
-  rfl
-additivity by
-  change x i + x' i = x i + x' i + Zero.zero
-  rw [add_zeroₓ]
-optimality le_reflₓ _
-
-declare_atom Vec.add [affine] (m : Nat)&  (x : Finₓ m → ℝ)+ (y : Finₓ m → ℝ)+ : x + y :=
-bconditions
-homogenity by
-  change HasSmul.smul κ (x + y) + (Zero.zero + Zero.zero) 
-    = HasSmul.smul κ x + HasSmul.smul κ y + HasSmul.smul κ (Zero.zero + Zero.zero)
-  rw [add_zeroₓ, add_zeroₓ, smul_zero, add_zeroₓ, smul_add]
-  rfl
-additivity by
-  change x + y + (x' + y') = x + x' + (y + y') + (Zero.zero + Zero.zero)
-  rw [add_zeroₓ, add_zeroₓ, add_assocₓ, add_commₓ x' y', ←add_assocₓ y, add_commₓ _ x']
-  simp [add_assocₓ]
-optimality by
-  intros x' y' hx hy i
-  apply add_le_add (hx i) (hy i)
-
-declare_atom Vec.sub [affine] (m : Nat)&  (x : Finₓ m → ℝ)+ (y : Finₓ m → ℝ)- : x - y :=
-bconditions
-homogenity by
-  rw [sub_self, smul_sub, smul_zero]
-  rfl
-additivity by
-  rw [sub_add_sub_comm, sub_self, add_zeroₓ]
-optimality by
-  intros x' y' hx hy i
-  apply @sub_le_sub Real _ _ 
-    (@OrderedAddCommGroup.to_covariant_class_left_le Real Real.orderedAddCommGroup)
-  exact (hx i)
-  exact (hy i)
-
-declare_atom Vec.sum [affine] (m : Nat)& (x : Finₓ m → ℝ)+ : Vec.sum x :=
-bconditions
-homogenity by
-  change HasSmul.smul κ (Vec.sum x) + (∑ i, Zero.zero)
-    = Vec.sum (HasSmul.smul κ x) + HasSmul.smul κ (∑ i, Zero.zero)
-  unfold Vec.sum
-  rw [Finset.smul_sum, Finset.sum_const_zero, add_zeroₓ, smul_zero, add_zeroₓ]
-  rfl
-additivity by
-  change (∑ i, x i) + (∑ i, x' i) = (∑ i, x i + x' i) + ∑ i, Zero.zero
-  rw [Finset.sum_const_zero, add_zeroₓ, Finset.sum_add_distrib]
-optimality by
-  intro x' hx
-  apply Finset.sum_le_sum
-  intros
-  apply hx
-
-declare_atom div [affine] (x : ℝ)+ (y : ℝ)& : x / y :=
-bconditions (hy : (0 : ℝ) ≤ y)
-homogenity by
-  change κ * (x / y) + Zero.zero / y 
-    = κ * x / y + κ * (Zero.zero / y)
-  rw [zero_div, add_zeroₓ, _root_.mul_zero, add_zeroₓ, mul_div]
-additivity by
-  change x / y + x' / y = (x + x') / y + Zero.zero / y
-  rw [zero_div, add_zeroₓ, add_div]
-optimality by
-  intros x' hx
-  by_cases h : Zero.zero = y
-  · rw [←h, div_zero, div_zero]
-    exact le_reflₓ _
-  · rw [div_le_div_right]
-    apply hx
-    apply lt_of_le_of_neₓ hy h
-
-declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Finₓ m → ℝ)& (y : Finₓ m → ℝ)? : Matrix.dotProduct x y := 
-bconditions
-homogenity by
-  change κ * (Matrix.dotProduct x y) + Matrix.dotProduct x Zero.zero =
-    Matrix.dotProduct x (HasSmul.smul κ y) + κ * (Matrix.dotProduct x Zero.zero)
-  rw [Matrix.dot_product_zero, add_zeroₓ, _root_.mul_zero, add_zeroₓ,
-    Matrix.dot_product_smul]
-  rfl
-additivity by
-  change Matrix.dotProduct x y + Matrix.dotProduct x y'
-    = Matrix.dotProduct x (y + y') + Matrix.dotProduct x Zero.zero
-  rw [Matrix.dot_product_zero, add_zeroₓ, Matrix.dot_product_add]
-optimality le_reflₓ _
+  rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
+optimality le_refl _
 
 declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Finₓ m → ℝ)? (y : Finₓ m → ℝ)& : Matrix.dotProduct x y := 
 bconditions
@@ -675,7 +663,7 @@ vconditions
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints
-  (c1 : rotatedSoCone t (1/2) (![x] : Finₓ 1 → ℝ))
+  (c1 : rotatedSoCone t (1/2) (![x] : Fin 1 → ℝ))
 solution
   (t := x ^ 2)
 solutionEqualsAtom rfl
@@ -742,19 +730,23 @@ optimality by
   exact (exp_le_exp.2 hx).transₓ c_exp
 vconditionElimination
 
+#check Zero.toOfNat0
+
 declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
 vconditions (cond : 0 ≤ x)
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints 
-  (c1 : rotatedSoCone x (1/2) (![t] : Finₓ 1 → ℝ))
+  (c1 : rotatedSoCone x (1/2) (![t] : Fin 1 → ℝ))
 solution (t := Real.sqrt x)
 solutionEqualsAtom by
   rfl;
 feasibility 
   (c1 : by
-    unfold rotatedSoCone
-    rw [← sq_sqrt cond]
+    simp [rotatedSoCone]
+    simp [Zero.toOfNat0] at cond
+    have := sq_sqrt ((@zero_eq_zero Real _).symm ▸ cond)
+
     have : sqrt x ^ 2 = @HPow.hPow ℝ ℕ ℝ instHPow (sqrt x) 2 := 
         by apply Real.rpow_nat_cast
     have sqf := sq.feasibility0 (sqrt x)
