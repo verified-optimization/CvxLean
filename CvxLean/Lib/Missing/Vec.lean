@@ -44,13 +44,14 @@ section AddCommMonoid
 variable {α} [AddCommMonoid α] {m : Nat} {n : Nat} (x : Fin m → α) (y : Fin n → α) 
 
 -- TODO: Why can't I remove `noncomputable`?
-noncomputable def sum {m : Type} [Fintype m] (x : m → α) : α := ∑ i, x i
+noncomputable def sum {m : Type} [Fintype m] (x : m → α) : α :=
+  Finset.sum Finset.univ fun i => x i
 
 /-- Cumulative sum: The `i`th entry of the `cumsum` vector contains the sum of
   the first `i + 1` elements of the given vector. -/
 -- TODO: Why can't I remove `noncomputable`?
 noncomputable def cumsum : Fin m → α := 
-  fun i => ∑ k, (take x (i.val + 1)) k
+  fun i => Finset.sum Finset.univ fun k => (take x (i.val + 1)) k
 
 end AddCommMonoid
 
