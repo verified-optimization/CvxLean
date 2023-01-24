@@ -27,268 +27,268 @@ instance {n} : DistribMulAction ℝ (Fin n → ℝ) := by infer_instance
 namespace CvxLean
 
 -- Constraints in conic form.
--- section Cones
+section Cones
 
 open Real
 
 -- Optimality for using a variable in the second argument
 -- will be hard to prove optimality for.
--- declare_atom expCone [cone] (x : ℝ)- (z : ℝ)+ : expCone x 1 z :=
--- optimality by
---   intros x' z' hx hz hexp
---   rw [←exp_iff_expCone] at *
---   -- TODO: exp_le_exp
---   exact ((exp_strict_mono.le_iff_le.2 hx).trans hexp).trans hz
+declare_atom expCone [cone] (x : ℝ)- (z : ℝ)+ : expCone x 1 z :=
+optimality by
+  intros x' z' hx hz hexp
+  rw [←exp_iff_expCone] at *
+  -- TODO: exp_le_exp
+  exact ((exp_strict_mono.le_iff_le.2 hx).trans hexp).trans hz
 
--- declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
--- optimality by
---   intros x' z' hx hz hexp i
---   unfold Vec.expCone at *
---   apply (exp_iff_expCone _ _).1
---   -- TODO: exp_le_exp
---   exact ((exp_strict_mono.le_iff_le.2 (hx i)).trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
+declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
+optimality by
+  intros x' z' hx hz hexp i
+  unfold Vec.expCone at *
+  apply (exp_iff_expCone _ _).1
+  -- TODO: exp_le_exp
+  exact ((exp_strict_mono.le_iff_le.2 (hx i)).trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
 
--- declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
--- optimality by
---   intros x' hx hx0
---   exact hx0.trans hx
+declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
+optimality by
+  intros x' hx hx0
+  exact hx0.trans hx
 
--- declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
--- optimality by
---   intros x' hx hx0 i
---   exact (hx0 i).trans (hx i)
+declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
+optimality by
+  intros x' hx hx0 i
+  exact (hx0 i).trans (hx i)
 
--- declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
---   Real.Matrix.posOrthCone M :=
--- optimality by
---   intros x' hx hx0 i j
---   exact (hx0 i j).trans (hx i j)
+declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
+  Real.Matrix.posOrthCone M :=
+optimality by
+  intros x' hx hx0 i j
+  exact (hx0 i j).trans (hx i j)
 
--- declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
---   rotatedSoCone v w x :=
--- optimality by
---   intros v' w' hv hw h
---   unfold rotatedSoCone at *
---   apply And.intro
---   · apply h.1.trans
---     apply mul_le_mul_of_nonneg_right
---     apply mul_le_mul_of_le_of_le hv hw h.2.1 (h.2.2.trans hw)
---     simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
---     apply Nat.cast_le.2
---     norm_num
---   · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
+declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
+  rotatedSoCone v w x :=
+optimality by
+  intros v' w' hv hw h
+  unfold rotatedSoCone at *
+  apply And.intro
+  · apply h.1.trans
+    apply mul_le_mul_of_nonneg_right
+    apply mul_le_mul_of_le_of_le hv hw h.2.1 (h.2.2.trans hw)
+    simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
+    apply Nat.cast_le.2
+    norm_num
+  · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
 
--- declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
---   Vec.rotatedSoCone v w x :=
--- optimality by
---   unfold Vec.rotatedSoCone
---   intros v' w' hv hw h i
---   apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
+declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
+  Vec.rotatedSoCone v w x :=
+optimality by
+  unfold Vec.rotatedSoCone
+  intros v' w' hv hw h i
+  apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
   
--- declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : 
---   Matrix.PSDCone A :=
--- optimality fun h => h
+declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : 
+  Matrix.PSDCone A :=
+optimality fun h => h
 
--- end Cones
+end Cones
 
--- -- NOTE: Workaround for nonterminating simp.
--- attribute [-simp] Quot.liftOn_mk Quot.liftOn₂_mk Quot.lift₂_mk
+-- NOTE: Workaround for nonterminating simp.
+attribute [-simp] Quot.liftOn_mk Quot.liftOn₂_mk Quot.lift₂_mk
 
--- -- Affine operations.
--- section RealAffine
+-- Affine operations.
+section RealAffine
 
--- open Real
+open Real
 
--- declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
--- bconditions
--- homogenity by
---   simp [mul_add]
--- additivity by
---   simp only [add_zero, add_assoc, add_comm]
---   rw [add_comm x' y', ←add_assoc y y' x', add_comm _ x']
--- optimality fun _ _ => add_le_add
+declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
+bconditions
+homogenity by
+  simp [mul_add]
+additivity by
+  simp only [add_zero, add_assoc, add_comm]
+  rw [add_comm x' y', ←add_assoc y y' x', add_comm _ x']
+optimality fun _ _ => add_le_add
 
--- declare_atom neg [affine] (x : ℝ)- : - x :=
--- bconditions
--- homogenity by
---   simp [neg_zero, add_zero]
--- additivity by
---   rw [neg_add]
---   simp
--- optimality by
---   intros x' hx
---   apply neg_le_neg hx
+declare_atom neg [affine] (x : ℝ)- : - x :=
+bconditions
+homogenity by
+  simp [neg_zero, add_zero]
+additivity by
+  rw [neg_add]
+  simp
+optimality by
+  intros x' hx
+  apply neg_le_neg hx
 
--- declare_atom maximizeNeg [affine] (x : ℝ)- : maximizeNeg x :=
--- bconditions
--- homogenity by
---   simp [maximizeNeg, neg_zero, add_zero]
--- additivity by
---   unfold maximizeNeg
---   rw [neg_add]
---   simp
--- optimality by
---   intros x' hx
---   apply neg_le_neg hx
+declare_atom maximizeNeg [affine] (x : ℝ)- : maximizeNeg x :=
+bconditions
+homogenity by
+  simp [maximizeNeg, neg_zero, add_zero]
+additivity by
+  unfold maximizeNeg
+  rw [neg_add]
+  simp
+optimality by
+  intros x' hx
+  apply neg_le_neg hx
 
--- declare_atom sub [affine] (x : ℝ)+ (y : ℝ)- : x - y :=
--- bconditions
--- homogenity by
---   change _ * _ + _ = _ * _ - _ * _ + _ * _
---   ring
--- additivity by
---   ring
--- optimality by
---   intros x' y' hx hy
---   apply sub_le_sub hx hy
+declare_atom sub [affine] (x : ℝ)+ (y : ℝ)- : x - y :=
+bconditions
+homogenity by
+  change _ * _ + _ = _ * _ - _ * _ + _ * _
+  ring
+additivity by
+  ring
+optimality by
+  intros x' y' hx hy
+  apply sub_le_sub hx hy
 
--- declare_atom mul1 [affine] (x : ℝ)& (y : ℝ)+ : x * y :=
--- bconditions (hx : 0 ≤ x)
--- homogenity by
---   change _ * _ + _ = _ * (_ * _) + _ * _
---   ring
--- additivity by
---   ring
--- optimality by
---   intros y' hy
---   apply mul_le_mul_of_nonneg_left hy hx
+declare_atom mul1 [affine] (x : ℝ)& (y : ℝ)+ : x * y :=
+bconditions (hx : 0 ≤ x)
+homogenity by
+  change _ * _ + _ = _ * (_ * _) + _ * _
+  ring
+additivity by
+  ring
+optimality by
+  intros y' hy
+  apply mul_le_mul_of_nonneg_left hy hx
 
--- declare_atom mul2 [affine] (x : ℝ)+ (y : ℝ)& : x * y :=
--- bconditions (hy : 0 ≤ y)
--- homogenity by
---   change _ * _ + _ = (_ * _) * _ + _ * _
---   ring
--- additivity by
---   ring
--- optimality by
---   intros y' hx
---   apply mul_le_mul_of_nonneg_right hx hy
+declare_atom mul2 [affine] (x : ℝ)+ (y : ℝ)& : x * y :=
+bconditions (hy : 0 ≤ y)
+homogenity by
+  change _ * _ + _ = (_ * _) * _ + _ * _
+  ring
+additivity by
+  ring
+optimality by
+  intros y' hx
+  apply mul_le_mul_of_nonneg_right hx hy
 
--- end RealAffine
+end RealAffine
 
--- -- Affine operations on vectors.
--- section VecAffine
+-- Affine operations on vectors.
+section VecAffine
 
--- declare_atom Vec.nth [affine] (m : Nat)&  (x : Fin m → ℝ)? (i : Fin m)& : x i :=
--- bconditions
--- homogenity by
---   rw [Pi.zero_apply]
---   change _ * _ + _ = _ * _ + _ * _
---   ring
--- additivity by
---   rw [Pi.zero_apply]
---   change _ + _ = _ + _ + _
---   ring
--- optimality le_refl _
+declare_atom Vec.nth [affine] (m : Nat)&  (x : Fin m → ℝ)? (i : Fin m)& : x i :=
+bconditions
+homogenity by
+  rw [Pi.zero_apply]
+  change _ * _ + _ = _ * _ + _ * _
+  ring
+additivity by
+  rw [Pi.zero_apply]
+  change _ + _ = _ + _ + _
+  ring
+optimality le_refl _
 
--- declare_atom Vec.add [affine] (m : Nat)&  (x : Fin m → ℝ)+ (y : Fin m → ℝ)+ : x + y :=
--- bconditions
--- homogenity by
---   simp [smul_add]
--- additivity by
---   ring
--- optimality by
---   intros x' y' hx hy i
---   apply add_le_add (hx i) (hy i)
+declare_atom Vec.add [affine] (m : Nat)&  (x : Fin m → ℝ)+ (y : Fin m → ℝ)+ : x + y :=
+bconditions
+homogenity by
+  simp [smul_add]
+additivity by
+  ring
+optimality by
+  intros x' y' hx hy i
+  apply add_le_add (hx i) (hy i)
 
--- declare_atom Vec.sub [affine] (m : Nat)& (x : Fin m → ℝ)+ (y : Fin m → ℝ)- : x - y :=
--- bconditions
--- homogenity by
---   simp [smul_sub]
--- additivity by
---   ring
--- optimality by
---   intros x' y' hx hy i
---   exact sub_le_sub (hx i) (hy i)
+declare_atom Vec.sub [affine] (m : Nat)& (x : Fin m → ℝ)+ (y : Fin m → ℝ)- : x - y :=
+bconditions
+homogenity by
+  simp [smul_sub]
+additivity by
+  ring
+optimality by
+  intros x' y' hx hy i
+  exact sub_le_sub (hx i) (hy i)
 
--- declare_atom Vec.sum [affine] (m : Nat)& (x : Fin m → ℝ)+ : Vec.sum x :=
--- bconditions
--- homogenity by
---   unfold Vec.sum
---   simp only [Pi.zero_apply]
---   rw [Finset.smul_sum, Finset.sum_const_zero, add_zero, smul_zero, add_zero]
---   rfl
--- additivity by
---   unfold Vec.sum
---   simp only [Pi.zero_apply, Pi.add_apply]
---   rw [Finset.sum_const_zero, add_zero, Finset.sum_add_distrib]
--- optimality by
---   intro x' hx
---   apply Finset.sum_le_sum
---   intros _ _
---   apply hx
+declare_atom Vec.sum [affine] (m : Nat)& (x : Fin m → ℝ)+ : Vec.sum x :=
+bconditions
+homogenity by
+  unfold Vec.sum
+  simp only [Pi.zero_apply]
+  rw [Finset.smul_sum, Finset.sum_const_zero, add_zero, smul_zero, add_zero]
+  rfl
+additivity by
+  unfold Vec.sum
+  simp only [Pi.zero_apply, Pi.add_apply]
+  rw [Finset.sum_const_zero, add_zero, Finset.sum_add_distrib]
+optimality by
+  intro x' hx
+  apply Finset.sum_le_sum
+  intros _ _
+  apply hx
 
--- declare_atom div [affine] (x : ℝ)+ (y : ℝ)& : x / y :=
--- bconditions (hy : (0 : ℝ) ≤ y)
--- homogenity by
---   simp [mul_div]
--- additivity by
---   simp [add_div]
--- optimality by
---   intros x' hx
---   by_cases h : 0 = y
---   · rw [← h, div_zero, div_zero]
---   · rw [div_le_div_right]
---     apply hx
---     apply lt_of_le_of_ne hy h
+declare_atom div [affine] (x : ℝ)+ (y : ℝ)& : x / y :=
+bconditions (hy : (0 : ℝ) ≤ y)
+homogenity by
+  simp [mul_div]
+additivity by
+  simp [add_div]
+optimality by
+  intros x' hx
+  by_cases h : 0 = y
+  · rw [← h, div_zero, div_zero]
+  · rw [div_le_div_right]
+    apply hx
+    apply lt_of_le_of_ne hy h
 
--- theorem Matrix.dotProduct_zero {m} [Fintype m] (x : m → ℝ) 
---   : Matrix.dotProduct x 0 = 0 := by
---   simp [Matrix.dotProduct]
+theorem Matrix.dotProduct_zero {m} [Fintype m] (x : m → ℝ) 
+  : Matrix.dotProduct x 0 = 0 := by
+  simp [Matrix.dotProduct]
 
--- theorem Matrix.zero_dotProduct {m} [Fintype m] (x : m → ℝ) 
---   : Matrix.dotProduct 0 x = 0 := by
---   simp [Matrix.dotProduct]
+theorem Matrix.zero_dotProduct {m} [Fintype m] (x : m → ℝ) 
+  : Matrix.dotProduct 0 x = 0 := by
+  simp [Matrix.dotProduct]
 
--- theorem Matrix.dotProduct_smul {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
---   : Matrix.dotProduct x (a • y) = a • Matrix.dotProduct x y := by
---   unfold Matrix.dotProduct ; rw [Finset.smul_sum]
---   apply congr_arg ; ext i ; simp ; ring
+theorem Matrix.dotProduct_smul {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
+  : Matrix.dotProduct x (a • y) = a • Matrix.dotProduct x y := by
+  unfold Matrix.dotProduct ; rw [Finset.smul_sum]
+  apply congr_arg ; ext i ; simp ; ring
 
--- theorem Matrix.smul_dotProduct {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
---   : Matrix.dotProduct (a • x) y = a • Matrix.dotProduct x y := by
---   unfold Matrix.dotProduct ; rw [Finset.smul_sum]
---   apply congr_arg ; ext i ; simp ; ring
+theorem Matrix.smul_dotProduct {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
+  : Matrix.dotProduct (a • x) y = a • Matrix.dotProduct x y := by
+  unfold Matrix.dotProduct ; rw [Finset.smul_sum]
+  apply congr_arg ; ext i ; simp ; ring
 
--- theorem Matrix.dotProduct_add {m} [Fintype m] (x : m → ℝ) (y y' : m → ℝ) 
---   : Matrix.dotProduct x (y + y') = Matrix.dotProduct x y + Matrix.dotProduct x y' := by
---   unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
---   apply congr_arg ; ext i ; simp ; ring
+theorem Matrix.dotProduct_add {m} [Fintype m] (x : m → ℝ) (y y' : m → ℝ) 
+  : Matrix.dotProduct x (y + y') = Matrix.dotProduct x y + Matrix.dotProduct x y' := by
+  unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
+  apply congr_arg ; ext i ; simp ; ring
 
--- theorem Matrix.add_dotProduct {m} [Fintype m] (x x' : m → ℝ) (y : m → ℝ) 
---   : Matrix.dotProduct (x + x') y = Matrix.dotProduct x y + Matrix.dotProduct x' y := by
---   unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
---   apply congr_arg ; ext i ; simp ; ring
+theorem Matrix.add_dotProduct {m} [Fintype m] (x x' : m → ℝ) (y : m → ℝ) 
+  : Matrix.dotProduct (x + x') y = Matrix.dotProduct x y + Matrix.dotProduct x' y := by
+  unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
+  apply congr_arg ; ext i ; simp ; ring
 
--- declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
--- bconditions
--- homogenity by
---   rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero, 
---       Matrix.dotProduct_smul]
--- additivity by
---   rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
--- optimality le_refl _
+declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
+bconditions
+homogenity by
+  rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero, 
+      Matrix.dotProduct_smul]
+additivity by
+  rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
+optimality le_refl _
 
--- declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y := 
--- bconditions
--- homogenity by
---   rw [Matrix.zero_dotProduct, smul_zero, add_zero, add_zero,
---       Matrix.smul_dotProduct]
--- additivity by
---   rw [Matrix.zero_dotProduct, add_zero, Matrix.add_dotProduct]
--- optimality le_refl _
+declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y := 
+bconditions
+homogenity by
+  rw [Matrix.zero_dotProduct, smul_zero, add_zero, add_zero,
+      Matrix.smul_dotProduct]
+additivity by
+  rw [Matrix.zero_dotProduct, add_zero, Matrix.add_dotProduct]
+optimality le_refl _
 
--- declare_atom smul [affine] (n : ℕ)& (y : ℝ)+ : n • y :=
--- bconditions
--- homogenity by
---   rw [smul_zero, add_zero, smul_zero, add_zero, smul_comm]
--- additivity by
---   rw [smul_zero, add_zero, smul_add]
--- optimality by
---   intros y' hy
---   apply smul_le_smul_of_nonneg hy (Nat.zero_le _)
+declare_atom smul [affine] (n : ℕ)& (y : ℝ)+ : n • y :=
+bconditions
+homogenity by
+  rw [smul_zero, add_zero, smul_zero, add_zero, smul_comm]
+additivity by
+  rw [smul_zero, add_zero, smul_add]
+optimality by
+  intros y' hy
+  apply smul_le_smul_of_nonneg hy (Nat.zero_le _)
 
--- end VecAffine
+end VecAffine
 
 -- Affine operations on matrices.
 section MatrixAffine 
@@ -305,18 +305,18 @@ theorem Matrix.add_vecCons {n} (x : ℝ) (v : Fin n → ℝ) (y : ℝ) (w : Fin 
   : Matrix.vecCons x v + Matrix.vecCons y w = Matrix.vecCons (x + y) (v + w) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
 
--- declare_atom Matrix.vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ : 
---   Matrix.vecCons x y :=
--- bconditions
--- homogenity by
---   simp only [Matrix.vecCons_zero_zero, smul_zero, add_zero, Matrix.smul_vecCons]
--- additivity by
---   simp only [Matrix.add_vecCons, add_zero]
--- optimality by
---   intros x' y' hx hy i
---   refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
---   . exact hx
---   . exact hy
+declare_atom Matrix.vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ : 
+  Matrix.vecCons x y :=
+bconditions
+homogenity by
+  simp only [Matrix.vecCons_zero_zero, smul_zero, add_zero, Matrix.smul_vecCons]
+additivity by
+  simp only [Matrix.add_vecCons, add_zero]
+optimality by
+  intros x' y' hx hy i
+  refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
+  . exact hx
+  . exact hy
 
 theorem Matrix.zero_apply {n} (i : Fin n) (j : Fin n) 
   : (0 : Matrix (Fin n) (Fin n) ℝ) i j = 0 := by
@@ -336,221 +336,194 @@ theorem Matrix.sum_add {n} (X Y : Matrix (Fin n) (Fin n) ℝ)
   unfold Matrix.sum ; rw [←Finset.sum_add_distrib]
   congr ; ext i ; rw [←Finset.sum_add_distrib] ; rfl
 
--- declare_atom Matrix.sum [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)+ : Matrix.sum X :=
--- bconditions
--- homogenity by
---   simp only [Matrix.sum_zero]
---   rw [smul_zero, add_zero, add_zero, Matrix.smul_sum]
--- additivity by
---   simp only [Matrix.sum_zero]
---   rw [add_zero, Matrix.sum_add]
--- optimality by
---   intros X' hX
---   apply Finset.sum_le_sum (fun i _ => Finset.sum_le_sum (fun j _ => ?_))
---   apply hX
-
--- declare_atom Matrix.nth [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& : X i :=
--- bconditions
--- homogenity by
---   rw [Pi.zero_apply, add_zero, smul_zero, add_zero]
---   rfl
--- additivity by
---   rw [Pi.zero_apply, add_zero]
---   rfl
--- optimality le_refl _
-
--- declare_atom Matrix.nth2 [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& (j : Fin m)& : X i j :=
--- bconditions
--- homogenity by
---   rw [Pi.zero_apply, Pi.zero_apply, smul_zero]
---   rfl
--- additivity by
---   rw [Pi.zero_apply, Pi.zero_apply, add_zero]
---   rfl
--- optimality le_refl _
-
--- TODO: make argument increasing, without breaking det-log-atom
--- declare_atom Matrix.diag [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : A.diag :=
--- bconditions
--- homogenity by
---   rw [Matrix.diag_zero, add_zero, smul_zero, add_zero]
---   rfl
--- additivity by
---   rw [Matrix.diag_zero, add_zero]
---   rfl
--- optimality le_refl _
-
-declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Finₓ n → ℝ)+ : Matrix.diagonal d :=
+declare_atom Matrix.sum [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)+ : Matrix.sum X :=
 bconditions
 homogenity by
-  ext i j
-  change
-    κ * (Matrix.diagonalₓ d) i j + (Matrix.diagonal fun i => Zero.zero) i j =
-    Matrix.diagonalₓ (HasSmul.smul κ d) i j + HasSmul.smul κ (Matrix.diagonal Zero.zero) i j
-  by_cases h : i = j
-  · simp [Matrix.diagonal, h]
-    change κ * d j = HasSmul.smul κ d j + κ * Zero.zero
-    rw [_root_.mul_zero, add_zeroₓ]
-    rfl
-  · simp [Matrix.diagonal, h]
-    change Zero.zero = κ * Zero.zero
-    rw [_root_.mul_zero]
+  simp only [Matrix.sum_zero]
+  rw [smul_zero, add_zero, add_zero, Matrix.smul_sum]
 additivity by
-  change Matrix.diagonalₓ _ + Matrix.diagonalₓ _
-    = _ + Matrix.diagonalₓ fun i => Zero.zero
-  rw [Matrix.diagonal_add, Matrix.diagonal_zero, add_zeroₓ]
+  simp only [Matrix.sum_zero]
+  rw [add_zero, Matrix.sum_add]
+optimality by
+  intros X' hX
+  apply Finset.sum_le_sum (fun i _ => Finset.sum_le_sum (fun j _ => ?_))
+  apply hX
+
+declare_atom Matrix.nth [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& : X i :=
+bconditions
+homogenity by
+  rw [Pi.zero_apply, add_zero, smul_zero, add_zero]
   rfl
+additivity by
+  rw [Pi.zero_apply, add_zero]
+  rfl
+optimality le_refl _
+
+declare_atom Matrix.nth2 [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& (j : Fin m)& : X i j :=
+bconditions
+homogenity by
+  rw [Pi.zero_apply, Pi.zero_apply, smul_zero]
+  rfl
+additivity by
+  rw [Pi.zero_apply, Pi.zero_apply, add_zero]
+  rfl
+optimality le_refl _
+
+theorem Matrix.diag_smul' {m} [Fintype m] (x : ℝ) (A : Matrix m m ℝ) 
+  : Matrix.diag (x • A) = x • Matrix.diag A := by
+  rfl
+
+-- TODO: make argument increasing, without breaking det-log-atom
+declare_atom Matrix.diag [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : A.diag :=
+bconditions
+homogenity by
+  rw [Matrix.diag_zero, add_zero, smul_zero, add_zero]
+  rfl
+additivity by
+  rw [Matrix.diag_zero, add_zero]
+  rfl
+optimality le_refl _
+
+theorem Matrix.diagonal_zero' {n} 
+  : Matrix.diagonal (0 : Fin n → ℝ) = 0 := by
+  funext i j ; by_cases i = j <;> 
+  simp [Matrix.diagonal, h] <;> rw [Pi.zero_apply, Pi.zero_apply] ; rfl
+
+theorem Matrix.diagonal_smul' {n} (d : Fin n → ℝ) (κ : ℝ)
+  : κ • Matrix.diagonal d = Matrix.diagonal (κ • d) := by
+  funext i j ; by_cases i = j <;>
+  simp [Matrix.diagonal, idRhs, h] <;> rw [Pi.smul_apply, Pi.smul_apply] <;>
+  simp [h] ; exact MulZeroClass.mul_zero _
+
+theorem Matrix.diagonal_add' {n} (d₁ d₂ : Fin n → ℝ)
+  : Matrix.diagonal d₁ + Matrix.diagonal d₂ = Matrix.diagonal (d₁ + d₂) := by
+  funext i j ; by_cases i = j <;>
+  simp [Matrix.diagonal, idRhs, h] <;> rw [Pi.add_apply, Pi.add_apply] <;>
+  simp [h] ; exact AddZeroClass.zero_add _
+
+declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Fin n → ℝ)+ : Matrix.diagonal d :=
+bconditions
+homogenity by
+  rw [Matrix.diagonal_zero', add_zero, smul_zero, add_zero, 
+      Matrix.diagonal_smul']
+additivity by
+  rw [Matrix.diagonal_add', Matrix.diagonal_zero', add_zero]
 optimality by
   intros d' hd i j
-  by_cases h : i = j
-  · simp [Matrix.diagonal, h, hd j]
-  · simp [Matrix.diagonal, h, hd j]
+  by_cases h : i = j <;> simp [Matrix.diagonal, h, hd j]
 
--- declare_atom Matrix.diagonalₓ [affine] (n : ℕ)& (d : Finₓ n → ℝ)+ : Matrix.diagonalₓ d :=
--- bconditions
--- homogenity by
---   ext i j
---   change
---     κ * (Matrix.diagonalₓ d) i j + (Matrix.diagonal fun i => Zero.zero) i j =
---     Matrix.diagonalₓ (HasSmul.smul κ d) i j + HasSmul.smul κ (Matrix.diagonal Zero.zero) i j
---   by_cases h : i = j
---   · simp [Matrix.diagonal, h]
---     change κ * d j = HasSmul.smul κ d j + κ * Zero.zero
---     rw [_root_.mul_zero, add_zeroₓ]
---     rfl
---   · simp [Matrix.diagonal, h]
---     change Zero.zero = κ * Zero.zero
---     rw [_root_.mul_zero]
--- additivity by
---   change _ = _ + Matrix.diagonalₓ fun i => Zero.zero
---   rw [Matrix.diagonal_add, Matrix.diagonal_zero, add_zeroₓ]
---   rfl
--- optimality by
---   intros d' hd i j
---   by_cases h : i = j
---   · simp [Matrix.diagonal, h, hd j]
---   · simp [Matrix.diagonal, h, hd j]
+theorem Matrix.trace_zero {m} [Fintype m]
+  : Matrix.trace (0 : Matrix m m ℝ) = 0 := by
+  unfold Matrix.trace ; rw [Matrix.diag_zero]
+  exact Finset.sum_const_zero
 
--- -- NOTE: Helper lemma needed due to mathport
--- lemma zero_eq_zero [Zero α] : (0 : α) = Zero.zero := rfl
+theorem Matrix.trace_smul' {m} [Fintype m] (A : Matrix m m ℝ) (κ : ℝ)
+  : Matrix.trace (κ • A) = κ • Matrix.trace A := by
+  unfold Matrix.trace ; rw [Matrix.diag_smul', Finset.smul_sum] ; rfl
 
--- declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
--- bconditions
--- homogenity by
---   change HasSmul.smul κ (Matrix.trace A) + Matrix.trace Zero.zero
---     = Matrix.trace (HasSmul.smul κ A) + HasSmul.smul κ (Matrix.trace Zero.zero)
---   rw [← Matrix.trace_smul, ← Matrix.trace_smul, smul_zero]
---   rfl
--- additivity by
---   rw [zero_eq_zero, Matrix.trace_add, Matrix.trace_zero, add_zeroₓ]
--- optimality by
---   intros A' hA
---   apply Finset.sum_le_sum
---   intros i _
---   exact hA i i
+theorem Matrix.trace_add' {m} [Fintype m] (A B : Matrix m m ℝ)
+  : Matrix.trace (A + B) = Matrix.trace A + Matrix.trace B := by
+  unfold Matrix.trace ; rw [Matrix.diag_add, ←Finset.sum_add_distrib] ; rfl
 
--- declare_atom Matrix.toUpperTri [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+ : 
---   A.toUpperTri :=
--- bconditions
--- homogenity by
---   ext i j
---   change κ * (Matrix.toUpperTri A) i j + (Matrix.toUpperTri 0) i j =
---     (Matrix.toUpperTri (HasSmul.smul κ A)) i j + κ * (Matrix.toUpperTri Zero.zero) i j
---   by_cases h : i ≤ j
---   · unfold Matrix.toUpperTri
---     simp [h]
---     change κ * A i j + 0 = HasSmul.smul κ A i j + κ * Zero.zero
---     rw [_root_.mul_zero]
---     rfl
---   · unfold Matrix.toUpperTri
---     simp [h]
--- additivity by
---   ext i j
---   change (Matrix.toUpperTri A) i j+ (Matrix.toUpperTri A') i j =
---     (Matrix.toUpperTri _) i j + (Matrix.toUpperTri Zero.zero) i j
---   by_cases h : i ≤ j
---   · unfold Matrix.toUpperTri
---     simp [h]
---     change A i j + A' i j = HAdd.hAdd A A' i j + Zero.zero
---     rw [add_zeroₓ]
---     rfl
---   · unfold Matrix.toUpperTri
---     simp [h]
--- optimality by
---   intros A' hA
---   ext i j
---   by_cases h : i ≤ j
---   · unfold Matrix.toUpperTri
---     simp [h, hA i j]
---   · unfold Matrix.toUpperTri
---     simp [h]
+declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
+bconditions
+homogenity by 
+  rw [Matrix.trace_zero, add_zero, smul_zero, add_zero, Matrix.trace_smul']
+additivity by
+  rw [Matrix.trace_add', Matrix.trace_zero, add_zero]
+optimality by
+  intros A' hA
+  apply Finset.sum_le_sum
+  intros i _
+  exact hA i i
 
--- declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+ : 
---   A.transpose :=
--- bconditions
--- homogenity by
---   change _ = _ + HasSmul.smul _ (Matrix.transposeₓ Zero.zero)
---   simp [zero_eq_zero, Matrix.transpose_zero]
---   rw [smul_zero]
---   rfl
--- additivity by
---   change Matrix.transposeₓ _ + Matrix.transposeₓ _
---     = Matrix.transposeₓ _ + Matrix.transposeₓ _
---   simp
---   rfl
--- optimality by
---   intros _ hA
---   ext i j
---   exact hA j i
+attribute [instance] LinearOrder.decidable_le
 
--- declare_atom Matrix.transposeₓ [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+ : 
---   A.transposeₓ :=
--- bconditions
--- homogenity by
---   simp [zero_eq_zero, Matrix.transpose_zero]
---   rw [smul_zero, add_zeroₓ]
---   rfl
--- additivity by
---   simp
---   rfl
--- optimality by
---   intros _ hA
---   ext i j
---   exact hA j i
+def Matrix.toUpperTri 
+  {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] (A : Matrix m m α) 
+  : Matrix m m α := 
+  fun i j => if i ≤ j then A i j else 0
 
--- @[simp] lemma Matrix.from_blocks_zero [Zero α]: 
---   Matrix.fromBlocks (0 : Matrix n l α) (0 : Matrix n m α) (0 : Matrix o l α) (0 : Matrix o m α) = 0 := by
---   ext i j
---   cases i
---   · cases j
---     rfl
---     rfl
---   · cases j
---     rfl
---     rfl
+theorem Matrix.toUpperTri_zero 
+  {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] 
+  : Matrix.toUpperTri (0 : Matrix m m α) = 0 := by
+  funext i j ; simp [Matrix.toUpperTri] ; intros _ ; rfl
 
--- declare_atom Matrix.fromBlocks [affine] (n : ℕ)& 
---   (A : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+ (B : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+
---   (C : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+ (D : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)+ :
---   Matrix.fromBlocks A B C D :=
--- bconditions
--- homogenity by
---   change _ = _ + HasSmul.smul κ _
---   rw [Matrix.from_blocks_smul,  Matrix.from_blocks_zero, zero_eq_zero, smul_zero]
---   rfl
--- additivity by
---   simp [Matrix.from_blocks_add, zero_eq_zero]
--- optimality by
---   intros A' B' C' D' hA hB hC hD i j
---   cases i with
---   | inl i =>
---     cases j with
---     | inl j => exact hA i j
---     | inr j => exact hB i j
---   | inr i => 
---     cases j with
---     | inl j => exact hC i j
---     | inr j => exact hD i j
+theorem Matrix.toUpperTri_smul 
+  {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
+  (A : Matrix m m ℝ) (κ : ℝ)
+  : κ • Matrix.toUpperTri A = Matrix.toUpperTri (κ • A) := by
+  funext i j ; rw [Pi.smul_apply, Pi.smul_apply] ; simp only [Matrix.toUpperTri]
+  by_cases h : i ≤ j <;> simp [h] ; rw [Pi.smul_apply, Pi.smul_apply] ; rfl
+
+theorem Matrix.toUpperTri_add 
+  {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
+  (A B : Matrix m m ℝ)
+  : Matrix.toUpperTri (A + B) = Matrix.toUpperTri A + Matrix.toUpperTri B := by
+  funext i j ; rw [Pi.add_apply, Pi.add_apply] ; simp only [Matrix.toUpperTri]
+  by_cases h : i ≤ j <;> simp [h] ; rw [Pi.add_apply, Pi.add_apply]
+
+declare_atom Matrix.toUpperTri [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
+  Matrix.toUpperTri A :=
+bconditions
+homogenity by
+  rw [Matrix.toUpperTri_zero, add_zero, smul_zero, add_zero, 
+      Matrix.toUpperTri_smul]
+additivity by
+  rw [Matrix.toUpperTri_zero, add_zero, Matrix.toUpperTri_add]
+optimality by
+  intros A' hA i j
+  by_cases h : i ≤ j <;> simp [Matrix.toUpperTri, h] ; exact hA i j
+
+theorem Matrix.transpose_zero' {m} [Fintype m] 
+  : Matrix.transpose (0 : Matrix m m ℝ) = 0 := by
+  funext i j ; simp [Matrix.transpose, idRhs] ; rfl
+
+theorem Matrix.transpose_add' {m} [Fintype m] (A B : Matrix m m ℝ)
+  : Matrix.transpose (A + B) = Matrix.transpose A + Matrix.transpose B := by
+  funext i j ; simp [Matrix.transpose, idRhs] ; rfl
+
+declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
+  A.transpose :=
+bconditions
+homogenity by
+  rw [Matrix.transpose_zero', smul_zero]
+  rfl
+additivity by
+  rw [Matrix.transpose_zero', add_zero, Matrix.transpose_add']
+optimality by
+  intros _ hA i j
+  exact hA j i
+
+theorem Matrix.fromBlocks_zero {n m l o α} [Zero α] 
+  : Matrix.fromBlocks (0 : Matrix n l α) (0 : Matrix n m α) (0 : Matrix o l α) (0 : Matrix o m α) = 0 := by
+  funext i j ; cases i <;> cases j <;> simp [Matrix.fromBlocks] <;> rfl
+
+theorem Matrix.fromBlocks_smul {n m l o} (κ : ℝ)
+  (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) 
+  : κ • Matrix.fromBlocks A B C D = Matrix.fromBlocks (κ • A) (κ • B) (κ • C) (κ • D) := by
+  funext i j ; cases i <;> cases j <;> rw [Pi.smul_apply, Pi.smul_apply] <;> 
+  simp [Matrix.fromBlocks] <;> rfl
+
+declare_atom Matrix.fromBlocks [affine] (n : ℕ)& 
+  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ 
+  (B : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+
+  (C : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ 
+  (D : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ :
+  Matrix.fromBlocks A B C D :=
+bconditions
+homogenity by
+  rw [Matrix.fromBlocks_zero, smul_zero, add_zero, add_zero, 
+      Matrix.fromBlocks_smul]
+additivity by
+  simp [Matrix.from_blocks_add]
+optimality by
+  intros A' B' C' D' hA hB hC hD i j
+  cases i <;> cases j <;> simp [Matrix.fromBlocks] 
+  . exact hA _ _
+  . exact hB _ _
+  . exact hC _ _
+  . exact hD _ _
 
 -- declare_atom Matrix.add [affine] (m : Type)& (n : Type)& (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)+ : A + B :=
 -- bconditions
