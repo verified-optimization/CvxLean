@@ -1,5 +1,4 @@
 import Mathbin.LinearAlgebra.Matrix.Default
-import Mathbin.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Data.Array.Defs
 
 import CvxLean.Lib.Missing.List
@@ -95,10 +94,8 @@ def diagonal {n : Type u_3} {α : Type v} [DecidableEq n] [Zero α] (x : n → �
 fun i j => (if i = j then x i else 0)
 
 def fromBlocks {l : Type}
-  {m : Type}
-    {n : Type}
-      {o : Type}
-        {α : Type} : Matrix n l α → Matrix n m α → Matrix o l α → Matrix o m α → Matrix (Sum n o) (Sum l m) α :=
+  {m : Type} {n : Type} {o : Type} {α : Type} 
+  : Matrix n l α → Matrix n m α → Matrix o l α → Matrix o m α → Matrix (Sum n o) (Sum l m) α :=
 fun A B C D i j => by
   cases i with
   | inl i => 
@@ -134,8 +131,8 @@ end Computable
 
 -- instance [Fintype m] [LE α] : LE (Matrix m m α) := Pi.hasLe
 
--- noncomputable def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
---   ∑ i, (∑ j, X i j)
+def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
+  Finset.sum Finset.univ fun i => (Finset.sum Finset.univ fun j => X i j)
 
 -- def abs [Abs α] (X : Matrix m n α) : Matrix m n α := 
 --   fun i j => Abs.abs (X i j)
