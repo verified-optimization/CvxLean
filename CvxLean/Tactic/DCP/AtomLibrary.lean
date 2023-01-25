@@ -8,8 +8,7 @@ import CvxLean.Syntax.Minimization
 attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
   Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
   Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
-  Real.instMonoidWithZeroReal_1 Real.monoidWithZero Real.module 
-  Real.addCommMonoid
+  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow
 
 instance : CovariantClass ℝ ℝ (· + ·) (· ≤ ·) := 
   ⟨fun a b c h => OrderedAddCommGroup.add_le_add_left b c h a⟩
@@ -23,6 +22,11 @@ instance : AddZeroClass ℝ := by infer_instance
 instance {n} : DistribSMul ℝ (Fin n → ℝ) := by infer_instance
 
 instance {n} : DistribMulAction ℝ (Fin n → ℝ) := by infer_instance
+
+-- TODO: Mathport unalignments.
+lemma tmp_zero_eq_zero : Real.instZeroReal = Real.hasZero := sorry
+lemma tmp_le_eq_le : Real.instLEReal = Real.hasLe := sorry
+lemma tmp_monoid_eq_monoid : Real.instMonoidReal = Real.monoid := sorry
 
 namespace CvxLean
 
@@ -647,129 +651,96 @@ optimality by
   exact (hx.trans h).trans hy
 vconditionElimination
 
--- declare_atom eq [concave] (x : ℝ)? (y : ℝ)? : x = y := 
--- vconditions
--- implementationVars
--- implementationObjective Real.zeroCone (y - x)
--- implementationConstraints
--- solution
--- solutionEqualsAtom by 
---   simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
---   exact Iff.intro Eq.symm Eq.symm;
--- feasibility
--- optimality by 
---   simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
---   intros h
---   exact Eq.symm h
--- vconditionElimination
+declare_atom eq [concave] (x : ℝ)? (y : ℝ)? : x = y := 
+vconditions
+implementationVars
+implementationObjective Real.zeroCone (y - x)
+implementationConstraints
+solution
+solutionEqualsAtom by 
+  simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
+  exact Iff.intro Eq.symm Eq.symm;
+feasibility
+optimality by 
+  simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
+  exact Eq.symm
+vconditionElimination
 
--- declare_atom sq [convex] (x : ℝ)? : x ^ 2 := 
--- vconditions
--- implementationVars (t : ℝ)
--- implementationObjective (t)
--- implementationConstraints
---   (c1 : rotatedSoCone t (1/2) (![x] : Fin 1 → ℝ))
--- solution
---   (t := x ^ 2)
--- solutionEqualsAtom rfl
--- feasibility
---   (c1 : by 
---     simp [rotatedSoCone]
---     refine ⟨?_, ?_, ?_⟩
---     · have : (2 : ℝ) ≠ 0 := by
---         apply ne_of_gtₓ
---         simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
---         apply Nat.cast_lt.2
---         norm_num
---       simp [_root_.mul_assoc, div_mul_cancel _ this]
---       have : x ^ 2 = @HPow.hPow ℝ ℕ ℝ instHPow x 2 := 
---         by apply Real.rpow_nat_cast
---       rw [this]
---       exact le_reflₓ _
---     · have : x ^ 2 = @HPow.hPow ℝ ℕ ℝ instHPow x 2 := 
---         by apply Real.rpow_nat_cast
---       rw [this]
---       exact sq_nonneg x
---     · rw [zero_eq_zero]
---       rw [← zero_div 2]
---       have : (0 : ℝ) < (2 : ℝ) := by
---         simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
---         apply Nat.cast_lt.2
---         norm_num
---       have := (@div_le_div_right ℝ _ 0 1 2 this).2
---       refine this ?_
---       have : ZeroLeOneClass ℝ := @OrderedSemiring.zeroLeOneClass ℝ Real.orderedSemiring
---       exact zero_le_one)
--- optimality by
---   have := c1.1
---   have two_ne_zero : (2 : ℝ) ≠ 0 := by
---     apply ne_of_gtₓ
---     simp only [(@Nat.cast_zero ℝ _).symm, (@Nat.cast_one ℝ _).symm]
---     apply Nat.cast_lt.2
---     norm_num
---   simp [_root_.mul_assoc, div_mul_cancel _ two_ne_zero] at this
---   have pow_eq_pow : x ^ 2 = @HPow.hPow ℝ ℕ ℝ instHPow x 2 := 
---     by apply Real.rpow_nat_cast
---   rw [pow_eq_pow]
---   exact this
--- vconditionElimination 
+declare_atom sq [convex] (x : ℝ)? : x ^ 2 := 
+vconditions
+implementationVars (t : ℝ)
+implementationObjective (t)
+implementationConstraints
+  (c1 : rotatedSoCone t (1/2) (![x] : Fin 1 → ℝ))
+solution
+  (t := x ^ 2)
+solutionEqualsAtom rfl
+feasibility
+  (c1 : by 
+    simp [rotatedSoCone]
+    refine ⟨?_, ?_, ?_⟩
+    · have h2ne0 : (2 : ℝ) ≠ 0 := by apply ne_of_gt ; norm_num
+      rw [mul_assoc, inv_mul_cancel h2ne0, mul_one]
+      exact le_refl _
+    · exact sq_nonneg x
+    · exact zero_le_two)
+optimality by
+  have h := c1.1
+  have h2ne0 : (2 : ℝ) ≠ 0 := by apply ne_of_gt ; norm_num
+  rw [mul_assoc, div_mul_cancel _ h2ne0, mul_one] at h
+  simp at h 
+  exact h
+vconditionElimination 
 
--- declare_atom exp [convex] (x : ℝ)+ : Real.exp x :=
--- vconditions
--- implementationVars (t : ℝ)
--- implementationObjective t
--- implementationConstraints (c_exp : expCone x 1 t)
--- solution (t := exp x)
--- solutionEqualsAtom by
---   rfl;
--- feasibility (c_exp : by
---   simp [expCone]
---   apply Or.inl;
---   refine ⟨Real.zero_lt_one, ?_⟩
---   change x / One.one ≤ x
---   rw [div_one]
---   apply le_reflₓ _)
--- optimality by
---   intros x' hx
---   rw [←exp_iff_expCone] at c_exp
---   exact (exp_le_exp.2 hx).transₓ c_exp
--- vconditionElimination
+declare_atom exp [convex] (x : ℝ)+ : Real.exp x :=
+vconditions
+implementationVars (t : ℝ)
+implementationObjective t
+implementationConstraints (c_exp : expCone x 1 t)
+solution (t := exp x)
+solutionEqualsAtom by
+  rfl;
+feasibility 
+  (c_exp : by 
+    simp [expCone])
+optimality by
+  intros x' hx
+  rw [←exp_iff_expCone] at c_exp
+  -- TODO: exp_le_exp
+  exact (exp_strict_mono.le_iff_le.2 hx).trans c_exp
+vconditionElimination
 
--- #check Zero.toOfNat0
-
--- declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
--- vconditions (cond : 0 ≤ x)
--- implementationVars (t : ℝ)
--- implementationObjective (t)
--- implementationConstraints 
---   (c1 : rotatedSoCone x (1/2) (![t] : Fin 1 → ℝ))
--- solution (t := Real.sqrt x)
--- solutionEqualsAtom by
---   rfl;
--- feasibility 
---   (c1 : by
---     simp [rotatedSoCone]
---     simp [Zero.toOfNat0] at cond
---     have := sq_sqrt ((@zero_eq_zero Real _).symm ▸ cond)
-
---     have : sqrt x ^ 2 = @HPow.hPow ℝ ℕ ℝ instHPow (sqrt x) 2 := 
---         by apply Real.rpow_nat_cast
---     have sqf := sq.feasibility0 (sqrt x)
---     rw [this] at sqf
---     simp only [rotatedSoCone] at sqf
---     have : 2 = bit0 One.one := rfl
---     rw [this, sq_sqrt cond] at sqf
---     rw [this, sq_sqrt cond]
---     apply sqf)
--- optimality by
---   intros y hy
---   have sqopt := sq.optimality t x c1
---   apply Real.le_sqrt_of_sq_le
---   have : t ^ 2 = @HPow.hPow ℝ ℕ ℝ instHPow t (bit0 One.one) := 
---       by apply Real.rpow_nat_cast
---   rw [←this]
---   apply sqopt.transₓ hy
--- vconditionElimination (cond : fun _ hx => c1.2.1.transₓ hx)
+declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
+vconditions (cond : 0 ≤ x)
+implementationVars (t : ℝ)
+implementationObjective (t)
+implementationConstraints 
+  (c1 : rotatedSoCone x (1/2) (![t] : Fin 1 → ℝ))
+solution (t := Real.sqrt x)
+solutionEqualsAtom by
+  rfl;
+feasibility 
+  (c1 : by
+    simp [rotatedSoCone]
+    refine ⟨?_, cond, zero_le_two⟩
+    have h2ne0 : (2 : ℝ) ≠ 0 := by apply ne_of_gt ; norm_num
+    rw [mul_assoc, inv_mul_cancel h2ne0, mul_one]
+    have sq_sqrt' := @sq_sqrt x (tmp_zero_eq_zero ▸ tmp_le_eq_le ▸ cond)
+    rw [tmp_monoid_eq_monoid, sq_sqrt']
+    exact le_refl _)
+optimality by
+  intros y hy 
+  simp [rotatedSoCone] at c1
+  have h := c1.1
+  have h2ne0 : (2 : ℝ) ≠ 0 := by apply ne_of_gt ; norm_num
+  rw [mul_assoc, inv_mul_cancel h2ne0, mul_one] at h
+  have htlesx := 
+    @Real.le_sqrt_of_sq_le t x (tmp_monoid_eq_monoid ▸ tmp_le_eq_le ▸ h)
+  have hsxlesy := Real.sqrt_le_sqrt (tmp_le_eq_le ▸ hy)
+  rw [←tmp_le_eq_le] at htlesx
+  rw [←tmp_le_eq_le] at hsxlesy
+  exact @le_trans ℝ instPreorderReal t (sqrt x) (sqrt y) htlesx hsxlesy
+vconditionElimination (cond : fun _ hx => c1.2.1.trans hx)
 
 -- declare_atom log [concave] (x : ℝ)+ : log x :=
 -- vconditions (cond : 0 < x)
