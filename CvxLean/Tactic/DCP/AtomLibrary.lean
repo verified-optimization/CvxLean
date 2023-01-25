@@ -525,105 +525,127 @@ optimality by
   . exact hC _ _
   . exact hD _ _
 
--- declare_atom Matrix.add [affine] (m : Type)& (n : Type)& (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)+ : A + B :=
--- bconditions
--- homogenity by
---   rw [zero_eq_zero, add_zeroₓ, add_zeroₓ, smul_zero, add_zeroₓ, smul_add]
---   rfl
--- additivity by
---   rw [zero_eq_zero, add_zeroₓ, add_zeroₓ, add_assocₓ, add_commₓ B, add_assocₓ A', add_commₓ B']
---   simp only [add_assocₓ]
--- optimality by
---   intros A' B' hA hB i j
---   apply add_le_add (hA i j) (hB i j)
+declare_atom Matrix.add [affine] (m : Type)& (n : Type)& (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)+ : A + B :=
+bconditions
+homogenity by
+  rw [add_zero, add_zero, smul_zero, add_zero, smul_add]
+additivity by
+  rw [add_zero, add_zero, add_assoc, add_comm B, add_assoc A', add_comm B']
+  simp only [add_assoc]
+optimality by
+  intros A' B' hA hB i j
+  apply add_le_add (hA i j) (hB i j)
 
--- declare_atom Matrix.sub [affine] (m : Type)& (n : Type)& (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)- : A - B :=
--- bconditions
--- homogenity by
---   ext i j
---   rw [sub_self]
---   change
---     κ * (A - B) i j + Zero.zero =
---     κ * A i j - κ * B i j + κ * Zero.zero
---   rw [_root_.mul_zero, add_zeroₓ, add_zeroₓ, ←mul_sub]
---   rfl
--- additivity by
---   rw [sub_self, add_zeroₓ, sub_add_sub_comm]
--- optimality by
---   intros A' B' hA hB i j
---   change A i j - B i j ≤ A' i j - B' i j
---   apply @sub_le_sub Real _ _ 
---     (@OrderedAddCommGroup.to_covariant_class_left_le Real Real.orderedAddCommGroup)
---   exact hA i j
---   exact hB i j
+declare_atom Matrix.sub [affine] (m : Type)& (n : Type)& 
+  (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)- : A - B :=
+bconditions
+homogenity by
+  funext i j
+  simp [Pi.add_apply]
+  rw [Pi.smul_apply, Pi.smul_apply]
+  rw [Pi.sub_apply, Pi.sub_apply, Pi.sub_apply, Pi.sub_apply]
+  rw [Pi.smul_apply, Pi.smul_apply, Pi.smul_apply, Pi.smul_apply]
+  rw [smul_sub]
+additivity by
+  rw [sub_self, add_zero, sub_add_sub_comm]
+optimality by
+  intros A' B' hA hB i j
+  apply sub_le_sub
+  exact hA i j
+  exact hB i j
 
--- declare_atom Matrix.mul1 [affine] (m : Type)& (hm : Fintype.{0} m)&
---   (A : Matrix.{0,0,0} m m ℝ)& (B : Matrix.{0,0,0} m m ℝ)? : A ⬝ B :=
--- bconditions
--- homogenity by
---   rw [zero_eq_zero, Matrix.mul_zero, smul_zero, Matrix.mul_smul]
---   rfl
--- additivity by 
---   rw [Matrix.mul_add, zero_eq_zero, Matrix.mul_zero, add_zeroₓ]
--- optimality le_reflₓ (A ⬝ B)
+theorem Matrix.mul_zero' {m} [Fintype m] (A : Matrix m m ℝ)
+  : Matrix.mul A (0 : Matrix m m ℝ) = 0 := by
+  funext ; exact Matrix.dotProduct_zero _
 
--- declare_atom Matrix.mul2 [affine] (m : Type)& (hm : Fintype.{0} m)&
---   (A : Matrix.{0,0,0} m m ℝ)? (B : Matrix.{0,0,0} m m ℝ)& : A ⬝ B :=
--- bconditions
--- homogenity by
---   haveI := @IsScalarTower.right Real Real Real.commSemiring Real.semiring (@Algebra.id Real Real.commSemiring)
---   rw [Matrix.smul_mul]
---   rw [zero_eq_zero, Matrix.zero_mul, smul_zero]
---   rfl
--- additivity by 
---   rw [Matrix.add_mul, zero_eq_zero, Matrix.zero_mul, add_zeroₓ]
--- optimality le_reflₓ (A ⬝ B)
+theorem Matrix.zero_mul' {m} [Fintype m] (A : Matrix m m ℝ)
+  : Matrix.mul (0 : Matrix m m ℝ) A = 0 := by
+  funext ; exact Matrix.zero_dotProduct _
 
--- declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)& (M : Matrix.{0,0,0} (Finₓ m) (Finₓ n) ℝ)& (v : Finₓ n → ℝ)? :
---   Matrix.mulVecₓ M v :=
--- bconditions
--- homogenity by
---   simp [zero_eq_zero]
---   rw [smul_zero, add_zeroₓ, Matrix.mul_vec_smul]
---   rfl
--- additivity by
---   simp [zero_eq_zero, Matrix.mul_vec_add]
--- optimality le_reflₓ _
+theorem Matrix.mul_smul' {m} [Fintype m] (κ : ℝ) (A : Matrix m m ℝ) (B : Matrix m m ℝ)
+  : Matrix.mul A (κ • B) = κ • Matrix.mul A B := by
+  funext ; exact Matrix.dotProduct_smul _ _ _
 
--- declare_atom Matrix.vecMul [affine] (n : ℕ)& (m : ℕ)& (v : Finₓ m → ℝ)? (M : Matrix.{0,0,0} (Finₓ m) (Finₓ n) ℝ)& :
---   Matrix.vecMulₓ v M :=
--- bconditions
--- homogenity by
---   simp [zero_eq_zero]
---   haveI := @IsScalarTower.right Real Real Real.commSemiring Real.semiring (@Algebra.id Real Real.commSemiring)
---   rw [smul_zero, add_zeroₓ, Matrix.vec_mul_smul]
---   rfl
--- additivity by
---   simp [zero_eq_zero, Matrix.add_vec_mul]
--- optimality le_reflₓ _
+theorem Matrix.smul_mul' {m} [Fintype m] (κ : ℝ) (A : Matrix m m ℝ) (B : Matrix m m ℝ)
+  : Matrix.mul (κ • A) B = κ • Matrix.mul A B := by
+  funext ; exact Matrix.smul_dotProduct _ _ _
 
+theorem Matrix.mul_add' {m} [Fintype m] (A : Matrix m m ℝ) (B C : Matrix m m ℝ)
+  : Matrix.mul A (B + C) = Matrix.mul A B + Matrix.mul A C := by
+  funext ; exact Matrix.dotProduct_add _ _ _
 
--- end MatrixAffine 
+theorem Matrix.add_mul' {m} [Fintype m] (A B : Matrix m m ℝ) (C : Matrix m m ℝ)
+  : Matrix.mul (A + B) C = Matrix.mul A C + Matrix.mul B C := by
+  funext ; exact Matrix.add_dotProduct _ _ _
 
--- -- Non-affine atoms on real variables.
--- section Real
+-- TODO: Notation
+declare_atom Matrix.mul1 [affine] (m : Type)& (hm : Fintype.{0} m)&
+  (A : Matrix.{0,0,0} m m ℝ)& (B : Matrix.{0,0,0} m m ℝ)? : Matrix.mul A B :=
+bconditions
+homogenity by
+  rw [Matrix.mul_zero', smul_zero, add_zero, add_zero, Matrix.mul_smul']
+additivity by 
+  rw [Matrix.mul_add', Matrix.mul_zero', add_zero]
+optimality le_refl _
 
--- open Real
+-- TODO: Notation
+declare_atom Matrix.mul2 [affine] (m : Type)& (hm : Fintype.{0} m)&
+  (A : Matrix.{0,0,0} m m ℝ)? (B : Matrix.{0,0,0} m m ℝ)& : Matrix.mul A B :=
+bconditions
+homogenity by
+  rw [Matrix.smul_mul', Matrix.zero_mul', smul_zero]
+additivity by 
+  rw [Matrix.add_mul', Matrix.zero_mul', add_zero]
+optimality le_refl _
 
--- declare_atom le [concave] (x : ℝ)- (y : ℝ)+ : x ≤ y :=
--- vconditions
--- implementationVars
--- implementationObjective Real.posOrthCone (y - x)
--- implementationConstraints
--- solution
--- solutionEqualsAtom by 
---   simp [Real.posOrthCone, zero_eq_zero]
--- feasibility
--- optimality by
---   intros x' y' hx hy h
---   simp [Real.posOrthCone, zero_eq_zero] at h 
---   exact (hx.transₓ h).transₓ hy
--- vconditionElimination
+theorem Matrix.mulVec_zero' {m n} [Fintype m] [Fintype n] (A : Matrix m n ℝ)
+  : Matrix.mulVec A (0 : n → ℝ) = 0 := by
+  funext i ; unfold Matrix.mulVec ; simp only [idRhs]
+  convert @Matrix.dotProduct_zero n _ (fun j => A i j) 
+  sorry
+
+theorem Matrix.mulVec_smul' {m n} [Fintype m] [Fintype n] 
+  (κ : ℝ) (A : Matrix m n ℝ) (v : n → ℝ)
+  : Matrix.mulVec A (κ • v) = κ • Matrix.mulVec A v := by
+  funext i ; unfold Matrix.mulVec ; simp only [idRhs]
+  sorry
+
+theorem Matrix.mulVec_add' {m n} [Fintype m] [Fintype n] 
+  (A : Matrix m n ℝ) (v w : n → ℝ)
+  : Matrix.mulVec A (v + w) = Matrix.mulVec A v + Matrix.mulVec A w := by
+  funext i ; unfold Matrix.mulVec ; simp only [idRhs]
+  sorry
+
+declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)& 
+  (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)& (v : Fin n → ℝ)? : Matrix.mulVec M v :=
+bconditions
+homogenity by
+  rw [Matrix.mulVec_zero', smul_zero, add_zero, add_zero, Matrix.mulVec_smul']
+additivity by
+  simp [Matrix.mulVec_add', Matrix.mulVec_zero', add_zero]
+optimality le_refl _
+
+end MatrixAffine 
+
+-- Non-affine atoms on real variables.
+section Real
+
+open Real
+
+declare_atom le [concave] (x : ℝ)- (y : ℝ)+ : x ≤ y :=
+vconditions
+implementationVars
+implementationObjective Real.posOrthCone (y - x)
+implementationConstraints
+solution
+solutionEqualsAtom by 
+  simp [Real.posOrthCone]
+feasibility
+optimality by
+  intros x' y' hx hy h
+  simp [Real.posOrthCone] at h 
+  exact (hx.trans h).trans hy
+vconditionElimination
 
 -- declare_atom eq [concave] (x : ℝ)? (y : ℝ)? : x = y := 
 -- vconditions
