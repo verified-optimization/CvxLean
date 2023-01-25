@@ -12,11 +12,11 @@ macro "π" : term =>
 
 variable (x y : Real)
 
-noncomputable instance : Preorder Real := by infer_instance
+-- noncomputable instance : Preorder Real := by infer_instance
 
-noncomputable instance : AddMonoidWithOne Real := by infer_instance
+-- noncomputable instance : AddMonoidWithOne Real := by infer_instance
 
-noncomputable instance : MonoidWithZero Real := by infer_instance
+-- noncomputable instance : MonoidWithZero Real := by infer_instance
 
 noncomputable instance : OfScientific Real := {
   ofScientific := fun mantissa exponentSign decimalExponent => 
