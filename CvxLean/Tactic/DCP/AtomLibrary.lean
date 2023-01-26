@@ -8,7 +8,9 @@ import CvxLean.Syntax.Minimization
 attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
   Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
   Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
-  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow
+  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow 
+  Real.linearOrder Real.conditionallyCompleteLinearOrder Real.orderedSemiring
+  Real.hasSup
 
 instance : CovariantClass ℝ ℝ (· + ·) (· ≤ ·) := 
   ⟨fun a b c h => OrderedAddCommGroup.add_le_add_left b c h a⟩
@@ -26,7 +28,11 @@ instance {n} : DistribMulAction ℝ (Fin n → ℝ) := by infer_instance
 -- TODO: Mathport unalignments.
 lemma tmp_zero_eq_zero : Real.instZeroReal = Real.hasZero := sorry
 lemma tmp_le_eq_le : Real.instLEReal = Real.hasLe := sorry
+lemma tmp_lt_eq_lt : Real.instLTReal = Real.hasLt := sorry
+lemma tmp_preorder_eq_le : @Preorder.toLE ℝ Real.preorder = Real.hasLe := sorry
+lemma tmp_preorder_eq_lt : @Preorder.toLT ℝ Real.preorder = Real.hasLt := sorry
 lemma tmp_monoid_eq_monoid : Real.instMonoidReal = Real.monoid := sorry
+lemma tmp_sup_eq_sup : ∀ (i : HasSup ℝ), i = Real.hasSup := sorry
 
 namespace CvxLean
 
@@ -742,80 +748,60 @@ optimality by
   exact @le_trans ℝ instPreorderReal t (sqrt x) (sqrt y) htlesx hsxlesy
 vconditionElimination (cond : fun _ hx => c1.2.1.trans hx)
 
--- declare_atom log [concave] (x : ℝ)+ : log x :=
--- vconditions (cond : 0 < x)
--- implementationVars (t : ℝ)
--- implementationObjective t
--- implementationConstraints (c_exp : expCone t (1) x)
--- solution (t := log x)
--- solutionEqualsAtom by 
---   rfl;
--- feasibility (c_exp : by 
---   simp [expCone] 
---   left
---   apply And.intro Real.zero_lt_one
---   erw [div_one, Real.exp_log cond]
---   exact le_reflₓ _)
--- optimality by 
---   intros x' hx;
---   simp [expCone] at c_exp
---   cases c_exp with 
---   | inl h => 
---     rcases h with ⟨_, h⟩
---     cases em (0 < x) with 
---     | inl h0x => 
---       erw [le_log_iff_exp_le (lt_of_lt_of_leₓ h0x hx)]
---       erw [div_one] at h
---       exact le_transₓ h hx
---     | inr h0x => 
---       exfalso
---       cases (eq_or_lt_of_not_ltₓ h0x) with 
---       | inl heq => 
---         erw [div_one] at h
---         exact lt_irreflₓ 0 (lt_of_lt_of_leₓ (exp_pos t) (heq ▸ h))
---       | inr hlt =>
---         erw [div_one] at h
---         exact lt_irreflₓ 0 (lt_transₓ (lt_of_lt_of_leₓ (exp_pos t) h) hlt)
---   | inr h => 
---     rcases h with ⟨_, hc, _⟩; 
---     exfalso
---     exact (zero_ne_one hc.symm)
--- vconditionElimination 
---   (cond : by
---     simp [expCone] at c_exp
---     apply c_exp.by_cases
---     · intro h
---       exact fun _ h' => lt_of_lt_of_leₓ (lt_of_lt_of_leₓ (Real.exp_pos _) h.2) h'
---     · intro h
---       exact False.elim $ zero_ne_one h.2.1.symm)
+declare_atom log [concave] (x : ℝ)+ : log x :=
+vconditions (cond : 0 < x)
+implementationVars (t : ℝ)
+implementationObjective t
+implementationConstraints (c_exp : expCone t 1 x)
+solution (t := log x)
+solutionEqualsAtom by 
+  rfl;
+feasibility (c_exp : by 
+  simp [expCone]
+  rw [Real.exp_log (tmp_zero_eq_zero ▸ tmp_lt_eq_lt ▸ cond)])
+optimality by
+  intros y hy
+  simp [expCone] at c_exp 
+  have hexppos := tmp_zero_eq_zero.symm ▸ tmp_lt_eq_lt.symm ▸ exp_pos t
+  have hxpos := lt_of_lt_of_le hexppos c_exp
+  have hypos := lt_of_lt_of_le hxpos hy
+  have hypos' := tmp_preorder_eq_lt ▸ tmp_zero_eq_zero ▸ hypos
+  have hexptley := le_trans c_exp hy
+  have htlelogy := (le_log_iff_exp_le hypos').2 (tmp_preorder_eq_le ▸ hexptley)
+  exact tmp_le_eq_le.symm ▸ htlelogy
+vconditionElimination 
+  (cond : by
+    intros y hy
+    simp [expCone] at c_exp
+    have hexppos := tmp_zero_eq_zero.symm ▸ tmp_lt_eq_lt.symm ▸ exp_pos t
+    have hxpos := lt_of_lt_of_le hexppos c_exp
+    exact lt_of_lt_of_le hxpos hy)
 
--- declare_atom abs [convex] (x : ℝ)? : abs x :=
--- vconditions
--- implementationVars (t : ℝ)
--- implementationObjective t
--- implementationConstraints
---   (c_pos : posOrthCone (t - x))
---   (c_neg : posOrthCone (t + x))
--- solution (t := abs x)
--- solutionEqualsAtom rfl
--- feasibility 
---   (c_pos : by
---     unfold posOrthCone
---     rw [zero_eq_zero, sub_nonneg]
---     apply le_abs_self) 
---   (c_neg : by
---     unfold posOrthCone
---     rw [zero_eq_zero, ← neg_le_iff_add_nonneg' 
---       (_inst_3 := @OrderedAddCommGroup.to_covariant_class_left_le Real Real.orderedAddCommGroup)]
---     apply neg_abs_le_self 
---       (_inst_3 := @OrderedAddCommGroup.to_covariant_class_left_le Real Real.orderedAddCommGroup))
--- optimality by
---   apply abs_le.2
---   rw [←sub_nonneg, sub_neg_eq_add, add_commₓ, ←sub_nonneg (b := x)]
---   exact ⟨c_neg, c_pos⟩
--- vconditionElimination
+declare_atom abs [convex] (x : ℝ)? : abs x :=
+vconditions
+implementationVars (t : ℝ)
+implementationObjective t
+implementationConstraints
+  (c_pos : posOrthCone (t - x))
+  (c_neg : posOrthCone (t + x))
+solution (t := abs x)
+solutionEqualsAtom rfl
+feasibility 
+  (c_pos : by
+    unfold posOrthCone
+    rw [sub_nonneg]
+    exact le_abs_self x) 
+  (c_neg : by
+    unfold posOrthCone
+    rw [←neg_le_iff_add_nonneg']
+    exact neg_abs_le_self x)
+optimality by
+  apply abs_le.2
+  rw [←sub_nonneg, sub_neg_eq_add, add_comm, ←sub_nonneg (b := x)]
+  exact ⟨c_neg, c_pos⟩
+vconditionElimination
 
--- end Real
+end Real
 
 -- -- Non-affine atoms on vectors.
 -- section Vec
