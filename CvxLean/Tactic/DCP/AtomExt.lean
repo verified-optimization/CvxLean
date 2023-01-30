@@ -70,26 +70,25 @@ instance : ToMessageData AtomData where
   toMessageData 
   | AtomData.graph d => toMessageData d
 
-/-- -/
+/-- Get the expression corresponding to the atom. -/
 def AtomData.expr : AtomData → Expr
   | graph d => d.expr
 
-/-- -/
+/-- Unwrap `AtomData`. -/
 def AtomData.graph! : AtomData → GraphAtomData
   | graph d => d
 
-/-- -/
+/-- Environment extension to store atoms. -/
 def AtomExtension : Type := 
   PersistentEnvExtension 
     (Array Key × AtomData) (Array Key × AtomData) (DiscrTree AtomData)
 deriving Inhabited
 
-/-- -/
 initialize atomExtension : AtomExtension ← do
   let atomExtension ← registerPersistentEnvExtension {
     name            := `atomExtension
     mkInitial       := return {}
-    addImportedFn   := fun as ctx =>
+    addImportedFn   := fun as _ =>
       let addEntryFn : 
         DiscrTree AtomData → Array Key × AtomData → DiscrTree AtomData := 
         fun s d => s.insertCore d.1 d.2
@@ -105,11 +104,11 @@ def addAtom (data : AtomData) : MetaM Unit := do
   let keys ← DiscrTree.mkPath expr
   setEnv $ atomExtension.addEntry (← getEnv) (keys, data)
 
-/-- -/
+/-- Get the atom tree. -/
 def getAtomDiscrTree : MetaM (DiscrTree AtomData) := do
   return atomExtension.getState (← getEnv)
 
-/-- -/
+/-- Caclulate curvature depending on monotonicity. -/
 def curvatureInArg : Curvature → ArgKind → Curvature
   | Curvature.Concave, ArgKind.Increasing => Curvature.Concave
   | Curvature.Concave, ArgKind.Decreasing => Curvature.Convex
