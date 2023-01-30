@@ -803,105 +803,107 @@ vconditionElimination
 
 end Real
 
--- -- Non-affine atoms on vectors.
--- section Vec
+-- Non-affine atoms on vectors.
+section Vec
 
--- open Vec
+open Vec
 
--- declare_atom Vec.le [concave] (n : Nat)& (x : (Finₓ n) → ℝ)- (y : (Finₓ n) → ℝ)+ : x ≤ y :=
--- vconditions
--- implementationVars
--- implementationObjective Real.Vec.posOrthCone (y - x : (Finₓ n) → ℝ)
--- implementationConstraints
--- solution
--- solutionEqualsAtom by
---   unfold Real.Vec.posOrthCone
---   rw [← iff_iff_eq]
---   constructor
---   · intros h i
---     rw [←le.solEqAtom]
---     apply h
---   · intros h i
---     change Zero.zero ≤ y i - x i
---     rw [le.solEqAtom]
---     apply h
--- feasibility
--- optimality by
---   intros x' y' hx hy h i
---   apply le.optimality _ _ _ _ (hx i) (hy i) (h i)
--- vconditionElimination
+declare_atom Vec.le [concave] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ : x ≤ y :=
+vconditions
+implementationVars
+implementationObjective Real.Vec.posOrthCone (y - x : (Fin n) → ℝ)
+implementationConstraints
+solution
+solutionEqualsAtom by
+  unfold Real.Vec.posOrthCone
+  unfold Real.posOrthCone
+  rw [← iff_iff_eq]
+  constructor
+  · intros h i
+    rw [← le.solEqAtom]
+    apply h
+  · intros h i
+    erw [le.solEqAtom]
+    apply h
+feasibility
+optimality by
+  intros x' y' hx hy h i
+  apply le.optimality _ _ _ _ (hx i) (hy i) (h i)
+vconditionElimination
 
--- declare_atom Vec.exp [convex] (n : Nat)& (x : (Finₓ n) → ℝ)+ : exp x :=
--- vconditions
--- implementationVars (t : Finₓ n → ℝ)
--- implementationObjective t
--- implementationConstraints (c_exp : Real.Vec.expCone x 1 t)
--- solution (t := exp x)
--- solutionEqualsAtom 
---   rfl
--- feasibility 
---   (c_exp: by
---     intros _ _
---     apply exp.feasibility0)
--- optimality by
---   intros x' hx i
---   apply exp.optimality _ _ (c_exp i) _ (hx i)
--- vconditionElimination
+declare_atom Vec.exp [convex] (n : Nat)& (x : (Fin n) → ℝ)+ : exp x :=
+vconditions
+implementationVars (t : Fin n → ℝ)
+implementationObjective t
+implementationConstraints (c_exp : Real.Vec.expCone x 1 t)
+solution (t := exp x)
+solutionEqualsAtom 
+  rfl
+feasibility 
+  (c_exp: by
+    intros _ _
+    apply exp.feasibility0)
+optimality by
+  intros x' hx i
+  apply exp.optimality _ _ (c_exp i) _ (hx i)
+vconditionElimination
 
--- declare_atom Vec.log [concave] (n : Nat)& (x : (Finₓ n) → ℝ)+ : log x :=
--- vconditions (cond : ∀ i, 0 < x i)
--- implementationVars (t : (Finₓ n) → ℝ)
--- implementationObjective t
--- implementationConstraints (c_exp : Real.Vec.expCone t 1 x)
--- solution (t := log x)
--- solutionEqualsAtom rfl
--- feasibility 
---   (c_exp: by
---     intros _ i
---     apply log.feasibility0
---     apply cond)
--- optimality by
---   intros x' hx i
---   apply log.optimality _ _ (c_exp i) _ (hx i)
--- vconditionElimination (cond : by
---   intros x' hx i
---   apply log.vcondElim0 _ _ (c_exp i) _ (hx i))
+declare_atom Vec.log [concave] (n : Nat)& (x : (Fin n) → ℝ)+ : log x :=
+vconditions (cond : ∀ i, 0 < x i)
+implementationVars (t : (Fin n) → ℝ)
+implementationObjective t
+implementationConstraints (c_exp : Real.Vec.expCone t 1 x)
+solution (t := log x)
+solutionEqualsAtom rfl
+feasibility 
+  (c_exp: by
+    intros _ i
+    apply log.feasibility0
+    apply cond)
+optimality by
+  intros x' hx i
+  apply log.optimality _ _ (c_exp i) _ (hx i)
+vconditionElimination (cond : by
+  intros x' hx i
+  apply log.vcondElim0 _ _ (c_exp i) _ (hx i))
 
--- declare_atom Vec.abs [convex] (n : Nat)& (x : (Finₓ n) → ℝ)? : abs x :=
--- vconditions
--- implementationVars (t : (Finₓ n) → ℝ)
--- implementationObjective t
--- implementationConstraints
---   (c_pos : Real.Vec.posOrthCone (t - x : (Finₓ n) → ℝ))
---   (c_neg : Real.Vec.posOrthCone (t + x : (Finₓ n) → ℝ))
--- solution (t := abs x)
--- solutionEqualsAtom rfl
--- feasibility
---   (c_pos : by
---     intros _ _
---     apply abs.feasibility0)
---   (c_neg : by
---     intros _ _
---     apply abs.feasibility1)
--- optimality by
---   intros i
---   apply abs.optimality _ _ (c_pos i) (c_neg i)
--- vconditionElimination
+declare_atom Vec.abs [convex] (n : Nat)& (x : (Fin n) → ℝ)? : abs x :=
+vconditions
+implementationVars (t : (Fin n) → ℝ)
+implementationObjective t
+implementationConstraints
+  (c_pos : Real.Vec.posOrthCone (t - x : (Fin n) → ℝ))
+  (c_neg : Real.Vec.posOrthCone (t + x : (Fin n) → ℝ))
+solution (t := abs x)
+solutionEqualsAtom rfl
+feasibility
+  (c_pos : by
+    intros _ _
+    apply abs.feasibility0)
+  (c_neg : by
+    intros _ _
+    apply abs.feasibility1)
+optimality by
+  intros i
+  apply abs.optimality _ _ (c_pos i) (c_neg i)
+vconditionElimination
 
--- end Vec
+end Vec
 
--- -- Non-affine atoms on real variables.
--- namespace Matrix
+-- Non-affine atoms on real variables.
+namespace Matrix
 
--- declare_atom Matrix.PosSemidef [concave] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : Matrix.PosSemidef A :=
+-- declare_atom Matrix.PosSemidef [concave] 
+--   (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? 
+--   : Matrix.PosSemidef A :=
 -- vconditions
 -- implementationVars
 -- implementationObjective Real.Matrix.PSDCone A
 -- implementationConstraints
 -- solution
--- solutionEqualsAtom by simp [Real.Matrix.PSDCone]
+-- solutionEqualsAtom sorry -- by simp [Real.Matrix.PSDCone]
 -- feasibility
--- optimality by simp [Real.Matrix.PSDCone]
+-- optimality sorry -- by simp [Real.Matrix.PSDCone]
 -- vconditionElimination
 
 -- declare_atom Matrix.logDet [concave] (n : ℕ)& (A : Matrix.{0,0,0} (Finₓ n) (Finₓ n) ℝ)? : Real.log A.det :=
@@ -953,25 +955,25 @@ end Real
 --       rw [Real.exp_iff_expCone]
 --       apply c_exp)
 
--- declare_atom Matrix.abs [convex] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Finₓ m) (Finₓ n) ℝ)? : Matrix.abs M :=
--- vconditions
--- implementationVars (T : Matrix (Finₓ m) (Finₓ n) ℝ)
--- implementationObjective T
--- implementationConstraints
---   (c_pos : Real.Matrix.posOrthCone (T - M : Matrix (Finₓ m) (Finₓ n) ℝ))
---   (c_neg : Real.Matrix.posOrthCone (T + M : Matrix (Finₓ m) (Finₓ n) ℝ))
--- solution (T := M.abs)
--- solutionEqualsAtom rfl
--- feasibility
---   (c_pos : by 
---     intros _ _ _
---     apply abs.feasibility0)
---   (c_neg :  by 
---     intros _ _ _
---     apply abs.feasibility1)
--- optimality by
---   intros i j
---   apply abs.optimality _ _ (c_pos i j) (c_neg i j)
--- vconditionElimination
+declare_atom Matrix.abs [convex] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? : Matrix.abs M :=
+vconditions
+implementationVars (T : Matrix (Fin m) (Fin n) ℝ)
+implementationObjective T
+implementationConstraints
+  (c_pos : Real.Matrix.posOrthCone (T - M : Matrix (Fin m) (Fin n) ℝ))
+  (c_neg : Real.Matrix.posOrthCone (T + M : Matrix (Fin m) (Fin n) ℝ))
+solution (T := M.abs)
+solutionEqualsAtom rfl
+feasibility
+  (c_pos : by 
+    intros _ _ _
+    apply abs.feasibility0)
+  (c_neg :  by 
+    intros _ _ _
+    apply abs.feasibility1)
+optimality by
+  intros i j
+  apply abs.optimality _ _ (c_pos i j) (c_neg i j)
+vconditionElimination
 
--- end Matrix
+end Matrix

@@ -134,8 +134,8 @@ end Computable
 def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
   Finset.sum Finset.univ fun i => (Finset.sum Finset.univ fun j => X i j)
 
--- def abs [Abs α] (X : Matrix m n α) : Matrix m n α := 
---   fun i j => Abs.abs (X i j)
+def abs [Abs α] (X : Matrix m n α) : Matrix m n α := 
+  fun i j => Abs.abs (X i j)
 
 -- noncomputable def posDefObjective [Fintype m] [OrderedSemiring α] (C X : Matrix m m α) : α :=
 -- trace (C ⬝ X)
