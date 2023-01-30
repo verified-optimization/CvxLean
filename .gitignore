@@ -5,4 +5,5 @@
 /solver/test.cbf
 /solver/test.sol
 /ffi/build
-/lean_packages
+/ffi/lake-packages 
+/lake-packages
