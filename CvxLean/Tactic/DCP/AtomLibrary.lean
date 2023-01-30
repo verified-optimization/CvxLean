@@ -47,16 +47,16 @@ declare_atom expCone [cone] (x : ℝ)- (z : ℝ)+ : expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp
   rw [←exp_iff_expCone] at *
-  -- TODO: exp_le_exp
-  exact ((exp_strict_mono.le_iff_le.2 hx).trans hexp).trans hz
+  have hexpleexp := tmp_preorder_eq_le.symm ▸ exp_le_exp.2 (tmp_le_eq_le ▸ hx)
+  exact (hexpleexp.trans hexp).trans hz
 
 declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp i
   unfold Vec.expCone at *
   apply (exp_iff_expCone _ _).1
-  -- TODO: exp_le_exp
-  exact ((exp_strict_mono.le_iff_le.2 (hx i)).trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
+  have hexpleexp := tmp_preorder_eq_le.symm ▸ exp_le_exp.2 (tmp_le_eq_le ▸ hx i)
+  exact (hexpleexp.trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
 
 declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
 optimality by
@@ -402,13 +402,13 @@ theorem Matrix.diagonal_zero' {n}
 theorem Matrix.diagonal_smul' {n} (d : Fin n → ℝ) (κ : ℝ)
   : κ • Matrix.diagonal d = Matrix.diagonal (κ • d) := by
   funext i j ; by_cases i = j <;>
-  simp [Matrix.diagonal, idRhs, h] <;> rw [Pi.smul_apply, Pi.smul_apply] <;>
+  simp [Matrix.diagonal, h] <;> rw [Pi.smul_apply, Pi.smul_apply] <;>
   simp [h] ; exact MulZeroClass.mul_zero _
 
 theorem Matrix.diagonal_add' {n} (d₁ d₂ : Fin n → ℝ)
   : Matrix.diagonal d₁ + Matrix.diagonal d₂ = Matrix.diagonal (d₁ + d₂) := by
   funext i j ; by_cases i = j <;>
-  simp [Matrix.diagonal, idRhs, h] <;> rw [Pi.add_apply, Pi.add_apply] <;>
+  simp [Matrix.diagonal, h] <;> rw [Pi.add_apply, Pi.add_apply] <;>
   simp [h] ; exact AddZeroClass.zero_add _
 
 declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Fin n → ℝ)+ : Matrix.diagonal d :=
@@ -487,11 +487,11 @@ optimality by
 
 theorem Matrix.transpose_zero' {m} [Fintype m] 
   : Matrix.transpose (0 : Matrix m m ℝ) = 0 := by
-  funext i j ; simp [Matrix.transpose, idRhs] ; rfl
+  funext i j ; simp [Matrix.transpose, id] ; rfl
 
 theorem Matrix.transpose_add' {m} [Fintype m] (A B : Matrix m m ℝ)
   : Matrix.transpose (A + B) = Matrix.transpose A + Matrix.transpose B := by
-  funext i j ; simp [Matrix.transpose, idRhs] ; rfl
+  funext i j ; simp [Matrix.transpose, id] ; rfl
 
 declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
   A.transpose :=
@@ -526,7 +526,7 @@ homogenity by
   rw [Matrix.fromBlocks_zero, smul_zero, add_zero, add_zero, 
       Matrix.fromBlocks_smul]
 additivity by
-  simp [Matrix.from_blocks_add]
+  simp [Matrix.fromBlocks_add]
 optimality by
   intros A' B' C' D' hA hB hC hD i j
   cases i <;> cases j <;> simp [Matrix.fromBlocks] 
@@ -610,20 +610,20 @@ optimality le_refl _
 
 theorem Matrix.mulVec_zero' {m n} [Fintype m] [Fintype n] (A : Matrix m n ℝ)
   : Matrix.mulVec A (0 : n → ℝ) = 0 := by
-  funext i ; unfold Matrix.mulVec ; simp only [idRhs]
+  funext i ; unfold Matrix.mulVec
   convert @Matrix.dotProduct_zero n _ (fun j => A i j) 
   sorry
 
 theorem Matrix.mulVec_smul' {m n} [Fintype m] [Fintype n] 
   (κ : ℝ) (A : Matrix m n ℝ) (v : n → ℝ)
   : Matrix.mulVec A (κ • v) = κ • Matrix.mulVec A v := by
-  funext i ; unfold Matrix.mulVec ; simp only [idRhs]
+  funext i ; unfold Matrix.mulVec 
   sorry
 
 theorem Matrix.mulVec_add' {m n} [Fintype m] [Fintype n] 
   (A : Matrix m n ℝ) (v w : n → ℝ)
   : Matrix.mulVec A (v + w) = Matrix.mulVec A v + Matrix.mulVec A w := by
-  funext i ; unfold Matrix.mulVec ; simp only [idRhs]
+  funext i ; unfold Matrix.mulVec
   sorry
 
 declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)& 
@@ -671,6 +671,8 @@ optimality by
   simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
   exact Eq.symm
 vconditionElimination
+
+#check Matrix.vecCons
 
 declare_atom sq [convex] (x : ℝ)? : x ^ 2 := 
 vconditions

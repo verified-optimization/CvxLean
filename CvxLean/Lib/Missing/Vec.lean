@@ -12,18 +12,18 @@ def map (f : α → β) (x : m → α) : m → β :=
 
 end Vec
 
-@[app_unexpander Matrix.vecEmpty]
-def unexpandVecEmpty : Lean.PrettyPrinter.Unexpander := 
-fun stx => match stx with
-| `(Matrix.vecEmpty) => do return Lean.TSyntax.raw $ ← `(![])
-| _ => throw ()
+-- @[app_unexpander Matrix.vecEmpty]
+-- def unexpandVecEmpty : Lean.PrettyPrinter.Unexpander := 
+-- fun stx => match stx with
+-- | `(Matrix.vecEmpty) => do return Lean.TSyntax.raw $ ← `(![])
+-- | _ => throw ()
 
-@[app_unexpander Matrix.vecCons]
-def unexpandVecCons : Lean.PrettyPrinter.Unexpander := 
-fun stx => match stx with
-| `(Matrix.vecCons $e ![]) => do return Lean.TSyntax.raw $ ← `(![$e])
-| `(Matrix.vecCons $e ![$elem,*]) => do return Lean.TSyntax.raw $ ← `(![$e,$elem,*])
-| _ => throw ()
+-- @[app_unexpander Matrix.vecCons]
+-- def unexpandVecCons : Lean.PrettyPrinter.Unexpander := 
+-- fun stx => match stx with
+-- | `(Matrix.vecCons $e ![]) => do return Lean.TSyntax.raw $ ← `(![$e])
+-- | `(Matrix.vecCons $e ![$elem,*]) => do return Lean.TSyntax.raw $ ← `(![$e,$elem,*])
+-- | _ => throw ()
 
 namespace Vec
 
