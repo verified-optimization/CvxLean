@@ -2,8 +2,6 @@ import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Solver.Conic
 import CvxLean.Command.Reduction
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 open Lean Lean.Elab Lean.Elab.Term Lean.Elab.Command Lean.Meta

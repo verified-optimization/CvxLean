@@ -1,7 +1,5 @@
 import CvxLean.Lib.Missing.Real
 
-attribute [-instance] coeDecidableEq
-
 namespace Vec
 variable {m : Type u} {n : Type v} [Fintype m] [Fintype n] {α : Type w} (x y : m → α)
 

@@ -1,7 +1,6 @@
 import Mathlib.Data.Real.Basic
 import Mathbin.Data.Complex.Exponential
 import Mathbin.Analysis.SpecialFunctions.Log.Basic
-import Mathbin.Analysis.SpecialFunctions.Trigonometric.Basic
 
 attribute [-instance] coeDecidableEq Real.hasLe
 
@@ -10,14 +9,6 @@ namespace Real
 macro "π" : term => 
   `(Real.pi)
 
-variable (x y : Real)
-
--- noncomputable instance : Preorder Real := by infer_instance
-
--- noncomputable instance : AddMonoidWithOne Real := by infer_instance
-
--- noncomputable instance : MonoidWithZero Real := by infer_instance
-
 noncomputable instance : OfScientific Real := {
   ofScientific := fun mantissa exponentSign decimalExponent => 
     if exponentSign
@@ -25,15 +16,15 @@ noncomputable instance : OfScientific Real := {
     else mantissa * (10 ^ decimalExponent)
 }
 
-noncomputable def entr := 
+noncomputable def entr (x : Real) := 
   -(x * Real.log x)
 
-noncomputable def huber := 
+noncomputable def huber (x : Real) := 
   if abs x ≤ 1
   then x ^ 2
   else 2 * abs x - 1
 
-noncomputable def kl_div :=
+noncomputable def kl_div (x y : Real) :=
   x * log (x / y) - x + y
 
 end Real

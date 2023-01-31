@@ -1,16 +1,25 @@
-import CvxLean.Tactic.Solver.Float.RealToFloatExt
 import CvxLean.Lib.Missing.Real
+import CvxLean.Lib.Missing.Vec 
 import CvxLean.Lib.Missing.Matrix 
-import CvxLean.Meta.Minimization
-import CvxLean.Meta.Missing.Expr
 import CvxLean.Lib.Cones
+import CvxLean.Meta.Missing.Expr
+import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Solver.Float.Cones
 import CvxLean.Tactic.Solver.Float.OptimizationParam
-import Optbin.All
-
-attribute [-instance] coeDecidableEq
+import CvxLean.Tactic.Solver.Float.RealToFloatExt
 
 namespace CvxLean
+
+attribute [-instance] Nat.hasSub String.hasToString String.hasAppend 
+  Nat.hasToString Bool.inhabited Ne.decidable Prod.inhabited 
+  String.hasDecidableEq Nat.hasAdd
+
+attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
+  Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
+  Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
+  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow 
+  Real.linearOrder Real.conditionallyCompleteLinearOrder Real.orderedSemiring
+  Real.hasSup
 
 open Lean Lean.Elab Lean.Meta Lean.Elab.Command Lean.Elab.Term
 
@@ -29,7 +38,7 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
       let args ← mvars.mapM instantiateMVars
       return mkAppNBeta translation.float args
     else
-      trace[Meta.debug] "no match: \n{toString pattern} \n{toString e}"
+      trace[Meta.debug] "no match: \n{pattern} \n{e}"
   -- trace[Meta.debug] "no translation found for {e}"
   match e with
   | Expr.app a b => return mkApp (← realToFloat a) (← realToFloat b)
@@ -65,7 +74,7 @@ def realSolutionToFloat (s : Meta.SolutionExpr) : MetaM Meta.SolutionExpr := do
     Macro.throwUnsupported
 | _ => Macro.throwUnsupported
 
-@[commandElab addRealToFloatCommand] 
+@[command_elab addRealToFloatCommand] 
 def elabAddRealToFloatCommand : CommandElab
 | `(addRealToFloat : $real := $float) => 
   liftTermElabM do
@@ -77,7 +86,7 @@ def elabAddRealToFloatCommand : CommandElab
 syntax (name:=realToFloatCommand) 
   "#realToFloat" term : command
 
-@[commandElab realToFloatCommand] 
+@[command_elab realToFloatCommand] 
 unsafe def elabRealToFloatCommand : CommandElab
 | `(#realToFloat $stx) =>  
   liftTermElabM do
@@ -100,23 +109,23 @@ addRealToFloat : @Real.hasOne := One.mk (1 : Float)
 
 addRealToFloat : @Nat.hasZero := Zero.mk (nat_lit 0)
 
-addRealToFloat (n : Nat) (i) : @AddMonoidWithOneₓ.natCast ℝ i n := 
+addRealToFloat (n : Nat) (i) : @AddMonoidWithOne.natCast ℝ i n := 
   Float.ofNat n
 
 addRealToFloat (i) (x : ℕ) : @Nat.cast Real i x := Float.ofNat x
 
 addRealToFloat (i) : @Nat.castCoe Real i :=
-  CoeTₓ.mk Float.ofNat
+  CoeT.mk Float.ofNat
 
-addRealToFloat (x : ℕ) (i) : @instOfNat Real x Real.instAddMonoidWithOneReal i := 
+addRealToFloat (x : ℕ) (i) : @instOfNat Real x Real.natCast i := 
   @instOfNatFloat x
 
 addRealToFloat (n m k : Nat) : 
-  @HasSmul.smul ℕ (Matrix (Finₓ n) (Finₓ m) ℝ) AddMonoidₓ.hasSmulNat k := 
+  @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.SMul k := 
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
 addRealToFloat (k : Nat) : 
-  @HasSmul.smul ℕ ℝ AddMonoidₓ.hasSmulNat k := 
+  @SMul.smul ℕ ℝ AddMonoid.SMul k := 
   (fun (x : Float) => (OfNat.ofNat k) * x)
 
 addRealToFloat : @Real.hasNeg := instNegFloat
@@ -165,54 +174,35 @@ def Fin.cons {α : Type} {n : Nat} (a : α) (x : Fin n → α) : Fin n.succ → 
 
 addRealToFloat : @Matrix.vecCons := @Fin.cons
 
-def Matrix.toUpperTri' [LinearOrder m] [Zero α]
-  (A : Matrix m m α) : Matrix m m α :=
-fun i j => if i ≤ j then A i j else 0
-
-addRealToFloat : @Matrix.toUpperTri.{0,0} := @Matrix.toUpperTri'.{0,0}
-
-addRealToFloat : @Finₓ.linearOrder := @instLinearOrderFin
-
-addRealToFloat : LinearOrderₓ := LinearOrder
-
-addRealToFloat : @Finₓ.decidableEq   := @instDecidableEqFin
+addRealToFloat : @Fin.decidableEq := @instDecidableEqFin
 
 addRealToFloat : @Matrix.vecEmpty Real := 
   fun (x : Fin 0) => ((False.elim (Nat.not_lt_zero x.1 x.2)) : Float)
 
-addRealToFloat (n) : @Matrix.vecEmpty (Finₓ n → Real) :=
+addRealToFloat (n) : @Matrix.vecEmpty (Fin n → Real) :=
   fun (x : Fin 0) => ((False.elim (Nat.not_lt_zero x.1 x.2)) : Fin n → Float)
 
-addRealToFloat (N n : ℕ) : @covarianceMatrix N n :=
-  @Matrix.Computable.covarianceMatrix Float (Zero.mk (0 : Float)) ⟨Float.add⟩ ⟨Float.mul⟩ ⟨Float.div⟩ N n (@instOfNatFloat N)
-
-addRealToFloat : @Matrix.transposeₓ.{0,0,0} := @Matrix.Computable.transpose.{0,0,0}
+-- TODO: Recover optlib
+-- addRealToFloat (N n : ℕ) : @covarianceMatrix N n :=
+--   @Matrix.Computable.covarianceMatrix Float (Zero.mk (0 : Float)) ⟨Float.add⟩ ⟨Float.mul⟩ ⟨Float.div⟩ N n (@instOfNatFloat N)
 
 addRealToFloat : @Matrix.transpose.{0,0,0} := @Matrix.Computable.transpose.{0,0,0}
 
-addRealToFloat : @Matrix.diagonalₓ.{0,0} := @Matrix.Computable.diagonal.{0,0} 
+addRealToFloat : @Matrix.transpose.{0,0,0} := @Matrix.Computable.transpose.{0,0,0}
+
+addRealToFloat : @Matrix.diagonal.{0,0} := @Matrix.Computable.diagonal.{0,0} 
 
 addRealToFloat : @Matrix.fromBlocks := @Matrix.Computable.fromBlocks
 
 addRealToFloat : @Matrix.diag.{0,0} := @Matrix.Computable.diag.{0,0}
 
--- Also add thse, to transform the whole problem.
-
-addRealToFloat : Finₓ := Fin
-
-addRealToFloat (n : Nat) : @Finₓ.fintype n := @instFintypeFin n
+-- Also add these, to transform the whole problem.
 
 addRealToFloat : Nat.hasLt := instLTNat
 
-addRealToFloat (n i : Nat) : @Finₓ.mk n i := @Fin.mk n i
+addRealToFloat (n : Nat) : @Fin.hasZero n := Zero.mk (0 : Fin n.succ)
 
-addRealToFloat (n : Nat) : @Finₓ.hasZero n := Zero.mk (0 : Fin n.succ)
-
-addRealToFloat (n : Nat) : @Finₓ.hasOne n := One.mk (1 : Fin n.succ)
-
-addRealToFloat : @Finₓ.val := @Fin.val
-
-addRealToFloat : @Finx.val := @Fin.val
+addRealToFloat (n : Nat) : @Fin.hasOne n := One.mk (1 : Fin n.succ)
 
 addRealToFloat : @OfScientific.ofScientific Real Real.instOfScientificReal := 
   Float.ofScientific
@@ -221,38 +211,35 @@ addRealToFloat : Real.instOfScientificReal := instOfScientificFloat
 
 addRealToFloat : Real.inhabited := instInhabitedFloat
 
-addRealToFloat (m) (i) (hm) : @Vec.sum Real i (Finₓ m) hm := 
+addRealToFloat (m) (i) (hm) : @Vec.sum Real i (Fin m) hm := 
   fun v => (@Matrix.Computable.vecToArray Float (Zero.mk (0 : Float)) m v).foldl (· + ·) 0
 
-addRealToFloat (m) (i) (hm) : @Matrix.sum Real (Finₓ m) hm i := 
+addRealToFloat (m) (i) (hm) : @Matrix.sum Real (Fin m) hm i := 
   fun M => (@Matrix.Computable.toArray Float (Zero.mk (0 : Float)) m M).foldl (fun acc v => acc + v.foldl (· + ·) 0) 0
 
 addRealToFloat (n : Nat) : @Subtype.val Nat (fun i => i < n) := @Fin.val n
 
-addRealToFloat (n) (i1) (i2) (i3) : @Matrix.dotProduct (Finₓ n) Real i1 i2 i3 := 
+addRealToFloat (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) Real i1 i2 i3 := 
   @Matrix.Computable.dotProduct Float (Zero.mk (0 : Float)) n instMulFloat instAddFloat
 
-addRealToFloat (n m) (i1) (i2) : @Matrix.mulVecₓ (Finₓ n) (Finₓ m) Real i1 i2 := 
+addRealToFloat (n m) (i1) (i2) : @Matrix.mulVec (Fin n) (Fin m) Real i1 i2 := 
   @Matrix.Computable.mulVec Float (Zero.mk (0 : Float)) n m instMulFloat instAddFloat
 
-addRealToFloat (n m) (i1) (i2) : @Matrix.vecMulₓ (Finₓ n) (Finₓ m) Real i1 i2 := 
+addRealToFloat (n m) (i1) (i2) : @Matrix.vecMul (Fin n) (Fin m) Real i1 i2 := 
   @Matrix.Computable.vecMul Float (Zero.mk (0 : Float)) n m instMulFloat instAddFloat
 
-addRealToFloat (n : Nat) : @Matrix.PosDef ℝ Real.isROrC (Finₓ n) (Finₓ.fintype n) := 
+addRealToFloat (n : Nat) : @Matrix.PosDef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
   @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLTFloat
 
-addRealToFloat (n : Nat) : @Matrix.PosSemidef ℝ Real.isROrC (Finₓ n) (Finₓ.fintype n) := 
+addRealToFloat (n : Nat) : @Matrix.PosSemidef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
   @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLEFloat
 
-addRealToFloat (n : Nat) : @Matrix.posDefObjective Real (Finₓ n) (Finₓ.fintype n) Real.orderedSemiring := 
-  @Matrix.Computable.posDefObjective Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat 
-
 addRealToFloat (n : Nat) : 
-  @Matrix.trace (Finₓ n) ℝ (Finₓ.fintype n) Real.addCommMonoid := 
+  @Matrix.trace (Fin n) ℝ (Fin.fintype n) Real.addCommMonoid := 
   @Matrix.Computable.tr Float (Zero.mk (0 : Float)) n instAddFloat
 
 addRealToFloat (n : Nat) : 
-  @Matrix.mul (Finₓ n) (Finₓ n) (Finₓ n) ℝ (Finₓ.fintype n) Real.hasMul Real.addCommMonoid := 
+  @Matrix.mul (Fin n) (Fin n) (Fin n) ℝ (Fin.fintype n) Real.hasMul Real.addCommMonoid := 
   @Matrix.Computable.mul Float (Zero.mk (0 : Float)) n n n instMulFloat instAddFloat
 
 -- Cones.
@@ -270,10 +257,5 @@ addRealToFloat : @Real.expCone := @Float.expCone
 addRealToFloat : @Real.Vec.expCone := @Float.Vec.expCone
 
 addRealToFloat : @Real.Matrix.PSDCone := @Float.Matrix.PSDCone
-
--- Others
-
-addRealToFloat (n) (i) : @Pi.hasSub.{0, 0} (Finₓ n) (fun _ => ℝ) i := 
-  Sub.mk (fun (u v : Fin n → Float) (i : Fin n) => (u i) - (v i))
 
 end CvxLean

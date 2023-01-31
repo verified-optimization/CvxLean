@@ -3,8 +3,6 @@ import CvxLean.Lib.Minimization
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Missing.Expr
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 open Lean Lean.Elab Lean.Meta Lean.Elab.Tactic Lean.Elab.Term Lean.Elab.Command
@@ -62,7 +60,7 @@ syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Parser.Term.byTactic : command
 
 /-- Reduction command. -/
-@[commandElab «reduction»]
+@[command_elab «reduction»]
 def evalReduction : CommandElab := fun stx => match stx with
 | `(reduction $redId / $probId $declSig := $proof) => do
   liftTermElabM do
@@ -75,7 +73,7 @@ def evalReduction : CommandElab := fun stx => match stx with
       let prob₁Ty := mkApp2 (Lean.mkConst ``Minimization) D1 R1
       let prob ← elabTermAndSynthesizeEnsuringType prob (some $ prob₁Ty)
       let R2Preorder ← Meta.mkFreshExprMVar
-        (some $ mkAppN (Lean.mkConst ``Preorderₓ [levelZero]) #[R2])
+        (some $ mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R2])
       let prob₂Ty := mkAppN (Lean.mkConst ``Minimization) #[D2, R2]
       let prob₂ ← Meta.mkFreshExprMVar (some $ prob₂Ty)
       let proof ← elabReductionProof proof.raw

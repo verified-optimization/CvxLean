@@ -50,7 +50,8 @@ optimality by
   have hexpleexp := tmp_preorder_eq_le.symm ▸ exp_le_exp.2 (tmp_le_eq_le ▸ hx)
   exact (hexpleexp.trans hexp).trans hz
 
-declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
+declare_atom Vec.expCone [cone] 
+  (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp i
   unfold Vec.expCone at *
@@ -63,12 +64,14 @@ optimality by
   intros x' hx hx0
   exact hx0.trans hx
 
-declare_atom Vec.posOrthCone [cone] (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
+declare_atom Vec.posOrthCone [cone] 
+  (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
 optimality by
   intros x' hx hx0 i
   exact (hx0 i).trans (hx i)
 
-declare_atom Matrix.posOrthCone [cone] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
+declare_atom Matrix.posOrthCone [cone] 
+  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
   Real.Matrix.posOrthCone M :=
 optimality by
   intros x' hx hx0 i j
@@ -242,50 +245,22 @@ optimality by
     apply hx
     apply lt_of_le_of_ne hy h
 
-theorem Matrix.dotProduct_zero {m} [Fintype m] (x : m → ℝ) 
-  : Matrix.dotProduct x 0 = 0 := by
-  simp [Matrix.dotProduct]
-
-theorem Matrix.zero_dotProduct {m} [Fintype m] (x : m → ℝ) 
-  : Matrix.dotProduct 0 x = 0 := by
-  simp [Matrix.dotProduct]
-
-theorem Matrix.dotProduct_smul {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
-  : Matrix.dotProduct x (a • y) = a • Matrix.dotProduct x y := by
-  unfold Matrix.dotProduct ; rw [Finset.smul_sum]
-  apply congr_arg ; ext i ; simp ; ring
-
-theorem Matrix.smul_dotProduct {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
-  : Matrix.dotProduct (a • x) y = a • Matrix.dotProduct x y := by
-  unfold Matrix.dotProduct ; rw [Finset.smul_sum]
-  apply congr_arg ; ext i ; simp ; ring
-
-theorem Matrix.dotProduct_add {m} [Fintype m] (x : m → ℝ) (y y' : m → ℝ) 
-  : Matrix.dotProduct x (y + y') = Matrix.dotProduct x y + Matrix.dotProduct x y' := by
-  unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
-  apply congr_arg ; ext i ; simp ; ring
-
-theorem Matrix.add_dotProduct {m} [Fintype m] (x x' : m → ℝ) (y : m → ℝ) 
-  : Matrix.dotProduct (x + x') y = Matrix.dotProduct x y + Matrix.dotProduct x' y := by
-  unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
-  apply congr_arg ; ext i ; simp ; ring
-
 declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
 bconditions
 homogenity by
-  rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero, 
-      Matrix.dotProduct_smul]
+  rw [Matrix.dotProduct_zero'', smul_zero, add_zero, add_zero, 
+      Matrix.dotProduct_smul']
 additivity by
-  rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
+  rw [Matrix.dotProduct_zero'', add_zero, Matrix.dotProduct_add']
 optimality le_refl _
 
 declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y := 
 bconditions
 homogenity by
-  rw [Matrix.zero_dotProduct, smul_zero, add_zero, add_zero,
-      Matrix.smul_dotProduct]
+  rw [Matrix.zero_dotProduct', smul_zero, add_zero, add_zero,
+      Matrix.smul_dotProduct']
 additivity by
-  rw [Matrix.zero_dotProduct, add_zero, Matrix.add_dotProduct]
+  rw [Matrix.zero_dotProduct', add_zero, Matrix.add_dotProduct']
 optimality le_refl _
 
 declare_atom smul [affine] (n : ℕ)& (y : ℝ)+ : n • y :=
@@ -303,18 +278,6 @@ end VecAffine
 -- Affine operations on matrices.
 section MatrixAffine 
 
-theorem Matrix.vecCons_zero_zero {n} 
-  : Matrix.vecCons (0 : ℝ) (0 : Fin n → ℝ) = 0 := by
-  ext i ; refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
-
-theorem Matrix.smul_vecCons {n} (x : ℝ) (y : ℝ) (v : Fin n → ℝ) 
-  : x • Matrix.vecCons y v = Matrix.vecCons (x • y) (x • v) := by
-  ext i ; refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
-
-theorem Matrix.add_vecCons {n} (x : ℝ) (v : Fin n → ℝ) (y : ℝ) (w : Fin n → ℝ) 
-  : Matrix.vecCons x v + Matrix.vecCons y w = Matrix.vecCons (x + y) (v + w) := by
-  ext i ; refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
-
 declare_atom Matrix.vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ : 
   Matrix.vecCons x y :=
 bconditions
@@ -327,24 +290,6 @@ optimality by
   refine' Fin.cases _ _ i <;> simp [Matrix.vecCons]
   . exact hx
   . exact hy
-
-theorem Matrix.zero_apply {n} (i : Fin n) (j : Fin n) 
-  : (0 : Matrix (Fin n) (Fin n) ℝ) i j = 0 := by
-  rw [Pi.zero_apply, Pi.zero_apply]
-
-theorem Matrix.sum_zero {n} 
-  : Matrix.sum (0 : Matrix (Fin n) (Fin n) ℝ) = 0 := by
-  simp [Matrix.sum, Matrix.zero_apply]
-
-theorem Matrix.smul_sum {n} (X : Matrix (Fin n) (Fin n) ℝ) (κ : ℝ)
-  : κ • Matrix.sum X = Matrix.sum (κ • X) := by
-  unfold Matrix.sum ; rw [Finset.smul_sum]
-  congr ; ext i ; rw [Finset.smul_sum] ; rfl 
-
-theorem Matrix.sum_add {n} (X Y : Matrix (Fin n) (Fin n) ℝ)
-  : Matrix.sum X + Matrix.sum Y = Matrix.sum (X + Y) := by
-  unfold Matrix.sum ; rw [←Finset.sum_add_distrib]
-  congr ; ext i ; rw [←Finset.sum_add_distrib] ; rfl
 
 declare_atom Matrix.sum [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)+ : Matrix.sum X :=
 bconditions
@@ -379,10 +324,6 @@ additivity by
   rfl
 optimality le_refl _
 
-theorem Matrix.diag_smul' {m} [Fintype m] (x : ℝ) (A : Matrix m m ℝ) 
-  : Matrix.diag (x • A) = x • Matrix.diag A := by
-  rfl
-
 -- TODO: make argument increasing, without breaking det-log-atom
 declare_atom Matrix.diag [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : A.diag :=
 bconditions
@@ -393,23 +334,6 @@ additivity by
   rw [Matrix.diag_zero, add_zero]
   rfl
 optimality le_refl _
-
-theorem Matrix.diagonal_zero' {n} 
-  : Matrix.diagonal (0 : Fin n → ℝ) = 0 := by
-  funext i j ; by_cases i = j <;> 
-  simp [Matrix.diagonal, h] <;> rw [Pi.zero_apply, Pi.zero_apply] ; rfl
-
-theorem Matrix.diagonal_smul' {n} (d : Fin n → ℝ) (κ : ℝ)
-  : κ • Matrix.diagonal d = Matrix.diagonal (κ • d) := by
-  funext i j ; by_cases i = j <;>
-  simp [Matrix.diagonal, h] <;> rw [Pi.smul_apply, Pi.smul_apply] <;>
-  simp [h] ; exact MulZeroClass.mul_zero _
-
-theorem Matrix.diagonal_add' {n} (d₁ d₂ : Fin n → ℝ)
-  : Matrix.diagonal d₁ + Matrix.diagonal d₂ = Matrix.diagonal (d₁ + d₂) := by
-  funext i j ; by_cases i = j <;>
-  simp [Matrix.diagonal, h] <;> rw [Pi.add_apply, Pi.add_apply] <;>
-  simp [h] ; exact AddZeroClass.zero_add _
 
 declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Fin n → ℝ)+ : Matrix.diagonal d :=
 bconditions
@@ -422,56 +346,17 @@ optimality by
   intros d' hd i j
   by_cases h : i = j <;> simp [Matrix.diagonal, h, hd j]
 
-theorem Matrix.trace_zero {m} [Fintype m]
-  : Matrix.trace (0 : Matrix m m ℝ) = 0 := by
-  unfold Matrix.trace ; rw [Matrix.diag_zero]
-  exact Finset.sum_const_zero
-
-theorem Matrix.trace_smul' {m} [Fintype m] (A : Matrix m m ℝ) (κ : ℝ)
-  : Matrix.trace (κ • A) = κ • Matrix.trace A := by
-  unfold Matrix.trace ; rw [Matrix.diag_smul', Finset.smul_sum] ; rfl
-
-theorem Matrix.trace_add' {m} [Fintype m] (A B : Matrix m m ℝ)
-  : Matrix.trace (A + B) = Matrix.trace A + Matrix.trace B := by
-  unfold Matrix.trace ; rw [Matrix.diag_add, ←Finset.sum_add_distrib] ; rfl
-
 declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
 bconditions
 homogenity by 
-  rw [Matrix.trace_zero, add_zero, smul_zero, add_zero, Matrix.trace_smul']
+  rw [Matrix.trace_zero', add_zero, smul_zero, add_zero, Matrix.trace_smul']
 additivity by
-  rw [Matrix.trace_add', Matrix.trace_zero, add_zero]
+  rw [Matrix.trace_add', Matrix.trace_zero', add_zero]
 optimality by
   intros A' hA
   apply Finset.sum_le_sum
   intros i _
   exact hA i i
-
-attribute [instance] LinearOrder.decidable_le
-
-def Matrix.toUpperTri 
-  {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] (A : Matrix m m α) 
-  : Matrix m m α := 
-  fun i j => if i ≤ j then A i j else 0
-
-theorem Matrix.toUpperTri_zero 
-  {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] 
-  : Matrix.toUpperTri (0 : Matrix m m α) = 0 := by
-  funext i j ; simp [Matrix.toUpperTri] ; intros _ ; rfl
-
-theorem Matrix.toUpperTri_smul 
-  {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
-  (A : Matrix m m ℝ) (κ : ℝ)
-  : κ • Matrix.toUpperTri A = Matrix.toUpperTri (κ • A) := by
-  funext i j ; rw [Pi.smul_apply, Pi.smul_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h] ; rw [Pi.smul_apply, Pi.smul_apply] ; rfl
-
-theorem Matrix.toUpperTri_add 
-  {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
-  (A B : Matrix m m ℝ)
-  : Matrix.toUpperTri (A + B) = Matrix.toUpperTri A + Matrix.toUpperTri B := by
-  funext i j ; rw [Pi.add_apply, Pi.add_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h] ; rw [Pi.add_apply, Pi.add_apply]
 
 declare_atom Matrix.toUpperTri [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
   Matrix.toUpperTri A :=
@@ -485,14 +370,6 @@ optimality by
   intros A' hA i j
   by_cases h : i ≤ j <;> simp [Matrix.toUpperTri, h] ; exact hA i j
 
-theorem Matrix.transpose_zero' {m} [Fintype m] 
-  : Matrix.transpose (0 : Matrix m m ℝ) = 0 := by
-  funext i j ; simp [Matrix.transpose, id] ; rfl
-
-theorem Matrix.transpose_add' {m} [Fintype m] (A B : Matrix m m ℝ)
-  : Matrix.transpose (A + B) = Matrix.transpose A + Matrix.transpose B := by
-  funext i j ; simp [Matrix.transpose, id] ; rfl
-
 declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
   A.transpose :=
 bconditions
@@ -505,16 +382,6 @@ optimality by
   intros _ hA i j
   exact hA j i
 
-theorem Matrix.fromBlocks_zero {n m l o α} [Zero α] 
-  : Matrix.fromBlocks (0 : Matrix n l α) (0 : Matrix n m α) (0 : Matrix o l α) (0 : Matrix o m α) = 0 := by
-  funext i j ; cases i <;> cases j <;> simp [Matrix.fromBlocks] <;> rfl
-
-theorem Matrix.fromBlocks_smul {n m l o} (κ : ℝ)
-  (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) 
-  : κ • Matrix.fromBlocks A B C D = Matrix.fromBlocks (κ • A) (κ • B) (κ • C) (κ • D) := by
-  funext i j ; cases i <;> cases j <;> rw [Pi.smul_apply, Pi.smul_apply] <;> 
-  simp [Matrix.fromBlocks] <;> rfl
-
 declare_atom Matrix.fromBlocks [affine] (n : ℕ)& 
   (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ 
   (B : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+
@@ -524,7 +391,7 @@ declare_atom Matrix.fromBlocks [affine] (n : ℕ)&
 bconditions
 homogenity by
   rw [Matrix.fromBlocks_zero, smul_zero, add_zero, add_zero, 
-      Matrix.fromBlocks_smul]
+      Matrix.fromBlocks_smul']
 additivity by
   simp [Matrix.fromBlocks_add]
 optimality by
@@ -564,30 +431,6 @@ optimality by
   exact hA i j
   exact hB i j
 
-theorem Matrix.mul_zero' {m} [Fintype m] (A : Matrix m m ℝ)
-  : Matrix.mul A (0 : Matrix m m ℝ) = 0 := by
-  funext ; exact Matrix.dotProduct_zero _
-
-theorem Matrix.zero_mul' {m} [Fintype m] (A : Matrix m m ℝ)
-  : Matrix.mul (0 : Matrix m m ℝ) A = 0 := by
-  funext ; exact Matrix.zero_dotProduct _
-
-theorem Matrix.mul_smul' {m} [Fintype m] (κ : ℝ) (A : Matrix m m ℝ) (B : Matrix m m ℝ)
-  : Matrix.mul A (κ • B) = κ • Matrix.mul A B := by
-  funext ; exact Matrix.dotProduct_smul _ _ _
-
-theorem Matrix.smul_mul' {m} [Fintype m] (κ : ℝ) (A : Matrix m m ℝ) (B : Matrix m m ℝ)
-  : Matrix.mul (κ • A) B = κ • Matrix.mul A B := by
-  funext ; exact Matrix.smul_dotProduct _ _ _
-
-theorem Matrix.mul_add' {m} [Fintype m] (A : Matrix m m ℝ) (B C : Matrix m m ℝ)
-  : Matrix.mul A (B + C) = Matrix.mul A B + Matrix.mul A C := by
-  funext ; exact Matrix.dotProduct_add _ _ _
-
-theorem Matrix.add_mul' {m} [Fintype m] (A B : Matrix m m ℝ) (C : Matrix m m ℝ)
-  : Matrix.mul (A + B) C = Matrix.mul A C + Matrix.mul B C := by
-  funext ; exact Matrix.add_dotProduct _ _ _
-
 -- TODO: Notation
 declare_atom Matrix.mul1 [affine] (m : Type)& (hm : Fintype.{0} m)&
   (A : Matrix.{0,0,0} m m ℝ)& (B : Matrix.{0,0,0} m m ℝ)? : Matrix.mul A B :=
@@ -607,24 +450,6 @@ homogenity by
 additivity by 
   rw [Matrix.add_mul', Matrix.zero_mul', add_zero]
 optimality le_refl _
-
-theorem Matrix.mulVec_zero' {m n} [Fintype m] [Fintype n] (A : Matrix m n ℝ)
-  : Matrix.mulVec A (0 : n → ℝ) = 0 := by
-  funext i ; unfold Matrix.mulVec
-  convert @Matrix.dotProduct_zero n _ (fun j => A i j) 
-  sorry
-
-theorem Matrix.mulVec_smul' {m n} [Fintype m] [Fintype n] 
-  (κ : ℝ) (A : Matrix m n ℝ) (v : n → ℝ)
-  : Matrix.mulVec A (κ • v) = κ • Matrix.mulVec A v := by
-  funext i ; unfold Matrix.mulVec 
-  sorry
-
-theorem Matrix.mulVec_add' {m n} [Fintype m] [Fintype n] 
-  (A : Matrix m n ℝ) (v w : n → ℝ)
-  : Matrix.mulVec A (v + w) = Matrix.mulVec A v + Matrix.mulVec A w := by
-  funext i ; unfold Matrix.mulVec
-  sorry
 
 declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)& 
   (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)& (v : Fin n → ℝ)? : Matrix.mulVec M v :=
@@ -672,14 +497,13 @@ optimality by
   exact Eq.symm
 vconditionElimination
 
-#check Matrix.vecCons
-
 declare_atom sq [convex] (x : ℝ)? : x ^ 2 := 
 vconditions
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints
-  (c1 : rotatedSoCone t (1/2) (![x] : Fin 1 → ℝ))
+  -- TODO: Notation
+  (c1 : rotatedSoCone t (1/2) (Matrix.vecCons x Matrix.vecEmpty : Fin 1 → ℝ))
 solution
   (t := x ^ 2)
 solutionEqualsAtom rfl
@@ -714,8 +538,8 @@ feasibility
 optimality by
   intros x' hx
   rw [←exp_iff_expCone] at c_exp
-  -- TODO: exp_le_exp
-  exact (exp_strict_mono.le_iff_le.2 hx).trans c_exp
+  have hexpleexp := tmp_preorder_eq_le.symm ▸ exp_le_exp.2 (tmp_le_eq_le ▸ hx)
+  exact hexpleexp.trans c_exp
 vconditionElimination
 
 declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
@@ -723,7 +547,8 @@ vconditions (cond : 0 ≤ x)
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints 
-  (c1 : rotatedSoCone x (1/2) (![t] : Fin 1 → ℝ))
+  -- TODO: Notation
+  (c1 : rotatedSoCone x (1/2) (Matrix.vecCons t Matrix.vecEmpty : Fin 1 → ℝ))
 solution (t := Real.sqrt x)
 solutionEqualsAtom by
   rfl;
@@ -957,14 +782,16 @@ namespace Matrix
 --       rw [Real.exp_iff_expCone]
 --       apply c_exp)
 
-declare_atom Matrix.abs [convex] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? : Matrix.abs M :=
+declare_atom Matrix.abs [convex] 
+  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? 
+  : abs M :=
 vconditions
 implementationVars (T : Matrix (Fin m) (Fin n) ℝ)
 implementationObjective T
 implementationConstraints
   (c_pos : Real.Matrix.posOrthCone (T - M : Matrix (Fin m) (Fin n) ℝ))
   (c_neg : Real.Matrix.posOrthCone (T + M : Matrix (Fin m) (Fin n) ℝ))
-solution (T := M.abs)
+solution (T := abs M)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by 
