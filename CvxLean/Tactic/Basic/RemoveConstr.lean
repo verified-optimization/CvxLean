@@ -2,8 +2,7 @@ import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Basic.ReplaceConstr
 import CvxLean.Tactic.Basic.ShowVars
-import CvxLean.Lib.Missing.List
-import CvxLean.Lib.Missing.Mathlib
+--import CvxLean.Lib.Missing.List
 
 namespace CvxLean
 
@@ -20,6 +19,8 @@ def mkAndProj (e : Expr) (i : Nat) (total : Nat) : MetaM Expr := do
   | _, 0 => return ← mkAppM ``And.left #[e]
   | total + 1, i + 1 => mkAndProj (← mkAppM ``And.right #[e]) i total
 
+#check List.findIdx
+
 /-- Remove a redundant constraint from an optimization problem, redundant
 meaning that it is implied by the other constraints. -/
 def removeConstr (goal : MVarId) (id : Syntax) : MetaM (MVarId × MVarId) := do
@@ -35,9 +36,9 @@ def removeConstr (goal : MVarId) (id : Syntax) : MetaM (MVarId × MVarId) := do
   let (i, total, erasedConstr) ← 
     withLambdaBody goalExprs.constraints fun p oldConstrBody => do
       let cs ← decomposeConstraints oldConstrBody
-      let i ← match cs.findIdx' fun c => c.1 == id.getId with
-      | some i => pure i
-      | none => throwError "constraint {id.getId} not found"
+      let i := cs.findIdx fun c => c.1 == id.getId
+      if i == cs.length then  
+        throwError "constraint {id.getId} not found"
       let cs' := cs.eraseIdx i
       let newConstr := composeAnd $ cs'.map Prod.snd
       let newConstr ← mkLambdaFVars #[p] newConstr

@@ -3,8 +3,6 @@ import CvxLean.Lib.Cones
 import CvxLean.Tactic.Solver.Float.ProblemData
 import CvxLean.Tactic.Solver.Float.RealToFloat
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 open Lean

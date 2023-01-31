@@ -5,11 +5,6 @@ import CvxLean.Lib.Cones
 
 open CvxLean Minimization
 
-#check Real.posOrthCone
-#check DyadicExpr
-
-attribute [-instance] coeDecidableEq
-
 def ArithForm.posOrthCone : ArithForm := 
   ArithForm.le (DyadicExpr.num 0) (DyadicExpr.var 0)
 
