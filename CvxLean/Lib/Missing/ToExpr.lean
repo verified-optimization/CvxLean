@@ -4,18 +4,6 @@ section ToExpr
 
 open Lean
 
-instance : ToExpr Expr where 
-  toExpr e := e 
-  toTypeExpr := mkConst ``Expr
-
-instance : ToExpr Int where 
-  toExpr i := 
-    if i < 0 then 
-      mkApp (mkConst ``Int.neg) (mkApp (mkConst ``Int.natAbs) (toExpr i.toNat))
-    else 
-      mkApp (mkConst ``Int.ofNat) (toExpr i.toNat)
-  toTypeExpr := mkConst ``Int
-
 instance : ToExpr Float where 
   toExpr f := 
     match Json.Parser.num f.toString.mkIterator with

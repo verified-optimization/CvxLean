@@ -11,41 +11,26 @@ open Meta
 open Lean.Elab
 open Lean.Elab.Tactic
 
-/-- This instance is used to override the noncomputable instance from binport. -/
-instance (α : Type u_1) [a : DecidableEq α] (β : Type u_2) [a : DecidableEq β] : 
-  DecidableEq (α ⊕ β) := by
-  intros x y
-  cases x
-  · cases y
-    · simp only [Sum.inl.inj_iff]
-      exact inferInstance
-    · apply Decidable.isFalse Sum.inl_ne_inr
-  · cases y
-    · apply Decidable.isFalse Sum.inr_ne_inl
-    · simp only [Sum.inr.inj_iff]
-      exact inferInstance
+attribute [-instance] Sum.decidableEq String.hasDecidableEq Prod.inhabited
 
 /- Generate Float expression from natural number. 
 TODO: Duplicate? Move? -/
 def mkFloat (n : Nat) : Expr :=
-  mkApp3 
-    (mkConst ``OfNat.ofNat [levelZero]) 
-    (mkConst ``Float) 
-    (mkNatLit n) 
-    (mkApp (mkConst ``instOfNatFloat) (mkNatLit n))
+  mkApp3 (mkConst ``OfNat.ofNat ([levelZero] : List Level)) 
+    (mkConst ``Float) (mkNatLit n) (mkApp (mkConst ``instOfNatFloat) (mkNatLit n))
 
 /- Helper function to generate (i : Fin n) as an expression.
 TODO: Get rid of sorry's to access elements of a vector. How? -/
 def mkFinIdxExpr (i : Nat) (n : Nat) : MetaM Expr := do
   let finProofExpr ← mkSyntheticSorry 
-    (mkApp4 (mkConst ``LT.lt [levelZero]) 
+    (mkApp4 (mkConst ``LT.lt ([levelZero] : List Level)) 
       (mkConst ``Nat) (mkConst ``instLTNat) (mkNatLit i) (mkNatLit n))
   return mkApp3 (mkConst ``Fin.mk) (mkNatLit n) (mkNatLit i) finProofExpr
 
 /- Same but for Finₓ. -/
 def mkFinxIdxExpr (i : Nat) (n : Nat) : MetaM Expr := do
   let finProofExpr ← mkSyntheticSorry (← mkLt (mkNatLit i) (mkNatLit n))
-  mkAppM ``Finₓ.mk #[mkNatLit i, finProofExpr]
+  mkAppM ``Fin.mk #[mkNatLit i, finProofExpr]
 
 /- Evaluate floating point expressions. -/
 unsafe def evalFloat (e : Expr) : MetaM Float := do
@@ -287,7 +272,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
           data := data.addExpConstraint res[0]!.1 res[0]!.2
       | Expr.app (Expr.app (Expr.app (Expr.app (Expr.app 
           (Expr.const ``Real.rotatedSoCone _) 
-          (Expr.app (Expr.const ``Finₓ _) n)) _) v) w) x => do 
+          (Expr.app (Expr.const ``Fin _) n)) _) v) w) x => do 
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n 
           -- TODO: This is a common issue with all vectors.
           let xis ← (Array.range n).mapM 
