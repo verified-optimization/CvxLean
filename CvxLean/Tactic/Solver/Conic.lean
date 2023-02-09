@@ -12,7 +12,8 @@ import CvxLean.Tactic.Solver.Generation
 import CvxLean.Tactic.Solver.InferDimension
 import CvxLean.Tactic.Solver.Mosek.CBF
 
-attribute [-instance] coeDecidableEq
+attribute [-instance] coeDecidableEq Nat.hasMul Nat.hasAdd String.hasToString
+  String.hasAppend Ne.decidable
 
 namespace CvxLean
 
@@ -94,12 +95,12 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
 
   -- Write input.
   let inputPath := "solver/test.cbf"
-  IO.FS.writeFile inputPath (toString cbf)
+  IO.FS.writeFile inputPath (ToString.toString cbf)
 
   -- Run solver.
   let out ← IO.Process.output { cmd := "mosek", args := #[inputPath] }
   if out.exitCode != 0 then
-    dbg_trace ("MOSEK exited with code " ++ toString out.exitCode)
+    dbg_trace ("MOSEK exited with code " ++ ToString.toString out.exitCode)
     return Sol.Response.failure out.exitCode.toNat
   
   let res := out.stdout
@@ -147,8 +148,8 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
         -- TODO: Many copies of this in the function
         let arrayExpr ← Lean.Expr.mkArray (mkConst ``Real) exprs
         let arrayList ← mkAppM ``Array.toList #[arrayExpr]
-        let v ← withLocalDeclD `i' (← mkAppM ``Finₓ #[toExpr n]) fun i' => do
-          let i'' := mkApp2 (mkConst ``Finx.val) (toExpr n) i'
+        let v ← withLocalDeclD `i' (← mkAppM ``Fin #[toExpr n]) fun i' => do
+          let i'' := mkApp2 (mkConst ``Fin.val) (toExpr n) i'
           -- Get from generated array.
           let r ← mkAppM ``List.get! #[arrayList, i'']
           mkLambdaFVars #[i'] r
@@ -170,11 +171,11 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
         -- List of list representing the matrix.
         let listListExpr ← mkAppM ``Array.toList #[arrayListExpr]
 
-        let M ← withLocalDeclD `i' (← mkAppM ``Finₓ #[toExpr n]) fun i' => do
-          let i'' := mkApp2 (mkConst ``Finx.val) (toExpr n) i'
+        let M ← withLocalDeclD `i' (← mkAppM ``Fin #[toExpr n]) fun i' => do
+          let i'' := mkApp2 (mkConst ``Fin.val) (toExpr n) i'
           let ri ← mkAppM ``List.get! #[listListExpr, i'']
-          withLocalDeclD `j' (← mkAppM ``Finₓ #[toExpr m]) fun j' => do 
-            let j'' := mkApp2 (mkConst ``Finx.val) (toExpr m) j'
+          withLocalDeclD `j' (← mkAppM ``Fin #[toExpr m]) fun j' => do 
+            let j'' := mkApp2 (mkConst ``Fin.val) (toExpr m) j'
             let rij ← mkAppM ``List.get! #[ri, j'']
             mkLambdaFVars #[i', j'] rij
         

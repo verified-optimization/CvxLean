@@ -12,6 +12,7 @@ open Lean.Elab
 open Lean.Elab.Tactic
 
 attribute [-instance] Sum.decidableEq String.hasDecidableEq Prod.inhabited
+  Fin.decidableEq
 
 /- Generate Float expression from natural number. 
 TODO: Duplicate? Move? -/
