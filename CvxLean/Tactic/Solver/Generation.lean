@@ -1,6 +1,5 @@
-import CvxLean.Lib.Missing.Float
-import CvxLean.Lib.Missing.Array
 import CvxLean.Lib.Missing.ToExpr
+import CvxLean.Lib.Missing.Array
 import CvxLean.Tactic.Solver.Mosek.Sol
 
 namespace CvxLean
@@ -20,7 +19,7 @@ def generateMatrixExpr (n : Nat) (A : Array (Array Float)) : Expr :=
       let Ai := 
         mkApp4 (mkConst ``Array.get! [levelZero]) 
           (mkApp (mkConst ``Array [levelZero]) (mkConst ``Float)) 
-          (mkConst ``instInhabitedArrayFloat) 
+          (mkApp (mkConst ``instInhabitedArray) (mkConst ``Float))
           (toExpr A) 
           (mkApp2 (mkConst ``Fin.val) (toExpr n) (mkBVar 1))
       let Aij := 
@@ -44,7 +43,7 @@ def generateMatrixFromIndexedList (n : Nat) (l : List (Nat × Nat × Float))
 def generateSymmMatrixFromVariables (n : Nat) (smvs : List Sol.SymmMatrixVariable) 
   : MetaM (List (Lean.Name × (Array (Array Float)) × Lean.Name × (Array (Array Float)))) := do
   -- TODO: Build the hashmap when you read the input.
-  let mut m : HashMap String (List (Nat × Nat × Float × Float)) := mkHashMap
+  let mut m : Std.HashMap String (List (Nat × Nat × Float × Float)) := mkHashMap
   for smv in smvs do 
     match smv.primal, smv.dual with 
     | some primalValue, some dualValue =>

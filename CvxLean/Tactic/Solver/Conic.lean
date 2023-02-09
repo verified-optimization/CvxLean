@@ -1,8 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Lib.Missing.Array
 import CvxLean.Lib.Missing.Matrix
-import CvxLean.Lib.Missing.Float
---import CvxLean.Lib.Missing.Rat
 import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Missing.ToExpr
 import CvxLean.Meta.Missing.Expr

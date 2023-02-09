@@ -1,6 +1,9 @@
 import Mathlib.Data.List.Basic
 import Mathlib.Algebra.Group.Defs
 
+instance {α} : Inhabited (Array α) where
+  default := Array.empty
+
 def Array.zeroes [Zero α] (n : Nat) : Array α := 
   Array.mk (List.replicate n 0)
 
