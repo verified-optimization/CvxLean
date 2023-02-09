@@ -4,7 +4,7 @@ open System Lake DSL
 package CvxLean
 
 require mathlibport from git
-  "https://github.com/leanprover-community/mathlib3port.git"@"db402ab7e576d998c8cbc97b0d1897c712f34fb5"
+  "https://github.com/leanprover-community/mathlib3port.git"@"e1ef11de97cea5fcd3772993509fa5bd19a2521d"
 
 require ffi from "ffi"
 

@@ -1,48 +1,24 @@
 {"version": 4,
- "packagesDir": "./lake-packages",
+ "packagesDir": "lake-packages",
  "packages":
  [{"git":
-   {"url": "https://github.com/xubaiw/CMark.lean",
-    "subDir?": null,
-    "rev": "2cc7cdeef67184f84db6731450e4c2b258c28fe8",
-    "name": "CMark",
-    "inputRev?": "main"}},
-  {"git":
    {"url": "https://github.com/leanprover-community/mathlib3port.git",
     "subDir?": null,
-    "rev": "db402ab7e576d998c8cbc97b0d1897c712f34fb5",
+    "rev": "e1ef11de97cea5fcd3772993509fa5bd19a2521d",
     "name": "mathlibport",
-    "inputRev?": "db402ab7e576d998c8cbc97b0d1897c712f34fb5"}},
-  {"git":
-   {"url": "https://github.com/leanprover/lake",
-    "subDir?": null,
-    "rev": "d0b530530f14dde97a547b03abf87eee06360d60",
-    "name": "lake",
-    "inputRev?": "master"}},
-  {"git":
-   {"url": "https://github.com/leanprover/doc-gen4",
-    "subDir?": null,
-    "rev": "09dbebed9ca85368152bb5146ef6f1271b1be425",
-    "name": "doc-gen4",
-    "inputRev?": "main"}},
+    "inputRev?": "e1ef11de97cea5fcd3772993509fa5bd19a2521d"}},
   {"git":
    {"url": "https://github.com/leanprover-community/lean3port.git",
     "subDir?": null,
-    "rev": "5912caa13c1aced0beafedb6b4255ceda0827d1f",
+    "rev": "c2e2458ed2ee1c157340b77685da26e7d51676aa",
     "name": "lean3port",
-    "inputRev?": "5912caa13c1aced0beafedb6b4255ceda0827d1f"}},
-  {"git":
-   {"url": "https://github.com/mhuisi/lean4-cli",
-    "subDir?": null,
-    "rev": "5a858c32963b6b19be0d477a30a1f4b6c120be7e",
-    "name": "Cli",
-    "inputRev?": "nightly"}},
+    "inputRev?": "c2e2458ed2ee1c157340b77685da26e7d51676aa"}},
   {"git":
    {"url": "https://github.com/leanprover-community/mathlib4.git",
     "subDir?": null,
-    "rev": "06a8409ad004941bc6efd11b2a47ea3f669843f4",
+    "rev": "bac7310cc18d6ed292606d26ccb5fb9ffc697c7a",
     "name": "mathlib",
-    "inputRev?": "06a8409ad004941bc6efd11b2a47ea3f669843f4"}},
+    "inputRev?": "bac7310cc18d6ed292606d26ccb5fb9ffc697c7a"}},
   {"git":
    {"url": "https://github.com/gebner/quote4",
     "subDir?": null,
@@ -52,25 +28,13 @@
   {"git":
    {"url": "https://github.com/JLimperg/aesop",
     "subDir?": null,
-    "rev": "645e92db52499582bb31984396a5e41772241012",
+    "rev": "ba61f7fec6174d8c7d2796457da5a8d0b0da44c6",
     "name": "aesop",
     "inputRev?": "master"}},
-  {"git":
-   {"url": "https://github.com/hargonix/LeanInk",
-    "subDir?": null,
-    "rev": "2447df5cc6e48eb965c3c3fba87e46d353b5e9f1",
-    "name": "leanInk",
-    "inputRev?": "doc-gen"}},
   {"path": {"name": "ffi", "dir": "./ffi"}},
-  {"git":
-   {"url": "https://github.com/xubaiw/Unicode.lean",
-    "subDir?": null,
-    "rev": "6dd6ae3a3839c8350a91876b090eda85cf538d1d",
-    "name": "Unicode",
-    "inputRev?": "main"}},
   {"git":
    {"url": "https://github.com/leanprover/std4",
     "subDir?": null,
-    "rev": "04b3c9831e0c141713a70e68af7e40973ec9a1ff",
+    "rev": "de7e2a79905a3f87cad1ad5bf57045206f9738c7",
     "name": "std",
     "inputRev?": "main"}}]}
