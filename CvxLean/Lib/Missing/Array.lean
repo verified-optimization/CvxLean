@@ -9,10 +9,9 @@ def DArray.zeroes [Zero α] (a b : Nat) : Array (Array α) :=
 
 def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
   let mut bs := #[]
-  for i in [:as.size] do
-    if h : i < as.size then -- TODO: Deduce this from for loop.
-      if f i then
-        bs := bs.push (as.get ⟨i, h⟩)
+  for h : i in [:as.size] do
+    if f i then
+      bs := bs.push (as.get ⟨i, h.2⟩)
   return bs
 
 @[specialize] def zipWithMAux (f : α → β → Lean.MetaM γ) (as : Array α) (bs : Array β) (i : Nat) (cs : Array γ) : Lean.MetaM (Array γ) := do

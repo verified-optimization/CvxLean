@@ -228,11 +228,11 @@ addRealToFloat (n m) (i1) (i2) : @Matrix.mulVec (Fin n) (Fin m) Real i1 i2 :=
 addRealToFloat (n m) (i1) (i2) : @Matrix.vecMul (Fin n) (Fin m) Real i1 i2 := 
   @Matrix.Computable.vecMul Float (Zero.mk (0 : Float)) n m instMulFloat instAddFloat
 
-addRealToFloat (n : Nat) : @Matrix.PosDef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
-  @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLTFloat
+-- addRealToFloat (n : Nat) : @Matrix.PosDef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
+--   @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLTFloat
 
-addRealToFloat (n : Nat) : @Matrix.PosSemidef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
-  @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLEFloat
+-- addRealToFloat (n : Nat) : @Matrix.PosSemidef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
+--   @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLEFloat
 
 addRealToFloat (n : Nat) : 
   @Matrix.trace (Fin n) ℝ (Fin.fintype n) Real.addCommMonoid := 
