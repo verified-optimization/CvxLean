@@ -1,6 +1,9 @@
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.DCP.Dcp
 import CvxLean.Tactic.Solver.Conic
 import CvxLean.Command.Reduction
+
+attribute [-instance] coeDecidableEq Nat.hasMul Nat.hasAdd String.hasToString
+  String.hasAppend Ne.decidable Nat.hasToString
 
 namespace CvxLean
 
@@ -47,8 +50,6 @@ def getProblemName (term : Syntax) : MetaM Lean.Name := do
 
   return idStx.getId
 
-#check Meta.SolutionExpr
-
 /-- Get solution expression and reduction expression from optimization problem. 
 -/
 def getReducedProblemAndReduction (prob : Expr) 
@@ -61,7 +62,7 @@ def getReducedProblemAndReduction (prob : Expr)
   let codomain := probTy.getArg! 1
   
   let codomainPreorderInst ← mkFreshExprMVar
-    (some $ mkAppN (Lean.mkConst ``Preorderₓ [levelZero]) #[codomain])
+    (some $ mkAppN (Lean.mkConst ``Preorder ([levelZero] : List Level)) #[codomain])
 
   let probSol := mkAppN 
     (mkConst ``Minimization.Solution) 
@@ -81,7 +82,7 @@ def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool)
   let ty ← inferType e 
   let reducibility := Lean.ReducibilityHints.regular 0
   let safety := DefinitionSafety.safe
-  let defVal := mkDefinitionValEx n [] ty e reducibility safety []
+  let defVal := mkDefinitionValEx n ([] : List Lean.Name) ty e reducibility safety ([] : List Lean.Name)
   let decl := Declaration.defnDecl defVal
   if compile then
     Lean.addAndCompile decl 
@@ -92,7 +93,7 @@ syntax (name := solve) "solve " term : command
 
 set_option maxHeartbeats 1000000
 
-@[commandElab «solve»]
+@[command_elab «solve»]
 unsafe def evalSolve : CommandElab := fun stx =>
   match stx with
   | `(solve $probInstance) =>
@@ -153,9 +154,9 @@ unsafe def evalSolve : CommandElab := fun stx =>
           (probReducedSignature ++ #[solPointExpr])
         let fakeOptimality ← mkSyntheticSorry $ ← withLocalDeclD `y feasPointTy 
           fun y => do
-            let hasLe := mkAppN (mkConst ``Preorderₓ.toHasLe [levelZero]) 
+            let hasLe := mkAppN (mkConst ``Preorder.toLE ([levelZero] : List Level)) 
               #[probReducedExpr.codomain, probReducedExpr.codomainPreorder]
-            let le := mkAppN (mkConst ``LE.le [levelZero]) 
+            let le := mkAppN (mkConst ``LE.le ([levelZero] : List Level)) 
               #[probReducedExpr.codomain, hasLe]
             let pointVal := mkAppN (mkConst ``FeasPoint.point)
               (probReducedSignature ++ #[y])
