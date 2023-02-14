@@ -105,7 +105,11 @@ addRealToFloat : Real := Float
 
 addRealToFloat : @Real.hasZero := Zero.mk (0 : Float)
 
+addRealToFloat : Real.instZeroReal := Zero.mk (0 : Float)
+
 addRealToFloat : @Real.hasOne := One.mk (1 : Float)
+
+addRealToFloat : Real.instOneReal := One.mk (1 : Float)
 
 addRealToFloat : @Nat.hasZero := Zero.mk (nat_lit 0)
 
@@ -113,6 +117,8 @@ addRealToFloat (n : Nat) (i) : @AddMonoidWithOne.natCast ℝ i n :=
   Float.ofNat n
 
 addRealToFloat (i) (x : ℕ) : @Nat.cast Real i x := Float.ofNat x
+
+addRealToFloat (n) (i1) (i2) : @instOfNat Real n i1 i2 := @instOfNatFloat n
 
 addRealToFloat (i) : @Nat.castCoe Real i :=
   CoeT.mk Float.ofNat

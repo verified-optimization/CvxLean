@@ -14,7 +14,7 @@ section RealToFloat
 
 #realToFloat Real.exp 1
 
-#realToFloat fun (p : Real × (Finₓ 2 → Real)) => Real.exp p.1 + p.2 1 ≤ 0 ∧ Real.exp p.1 + p.2 1 ≤ 0
+#realToFloat fun (p : Real × (Fin 2 → Real)) => Real.exp p.1 + p.2 1 ≤ 0 ∧ Real.exp p.1 + p.2 1 ≤ 0
 
 #realToFloat (1 : Real) = 3
 
