@@ -126,6 +126,15 @@ addRealToFloat (i) : @Nat.castCoe Real i :=
 addRealToFloat (x : ℕ) (i) : @instOfNat Real x Real.natCast i := 
   @instOfNatFloat x
 
+-- #check AddMonoid 
+-- -- @HSMul.hSMul ℕ (Matrix (Fin 2) (Fin 2) ℝ) (Matrix (Fin 2) (Fin 2) ℝ) instHSMul 2 X : Matrix (Fin 2) (Fin 2) ℝ
+-- addRealToFloat (n m) : @Matrix.addMonoid n m Real Real.instAddMonoidReal := 
+--   @Matrix.addMonoid n m Float Real.instAddMonoidReal Float.add
+
+addRealToFloat (n m k) : 
+  @HSMul.hSMul ℕ (Matrix n m ℝ) (Matrix n m ℝ) instHSMul k := 
+  (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
+
 addRealToFloat (n m k : Nat) : 
   @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.SMul k := 
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
