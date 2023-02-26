@@ -7,7 +7,7 @@ import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Command.Reduction
 import Mathbin.Algebra.Hom.Units
-import Mathbin.Algebra.Order.Ring
+import Mathlib.Algebra.Order.Ring
 import Optbin.CovarianceEstimation
 import CvxLean.Command.Solve
 
