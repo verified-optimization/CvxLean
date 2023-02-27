@@ -1,6 +1,10 @@
 import CvxLean.Lib.Minimization 
 import CvxLean.Tactic.DCP.AtomLibrary
 
+attribute [-instance] coeDecidableEq
+attribute [-simp] Set.inj_on_empty Set.inj_on_singleton Quot.lift_on₂_mk 
+  Quot.lift_on_mk Quot.lift₂_mk
+
 open Minimization
 
 variable {R D E F : Type} [Preorderₓ R]
@@ -92,6 +96,99 @@ def MinEquiv.trans (E₁ : MinEquiv p q) (E₂ : MinEquiv q r) :
 instance : 
   Trans (@MinEquiv R D E _) (@MinEquiv R E F _) (@MinEquiv R D F _) := 
   { trans := fun E₁ E₂ => MinEquiv.trans _ _ _ E₁ E₂ }
+
+-- NOTE: B for bundled. 
+
+structure MinimizationB := 
+  (D : Type)
+  (prob : Minimization D Real)
+
+def MinimizationB.equiv : MinimizationB → MinimizationB → Prop := 
+  fun p q => Nonempty (MinEquiv p.prob q.prob)
+
+lemma MinimizationB.equiv_refl (p : MinimizationB) : 
+  MinimizationB.equiv p p :=
+  ⟨MinEquiv.refl _⟩
+
+lemma Minimization.equiv_symm {p q : MinimizationB} : 
+  MinimizationB.equiv p q → MinimizationB.equiv q p :=
+  fun ⟨E⟩ => ⟨@MinEquiv.symm Real p.D q.D _ p.prob q.prob E⟩ 
+
+lemma Minimization.equiv_trans {p q r : MinimizationB} : 
+  MinimizationB.equiv p q → MinimizationB.equiv q r → MinimizationB.equiv p r :=
+  fun ⟨E₁⟩ ⟨E₂⟩ => 
+    ⟨@MinEquiv.trans Real p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
+
+instance : Setoid MinimizationB := 
+  { r := MinimizationB.equiv,
+    iseqv := 
+      { refl := MinimizationB.equiv_refl, 
+        symm := Minimization.equiv_symm, 
+        trans := Minimization.equiv_trans } }
+
+-- NOTE: Q for quotient.
+
+def MinimizationQ := @Quotient MinimizationB (by infer_instance)
+
+def MinimizationQ.mk {D : Type} (p : Minimization D Real) : MinimizationQ := 
+  Quotient.mk' { D := D, prob := p }
+
+syntax "{|" term "|}" : term
+
+macro_rules 
+  | `({| $p:term |}) => do pure (← `(@MinimizationQ.mk _ $p)).raw
+
+def MinimizationQ.constraints_comm
+  {D : Type} {f : D → Real} {cs₁ cs₂ : D → Prop} :
+  {| { objFun := f, constraints := fun x => cs₁ x ∧ cs₂ x } |} = 
+  {| { objFun := f, constraints := fun x => cs₂ x ∧ cs₁ x } |} := by
+  apply Quotient.sound; apply Nonempty.intro; exact 
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun _ hx => And.comm.mp hx,
+    phi_optimality := fun _ _ => le_reflₓ _,
+    psi_feasibility := fun _ hy => And.comm.mp hy,
+    psi_optimality := fun _ _ => le_reflₓ _ }
+
+-- Useful to have this.
+def MinimizationQ.constraints_comm_l
+  {D : Type} {f : D → Real} {cs cs₁ cs₂ : D → Prop} :
+  {| { objFun := f, constraints := fun x => cs x ∧ (cs₁ x ∧ cs₂ x) } |} = 
+  {| { objFun := f, constraints := fun x => cs x ∧ (cs₂ x ∧ cs₁ x) } |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun _ hx => ⟨hx.1, And.comm.mp hx.2⟩,
+    phi_optimality := fun _ _ => le_reflₓ _,
+    psi_feasibility := fun _ hy => ⟨hy.1, And.comm.mp hy.2⟩,
+    psi_optimality := fun _ _ => le_reflₓ _ }
+
+def MinimizationQ.constraints_assoc 
+  {D : Type} {f : D → Real} {cs₁ cs₂ cs₃ : D → Prop} :
+  {| { objFun := f, constraints := fun x => (cs₁ x ∧ cs₂ x) ∧ cs₃ x } |} = 
+  {| { objFun := f, constraints := fun x => cs₁ x ∧ (cs₂ x ∧ cs₃ x) } |} := 
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun _ hx => And.assoc.mp hx,
+    phi_optimality := fun _ _ => le_reflₓ _,
+    psi_feasibility := fun _ hy => And.assoc.mpr hy,
+    psi_optimality := fun _ _ => le_reflₓ _ }
+
+
+section QuotientExample 
+
+open CvxLean MinimizationQ
+
+example :
+  {| optimization (x : Real) minimize x subject to h : 0 < x ∧ True ∧ False |} =
+  {| optimization (x : Real) minimize x subject to h : False ∧ True ∧ 0 < x |} := by
+  rw [constraints_comm_l (cs₁ := fun _ => True)]
+  rw [constraints_comm]
+  rw [constraints_assoc]
+
+end QuotientExample
+
 
 section Example
 
@@ -185,10 +282,6 @@ noncomputable def MinEquiv.log_le_log_no_cs
       fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).1 h.2.2⟩⟩)  
 
 open CvxLean
-
-attribute [-instance] coeDecidableEq
-attribute [-simp] Set.inj_on_empty Set.inj_on_singleton Quot.lift_on₂_mk 
-  Quot.lift_on_mk Quot.lift₂_mk
 
 set_option pp.optMinimization false
 
