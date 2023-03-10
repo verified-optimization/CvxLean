@@ -672,19 +672,24 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     (optimality := optimality)
 
 /-- -/
-def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : MetaM (Expr × Expr) := do
+def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
+  MetaM (Expr × Expr) := do
   -- Extract objective and constraints from `goalExprs`.
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
     let pr := (← Meta.mkProjections goalExprs.domain p).toArray
     let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) fun xs => do
-        return ← xs.mapM fun x => x.fvarId!.getDecl
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+        fun xs => do
+          return ← xs.mapM fun x => x.fvarId!.getDecl
     withExistingLocalDecls originalVarsDecls.toList do
       let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
       let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ← Meta.decomposeConstraints constraints
-      let constraints ← constraints.mapM (fun ((n : Lean.Name), e) => do return (n, ← Expr.removeMData e))
+      let constraints : List (Lean.Name × Expr) ← 
+        Meta.decomposeConstraints constraints
+      let constraints ← 
+        constraints.mapM (fun ((n : Lean.Name), e) => do 
+          return (n, ← Expr.removeMData e))
       let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
       let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
       return (objFun, constraints, originalVarsDecls)
@@ -783,9 +788,48 @@ def canonizeGoal (goal : MVarId) : MetaM MVarId := do
   trace[Meta.debug] "assignment: {assignment}"
   return newGoal.mvarId!
 
+def dcpScoreFromSolutionExpr (solE : Meta.SolutionExpr) : MetaM Nat := do 
+  let (objFun, constraints, originalVarsDecls)
+    ← withLambdaBody solE.constraints fun p constraints => do
+    let pr := (← Meta.mkProjections solE.domain p).toArray
+    let originalVarsDecls ←
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+        fun xs => do
+          return ← xs.mapM fun x => x.fvarId!.getDecl
+    withExistingLocalDecls originalVarsDecls.toList do
+      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
+      let constraints : List (Lean.Name × Expr) ← 
+        Meta.decomposeConstraints constraints
+      let constraints ← constraints.mapM (fun ((n : Lean.Name), e) => 
+        do return (n, ← Expr.removeMData e))
+      let objFunP := solE.objFun.bindingBody!.instantiate1 p
+      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
+      return (objFun, constraints, originalVarsDecls)
+  let oc ← mkOC objFun constraints originalVarsDecls
+  let (_failedAtom, _failedAtomMsgs, atoms, _args, _curvature, _bconds) ← 
+    mkAtomTree originalVarsDecls oc
+
+  let objFunTree := atoms.objFun
+  let constrTrees := atoms.constr
+
+  let mut totalSize := objFunTree.size
+  for constrTree in constrTrees do
+    totalSize := totalSize + constrTree.size
+
+  return totalSize
+
+def dcpScoreFromExpr (e : Expr) : MetaM Nat := do
+  let solE ← Meta.matchSolutionExprFromExpr e
+  dcpScoreFromSolutionExpr solE
+
+def dcpScore (mvarId : MVarId) : MetaM Nat := do 
+  let solE ← Meta.matchSolutionExpr mvarId
+  dcpScoreFromSolutionExpr solE
+
 end DCP
 
-namespace  Tactic
+namespace Tactic
 
 open Lean.Elab Lean.Elab.Tactic
 
@@ -797,6 +841,25 @@ def evalDcp : Tactic := fun stx => match stx with
   let goal ← Elab.Tactic.getMainGoal
   replaceMainGoal [← DCP.canonizeGoal goal]
 | _ => throwUnsupportedSyntax
+
+syntax (name := dcpScore) "dcp_score" : tactic 
+
+@[tactic dcpScore]
+def evalDcpScore : Tactic 
+  | `(tactic| dcp_score) => do 
+    let goal ← Elab.Tactic.getMainGoal
+    let score ← DCP.dcpScore goal
+    dbg_trace s!"DCP score: {score}"
+    pure ()
+  | _ => throwUnsupportedSyntax
+
+-- NOTES:
+-- mkAtomTree fails early, so the hacky way to go is to 
+-- try to reorder the constraints. 
+-- Why should it fail at all? Why not build as much as you can.
+-- The objective failure is in mkAtomTree.
+-- The constraint failure is in mkVCondition.
+-- Some of the Dcp tests are not passing e.g. huber, why?
 
 end Tactic
 
