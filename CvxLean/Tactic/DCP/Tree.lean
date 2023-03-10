@@ -47,6 +47,10 @@ def val : Tree α α → α
   | node val children => val
   | leaf val => val
 
+partial def size : Tree α β → Nat
+  | node _ children => children.foldl (fun acc child => acc + size child) 0
+  | leaf _ => 1
+
 end Tree
 
 end CvxLean
