@@ -269,6 +269,21 @@ noncomputable def MinEquiv.rewrite_constraints
     psi_optimality := fun x _ => le_reflₓ _
   }
 
+noncomputable def MinEquiv.rewrite_objective 
+  {f : D → R}
+  {g : D → R}
+  (hfg : ∀ x, cs x → f x = g x) :
+  MinEquiv 
+    { objFun := f, constraints := cs } 
+    { objFun := g, constraints := cs } :=
+  { phi := id,
+    psi := id,
+    phi_feasibility := fun x hx => hx,
+    phi_optimality := fun x hx => by dsimp; rw [hfg x hx]; exact le_reflₓ _,
+    psi_feasibility := fun x hx => hx,
+    psi_optimality := fun x hx => by dsimp; rw [hfg x hx]; exact le_reflₓ _
+  }
+
 noncomputable def MinEquiv.log_le_log_no_cs
   {f : Real → Real} {g h : Real → Real} :
   MinEquiv 
