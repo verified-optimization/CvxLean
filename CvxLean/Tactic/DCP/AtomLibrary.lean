@@ -28,21 +28,22 @@ optimality by
       left 
       rcases hexp with ⟨hy, hexp⟩
       apply And.intro hy;
-      refine' le_trans _ (le_trans hexp hz);
-      refine' mul_le_mul_of_nonneg_left _ _;
+      refine' le_transₓ _ (le_transₓ hexp hz);
+      refine' ZeroLt.mul_le_mul_of_nonneg_left _ _;
       { rw [exp_le_exp];
         refine' (div_le_div_right _).2 hx;
+        erw [(rfl : @Zero.zero Real (MulZeroClassₓ.toHasZero Real) = 0)]
         exact hy }
-      { apply le_of_lt;
+      { erw [(rfl : @Zero.zero Real (MulZeroClassₓ.toHasZero Real) = 0)]
+        apply le_of_ltₓ;
         exact hy } }
   | inr hyzx => {
       right 
       rcases hyzx with ⟨hy, h0z, hx0⟩
       apply And.intro hy;
-      exact ⟨le_trans h0z hz, le_trans hx hx0⟩ }
+      exact ⟨le_transₓ h0z hz, le_transₓ hx hx0⟩ }
 
-declare_atom Vec.expCone [cone] 
-  (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
+declare_atom Vec.expCone [cone] (n : Nat)& (x : (Finₓ n) → ℝ)- (z : (Finₓ n) → ℝ)+ : Vec.expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp i
   unfold Vec.expCone at *
