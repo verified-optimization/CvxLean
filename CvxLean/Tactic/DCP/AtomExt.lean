@@ -30,6 +30,7 @@ instance : ToMessageData ArgKind where
 
 /-- Data structure to store information about registered atoms. -/
 structure GraphAtomData where
+  id : Name
   curvature : Curvature
   expr : Expr
   argKinds : Array ArgKind
@@ -47,7 +48,8 @@ deriving BEq, Inhabited
 
 instance : ToMessageData GraphAtomData where
   toMessageData d := 
-    m!"curvature: {d.curvature}
+    m!"id: {d.id}
+    curvature: {d.curvature}
     expr: {d.expr}
     argKinds: {d.argKinds}
     vconds: {d.vconds}
