@@ -5,13 +5,6 @@ import CvxLean.Lib.Missing.Vec
 import CvxLean.Lib.Missing.Matrix
 import CvxLean.Syntax.Minimization
 
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
-  Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
-  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow 
-  Real.linearOrder Real.conditionallyCompleteLinearOrder Real.orderedSemiring
-  Real.hasSup
-
 instance : CovariantClass ℝ ℝ (· + ·) (· ≤ ·) := 
   ⟨fun a b c h => OrderedAddCommGroup.add_le_add_left b c h a⟩
 
@@ -24,15 +17,6 @@ instance : AddZeroClass ℝ := by infer_instance
 instance {n} : DistribSMul ℝ (Fin n → ℝ) := by infer_instance
 
 instance {n} : DistribMulAction ℝ (Fin n → ℝ) := by infer_instance
-
--- TODO: Mathport unalignments.
-lemma tmp_zero_eq_zero : Real.instZeroReal = Real.hasZero := sorry
-lemma tmp_le_eq_le : Real.instLEReal = Real.hasLe := sorry
-lemma tmp_lt_eq_lt : Real.instLTReal = Real.hasLt := sorry
-lemma tmp_preorder_eq_le : @Preorder.toLE ℝ Real.preorder = Real.hasLe := sorry
-lemma tmp_preorder_eq_lt : @Preorder.toLT ℝ Real.preorder = Real.hasLt := sorry
-lemma tmp_monoid_eq_monoid : Real.instMonoidReal = Real.monoid := sorry
-lemma tmp_sup_eq_sup : ∀ (i : HasSup ℝ), i = Real.hasSup := sorry
 
 namespace CvxLean
 
