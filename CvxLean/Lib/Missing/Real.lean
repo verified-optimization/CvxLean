@@ -6,8 +6,8 @@ namespace Real
 def log (x : Real) : Real := 
   sorry
 
-macro "π" : term => 
-  `(Real.pi)
+def pi : Real := 
+  sorry
 
 noncomputable instance : OfScientific Real := {
   ofScientific := fun mantissa exponentSign decimalExponent => 
