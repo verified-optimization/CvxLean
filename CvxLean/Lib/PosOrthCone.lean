@@ -1,7 +1,5 @@
 import CvxLean.Lib.Missing.Real
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField
+import CvxLean.Lib.Missing.Matrix
 
 namespace Real 
 

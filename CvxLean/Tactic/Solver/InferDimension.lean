@@ -1,10 +1,9 @@
 import CvxLean.Lib.Missing.Real
+import CvxLean.Lib.Missing.Matrix
 import CvxLean.Meta.Missing.Expr
 import CvxLean.Meta.Missing.Meta
 
 namespace CvxLean
-
-attribute [-instance] String.hasDecidableEq List.hasAppend
 
 open Lean Lean.Meta
 

@@ -10,17 +10,6 @@ import CvxLean.Tactic.Solver.Float.RealToFloatExt
 
 namespace CvxLean
 
-attribute [-instance] Nat.hasSub String.hasToString String.hasAppend 
-  Nat.hasToString Bool.inhabited Ne.decidable Prod.inhabited 
-  String.hasDecidableEq Nat.hasAdd
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
-  Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
-  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow 
-  Real.linearOrder Real.conditionallyCompleteLinearOrder Real.orderedSemiring
-  Real.hasSup
-
 open Lean Lean.Elab Lean.Meta Lean.Elab.Command Lean.Elab.Term
 
 syntax (name := addRealToFloatCommand) 
@@ -103,17 +92,11 @@ unsafe def elabRealToFloatCommand : CommandElab
 
 addRealToFloat : Real := Float
 
-addRealToFloat : @Real.hasZero := Zero.mk (0 : Float)
-
 addRealToFloat : Real.instZeroReal := Zero.mk (0 : Float)
-
-addRealToFloat : @Real.hasOne := One.mk (1 : Float)
 
 addRealToFloat : Real.instOneReal := One.mk (1 : Float)
 
-addRealToFloat : @Nat.hasZero := Zero.mk (nat_lit 0)
-
-addRealToFloat (n : Nat) (i) : @AddMonoidWithOne.natCast ℝ i n := 
+addRealToFloat (n : Nat) : AddMonoidWithOne.toNatCast.natCast (R := ℝ) n := 
   Float.ofNat n
 
 addRealToFloat (i) (x : ℕ) : @Nat.cast Real i x := Float.ofNat x
@@ -143,21 +126,13 @@ addRealToFloat (k : Nat) :
   @SMul.smul ℕ ℝ AddMonoid.SMul k := 
   (fun (x : Float) => (OfNat.ofNat k) * x)
 
-addRealToFloat : @Real.hasNeg := instNegFloat
-
-addRealToFloat : @Real.hasAdd := instAddFloat
-
 addRealToFloat (i) : @HAdd.hAdd Real Real Real i := Float.add 
 
 addRealToFloat (i) : @instHAdd Real i := @HAdd.mk Float Float Float Float.add
 
-addRealToFloat : @Real.hasSub := instSubFloat
-
 addRealToFloat (i) : @HSub.hSub Real Real Real i := Float.sub 
 
 addRealToFloat (i) : @instHSub Real i := @HSub.mk Float Float Float Float.sub
-
-addRealToFloat : @Real.hasMul := instMulFloat
 
 addRealToFloat (i) : @HMul.hMul Real Real Real i := Float.mul 
 
@@ -167,15 +142,13 @@ addRealToFloat (i) : @HDiv.hDiv Real Real Real i := Float.div
 
 addRealToFloat (i) : @instHDiv Real i := @HDiv.mk Float Float Float Float.div
 
-addRealToFloat : @Real.hasInv := @Inv.mk Float (fun x => 1 / x)
-
 addRealToFloat (i) : @HPow.hPow Real Nat Real i := 
   fun f n => Float.pow f (Float.ofNat n)
 
 addRealToFloat : @Real.exp := Float.exp
 
 -- TODO: define Float.pi using foreign function interface
-addRealToFloat : @Real.pi := 2 * Float.acos 0
+addRealToFloat : Real.pi := 2 * Float.acos 0
 
 addRealToFloat : @Real.sqrt := Float.sqrt
 
