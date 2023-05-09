@@ -1,4 +1,4 @@
-import Mathbin.LinearAlgebra.Matrix.PosDef
+import Mathbin.LinearAlgebra.Matrix.DotProduct
 
 namespace Real 
 

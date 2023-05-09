@@ -1,7 +1,4 @@
-import Mathbin.Data.Complex.Exponential
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField
+import Mathlib.Data.Complex.Exponential
 
 namespace Real
 

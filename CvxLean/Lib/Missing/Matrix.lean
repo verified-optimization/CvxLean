@@ -1,8 +1,6 @@
 import Mathlib.Data.Real.Basic
+import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.Array.Defs
-import Mathbin.Data.Real.Basic
-import Mathbin.LinearAlgebra.Matrix.Default
-import Mathbin.LinearAlgebra.Matrix.PosDef
 import CvxLean.Lib.Missing.List
 
 namespace Matrix

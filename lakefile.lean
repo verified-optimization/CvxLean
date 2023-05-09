@@ -3,10 +3,8 @@ open System Lake DSL
 
 package CvxLean
 
-require mathlibport from git
-  "https://github.com/leanprover-community/mathlib3port.git"@"e1ef11de97cea5fcd3772993509fa5bd19a2521d"
-
-require ffi from "ffi"
+require mathlib from git
+  "https://github.com/leanprover-community/mathlib4"@"68b21e12e6d612e77f34febea2e00a9358ce2f76"
 
 @[default_target]
 lean_lib CvxLeanTest

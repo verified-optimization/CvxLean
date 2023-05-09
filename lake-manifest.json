@@ -2,39 +2,26 @@
  "packagesDir": "lake-packages",
  "packages":
  [{"git":
-   {"url": "https://github.com/leanprover-community/mathlib3port.git",
+   {"url": "https://github.com/leanprover-community/mathlib4",
     "subDir?": null,
-    "rev": "e1ef11de97cea5fcd3772993509fa5bd19a2521d",
-    "name": "mathlibport",
-    "inputRev?": "e1ef11de97cea5fcd3772993509fa5bd19a2521d"}},
-  {"git":
-   {"url": "https://github.com/leanprover-community/lean3port.git",
-    "subDir?": null,
-    "rev": "c2e2458ed2ee1c157340b77685da26e7d51676aa",
-    "name": "lean3port",
-    "inputRev?": "c2e2458ed2ee1c157340b77685da26e7d51676aa"}},
-  {"git":
-   {"url": "https://github.com/leanprover-community/mathlib4.git",
-    "subDir?": null,
-    "rev": "bac7310cc18d6ed292606d26ccb5fb9ffc697c7a",
+    "rev": "68b21e12e6d612e77f34febea2e00a9358ce2f76",
     "name": "mathlib",
-    "inputRev?": "bac7310cc18d6ed292606d26ccb5fb9ffc697c7a"}},
+    "inputRev?": "68b21e12e6d612e77f34febea2e00a9358ce2f76"}},
   {"git":
    {"url": "https://github.com/gebner/quote4",
     "subDir?": null,
-    "rev": "7ac99aa3fac487bec1d5860e751b99c7418298cf",
+    "rev": "c71f94e34c1cda52eef5c93dc9da409ab2727420",
     "name": "Qq",
     "inputRev?": "master"}},
   {"git":
    {"url": "https://github.com/JLimperg/aesop",
     "subDir?": null,
-    "rev": "ba61f7fec6174d8c7d2796457da5a8d0b0da44c6",
+    "rev": "cdc00b640d0179910ebaa9c931e3b733a04b881c",
     "name": "aesop",
     "inputRev?": "master"}},
-  {"path": {"name": "ffi", "dir": "./ffi"}},
   {"git":
    {"url": "https://github.com/leanprover/std4",
     "subDir?": null,
-    "rev": "de7e2a79905a3f87cad1ad5bf57045206f9738c7",
+    "rev": "6006307d2ceb8743fea7e00ba0036af8654d0347",
     "name": "std",
     "inputRev?": "main"}}]}
