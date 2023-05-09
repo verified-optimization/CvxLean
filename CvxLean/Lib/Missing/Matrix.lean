@@ -1,15 +1,10 @@
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Matrix.Basic
+import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Data.Array.Defs
 import CvxLean.Lib.Missing.List
 
 namespace Matrix
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
-  Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid 
-  Real.monoidWithZero Real.addCommMonoid Real.linearOrder 
-  Real.conditionallyCompleteLinearOrder Real.orderedSemiring Real.hasSup
 
 instance [Preorder α] : Preorder (Matrix m n α) :=
 { le := fun A B => ∀ i j, A i j ≤ B i j
@@ -36,10 +31,6 @@ theorem dotProduct_zero'' {m} [Fintype m] (x : m → ℝ)
   : Matrix.dotProduct x 0 = 0 := by
   simp [Matrix.dotProduct]
 
-theorem zero_dotProduct' {m} [Fintype m] (x : m → ℝ) 
-  : Matrix.dotProduct 0 x = 0 := by
-  simp [Matrix.dotProduct]
-
 theorem dotProduct_smul' {m} [Fintype m] (x : m → ℝ) (y : m → ℝ) (a : ℝ) 
   : Matrix.dotProduct x (a • y) = a • Matrix.dotProduct x y := by
   unfold Matrix.dotProduct ; rw [Finset.smul_sum]
@@ -60,12 +51,6 @@ theorem add_dotProduct' {m} [Fintype m] (x x' : m → ℝ) (y : m → ℝ)
   unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
   apply congr_arg ; ext i ; simp ; ring
 
-theorem zero_apply {n} (i : Fin n) (j : Fin n) 
-  : (0 : Matrix (Fin n) (Fin n) ℝ) i j = 0 := by
-  rw [Pi.zero_apply, Pi.zero_apply]
-
-attribute [instance] LinearOrder.decidable_le
-
 def toUpperTri 
   {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] (A : Matrix m m α) 
   : Matrix m m α := 
@@ -74,21 +59,21 @@ def toUpperTri
 theorem toUpperTri_zero 
   {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] 
   : Matrix.toUpperTri (0 : Matrix m m α) = 0 := by
-  funext i j ; simp [Matrix.toUpperTri] ; intros _ ; rfl
+  funext i j ; simp [Matrix.toUpperTri] 
 
 theorem toUpperTri_smul 
   {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
   (A : Matrix m m ℝ) (κ : ℝ)
   : κ • Matrix.toUpperTri A = Matrix.toUpperTri (κ • A) := by
   funext i j ; rw [Pi.smul_apply, Pi.smul_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h] ; rw [Pi.smul_apply, Pi.smul_apply] ; rfl
+  by_cases h : i ≤ j <;> simp [h]
 
 theorem toUpperTri_add 
   {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
   (A B : Matrix m m ℝ)
   : Matrix.toUpperTri (A + B) = Matrix.toUpperTri A + Matrix.toUpperTri B := by
   funext i j ; rw [Pi.add_apply, Pi.add_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h] ; rw [Pi.add_apply, Pi.add_apply]
+  by_cases h : i ≤ j <;> simp [h]
 
 theorem sum_zero {n} 
   : Matrix.sum (0 : Matrix (Fin n) (Fin n) ℝ) = 0 := by
@@ -111,19 +96,17 @@ theorem diag_smul' {m} [Fintype m] (x : ℝ) (A : Matrix m m ℝ)
 theorem diagonal_zero' {n} 
   : Matrix.diagonal (0 : Fin n → ℝ) = 0 := by
   funext i j ; by_cases i = j <;> 
-  simp [Matrix.diagonal, h] <;> rw [Pi.zero_apply, Pi.zero_apply] ; rfl
+  simp [Matrix.diagonal, h]
 
 theorem diagonal_smul' {n} (d : Fin n → ℝ) (κ : ℝ)
   : κ • Matrix.diagonal d = Matrix.diagonal (κ • d) := by
   funext i j ; by_cases i = j <;>
-  simp [Matrix.diagonal, h] <;> rw [Pi.smul_apply, Pi.smul_apply] <;>
-  simp [h] ; exact MulZeroClass.mul_zero _
+  simp [Matrix.diagonal, h]
 
 theorem diagonal_add' {n} (d₁ d₂ : Fin n → ℝ)
   : Matrix.diagonal d₁ + Matrix.diagonal d₂ = Matrix.diagonal (d₁ + d₂) := by
   funext i j ; by_cases i = j <;>
-  simp [Matrix.diagonal, h] <;> rw [Pi.add_apply, Pi.add_apply] <;>
-  simp [h] ; exact AddZeroClass.zero_add _
+  simp [Matrix.diagonal, h] 
 
 theorem trace_zero' {m} [Fintype m]
   : Matrix.trace (0 : Matrix m m ℝ) = 0 := by
@@ -140,15 +123,11 @@ theorem trace_add' {m} [Fintype m] (A B : Matrix m m ℝ)
 
 theorem transpose_zero' {m} [Fintype m] 
   : Matrix.transpose (0 : Matrix m m ℝ) = 0 := by
-  funext i j ; simp [Matrix.transpose, id] ; rfl
+  funext i j ; simp [Matrix.transpose, id]
 
 theorem transpose_add' {m} [Fintype m] (A B : Matrix m m ℝ)
   : Matrix.transpose (A + B) = Matrix.transpose A + Matrix.transpose B := by
-  funext i j ; simp [Matrix.transpose, id] ; rfl
-
-theorem fromBlocks_zero {n m l o α} [Zero α] 
-  : Matrix.fromBlocks (0 : Matrix n l α) (0 : Matrix n m α) (0 : Matrix o l α) (0 : Matrix o m α) = 0 := by
-  funext i j ; cases i <;> cases j <;> simp [Matrix.fromBlocks] <;> rfl
+  funext i j ; simp [Matrix.transpose, id]
 
 theorem fromBlocks_smul' {n m l o} (κ : ℝ)
   (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) 
@@ -184,19 +163,16 @@ theorem mulVec_zero' {m n} [Fintype m] [Fintype n] (A : Matrix m n ℝ)
   : Matrix.mulVec A (0 : n → ℝ) = 0 := by
   funext i ; unfold Matrix.mulVec
   convert @Matrix.dotProduct_zero'' n _ (fun j => A i j) 
-  sorry
 
 theorem mulVec_smul' {m n} [Fintype m] [Fintype n] 
   (κ : ℝ) (A : Matrix m n ℝ) (v : n → ℝ)
   : Matrix.mulVec A (κ • v) = κ • Matrix.mulVec A v := by
-  funext i ; unfold Matrix.mulVec 
-  sorry
+  funext i ; simp [Matrix.mulVec]
 
 theorem mulVec_add' {m n} [Fintype m] [Fintype n] 
   (A : Matrix m n ℝ) (v w : n → ℝ)
   : Matrix.mulVec A (v + w) = Matrix.mulVec A v + Matrix.mulVec A w := by
-  funext i ; unfold Matrix.mulVec
-  sorry
+  funext i ; simp [Matrix.mulVec]
 
 -- Transform to arrays to compute. Avoiding mathbin matrix operations.
 namespace Computable

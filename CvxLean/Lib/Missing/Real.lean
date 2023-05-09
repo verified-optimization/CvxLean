@@ -1,10 +1,10 @@
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Complex.Exponential
-import Mathbin.Analysis.SpecialFunctions.Log.Basic
-
-attribute [-instance] coeDecidableEq Real.hasLe
 
 namespace Real
+
+def log (x : Real) : Real := 
+  sorry
 
 macro "π" : term => 
   `(Real.pi)
