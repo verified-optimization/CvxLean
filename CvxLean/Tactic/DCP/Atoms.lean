@@ -5,14 +5,6 @@ import CvxLean.Tactic.DCP.AtomSyntax
 import CvxLean.Lib.Missing.Real
 import CvxLean.Tactic.DCP.Dcp
 
-attribute [-instance] Nat.hasSub String.hasToString String.hasAppend 
-  Nat.hasToString Bool.inhabited Ne.decidable Prod.inhabited 
-  String.hasDecidableEq Nat.hasAdd
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.hasNatCast 
-
-
 namespace CvxLean
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command

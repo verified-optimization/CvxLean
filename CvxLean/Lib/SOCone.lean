@@ -1,5 +1,5 @@
-import Mathbin.Data.Real.Sqrt
-import Mathbin.Data.Matrix.Basic
+import Mathlib.Data.Real.Sqrt
+import Mathlib.Data.Matrix.Basic
 
 /- 
 https://docs.mosek.com/modeling-cookbook/cqo.html#sec-cqo-rquadcone
@@ -7,26 +7,17 @@ https://docs.mosek.com/modeling-cookbook/cqo.html#sec-cqo-rquadcone
 This file defines the second-order cone.
 -/
 
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.monoid Real.addCommMonoid Real.hasNatCast
-
 namespace Real
+
+open BigOperators
 
 variable [Fintype m] [Fintype n]
 
-set_option pp.all true
-
--- TODO: Notation
 def soCone (t : Real) (x : n → Real) : Prop :=
-  sqrt (Finset.sum Finset.univ <| fun i => x i ^ 2) ≤ t
+  sqrt (∑ i, x i ^ 2) ≤ t
 
--- TODO: Notation
 def rotatedSoCone (v w : Real) (x : n → Real) : Prop :=
-  (Finset.sum Finset.univ <| fun i => x i ^ 2) ≤ (v * w) * 2 ∧ 0 ≤ v ∧ 0 ≤ w
-
-section SOConeLemmas
-
-variable (t v w : Real) (x : n → Real)
+  (∑ i, x i ^ 2) ≤ (v * w) * 2 ∧ 0 ≤ v ∧ 0 ≤ w
 
 noncomputable def rotateSoCone {n : ℕ} (t : Real) (x : Fin n.succ → Real) : 
   Real × Real × (Fin n → Real) :=
@@ -36,18 +27,10 @@ noncomputable def unrotateSoCone {n : ℕ} (v w : Real) (x : Fin n → Real) :
    Real × (Fin n.succ → Real) :=
 ((v + w) / sqrt 2, Matrix.vecCons ((v - w) / sqrt 2) x)
 
-end SOConeLemmas
-
-namespace Vec
-
-variable [Fintype m] [Fintype n]
-
-def soCone (t : m → Real) (X : Matrix m n Real) : Prop :=
+def Vec.soCone (t : m → Real) (X : Matrix m n Real) : Prop :=
   ∀ i, Real.soCone (t i) (X i)
 
-def rotatedSoCone (v w : m → Real) (X : Matrix m n Real) : Prop :=
+def Vec.rotatedSoCone (v w : m → Real) (X : Matrix m n Real) : Prop :=
   ∀ i, Real.rotatedSoCone (v i) (w i) (X i)
-
-end Vec
 
 end Real

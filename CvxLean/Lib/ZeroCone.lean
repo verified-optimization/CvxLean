@@ -1,7 +1,4 @@
-import Mathbin.Data.Real.Basic
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField
+import Mathlib.Data.Real.Basic
 
 namespace Real 
 
