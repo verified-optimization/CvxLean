@@ -112,14 +112,6 @@ addRealToFloat (n) (i1) (i2) : @instOfNat Real n i1 i2 :=
 addRealToFloat (x : ℕ) (i) : @instOfNat Real x Real.natCast i := 
   @instOfNatFloat x
 
-addRealToFloat (n m k) : 
-  @HSMul.hSMul ℕ (Matrix n m ℝ) (Matrix n m ℝ) instHSMul k := 
-  (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
-
-addRealToFloat (n m k : Nat) : 
-  @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.SMul k := 
-  (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
-
 addRealToFloat (k : Nat) : 
   @SMul.smul ℕ ℝ AddMonoid.SMul k := 
   (fun (x : Float) => (OfNat.ofNat k) * x)
@@ -151,6 +143,12 @@ addRealToFloat (i) : @instHDiv Real i :=
 addRealToFloat (i) : @HPow.hPow Real Nat Real i := 
   fun f n => Float.pow f (Float.ofNat n)
 
+addRealToFloat (i) : @instHPow Real i := 
+  @HPow.mk Float Float Float Float.pow
+
+addRealToFloat (i) : @LE.le Real i := 
+  Float.le 
+
 -- TODO: define Float.pi using foreign function interface
 addRealToFloat : Real.pi := 
   2 * Float.acos 0
@@ -172,6 +170,14 @@ addRealToFloat : Real.instOfScientificReal := instOfScientificFloat
 end Basic
 
 section Matrix
+
+addRealToFloat (n m k) : 
+  @HSMul.hSMul ℕ (Matrix n m ℝ) (Matrix n m ℝ) instHSMul k := 
+  (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
+
+addRealToFloat (n m k : Nat) : 
+  @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.SMul k := 
+  (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
 addRealToFloat : @Matrix.vecEmpty Real := 
   fun (x : Fin 0) => ((False.elim (Nat.not_lt_zero x.1 x.2)) : Float)
