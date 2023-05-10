@@ -181,7 +181,7 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
         i := i + n * m
   
   let solPointExpr : Expr ← Lean.Expr.mkProd solPointExprArray
-      
+
   return solPointExpr
 
 -- TODO: Make the tactic work again.

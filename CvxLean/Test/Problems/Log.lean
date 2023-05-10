@@ -26,8 +26,6 @@ noncomputable def log2 :=
       h₁ : x ≤ 10
       h₂ : 0 < x
 
-set_option trace.Meta.debug true
-
 solve log2
 
 #print log2.reduced
