@@ -1,4 +1,4 @@
-import CvxLean.Tactic.DCP.Dcp
+import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Solver.Conic
 import CvxLean.Command.Reduction
 
