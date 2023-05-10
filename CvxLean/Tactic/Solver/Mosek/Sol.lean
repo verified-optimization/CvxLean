@@ -209,7 +209,8 @@ private def floatSummaryLine (id : String) : Parsec Float :=
 /-- Parse the whole `Sol.summary` section. -/
 private def summary : Parsec Summary :=
   Summary.mk <$> 
-  stringSummaryLine "NAME"             <*> 
+  ((skipString "NAME" *> ws *> skipChar ':' *> ws) *> pure "anonymous" <* endOfLine) <*> 
+  -- stringSummaryLine "NAME"             <*> 
   stringSummaryLine "PROBLEM STATUS"   <*> 
   stringSummaryLine "SOLUTION STATUS"  <*> 
   stringSummaryLine "OBJECTIVE NAME"   <*> 
@@ -333,14 +334,14 @@ def result : Parsec Result :=
   summary        <* ws <*>
   constraints    <* ws <*>
   vars           <* ws <*>
-  symmMatrixVars <* endOfLine
+  (symmMatrixVars <|> pure []) <* endOfLine
 
 /-- Parse using `result` and handle errors. -/
 def parse (s : String) : Except String Result :=
   match result s.mkIterator with
   | Parsec.ParseResult.success _ res => Except.ok res
   | Parsec.ParseResult.error it err  => 
-    Except.error s!"Error at offset {it.i.byteIdx}: {err}."
+    Except.error s!"Error at offset {it.i.byteIdx}. Error: {err}."
 
 end Parser 
 
