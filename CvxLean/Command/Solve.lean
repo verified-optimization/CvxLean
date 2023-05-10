@@ -2,9 +2,6 @@ import CvxLean.Tactic.DCP.Dcp
 import CvxLean.Tactic.Solver.Conic
 import CvxLean.Command.Reduction
 
-attribute [-instance] coeDecidableEq Nat.hasMul Nat.hasAdd String.hasToString
-  String.hasAppend Ne.decidable Nat.hasToString
-
 namespace CvxLean
 
 open Lean Lean.Elab Lean.Elab.Term Lean.Elab.Command Lean.Meta

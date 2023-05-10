@@ -12,9 +12,6 @@ import CvxLean.Tactic.Solver.Generation
 import CvxLean.Tactic.Solver.InferDimension
 import CvxLean.Tactic.Solver.Mosek.CBF
 
-attribute [-instance] coeDecidableEq Nat.hasMul Nat.hasAdd String.hasToString
-  String.hasAppend Ne.decidable
-
 namespace CvxLean
 
 namespace Meta
