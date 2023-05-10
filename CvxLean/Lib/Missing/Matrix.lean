@@ -6,6 +6,12 @@ import CvxLean.Lib.Missing.List
 
 namespace Matrix
 
+def PosSemidef [Fintype n] (A : Matrix n n ℝ) : Prop := 
+  sorry
+
+def PosDef [Fintype n] (A : Matrix n n ℝ) : Prop := 
+  sorry
+
 instance [Preorder α] : Preorder (Matrix m n α) :=
 { le := fun A B => ∀ i j, A i j ≤ B i j
   le_refl := fun _ _ _ => le_refl _
