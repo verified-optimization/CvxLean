@@ -100,6 +100,9 @@ addRealToFloat : Real.instZeroReal :=
 addRealToFloat : Real.instOneReal := 
   One.mk (1 : Float)
 
+addRealToFloat (n : Nat) (i) : @OfNat.ofNat Real n i := 
+  Float.ofNat n
+
 addRealToFloat (n : Nat) : AddMonoidWithOne.toNatCast.natCast (R := ℝ) n := 
   Float.ofNat n
 
@@ -172,7 +175,7 @@ end Basic
 section Matrix
 
 addRealToFloat (n m k) : 
-  @HSMul.hSMul ℕ (Matrix n m ℝ) (Matrix n m ℝ) instHSMul k := 
+  @HSMul.hSMul ℕ (Matrix (Fin n) (Fin m) ℝ) (Matrix (Fin n) (Fin m) ℝ) instHSMul k := 
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
 addRealToFloat (n m k : Nat) : 
@@ -232,11 +235,13 @@ addRealToFloat : @Real.posOrthCone := @Float.posOrthCone
 
 addRealToFloat : @Real.Vec.posOrthCone := @Float.Vec.posOrthCone
 
+addRealToFloat : @Real.Matrix.posOrthCone := @Float.Matrix.posOrthCone
+
 addRealToFloat : @Real.expCone := @Float.expCone
 
 addRealToFloat : @Real.Vec.expCone := @Float.Vec.expCone
 
-addRealToFloat : @Real.Matrix.PSDCone := @Float.Matrix.PSDCone
+addRealToFloat (n) (i) : @Real.Matrix.PSDCone (Fin n) i := @Float.Matrix.PSDCone n
 
 end Cones
 

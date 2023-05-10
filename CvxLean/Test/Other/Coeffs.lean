@@ -2,17 +2,6 @@ import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Solver.Float.Coeffs
 
-attribute [-instance] Nat.hasSub String.hasToString String.hasAppend 
-  Nat.hasToString Bool.inhabited Ne.decidable Prod.inhabited 
-  String.hasDecidableEq Nat.hasAdd Fin.decidableEq 
-
-attribute [-instance] Real.hasLt Real.hasLe Real.hasOne Real.hasZero Real.hasMul 
-  Real.linearOrderedField Real.hasNatCast Real.hasAdd Real.addCommGroup 
-  Real.hasNeg Real.hasSub Real.ring Real.addMonoid Real.monoid
-  Real.monoidWithZero Real.module Real.addCommMonoid Real.hasPow 
-  Real.linearOrder Real.conditionallyCompleteLinearOrder Real.orderedSemiring
-  Real.hasSup
-
 section Coeffs
 
 open CvxLean Minimization
