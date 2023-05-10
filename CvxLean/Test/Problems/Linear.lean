@@ -10,6 +10,8 @@ noncomputable def linear1 :=
     subject to
       h : 2 * x ≤ 3 
 
+set_option trace.Meta.debug true
+
 solve linear1
 
 #print linear1.reduced
@@ -36,11 +38,13 @@ solve linear2
 #eval linear2.solution -- (4.000000, 8.000000)
 
 noncomputable def linear3 := 
-  optimization (x : Finₓ 2 → ℝ)
+  optimization (x : Fin 2 → ℝ)
     minimize (5 * (x 0) - 4 * (x 1))
     subject to 
       h₁ : 3 ≤ (x 0) + (x 1)
       h₂ : (x 1) ≤ 7 + (x 0)
+
+set_option trace.Meta.debug true
 
 solve linear3
 
@@ -52,7 +56,7 @@ solve linear3
 #eval linear3.solution 1 -- 5.000000
 
 noncomputable def linear4 := 
-  optimization (x : Finₓ 5 → ℝ) (y z : ℝ) 
+  optimization (x : Fin 5 → ℝ) (y z : ℝ) 
     minimize (Vec.sum x + 10 * (y + z))
     subject to 
       h₁ : 4.0 ≤ y 
@@ -74,7 +78,7 @@ solve linear4
 #eval linear4.solution.2.2 -- 2.500000
 
 @[optimizationParam]
-noncomputable def A5 : Matrix (Finₓ 4) (Finₓ 4) ℝ := 
+noncomputable def A5 : Matrix (Fin 4) (Fin 4) ℝ := 
   fun i j => 
     (#[#[ 0.51417013, -1.40067196,  0.71943208,  0.58510080]
      , #[-0.53401066,  1.65680551,  0.13519183,  0.29269704]
@@ -82,19 +86,23 @@ noncomputable def A5 : Matrix (Finₓ 4) (Finₓ 4) ℝ :=
      , #[ 1.76713469,  0.61389781,  0.80559111, -0.12640489]][i.val]!)[j.val]!
 
 @[optimizationParam]
-noncomputable def b5 : Finₓ 4 → ℝ := 
+noncomputable def b5 : Fin 4 → ℝ := 
   fun i => #[ 10.56567387,  21.07609985,  23.43361457,  15.14706378][i.val]!
 
 @[optimizationParam]
-noncomputable def c5 : Finₓ 4 → ℝ := 
+noncomputable def c5 : Fin 4 → ℝ := 
   fun i => #[ 0.14794342, -0.19493149,  0.31361829,  1.13959857][i.val]!
 
+open Matrix
+
 noncomputable def linear5 := 
-  optimization (x : Finₓ 4 → ℝ) 
+  optimization (x : Fin 4 → ℝ) 
     maximize (c5 ⬝ᵥ x)
     subject to
-      h₁ : A5.mulVecₓ x ≤ b5
+      h₁ : A5.mulVec x ≤ b5
       h₂ : 0 ≤ x
+
+set_option trace.Meta.debug true
 
 solve linear5
 

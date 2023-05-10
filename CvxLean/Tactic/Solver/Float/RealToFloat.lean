@@ -94,6 +94,9 @@ section Basic
 addRealToFloat : Real := 
   Float
 
+addRealToFloat : Real.instInhabitedReal := 
+  instInhabitedFloat
+
 addRealToFloat : Real.instZeroReal := 
   Zero.mk (0 : Float)
 
@@ -121,17 +124,23 @@ addRealToFloat (k : Nat) :
 
 addRealToFloat : Real.instNegReal := instNegFloat
 
+addRealToFloat : Real.instAddReal := instAddFloat
+
 addRealToFloat (i) : @HAdd.hAdd Real Real Real i := 
   Float.add 
 
 addRealToFloat (i) : @instHAdd Real i := 
   @HAdd.mk Float Float Float Float.add
 
+addRealToFloat : Real.instSubReal := instSubFloat
+
 addRealToFloat (i) : @HSub.hSub Real Real Real i :=
   Float.sub 
 
 addRealToFloat (i) : @instHSub Real i := 
   @HSub.mk Float Float Float Float.sub
+
+addRealToFloat : Real.instMulReal := instMulFloat
 
 addRealToFloat (i) : @HMul.hMul Real Real Real i := 
   Float.mul 

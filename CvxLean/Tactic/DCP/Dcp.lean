@@ -79,10 +79,9 @@ where
       | some fvarId => 
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- TODO: HACK! Trick to prove 0 <= 2 and alike...
+        -- TODO: HACK! Trick to prove simple conditions.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
-          let v ← Lean.Elab.Term.elabTerm (← 
-          `(by simp only [(@Nat.cast_zero Real _).symm, (@Nat.cast_one Real _).symm]; apply Nat.cast_le.2; norm_num)).raw (some bcondType)
+          let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
           let v ← instantiateMVars v
           return v

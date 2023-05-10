@@ -189,7 +189,7 @@ private def nat : Parsec Nat :=
 private def float : Parsec Float := fun it₁ =>
   match Json.Parser.num it₁ with
   | ParseResult.success it₂ res =>
-    let f := Float.ofScientific res.mantissa.toNat true res.exponent
+    let f := Float.ofScientific res.mantissa.natAbs true res.exponent
     ParseResult.success it₂ (if res.mantissa < 0 then -f else f)
   | ParseResult.error it₂ err => ParseResult.error it₂ err
 
