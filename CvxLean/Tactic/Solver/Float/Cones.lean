@@ -16,6 +16,9 @@ def posOrthCone (x : Float) : Prop :=
 def Vec.posOrthCone (x : Fin n → Float) : Prop := 
   ∀ i, Float.posOrthCone (x i)
 
+def Matrix.posOrthCone (M : Matrix (Fin n) (Fin m) Float) : Prop := 
+  ∀ i j, Float.posOrthCone (M i j)
+
 def expCone (x y z : Float) : Prop :=
   (0 < y ∧ y * exp (x / y) ≤ z) ∨ (y = 0 ∧ 0 ≤ z ∧ x ≤ 0)
 

@@ -11,9 +11,6 @@ open Meta
 open Lean.Elab
 open Lean.Elab.Tactic
 
-attribute [-instance] Sum.decidableEq String.hasDecidableEq Prod.inhabited
-  Fin.decidableEq
-
 /- Generate Float expression from natural number. 
 TODO: Duplicate? Move? -/
 def mkFloat (n : Nat) : Expr :=
@@ -40,7 +37,6 @@ unsafe def evalFloat (e : Expr) : MetaM Float := do
 
 /-- Generate an array of elements of a finite type -/
 unsafe def elemsOfFintype (ty : Expr) : MetaM (Array Expr) := do
-  trace[Meta.debug] "elemsOfFintype {ty}"
   match ty with
   | Expr.app (Expr.const ``Fin _) nExpr => do
     let n : Nat ← evalExpr Nat (mkConst ``Nat) nExpr
@@ -293,8 +289,11 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
               let res ← determineScalarCoeffsAux eij p floatDomain
               data := data.addPosOrthConstraint res.1 res.2 
       | Expr.app (Expr.app (Expr.app (Expr.const ``Real.Matrix.PSDCone _) m) mi) e => do 
+          trace[Meta.debug] "PSD constraint 1 {e}"
           let e ← realToFloat e 
+          trace[Meta.debug] "PSD constraint 2 {e}"
           let res ← determineMatrixCoeffsAux e p floatDomain 
+          trace[Meta.debug] "PSD constraint 3 {res}"
           data := data.addMatrixAffineConstraint res.1 res.2
       | _ => throwError "No match: {c}."
     return data

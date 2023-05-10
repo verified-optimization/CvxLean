@@ -1,14 +1,8 @@
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.LinearAlgebra.QuadraticForm.Basic
-import CvxLean.Lib.Missing.Mathlib
 import CvxLean.Lib.Missing.Vec
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Command.Reduction
-import Mathlib.Algebra.Hom.Units
-import Mathlib.Algebra.Order.Ring
-import Optbin.CovarianceEstimation
 import CvxLean.Command.Solve
 
 open Real
@@ -16,14 +10,14 @@ open Minimization
 open CvxLean
 open Matrix
 
-noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Finₓ N → Finₓ n →  ℝ) := 
-  optimization (R : Matrix (Finₓ n) (Finₓ n) ℝ)
+noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) := 
+  optimization (R : Matrix (Fin n) (Fin n) ℝ)
     maximize (∏ i, gaussianPdf R (y i))
     subject to 
       c_pos_def : R.PosDef
       c_sparse : R⁻¹.abs.sum <= α
 
-reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Finₓ N → Finₓ n → ℝ) :
+reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n → ℝ) :
   problem n N α y := by
   simp only [problem]
   -- apply logarithm to objective:
