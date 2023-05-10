@@ -119,6 +119,8 @@ addRealToFloat (k : Nat) :
   @SMul.smul ℕ ℝ AddMonoid.SMul k := 
   (fun (x : Float) => (OfNat.ofNat k) * x)
 
+addRealToFloat : Real.instNegReal := instNegFloat
+
 addRealToFloat (i) : @HAdd.hAdd Real Real Real i := 
   Float.add 
 
