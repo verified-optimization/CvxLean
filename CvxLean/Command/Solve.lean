@@ -188,7 +188,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
         
         trace[Meta.debug] "probFakeSolPoint: {probFakeSolPoint}."
         -- NOTE: Cannot use whnf here because it introduces _Privates...
-        -- let probFakeSolPoint ← reduceExpr2 probFakeSolPoint
+        let probFakeSolPoint ← whnfUntilValue probFakeSolPoint
         --reduce probFakeSolPoint false false false 
         --whnfUntilValue
         trace[Meta.debug] "probFakeSolPoint reduced: {probFakeSolPoint}."

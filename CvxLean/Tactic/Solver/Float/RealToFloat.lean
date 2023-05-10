@@ -103,6 +103,14 @@ addRealToFloat : Real.instZeroReal :=
 addRealToFloat : Real.instOneReal := 
   One.mk (1 : Float)
 
+-- def instPreorderFloat : Preorder Float := sorry
+
+-- addRealToFloat : Real.instPreorderReal := 
+--   instPreorderFloat
+
+addRealToFloat : Real.instLEReal := 
+  instLEFloat
+
 addRealToFloat (n : Nat) (i) : @OfNat.ofNat Real n i := 
   Float.ofNat n
 
