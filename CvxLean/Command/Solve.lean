@@ -11,7 +11,7 @@ open Minimization
 /-- Equivalent to the `#reduce` command. TODO: Move. -/
 def reduceExpr (e : Expr) : MetaM Expr :=
   withTransparency (mode := TransparencyMode.all) <| 
-    reduce e (skipProofs := false) (skipTypes := false)
+    reduce e (skipProofs := true) (skipTypes := true)
 
 /-- Reduce like `Meta.DiscrTree.whnfDT`. -/
 partial def whnfUntilValue (e : Expr) : MetaM Expr := do
