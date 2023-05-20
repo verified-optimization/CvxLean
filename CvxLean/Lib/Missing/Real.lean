@@ -1,20 +1,8 @@
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Complex.Exponential
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 namespace Real
-
-def log (x : Real) : Real := 
-  sorry
-
-def pi : Real := 
-  sorry
-
-noncomputable instance : OfScientific Real := {
-  ofScientific := fun mantissa exponentSign decimalExponent => 
-    if exponentSign
-    then mantissa / (10 ^ decimalExponent)
-    else mantissa * (10 ^ decimalExponent)
-}
 
 noncomputable def entr (x : Real) := 
   -(x * Real.log x)

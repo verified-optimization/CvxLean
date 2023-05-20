@@ -494,7 +494,7 @@ feasibility
     exact ⟨sq_nonneg x, zero_le_two⟩)
 optimality by
   have h := c1.1
-  simp at h
+  simp at h ⊢
   exact h
 vconditionElimination 
 

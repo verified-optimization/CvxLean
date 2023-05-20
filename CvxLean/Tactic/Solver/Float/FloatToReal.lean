@@ -5,10 +5,14 @@ import CvxLean.Lib.Missing.Real
 open Lean 
 
 def floatToRealExpr (f : Float) : Expr :=
+  let divisionRingToOfScientific := 
+    mkApp2 (mkConst ``DivisionRing.toOfScientific ([levelZero] : List Level))
+      (mkConst ``Real)
+      (mkConst ``Real.instDivisionRingReal)
   let realOfScientific := 
     mkApp2 (mkConst ``OfScientific.ofScientific ([levelZero] : List Level))
       (mkConst ``Real)
-      (mkConst ``Real.instOfScientificReal)
+      divisionRingToOfScientific
   match Json.Parser.num f.toString.mkIterator with
   | Parsec.ParseResult.success _ res =>
       let num := mkApp3 realOfScientific
