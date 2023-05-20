@@ -184,10 +184,8 @@ addRealToFloat : @Real.sqrt :=
 addRealToFloat : @Real.log := 
   Float.log
 
-addRealToFloat : @OfScientific.ofScientific Real Real.instOfScientificReal := 
+addRealToFloat (i) : @OfScientific.ofScientific Real i := 
   Float.ofScientific
-
-addRealToFloat : Real.instOfScientificReal := instOfScientificFloat
 
 end Basic
 
