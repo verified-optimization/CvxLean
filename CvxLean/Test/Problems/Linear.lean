@@ -10,8 +10,6 @@ noncomputable def linear1 :=
     subject to
       h : 2 * x ≤ 3 
 
-set_option trace.Meta.debug true
-
 solve linear1
 
 #print linear1.reduced
@@ -43,8 +41,6 @@ noncomputable def linear3 :=
     subject to 
       h₁ : 3 ≤ (x 0) + (x 1)
       h₂ : (x 1) ≤ 7 + (x 0)
-
-set_option trace.Meta.debug true
 
 solve linear3
 
@@ -101,8 +97,6 @@ noncomputable def linear5 :=
     subject to
       h₁ : A5.mulVec x ≤ b5
       h₂ : 0 ≤ x
-
-set_option trace.Meta.debug true
 
 solve linear5
 
