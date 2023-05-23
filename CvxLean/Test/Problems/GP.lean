@@ -17,10 +17,6 @@ noncomputable def gp :=
       h6 : x^2 + 3 * y / z <= x^0.5
       h7 : x * y = z
 
-inductive I
-| x : I
-| y : List I → I
-
 class ExpMap (α : Type u) :=
   (exp : α → α)
 
@@ -68,7 +64,7 @@ elab "prove_exp_log" : tactic => do
         convert rfl <;> rw [exp_log (by assumption)])) mvarId
   replaceMainGoal mvarIds
 
-macro "map_exp" : tactic => 
+macro "map_exp" : tactic =>
   `(tactic| 
       apply map_domain 
         (g := fun x => ExpMap.exp x)
@@ -76,16 +72,50 @@ macro "map_exp" : tactic =>
         (hfg := by prove_exp_log) <;>
       simp only [Function.comp, ExpMap.exp, LogMap.log])
 
-lemma xxx : (0 + x) * x * (0 + 9) = (x + 0) * x * (0 + 9) := by 
-  convert rfl using 2
-  rw [add_comm]
+syntax (name := internally_rewrite) "internally_rewrite " Lean.Parser.Tactic.rwRule : tactic
+@[tactic internally_rewrite]
+def evalInternallyRewrite : Tactic := fun stx =>
+  match stx with
+  | `(tactic| internally_rewrite $thm) => do 
+    let g ← getMainGoal
+    for i in [:10] do 
+      let iStx := Syntax.mkNumLit i.repr
+      let gRes ← evalTacticAt  (← `(tactic| try { convert rfl using $iStx ; rw [$thm]; }))  g
+      if gRes.length == 0 then 
+        replaceMainGoal gRes
+        return ()
+  | _ => throwUnsupportedSyntax
 
 reduction red/gp2 : gp := by 
   unfold gp
   map_objFun_log
   map_exp
-  -- conv_constr => 
-  --   case h1 => simp 
+  have heq₁ : Solution
+    (optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+      minimize Real.log (exp x / exp y)
+      subject to
+        h1 : 0 < exp x
+        h2 : 0 < exp y
+        h3 : 0 < exp z
+        h4 : 2 ≤ exp x
+        h5 : exp x ≤ 3
+        h6 : exp x ^ 2 + 3 * exp y / exp z ≤ exp x ^ OfScientific.ofScientific 5 true 1
+        h7 : exp x * exp y = exp z
+      ) = 
+    Solution
+    (optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+      minimize Real.log (exp (x - y))
+      subject to
+        h1 : 0 < exp x
+        h2 : 0 < exp y
+        h3 : 0 < exp z
+        h4 : 2 ≤ exp x
+        h5 : exp x ≤ 3
+        h6 : exp x ^ 2 + 3 * exp y / exp z ≤ exp x ^ OfScientific.ofScientific 5 true 1
+        h7 : exp x * exp y = exp z
+    ) := by {
+      internally_rewrite ←Real.exp_sub
+    }
   exact done
 
 end GP
