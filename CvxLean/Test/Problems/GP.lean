@@ -39,21 +39,42 @@ noncomputable instance : LogMap ℝ :=
 instance [LogMap α] [LogMap β] : LogMap (α × β) :=
   ⟨fun x => ⟨LogMap.log x.1, LogMap.log x.2⟩⟩
 
-syntax "dirty_split_ands " Lean.Parser.Tactic.casesTarget ",i=" num  : tactic
-macro_rules 
-  | `(tactic| dirty_split_ands $n,i=$i) => do 
-    let nStr := n.raw.reprint.get!.splitOn[0]!
-    let iNum := i.raw.isNatLit?.getD 0
-    let iStr := iNum.repr.splitOn[0]!
-    let i' := Lean.Syntax.mkNumLit (iNum + 1).repr
-    let a := Lean.mkIdent (Lean.Name.mkSimple (nStr ++ iStr))
-    let b := Lean.mkIdent (Lean.Name.mkSimple nStr)
-    `(tactic| first | rcases $n with ⟨$a, $b⟩ ; dirty_split_ands $n,i=$i' | skip)
+open Lean Meta Elab Tactic
+open Lean.Elab.Term
 
-syntax "dirty_split_ands " Lean.Parser.Tactic.casesTarget : tactic
-macro_rules 
-  | `(tactic| dirty_split_ands $n) => do 
-    `(tactic| dirty_split_ands $n,i=1)
+elab "prove_log_le_log" : tactic => do
+  let mvarId ← getMainGoal
+  let [mvarId] ← evalTacticAt (← `(tactic| intros x y h csy)) mvarId | unreachable!
+  let mvarId ← mvarId.casesAnd
+  let mvarIds ← evalTacticAt (← 
+    `(tactic| 
+        simp only [maximizeNeg];
+        refine' (log_le_log _ _).1 <;>
+        field_simp <;> positivity)) mvarId
+  replaceMainGoal mvarIds
+
+macro "map_objFun_log" : tactic => 
+  `(tactic| 
+      apply map_objective (g := Real.log) (hg := by prove_log_le_log) <;> 
+      simp only [Function.comp])
+
+elab "prove_exp_log" : tactic => do
+  let mvarId ← getMainGoal
+  let [mvarId] ← evalTacticAt (← `(tactic| intros x hcs)) mvarId | unreachable!
+  let mvarId ← mvarId.casesAnd
+  let mvarIds ← evalTacticAt (← 
+    `(tactic| 
+        simp [LogMap.log, ExpMap.exp];
+        convert rfl <;> rw [exp_log (by assumption)])) mvarId
+  replaceMainGoal mvarIds
+
+macro "map_exp" : tactic => 
+  `(tactic| 
+      apply map_domain 
+        (g := fun x => ExpMap.exp x)
+        (f := fun x => LogMap.log x)
+        (hfg := by prove_exp_log) <;>
+      simp only [Function.comp, ExpMap.exp, LogMap.log])
 
 lemma xxx : (0 + x) * x * (0 + 9) = (x + 0) * x * (0 + 9) := by 
   convert rfl using 2
@@ -61,23 +82,8 @@ lemma xxx : (0 + x) * x * (0 + 9) = (x + 0) * x * (0 + 9) := by
 
 reduction red/gp2 : gp := by 
   unfold gp
-  -- map-objFun-log
-  apply map_objective 
-    (g := Real.log) 
-    (hg := fun x y csx csy => by { 
-      dirty_split_ands csx ; dirty_split_ands csy ;
-      simp only [maximizeNeg]; refine' (log_le_log _ _).1 <;>
-      field_simp <;> positivity })
-  -- map_exp 
-  -- map_exp
-  -- map_exp
-  apply map_domain 
-    (g := fun x => ExpMap.exp x)
-    (f := fun x => LogMap.log x)
-    (hfg := fun x hcs => by {  
-      dirty_split_ands hcs ; simp [LogMap.log, ExpMap.exp]
-      convert rfl <;> rw [exp_log (by assumption)] })
-  simp only [Function.comp, ExpMap.exp, LogMap.log]
+  map_objFun_log
+  map_exp
   -- conv_constr => 
   --   case h1 => simp 
   exact done
