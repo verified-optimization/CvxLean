@@ -40,13 +40,13 @@ open Lean.Elab.Term
 
 elab "prove_log_le_log" : tactic => do
   let mvarId ← getMainGoal
-  let [mvarId] ← evalTacticAt (← `(tactic| intros x y h csy)) mvarId | unreachable!
+  let (_, mvarId) ← mvarId.intros
   let mvarId ← mvarId.casesAnd
   let mvarIds ← evalTacticAt (← 
     `(tactic| 
         simp only [maximizeNeg];
-        refine' (log_le_log _ _).1 <;>
-        field_simp <;> positivity)) mvarId
+        refine' (log_le_log _ _).1 _ <;>
+        try { assumption } <;> field_simp <;> positivity)) mvarId
   replaceMainGoal mvarIds
 
 macro "map_objFun_log" : tactic => 
@@ -55,14 +55,14 @@ macro "map_objFun_log" : tactic =>
       simp only [Function.comp])
 
 elab "prove_exp_log" : tactic => do
-  let mvarId ← getMainGoal
-  let [mvarId] ← evalTacticAt (← `(tactic| intros x hcs)) mvarId | unreachable!
-  let mvarId ← mvarId.casesAnd
-  let mvarIds ← evalTacticAt (← 
+  let g ← getMainGoal 
+  let (_, g) ← g.intros
+  let g ← g.casesAnd
+  let gs ← evalTacticAt (← 
     `(tactic| 
         simp [LogMap.log, ExpMap.exp];
-        convert rfl <;> rw [exp_log (by assumption)])) mvarId
-  replaceMainGoal mvarIds
+        convert rfl <;> rw [exp_log (by assumption)])) g
+  replaceMainGoal gs
 
 macro "map_exp" : tactic =>
   `(tactic| 
@@ -72,7 +72,9 @@ macro "map_exp" : tactic =>
         (hfg := by prove_exp_log) <;>
       simp only [Function.comp, ExpMap.exp, LogMap.log])
 
-syntax (name := internally_rewrite) "internally_rewrite " Lean.Parser.Tactic.rwRule : tactic
+open Parser.Tactic
+
+syntax (name := internally_rewrite) "internally_rewrite " rwRule : tactic
 @[tactic internally_rewrite]
 def evalInternallyRewrite : Tactic := fun stx =>
   match stx with
@@ -80,9 +82,10 @@ def evalInternallyRewrite : Tactic := fun stx =>
     let g ← getMainGoal
     for i in [:10] do 
       let iStx := Syntax.mkNumLit i.repr
-      let gRes ← evalTacticAt  (← `(tactic| try { convert rfl using $iStx ; rw [$thm]; }))  g
-      if gRes.length == 0 then 
-        replaceMainGoal gRes
+      let gs ← evalTacticAt (← 
+        `(tactic| try { convert rfl using $iStx ; rw [$thm]; })) g
+      if gs.length == 0 then 
+        replaceMainGoal gs
         return ()
   | _ => throwUnsupportedSyntax
 
