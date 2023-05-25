@@ -466,8 +466,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("map-objFun-log"; "(objFun ?a)" => "(objFun (log ?a))" 
         if is_gt_zero("?a")),
 
-    rw!("map-domain-exp"; "(prob (objFun ?o) (constraints ?cs))" => 
-        { MapExp {} })
+    // rw!("map-domain-exp"; "(prob (objFun ?o) (constraints ?cs))" => 
+    //     { MapExp {} })
 ]}
 
 #[derive(Debug)]
@@ -710,6 +710,29 @@ struct Step {
     expected_term : String,
 }
 
+fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(String, Direction)> {
+    if let Some(rule_name) = &term.backward_rule {
+        return Some((rule_name.to_string(), Direction::Backward));
+    }
+
+    if let Some(rule_name) = &term.forward_rule {
+        return Some((rule_name.to_string(), Direction::Forward));
+    }
+
+    if term.node.is_leaf() {
+        return None
+    } else {
+        for child in &term.children {
+            let child_res = get_rewrite_name_and_direction(child);
+            if child_res.is_some() {
+                return child_res;
+            }
+        }
+    };
+
+    return None;
+}
+
 fn get_steps(s: String) -> Vec<Step> {
     let expr: RecExpr<Optimization> = s.parse().unwrap();
 
@@ -743,24 +766,13 @@ fn get_steps(s: String) -> Vec<Step> {
     if best_cost == Curvature::Convex {
         for i in 0..flat_explanation.len() {
             let expl = &flat_explanation[i];
-            let mut rewrite_name = String::new();
-            let mut direction = Direction::Forward;
-            match expl.forward_rule {
-                Some(name) => { 
-                    rewrite_name = name.to_string();
-                    direction = Direction::Forward;
-                }
-                _ => { }
-            }
-            match expl.backward_rule {
-                Some(name) => { 
-                    rewrite_name = name.to_string();
-                    direction = Direction::Backward;
-                }
-                _ => { }
-            }
             let expected_term = expl.get_recexpr().to_string();
-            res.push(Step { rewrite_name, direction, expected_term });
+            match get_rewrite_name_and_direction(expl) {
+                Some((rewrite_name, direction)) => {
+                    res.push(Step { rewrite_name, direction, expected_term });
+                }
+                None => {}
+            }
         }
     }
 
