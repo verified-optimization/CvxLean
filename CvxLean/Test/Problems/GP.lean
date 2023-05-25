@@ -1,65 +1,52 @@
 import CvxLean.Command.Solve
-import CvxLean.Tactic.Basic.RenameConstr
-import CvxLean.Tactic.Basic.RemoveConstr
-import CvxLean.Tactic.Conv.ConvOpt
+import CvxLean.Tactic.PreDCP.Basic
 
 section GP
 
 open CvxLean Minimization Real
 
-attribute [-instance] coeDecidableEq
-attribute [-simp] Set.inj_on_empty Set.inj_on_singleton Quot.lift_on₂_mk 
-  Quot.lift_on_mk Quot.lift₂_mk
+noncomputable def gp :=
+  optimization (x y z : ℝ) 
+    minimize (x / y)
+    subject to 
+      h1 : 0 < x
+      h2 : 0 < y
+      h3 : 0 < z
+      h4 : 2 <= x
+      h5 : x <= 3 
+      h6 : x^2 + 3 * y / z <= x^0.5
+      h7 : x * y = z
 
--- Original problem, geometric programming.
-noncomputable def problem₁ := 
-  optimization (x y : ℝ)
-  minimize x * y
-  subject to
-    h : 10 ≤ x * y 
-    hxpos : 0 < x
-    hypos : 0 < y
-
--- Step 1: Change of variables x ↦ exp x, y ↦ exp y.
-reduction red₂₁/problem₂ : problem₁ := by 
-  -- The tactic state here is:
-  --    done: Solution ?m.254
-  --    ⊢ Solution problem₁
-  -- The idea is that you transform the goal and then unify it with the 
-  -- metavariable ?m.254.
-  simp [problem₁]
-  apply map_domain 
-    (f := fun xy => (log xy.fst, log xy.snd))
-    (g := fun xy => (exp xy.fst, exp xy.snd))
-  case hfg => 
-    intros xy hcconstraints
-    have hxpos := hcconstraints.1
-    have hypos := hcconstraints.2.2
-    simp only [exp_log hxpos, exp_log hypos] 
-  case sol => 
-    simp only [Function.comp]
-    exact done
-
-#print problem₂ 
--- optimization (_ : Real) (_ : Real) 
---   minimize exp p.fst * exp p.snd
---   subject to
---     _ : 0 < exp p.fst
---     _ : 10 ≤ exp p.fst * exp p.snd
---     _ : 0 < exp p.snd
-#check red₂₁ 
--- Solution problem₂ → Solution problem₁
-
--- Step 2: Remove positivity constraints. 
--- It is not strictly necessary to do this, but simplifies the next steps. 
-reduction red₃₂/problem₃ : problem₂ := by 
-  simp [problem₂]
-  rename_constr [hxpos]
-  remove_constr hxpos 
-  . exact exp_pos _ 
-  rename_constr [h, hypos]
-  remove_constr hypos
-  . exact exp_pos _
+reduction red/gp2 : gp := by 
+  unfold gp
+  map_objFun_log
+  map_exp
+  have heq₁ : Solution
+    (optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+      minimize Real.log (exp x / exp y)
+      subject to
+        h1 : 0 < exp x
+        h2 : 0 < exp y
+        h3 : 0 < exp z
+        h4 : 2 ≤ exp x
+        h5 : exp x ≤ 3
+        h6 : exp x ^ 2 + 3 * exp y / exp z ≤ exp x ^ OfScientific.ofScientific 5 true 1
+        h7 : exp x * exp y = exp z
+      ) = 
+    Solution
+    (optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+      minimize Real.log (exp (x - y))
+      subject to
+        h1 : 0 < exp x
+        h2 : 0 < exp y
+        h3 : 0 < exp z
+        h4 : 2 ≤ exp x
+        h5 : exp x ≤ 3
+        h6 : exp x ^ 2 + 3 * exp y / exp z ≤ exp x ^ OfScientific.ofScientific 5 true 1
+        h7 : exp x * exp y = exp z
+    ) := by {
+      internally_rewrite ←Real.exp_sub
+    }
   exact done
 
 #print problem₃
