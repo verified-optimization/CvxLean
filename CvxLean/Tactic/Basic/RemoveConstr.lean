@@ -19,8 +19,6 @@ def mkAndProj (e : Expr) (i : Nat) (total : Nat) : MetaM Expr := do
   | _, 0 => return ← mkAppM ``And.left #[e]
   | total + 1, i + 1 => mkAndProj (← mkAppM ``And.right #[e]) i total
 
-#check List.findIdx
-
 /-- Remove a redundant constraint from an optimization problem, redundant
 meaning that it is implied by the other constraints. -/
 def removeConstr (goal : MVarId) (id : Syntax) : MetaM (MVarId × MVarId) := do
