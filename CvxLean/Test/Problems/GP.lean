@@ -21,32 +21,6 @@ reduction red/gp2 : gp := by
   unfold gp
   map_objFun_log
   map_exp
-  have heq₁ : Solution
-    (optimization (x : ℝ) (y : ℝ) (z : ℝ) 
-      minimize Real.log (exp x / exp y)
-      subject to
-        h1 : 0 < exp x
-        h2 : 0 < exp y
-        h3 : 0 < exp z
-        h4 : 2 ≤ exp x
-        h5 : exp x ≤ 3
-        h6 : exp x ^ 2 + 3 * exp y / exp z ≤ exp x ^ OfScientific.ofScientific 5 true 1
-        h7 : exp x * exp y = exp z
-      ) = 
-    Solution
-    (optimization (x : ℝ) (y : ℝ) (z : ℝ) 
-      minimize Real.log (exp (x - y))
-      subject to
-        h1 : 0 < exp x
-        h2 : 0 < exp y
-        h3 : 0 < exp z
-        h4 : 2 ≤ exp x
-        h5 : exp x ≤ 3
-        h6 : exp x ^ 2 + 3 * exp y / exp z ≤ exp x ^ OfScientific.ofScientific 5 true 1
-        h7 : exp x * exp y = exp z
-    ) := by {
-      internally_rewrite ←Real.exp_sub
-    }
   exact done
 
 #print problem₃
