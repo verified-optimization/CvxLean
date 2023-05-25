@@ -38,13 +38,13 @@ def findRegisteredAtoms (e : Expr) (vars : Array FVarId) : MetaM (Array (Array E
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms
 
-partial def mkFakeTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
+partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
   MetaM (OC (Tree String String)) := do
   withExistingLocalDecls originalVarsDecls.toList do
     let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-    OC.mapM (fun e => findFakeAtoms e (xs.map (·.fvarId!))) oc
+    OC.mapM (fun e => findUncheckedAtoms e (xs.map (·.fvarId!))) oc
 where 
-  findFakeAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
+  findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
     if isConstant e vars then
       let ppe ← Lean.PrettyPrinter.ppExpr e
       return Tree.leaf s!"{ppe}"
@@ -57,17 +57,17 @@ where
     let mut res := Tree.leaf ""
     trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
     for (args, atom) in potentialAtoms do
-      res := ← processFakeAtom e vars atom args 
+      res := ← processUncheckedAtom e vars atom args 
       break
     
     return res
  
-  processFakeAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr) 
+  processUncheckedAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr) 
   : MetaM (Tree String String) := do
     let mut childTrees := #[]
     for i in [:args.size] do
       let arg := args[i]!
-      let childTree ← findFakeAtoms arg vars
+      let childTree ← findUncheckedAtoms arg vars
       childTrees := childTrees.push childTree
 
     return Tree.node (toString atom.id) childTrees
@@ -826,8 +826,8 @@ def canonizeGoal (goal : MVarId) : MetaM MVarId := do
   trace[Meta.debug] "assignment: {assignment}"
   return newGoal.mvarId!
 
-def fakeTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
-  MetaM Unit := do
+def uncheckedTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
+  MetaM (OC (Tree String String)) := do
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
     let pr := (← Meta.mkProjections goalExprs.domain p).toArray
@@ -848,55 +848,17 @@ def fakeTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
       return (objFun, constraints, originalVarsDecls)
 
   let oc ← mkOC objFun constraints originalVarsDecls
-  let tree ← mkFakeTree originalVarsDecls oc
-  trace[Meta.debug] "tree {tree}"
+  let tree ← mkUncheckedTree originalVarsDecls oc
+  return tree
 
-def fakeTreeFromExpr (goalExpr : Expr) : MetaM Unit := do 
+def uncheckedTreeFromExpr (goalExpr : Expr) : 
+  MetaM (OC (Tree String String)) := do 
   let goalExprs ← Meta.matchSolutionExprFromExpr goalExpr
-  fakeTreeFromSolutionExpr goalExprs
+  uncheckedTreeFromSolutionExpr goalExprs
 
-def fakeTree (goal : MVarId) : MetaM Unit := do
+def uncheckedTree (goal : MVarId) : MetaM (OC (Tree String String)) := do
   let goalExprs ← Meta.matchSolutionExpr goal
-  fakeTreeFromSolutionExpr goalExprs
-
-def dcpScoreFromSolutionExpr (solE : Meta.SolutionExpr) : MetaM Nat := do 
-  let (objFun, constraints, originalVarsDecls)
-    ← withLambdaBody solE.constraints fun p constraints => do
-    let pr := (← Meta.mkProjections solE.domain p).toArray
-    let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
-        fun xs => do
-          return ← xs.mapM fun x => x.fvarId!.getDecl
-    withExistingLocalDecls originalVarsDecls.toList do
-      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ← 
-        Meta.decomposeConstraints constraints
-      let constraints ← constraints.mapM (fun ((n : Lean.Name), e) => 
-        do return (n, ← Expr.removeMData e))
-      let objFunP := solE.objFun.bindingBody!.instantiate1 p
-      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
-      return (objFun, constraints, originalVarsDecls)
-  let oc ← mkOC objFun constraints originalVarsDecls
-  let (_failedAtom, _failedAtomMsgs, atoms, _args, _curvature, _bconds) ← 
-    mkAtomTree originalVarsDecls oc
-
-  let objFunTree := atoms.objFun
-  let constrTrees := atoms.constr
-
-  let mut totalSize := objFunTree.size
-  for constrTree in constrTrees do
-    totalSize := totalSize + constrTree.size
-
-  return totalSize
-
-def dcpScoreFromExpr (e : Expr) : MetaM Nat := do
-  let solE ← Meta.matchSolutionExprFromExpr e
-  dcpScoreFromSolutionExpr solE
-
-def dcpScore (mvarId : MVarId) : MetaM Nat := do 
-  let solE ← Meta.matchSolutionExpr mvarId
-  dcpScoreFromSolutionExpr solE
+  uncheckedTreeFromSolutionExpr goalExprs
 
 end DCP
 
@@ -913,34 +875,15 @@ def evalDcp : Tactic := fun stx => match stx with
   replaceMainGoal [← DCP.canonizeGoal goal]
 | _ => throwUnsupportedSyntax
 
-syntax (name := preDcpTree) "pre_dcp_tree" : tactic 
+syntax (name := uncheckedTree) "unchecked_tree" : tactic 
 
-@[tactic preDcpTree]
+@[tactic uncheckedTree]
 def evalPreDcpTree : Tactic 
-  | `(tactic| pre_dcp_tree) => do 
+  | `(tactic| unchecked_tree) => do 
     let goal ← Elab.Tactic.getMainGoal
-    DCP.fakeTree goal
+    let _ ← DCP.uncheckedTree goal
     pure ()
   | _ => throwUnsupportedSyntax
-
-syntax (name := dcpScore) "dcp_score" : tactic 
-
-@[tactic dcpScore]
-def evalDcpScore : Tactic 
-  | `(tactic| dcp_score) => do 
-    let goal ← Elab.Tactic.getMainGoal
-    let score ← DCP.dcpScore goal
-    dbg_trace s!"DCP score: {score}"
-    pure ()
-  | _ => throwUnsupportedSyntax
-
--- NOTES:
--- mkAtomTree fails early, so the hacky way to go is to 
--- try to reorder the constraints. 
--- Why should it fail at all? Why not build as much as you can.
--- The objective failure is in mkAtomTree.
--- The constraint failure is in mkVCondition.
--- Some of the Dcp tests are not passing e.g. huber, why?
 
 end Tactic
 
