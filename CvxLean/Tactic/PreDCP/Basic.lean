@@ -44,7 +44,7 @@ elab (name := prove_log_le_log) "prove_log_le_log" : tactic => do
 macro "map_objFun_log" : tactic => 
   `(tactic| 
       apply map_objective (g := Real.log) (hg := by prove_log_le_log) <;> 
-      simp only [Function.comp])
+      dsimp only [Function.comp])
 
 elab "prove_exp_log" : tactic => do
   let g ← getMainGoal 
@@ -56,26 +56,40 @@ elab "prove_exp_log" : tactic => do
         convert rfl <;> rw [exp_log (by assumption)])) g
   replaceMainGoal gs
 
+macro "make_positive_constraints_true" : tactic => 
+  `(tactic|
+      conv_constr => repeat { try { rw [eq_true (by positivity : _ < _)] } })
+
+macro "remove_trues" : tactic => 
+  `(tactic|
+      repeat' conv in (True ∧ _) => rw [true_and])
+
+macro "remove_positive_constraints" : tactic => 
+  `(tactic|
+      make_positive_constraints_true <;>
+      remove_trues)
+
 macro "map_exp" : tactic =>
   `(tactic| 
       apply map_domain 
         (g := fun x => ExpMap.exp x)
         (f := fun x => LogMap.log x)
         (hfg := by prove_exp_log) <;>
-      simp only [Function.comp, ExpMap.exp, LogMap.log])
+      dsimp only [Function.comp, ExpMap.exp, LogMap.log] <;>
+      remove_positive_constraints)
 
 open Parser.Tactic
 
-syntax (name := internally_rewrite) "internally_rewrite " rwRule : tactic
-@[tactic internally_rewrite]
-def evalInternallyRewrite : Tactic := fun stx =>
+syntax (name := internally_do) "internally_do " tactic : tactic
+@[tactic internally_do]
+def evalInternallyDo : Tactic := fun stx =>
   match stx with
-  | `(tactic| internally_rewrite $thm) => do 
+  | `(tactic| internally_do $tac) => do 
     let g ← getMainGoal
     for i in [:10] do 
       let iStx := Syntax.mkNumLit i.repr
       let gs ← evalTacticAt (← 
-        `(tactic| try { convert rfl using $iStx ; rw [$thm]; })) g
+        `(tactic| try { convert rfl using $iStx ; $tac })) g
       if gs.length == 0 then 
         replaceMainGoal gs
         return ()
