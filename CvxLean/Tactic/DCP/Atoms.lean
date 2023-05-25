@@ -407,6 +407,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
     let atomData := {
+      id := id.getId
       curvature := curv
       expr := expr
       argKinds := argKinds
@@ -524,6 +525,7 @@ def elabBConds := elabVConditions
     let vcondElim := #[]
 
     let atomData := {
+      id := id.getId
       curvature := Curvature.Affine
       expr := expr
       argKinds := argKinds
@@ -567,6 +569,7 @@ def elabBConds := elabVConditions
     let vcondElim := #[]
 
     let atomData := {
+      id := id.getId
       curvature := Curvature.Concave
       expr := expr
       argKinds := argKinds

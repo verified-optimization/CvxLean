@@ -38,6 +38,40 @@ def findRegisteredAtoms (e : Expr) (vars : Array FVarId) : MetaM (Array (Array E
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms
 
+partial def mkFakeTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
+  MetaM (OC (Tree String String)) := do
+  withExistingLocalDecls originalVarsDecls.toList do
+    let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+    OC.mapM (fun e => findFakeAtoms e (xs.map (·.fvarId!))) oc
+where 
+  findFakeAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
+    if isConstant e vars then
+      let ppe ← Lean.PrettyPrinter.ppExpr e
+      return Tree.leaf s!"{ppe}"
+    if e.isFVar ∧ vars.contains e.fvarId! then
+      let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
+      return Tree.leaf (toString n) 
+    let potentialAtoms ← findRegisteredAtoms e vars
+    
+    -- Just get the first one for now.
+    let mut res := Tree.leaf ""
+    trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
+    for (args, atom) in potentialAtoms do
+      res := ← processFakeAtom e vars atom args 
+      break
+    
+    return res
+ 
+  processFakeAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr) 
+  : MetaM (Tree String String) := do
+    let mut childTrees := #[]
+    for i in [:args.size] do
+      let arg := args[i]!
+      let childTree ← findFakeAtoms arg vars
+      childTrees := childTrees.push childTree
+
+    return Tree.node (toString atom.id) childTrees
+
 /-- -/
 inductive FindAtomResult
 | Success (res : Tree GraphAtomData Expr × Tree (Array Expr) Unit × Tree Curvature Curvature × Tree (Array Expr) (Array Expr))
@@ -508,17 +542,22 @@ def mkOC (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsD
 -- TODO: Better error message when discovering a concave atom where convex is expected, and vice versa.
 /-- Construct the atom tree. -/
 def mkAtomTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) : 
-  MetaM (OC Bool ×  OC (Array MessageData) × OC (Tree GraphAtomData Expr) ×  OC (Tree (Array Expr) Unit) × 
-    OC (Tree Curvature Curvature) × OC (Tree (Array Expr) (Array Expr))) := do
+  MetaM (
+    OC Bool ×  
+    OC (Array MessageData) × 
+    OC (Tree GraphAtomData Expr) × 
+    OC (Tree (Array Expr) Unit) × 
+    OC (Tree Curvature Curvature) × 
+    OC (Tree (Array Expr) (Array Expr))) := do
 withExistingLocalDecls originalVarsDecls.toList do
   let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-  -- Find atoms
+  -- Find atoms.
   let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!)) c) oc 
     ⟨Curvature.Convex, oc.constr.map (fun _ => Curvature.Concave)⟩
   let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
   let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
-  if failedAtom.objFun then
-    throwError "Failure in objective: {failedAtomMsgs.objFun}"
+  -- if failedAtom.objFun then
+  --   throwError "Failure in objective: {failedAtomMsgs.objFun}"
   
   let atoms := atomsAndArgs.map (·.snd.snd.fst)
   let args := atomsAndArgs.map (·.snd.snd.snd.fst)
@@ -540,9 +579,9 @@ withExistingLocalDecls originalVarsDecls.toList do
       vcondIdxTree.fold acc fun acc is => 
         is.foldl (fun acc i => acc.set! i true) acc
   let vcondVars := vcondIdx.map $ mkVCondVars (originalConstrVars.map LocalDecl.fvarId)
-  for i in [:isVCond.size] do
-    if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
-      throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
+  -- for i in [:isVCond.size] do
+  --   if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
+  --     throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
   return (vcondIdx, isVCond, vcondVars)
 
 /-- -/
@@ -671,19 +710,24 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     (optimality := optimality)
 
 /-- -/
-def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : MetaM (Expr × Expr) := do
+def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
+  MetaM (Expr × Expr) := do
   -- Extract objective and constraints from `goalExprs`.
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
     let pr := (← Meta.mkProjections goalExprs.domain p).toArray
     let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) fun xs => do
-        return ← xs.mapM fun x => x.fvarId!.getDecl
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+        fun xs => do
+          return ← xs.mapM fun x => x.fvarId!.getDecl
     withExistingLocalDecls originalVarsDecls.toList do
       let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
       let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ← Meta.decomposeConstraints constraints
-      let constraints ← constraints.mapM (fun ((n : Lean.Name), e) => do return (n, ← Expr.removeMData e))
+      let constraints : List (Lean.Name × Expr) ← 
+        Meta.decomposeConstraints constraints
+      let constraints ← 
+        constraints.mapM (fun ((n : Lean.Name), e) => do 
+          return (n, ← Expr.removeMData e))
       let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
       let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
       return (objFun, constraints, originalVarsDecls)
@@ -782,9 +826,81 @@ def canonizeGoal (goal : MVarId) : MetaM MVarId := do
   trace[Meta.debug] "assignment: {assignment}"
   return newGoal.mvarId!
 
+def fakeTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
+  MetaM Unit := do
+  let (objFun, constraints, originalVarsDecls)
+    ← withLambdaBody goalExprs.constraints fun p constraints => do
+    let pr := (← Meta.mkProjections goalExprs.domain p).toArray
+    let originalVarsDecls ←
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+        fun xs => do
+          return ← xs.mapM fun x => x.fvarId!.getDecl
+    withExistingLocalDecls originalVarsDecls.toList do
+      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
+      let constraints : List (Lean.Name × Expr) ← 
+        Meta.decomposeConstraints constraints
+      let constraints ← 
+        constraints.mapM (fun ((n : Lean.Name), e) => do 
+          return (n, ← Expr.removeMData e))
+      let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
+      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
+      return (objFun, constraints, originalVarsDecls)
+
+  let oc ← mkOC objFun constraints originalVarsDecls
+  let tree ← mkFakeTree originalVarsDecls oc
+  trace[Meta.debug] "tree {tree}"
+
+def fakeTreeFromExpr (goalExpr : Expr) : MetaM Unit := do 
+  let goalExprs ← Meta.matchSolutionExprFromExpr goalExpr
+  fakeTreeFromSolutionExpr goalExprs
+
+def fakeTree (goal : MVarId) : MetaM Unit := do
+  let goalExprs ← Meta.matchSolutionExpr goal
+  fakeTreeFromSolutionExpr goalExprs
+
+def dcpScoreFromSolutionExpr (solE : Meta.SolutionExpr) : MetaM Nat := do 
+  let (objFun, constraints, originalVarsDecls)
+    ← withLambdaBody solE.constraints fun p constraints => do
+    let pr := (← Meta.mkProjections solE.domain p).toArray
+    let originalVarsDecls ←
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+        fun xs => do
+          return ← xs.mapM fun x => x.fvarId!.getDecl
+    withExistingLocalDecls originalVarsDecls.toList do
+      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
+      let constraints : List (Lean.Name × Expr) ← 
+        Meta.decomposeConstraints constraints
+      let constraints ← constraints.mapM (fun ((n : Lean.Name), e) => 
+        do return (n, ← Expr.removeMData e))
+      let objFunP := solE.objFun.bindingBody!.instantiate1 p
+      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
+      return (objFun, constraints, originalVarsDecls)
+  let oc ← mkOC objFun constraints originalVarsDecls
+  let (_failedAtom, _failedAtomMsgs, atoms, _args, _curvature, _bconds) ← 
+    mkAtomTree originalVarsDecls oc
+
+  let objFunTree := atoms.objFun
+  let constrTrees := atoms.constr
+
+  let mut totalSize := objFunTree.size
+  for constrTree in constrTrees do
+    totalSize := totalSize + constrTree.size
+
+  return totalSize
+
+def dcpScoreFromExpr (e : Expr) : MetaM Nat := do
+  let solE ← Meta.matchSolutionExprFromExpr e
+  dcpScoreFromSolutionExpr solE
+
+def dcpScore (mvarId : MVarId) : MetaM Nat := do 
+  let solE ← Meta.matchSolutionExpr mvarId
+  dcpScoreFromSolutionExpr solE
+
 end DCP
 
-namespace  Tactic
+namespace Tactic
 
 open Lean.Elab Lean.Elab.Tactic
 
@@ -796,6 +912,35 @@ def evalDcp : Tactic := fun stx => match stx with
   let goal ← Elab.Tactic.getMainGoal
   replaceMainGoal [← DCP.canonizeGoal goal]
 | _ => throwUnsupportedSyntax
+
+syntax (name := preDcpTree) "pre_dcp_tree" : tactic 
+
+@[tactic preDcpTree]
+def evalPreDcpTree : Tactic 
+  | `(tactic| pre_dcp_tree) => do 
+    let goal ← Elab.Tactic.getMainGoal
+    DCP.fakeTree goal
+    pure ()
+  | _ => throwUnsupportedSyntax
+
+syntax (name := dcpScore) "dcp_score" : tactic 
+
+@[tactic dcpScore]
+def evalDcpScore : Tactic 
+  | `(tactic| dcp_score) => do 
+    let goal ← Elab.Tactic.getMainGoal
+    let score ← DCP.dcpScore goal
+    dbg_trace s!"DCP score: {score}"
+    pure ()
+  | _ => throwUnsupportedSyntax
+
+-- NOTES:
+-- mkAtomTree fails early, so the hacky way to go is to 
+-- try to reorder the constraints. 
+-- Why should it fail at all? Why not build as much as you can.
+-- The objective failure is in mkAtomTree.
+-- The constraint failure is in mkVCondition.
+-- Some of the Dcp tests are not passing e.g. huber, why?
 
 end Tactic
 

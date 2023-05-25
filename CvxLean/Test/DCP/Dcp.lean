@@ -22,7 +22,6 @@ open Real
 
 -- #print test004
 
-
 set_option trace.Meta.debug true
 noncomputable def test000 : Solution $
   optimization (x : Finₓ 3 → ℝ) (y : ℝ)
@@ -33,8 +32,33 @@ noncomputable def test000 : Solution $
   dcp
   sorry
 
-
 noncomputable def test001' (h : 0 ≤ (2 : ℝ)) (h : 0 ≤ (3 : ℝ)) : Solution $
+  optimization (x y : ℝ)
+    minimize y * (2 : ℝ)
+    subject to
+      c1 : (exp x) * (exp y) ≤ 3 * x
+:= by
+  pre_dcp_tree
+  dcp
+  sorry
+
+-- ObjFun:(node:_uniq.7821 * 2[leaf:_uniq.7821, leaf:2])
+--     Constr:
+--     [
+--      (node:Real.exp _uniq.7820 * Real.exp _uniq.7821 ≤ 3 * _uniq.7820
+    --     [
+    --       (node:Real.exp _uniq.7820 * Real.exp _uniq.7821
+    --         [
+    --           (node:Real.exp _uniq.7820[leaf:_uniq.7820]), 
+    --           (node:Real.exp _uniq.7821[leaf:_uniq.7821])
+    --         ]
+    --       ), 
+    --       (node:3 * _uniq.7820[leaf:3, leaf:_uniq.7820])
+    --     ]
+    --   )
+    -- ] 
+
+noncomputable def test001'' (h : 0 ≤ (2 : ℝ)) (h : 0 ≤ (3 : ℝ)) : Solution $
   optimization (x y : ℝ)
     minimize y * (2 : ℝ)
     subject to
@@ -130,7 +154,8 @@ noncomputable def test_log_det : Solution $
       c0 : 0 ≤ Real.log M.det
       c_pos_def : M.PosDef
 := by
-  dcp
+  dcp_score
+  -- dcp
   sorry
 
 
