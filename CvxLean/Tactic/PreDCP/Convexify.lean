@@ -34,30 +34,37 @@ partial def CvxLean.Tree.surroundVars (t : Tree String String) (vars : List Stri
   | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
   | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
 
--- TODO(RFM): Construct this map with commands, not hard-coded.
-def Convexify.opMap : HashMap String String := HashMap.ofList [
-  ("prob",        "prob"),
-  ("objFun",      "objFun"),
-  ("constraints", "constraints"),
-  ("var",         "var"),
-  ("and",         "and"),
-  ("eq",          "eq"),
-  ("le",          "le"),
-  ("neg",         "neg"),
-  ("add",         "add"),
-  ("sub",         "sub"),
-  ("mul1",        "mul"),
-  ("mul2",        "mul"),
-  ("div",         "div"),
-  ("log",         "log"),
-  ("exp",         "exp")]
+-- TODO(RFM): Construct this map with commands, not hard-coded. For every key
+-- we have the name, the arity and the extra args.
+def Convexify.opMap : HashMap String (String × Nat × Array String) := 
+  HashMap.ofList [
+    ("prob",        ("prob", 2, #[])),
+    ("objFun",      ("objFun", 1, #[])),
+    ("constraints", ("constraints", 1, #[])),
+    ("var",         ("var", 1, #[])),
+    ("and",         ("and", 2, #[])),
+    ("eq",          ("eq", 2, #[])),
+    ("le",          ("le", 2, #[])),
+    ("neg",         ("neg", 1, #[])),
+    ("add",         ("add", 2, #[])),
+    ("sub",         ("sub", 2, #[])),
+    ("mul1",        ("mul", 2, #[])),
+    ("mul2",        ("mul", 2, #[])),
+    ("sq",          ("pow", 1, #["2"])),
+    ("div",         ("div", 2, #[])),
+    ("log",         ("log", 1, #[])),
+    ("exp",         ("exp", 1, #[]))
+  ]
 
 partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   MetaM (Tree String String) := do
   match t with
   | Tree.node op children =>
-      if let some op' := Convexify.opMap.find? op then
-        let children' ← children.mapM adjustOps
+      if let some (op', arity, extraArgs) := Convexify.opMap.find? op then
+        if children.size ≠ arity then
+          throwError s!"The operator {op} has arity {children.size}, but it should have arity {arity}."
+        let children' ← children.mapM adjustOps 
+        let children' := children' ++ extraArgs.map Tree.leaf
         return Tree.node op' children'
       else
         throwError s!"The atom {op} is not supported by the `convexify` tactic."
@@ -151,11 +158,7 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "add" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    let i := mkAppN (mkConst ``instHAdd [levelZero])
-      #[(mkConst ``Real), (mkConst ``Real.instAddReal)]
-    return mkAppN
-      (mkConst ``HAdd.hAdd [levelZero, levelZero, levelZero])
-      #[(mkConst ``Real), (mkConst ``Real), (mkConst ``Real), i, t1, t2]
+    return mkRealHBinAppExpr ``HAdd.hAdd ``instHAdd ``Real.instAddReal t1 t2
   -- Subtraction.
   | Tree.node "sub" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
@@ -167,18 +170,12 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "mul" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    let i := mkAppN (mkConst ``instHMul [levelZero])
-      #[(mkConst ``Real), (mkConst ``Real.instMulReal)]
-    return mkAppN
-      (mkConst ``HMul.hMul [levelZero, levelZero, levelZero])
-      #[(mkConst ``Real), (mkConst ``Real), (mkConst ``Real), i, t1, t2]
+    return mkRealHBinAppExpr ``HMul.hMul ``instHMul ``Real.instMulReal t1 t2
   -- Division.
   | Tree.node "div" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkAppN
-      (mkConst ``Div.div ([levelZero] : List Level))
-      #[(mkConst ``Real), (mkConst ``Real.instDivReal), t1, t2]
+    return mkRealHBinAppExpr ``HDiv.hDiv ``instHDiv ``Real.instDivReal t1 t2
   -- Log.
   | Tree.node "log" #[t] => do
     let t ← treeToExpr vars t
@@ -187,9 +184,21 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "exp" #[t] => do
     let t ← treeToExpr vars t
     return mkAppN (mkConst ``Real.exp) #[t]
+  -- Pow.
+  | Tree.node "pow" #[t1, t2] => do
+    let t1 ← treeToExpr vars t1
+    let t2 ← treeToExpr vars t2
+    return mkRealHBinAppExpr ``HPow.hPow ``instHPow ``Real.instPowReal t1 t2
   -- Error.
   | Tree.node op children =>
     throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children"
+where
+  mkRealHBinAppExpr (opName instHName instName : Name) (e1 e2 : Expr) : Expr := 
+    let inst := mkAppN (mkConst instHName [levelZero])
+      #[(mkConst ``Real), (mkConst instName)]
+    mkAppN
+      (mkConst opName [levelZero, levelZero, levelZero])
+      #[(mkConst ``Real), (mkConst ``Real), (mkConst ``Real), inst, e1, e2]
 
 def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
   MetaM (Option Meta.SolutionExpr) := do
@@ -392,7 +401,7 @@ lemma test : Solution (
       subject to
         hx : 0 < x
         hy : 0 < y
-        h : x * y ≤ (10.123)
+        h : x ^ 2 ≤ (10.123)
 ) := by
   map_exp
   convexify
