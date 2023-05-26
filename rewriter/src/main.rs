@@ -323,9 +323,9 @@ fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
 }
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("and-comm"; "(and ?a ?b)" => "(and ?b ?a)"),
+    // rw!("and-comm"; "(and ?a ?b)" => "(and ?b ?a)"),
 
-    rw!("and-assoc"; "(and (and ?a ?b) ?c)" => "(and ?a (and ?b ?c))"),
+    // rw!("and-assoc"; "(and (and ?a ?b) ?c)" => "(and ?a (and ?b ?c))"),
     
     rw!("eq-add"; "(eq ?a (add ?b ?c))" => "(eq (sub ?a ?c) ?b)"),
 
