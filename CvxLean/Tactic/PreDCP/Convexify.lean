@@ -458,7 +458,6 @@ elab "convexify" : tactic => withMainContext do
 
 open Minimization Real
 
-set_option maxHeartbeats 1000000 in
 lemma test : Solution (
     optimization (x y : ℝ)
       minimize (x * y)
@@ -472,7 +471,6 @@ lemma test : Solution (
   norm_num -- clean up numbers
   sorry
 
-set_option maxHeartbeats 1000000 in
 lemma test2 : Solution (
   optimization (x y z : ℝ) 
     minimize (x / y)
