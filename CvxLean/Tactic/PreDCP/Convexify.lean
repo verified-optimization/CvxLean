@@ -51,7 +51,7 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("mul1",        ("mul", 2, #[])),
     ("mul2",        ("mul", 2, #[])),
     ("sq",          ("pow", 1, #["2"])),
-    ("sqrt",        ("pow", 1, #["0.5"])),
+    ("sqrt",        ("sqrt", 1, #[])),
     ("div",         ("div", 2, #[])),
     ("log",         ("log", 1, #[])),
     ("exp",         ("exp", 1, #[]))
@@ -373,21 +373,27 @@ def findTactic (s : String) : MetaM (Bool × Syntax) := do
     return (true, ← `(tactic| iterative_conv_num (ring)))
   | "sub-add" => 
     return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "div-add" => 
+    return (true, ← `(tactic| iterative_conv_num (ring)))
   | "log-1" => 
     return (true, ← `(tactic| iterative_conv_num (rw [Real.log_one])))
+  | "div-pow" => 
+    return (true, ← `(tactic| iterative_conv_num (rw [div_eq_mul_inv, Real.rpow_neg] <;> positivity)))
   -- | "and-assoc" => 
   --   return (true, ← `(tactic| iterative_conv_num (rw [and_assoc])))
   | "mul-1-right" => 
     return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "sqrt_eq_rpow" => 
+    return (true, ← `(tactic| iterative_conv_num (rw [Real.sqrt_eq_rpow])))
   | "le-div-one" => 
-    return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> positivity)))
+    return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> norm_num; positivity)))
   | "map-objFun-log" =>
     return (false, ← `(tactic| map_objFun_log))
   | _ => throwError "Unknown rewrite name {s}."
 
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
-  -- let gExpr ← Meta.matchSolutionExpr g
+
   -- NOTE(RFM): No whnf
   let gTy := (← MVarId.getDecl g).type
   let gExpr ← Meta.matchSolutionExprFromExpr gTy

@@ -16,6 +16,7 @@ define_language! {
         "eq" = Eq([Id; 2]),
         "le" = Le([Id; 2]),
         "neg" = Neg(Id),
+        "sqrt" = Sqrt(Id),
         "add" = Add([Id; 2]),
         "sub" = Sub([Id; 2]),
         "mul" = Mul([Id; 2]),
@@ -155,6 +156,17 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
             }
+            Optimization::Sqrt(a) => {
+                free_vars.extend(get_vars(a));
+                match get_constant(a) {
+                    Some((c, _)) => { 
+                        constant = Some((
+                            NotNan::new(c.sqrt()).unwrap(), 
+                            format!("(sqrt {})", c).parse().unwrap())); 
+                    }
+                    _ => {}
+                }
+            }
             Optimization::Add([a, b]) => {
                 free_vars.extend(get_vars(a));
                 free_vars.extend(get_vars(b));
@@ -223,7 +235,9 @@ impl Analysis<Optimization> for Meta {
                 free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
-                        constant = Some((NotNan::new(c.exp()).unwrap(), format!("(exp {})", c).parse().unwrap())); 
+                        constant = Some((
+                            NotNan::new(c.exp()).unwrap(), 
+                            format!("(exp {})", c).parse().unwrap())); 
                     }
                     _ => {}
                 }
@@ -429,11 +443,14 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("pow-sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow ?a ?c))" 
         if is_not_zero("?a")),
 
-    rw!("div-pow"; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))"),
+    rw!("div-pow"; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))"
+        if is_gt_zero("?b")),
 
     rw!("div-pow-same-right"; "(div ?a (pow ?a ?b))" => "(pow ?a (sub 1 ?b))"),
 
     rw!("div-pow-same-left"; "(div (pow ?a ?b) ?a)" => "(pow ?a (sub ?b 1))"),
+
+    rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
 
     rw!("exp-0"; "(exp 0)" => "1"),
 
@@ -534,6 +551,15 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                     Curvature::Concave  => { return Curvature::Convex; }
                     Curvature::Affine   => { return Curvature::Affine; }
                     Curvature::Constant => { return Curvature::Constant; }
+                    _ => { return Curvature::Unknown; }
+                }
+            }
+            Optimization::Sqrt(a) => {
+                match get_curvature(a) {
+                    Curvature::Convex   => { return Curvature::Unknown; }
+                    Curvature::Concave  => { return Curvature::Concave; }
+                    Curvature::Affine   => { return Curvature::Concave; }
+                    Curvature::Constant => { return Curvature::Concave; }
                     _ => { return Curvature::Unknown; }
                 }
             }
