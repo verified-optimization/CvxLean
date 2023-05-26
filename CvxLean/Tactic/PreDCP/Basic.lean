@@ -85,15 +85,15 @@ syntax (name := internally_do) "internally_do " tactic : tactic
 def evalInternallyDo : Tactic := fun stx =>
   match stx with
   | `(tactic| internally_do $tac) => do 
-    let g ← getMainGoal
-    for i in [:10] do 
+    for i in [2:10] do 
+      let g ← getMainGoal
       let iStx := Syntax.mkNumLit i.repr
       let gs ← evalTacticAt (← 
-        `(tactic| try { convert rfl using $iStx ; $tac })) g
+        `(tactic| try { convert rfl using $iStx <;> $tac })) g
+      replaceMainGoal gs
       if gs.length == 0 then 
-        replaceMainGoal gs
         return ()
-  | _ => throwUnsupportedSyntax
+  | _  => throwUnsupportedSyntax
 
 end Tactic
 
