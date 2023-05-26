@@ -17,13 +17,23 @@ def gp :=
       h6 : x^2 + 3 * y / z <= sqrt x
       h7 : x * y = z
 
-set_option trace.Meta.debug true in
-set_option maxHeartbeats 1000000 in
+set_option trace.Meta.debug true
+
 reduction red/gp2 : gp := by 
   unfold gp
   map_exp
   convexify
   norm_num
   exact done
+
+#print gp2
+-- def gp2 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+-- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+--   minimize x - y
+--   subject to
+--     _ : log 2 ≤ x
+--     _ : x ≤ log 3
+--     _ : exp (x * (3 / 2)) + exp (y - z - 1 / 2 * x) * 3 ≤ 1
+--     _ : x + y = z
 
 end GP
