@@ -1,11 +1,11 @@
 import CvxLean.Command.Solve
-import CvxLean.Tactic.PreDCP.Basic
+import CvxLean.Tactic.PreDCP.Convexify
 
-section GP
+noncomputable section GP
 
 open CvxLean Minimization Real
 
-noncomputable def gp :=
+def gp :=
   optimization (x y z : ℝ) 
     minimize (x / y)
     subject to 
@@ -14,13 +14,16 @@ noncomputable def gp :=
       h3 : 0 < z
       h4 : 2 <= x
       h5 : x <= 3 
-      h6 : x^2 + 3 * y / z <= x^0.5
+      h6 : x^2 + 3 * y / z <= sqrt x
       h7 : x * y = z
 
+set_option trace.Meta.debug true in
+set_option maxHeartbeats 1000000 in
 reduction red/gp2 : gp := by 
   unfold gp
-  map_objFun_log
   map_exp
+  convexify
+  norm_num
   exact done
 
 #print problem₃
