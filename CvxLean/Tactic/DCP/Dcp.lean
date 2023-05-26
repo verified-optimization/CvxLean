@@ -54,7 +54,7 @@ where
     let potentialAtoms ← findRegisteredAtoms e vars
     
     -- Just get the first one for now.
-    let mut res := Tree.leaf ""
+    let mut res := Tree.leaf "unknown"
     trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
     for (args, atom) in potentialAtoms do
       res := ← processUncheckedAtom e vars atom args 

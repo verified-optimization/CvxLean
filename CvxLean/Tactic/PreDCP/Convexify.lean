@@ -68,6 +68,7 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
         return Tree.node op' children'
       else
         throwError s!"The atom {op} is not supported by the `convexify` tactic."
+  | Tree.leaf "unknown" => throwError "Unknown atom"
   | l => return l
 
 def CvxLean.DCP.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
@@ -413,7 +414,7 @@ lemma test : Solution (
       subject to
         hx : 0 < x
         hy : 0 < y
-        h : x ^ 2 ≤ (10.123)
+        h : x ^ 0.2 ≤ (10.123)
 ) := by
   map_exp
   convexify
