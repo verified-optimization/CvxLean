@@ -1,6 +1,4 @@
 import Lean
-import Qq
-import Mathlib.Tactic.NormNum
 import CvxLean.Tactic.Basic.RemoveConstr
 import CvxLean.Tactic.DCP.Dcp
 import CvxLean.Tactic.DCP.AtomLibrary
@@ -108,30 +106,13 @@ def CvxLean.stringToTree (s : String) : MetaM (Tree String String) := do
 noncomputable instance Real.instDivReal : Div ℝ :=
   by infer_instance
 
-open Qq Mathlib NormNum
-
-lemma x (a :ℝ ): a = (2 : Nat) / ((10 : Real) ^ (0 : Nat)) := by
-  norm_num 
-
 partial def CvxLean.treeToExpr (vars : List String) : Tree String String → MetaM Expr
   -- Numbers.
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
     | Parsec.ParseResult.success _ res => do
-      -- let m := res.mantissa
-      -- let qmAbs : Q(ℕ) := mkNatLit m.natAbs
-      -- let e := res.exponent
-      -- let d := 10 ^ e
-      -- let qd : Q(ℕ) := mkNatLit d
-      -- let r : Q(ℝ) := if d == 1 then 
-      --   if m < 0 then q(-$qmAbs) else q($qmAbs)
-      -- else
-      --   if m < 0 then q(-$qmAbs / $qd) else q($qmAbs / $qd)
-      -- return r
-      if res.exponent == 0 then 
-        let qmAbs : Q(ℕ) := mkNatLit res.mantissa.natAbs
-        let num : Q(ℝ) := if res.mantissa < 0 then q(-$qmAbs) else q($qmAbs)
-        return num
+      -- NOTE(RFM): This is not ideal, but it works if we use norm_num all the
+      -- time.
       let divisionRingToOfScientific :=
         mkApp2 (mkConst ``DivisionRing.toOfScientific ([levelZero] : List Level))
           (mkConst ``Real)
@@ -377,67 +358,51 @@ def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
 macro "iterative_conv_num " t:tactic : tactic => 
   `(tactic| internally_do (try { norm_num } <;> $t))
 
-def zxc : Nat → Nat → Nat 
-  | a, b => a
-
-#check Real.rpow_neg
+theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
+  ⟨fun h => by { 
+    have hxmem := Set.mem_Ioi.2 hx
+    have hymem := Set.mem_Ioi.2 hy
+    have heq : Set.restrict (Set.Ioi 0) log ⟨x, hxmem⟩ = 
+      Set.restrict (Set.Ioi 0) log ⟨y, hymem⟩ := by 
+      simp [h]
+    have h := Real.log_injOn_pos.injective heq
+    simp [Subtype.eq] at h
+    exact h
+  }, fun h => by rw [h]⟩
 
 -- TODO(RFM): Not hard-coded.
--- The bool indicates whether they need solve an equality.
+-- NOTE(RFM): The bool indicates whether they need solve an equality.
 def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
-  | "mul-exp", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (rw [←Real.exp_add])))
+  | "mul-exp", _ => 
     return (true, ← `(tactic| simp only [←Real.exp_add] <;> norm_num))
   | "le-log", EggRewriteDirection.Forward =>
-    -- return (true, ← `(tactic| iterative_conv_num (rw [←Real.log_le_log] <;> positivity)))
     return (true, ← `(tactic| conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by positivity) (by positivity)] ))
+  | "eq-log", EggRewriteDirection.Forward =>
+    return (true, ← `(tactic| conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by positivity) (by positivity)] ))
   | "log-exp", _ =>
-    --return (true, ← `(tactic| iterative_conv_num (rw [Real.log_exp])))
     return (true, ← `(tactic| simp only [Real.log_exp] <;> norm_num))
-  | "pow-exp", EggRewriteDirection.Forward =>
-    -- return (true, ← `(tactic| iterative_conv_num (rw [←Real.exp_mul])))
+  | "pow-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_mul] <;> norm_num))
-  | "pow-exp", EggRewriteDirection.Backward =>
-    return (true, ← `(tactic| simp only [Real.exp_mul] <;> norm_num))
-  | "div-exp", EggRewriteDirection.Forward =>
-    -- return (true, ← `(tactic| iterative_conv_num (rw [Real.exp_sub])))
-    return (true, ← `(tactic| conv in ((Real.exp _) / (Real.exp _)) => rw [←Real.exp_sub]))
-  -- | "add-0-right" => 
-  --   -- return (true, ← `(tactic| iterative_conv_num (ring)))
-  --   return (false, ← `(tactic| conv in (_ + 0) => rw [add_zero]))
-  | "sub-add", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "div-exp", _ =>
+    return (true, ← `(tactic| simp only [←Real.exp_sub] <;> norm_num))
+  | "sub-add", _ => 
     return (true, ← `(tactic| simp only [←add_sub] <;> norm_num))
-  | "div-add", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "div-add", _ => 
     return (true, ← `(tactic| simp only [add_div] <;> norm_num))
-  | "log-1", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (rw [Real.log_one])))
+  | "log-1", _ => 
     return (true, ← `(tactic| simp only [Real.log_one] <;> norm_num))
-  -- | "div-1" => 
-  --   -- return (true, ← `(tactic| iterative_conv_num (ring)))
-  --   return (false, ← `(tactic| conv in (_ / 1) => rw [div_one]))
-  | "sub-mul-left", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "sub-mul-left", _ => 
     return (false, ← `(tactic| simp only [←mul_sub] <;> norm_num))
   | "div-pow", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| iterative_conv_num (rw [div_eq_mul_inv, Real.rpow_neg] <;> positivity)))
-  | "mul-comm", EggRewriteDirection.Forward => 
+    return (true, ← `(tactic| conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, Real.rpow_neg (by positivity)]))
+  | "mul-comm", _ => 
     return (true, ← `(tactic| simp only [mul_comm] <;> norm_num))
-  | "div-mul", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (rw [←mul_div])))
+  | "div-mul", _ => 
     return (true, ← `(tactic| simp only [←mul_div] <;> norm_num))
-  -- | "and-assoc" => 
-  --   return (true, ← `(tactic| iterative_conv_num (rw [and_assoc])))
-  | "mul-1-right", EggRewriteDirection.Forward => 
-    -- return (true, ← `(tactic| iterative_conv_num (ring)))
-    return (true, ← `(tactic| simp only [mul_one] <;> norm_num))
-  -- | "sqrt_eq_rpow", EggRewriteDirection.Forward => 
-  --   -- return (true, ← `(tactic| iterative_conv_num (norm_num ; rw [Real.sqrt_eq_rpow])))
-  --   return (false, ← `(tactic| conv in (Real.sqrt _) => norm_num; rw [Real.sqrt_eq_rpow]))
   | "sqrt_eq_rpow", _ => 
     return (true, ← `(tactic| simp only [Real.sqrt_eq_rpow] <;> norm_num))
   | "le-div-one", EggRewriteDirection.Forward => 
+    -- NOTE(RFM): Only one that still works iteratively.
     return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> norm_num; positivity)))
   | "map-objFun-log", EggRewriteDirection.Forward =>
     return (false, ← `(tactic| map_objFun_log))
@@ -446,7 +411,7 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
 
-  -- NOTE(RFM): No whnf
+  -- NOTE(RFM): No whnf.              
   let gTy := (← MVarId.getDecl g).type
   let gExpr ← Meta.matchSolutionExprFromExpr gTy
 
@@ -465,7 +430,7 @@ elab "convexify" : tactic => withMainContext do
   for step in steps do
     let g ← getMainGoal
 
-    -- NOTE(RFM): No whnf
+    -- NOTE(RFM): No whnf.
     let gTy := (← MVarId.getDecl g).type
     let gExpr ← Meta.matchSolutionExprFromExpr gTy
 
@@ -500,7 +465,7 @@ lemma test : Solution (
       subject to
         hx : 0 < x
         hy : 0 < y
-        h : x ^ 2 ≤ (-10.123)
+        h : x ^ 2 ≤ -10.123
 ) := by
   map_exp
   convexify
@@ -517,11 +482,9 @@ lemma test2 : Solution (
       h3 : 0 < z
       h4 : 2 <= x
       h5 : x <= 3 
-      h6 : x^2 + 3 * y / z <= sqrt x) := by 
+      h6 : x^2 + 3 * y / z <= sqrt x
+      h7 : x * y = z) := by 
   map_exp
   convexify
-  norm_num
-  -- swap 
-  -- { conv in Real.log (Real.exp _) => rw [Real.log_exp] }
+  norm_num -- clean up numbers
   sorry
-
