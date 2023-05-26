@@ -19,7 +19,7 @@ partial def CvxLean.Tree.toString : Tree String String → String
 partial def CvxLean.Tree.and : List (Tree String String) → Tree String String
   | [] => Tree.leaf "true"
   | [t] => t
-  | t1::t2::ts => Tree.and ((Tree.node "and" #[t1, t2])::ts)
+  | t1::t2::ts => Tree.node "and" #[t1, Tree.and (t2::ts)]
 
 def CvxLean.Tree.ofOCTree (ocTree : OC (Tree String String)) :
   Tree String String :=
@@ -51,6 +51,7 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("mul1",        ("mul", 2, #[])),
     ("mul2",        ("mul", 2, #[])),
     ("sq",          ("pow", 1, #["2"])),
+    ("sqrt",        ("pow", 1, #["0.5"])),
     ("div",         ("div", 2, #[])),
     ("log",         ("log", 1, #[])),
     ("exp",         ("exp", 1, #[]))
@@ -68,7 +69,7 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
         return Tree.node op' children'
       else
         throwError s!"The atom {op} is not supported by the `convexify` tactic."
-  | Tree.leaf "unknown" => throwError "Unknown atom"
+  | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
 def CvxLean.DCP.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
@@ -89,13 +90,13 @@ partial def Sexpr.toTree : Sexp → MetaM (Tree String String)
   | .atom a => return Tree.leaf a
   | .list l => do
     if l.length == 0 then
-      throwError "Sexp to Tree conversion error: unexpected empty list"
+      throwError "Sexp to Tree conversion error: unexpected empty list."
     else
       match l.head! with
       | .atom op =>
         let children ← l.tail.mapM toTree
         return CvxLean.Tree.node op (Array.mk children)
-      | .list _ => throwError "Sexp to Tree conversion error: unexpected list as operator"
+      | .list _ => throwError "Sexp to Tree conversion error: unexpected list as operator."
 
 def CvxLean.stringToTree (s : String) : MetaM (Tree String String) := do
   match parseSingleSexp s with
@@ -125,23 +126,23 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
           (mkConst ``Real) (mkConst ``Real.instNegReal) num
       else
         return num
-    | _ => throwError "Tree to Expr conversion error: unexpected num {s}"
+    | _ => throwError "Tree to Expr conversion error: unexpected num {s}."
   -- Variables.
   | Tree.node "var" #[Tree.leaf s] =>
     if s ∈ vars then
       return mkFVar (FVarId.mk (Name.mkSimple s))
     else
-      throwError "Tree to Expr conversion error: unexpected var {s}"
+      throwError "Tree to Expr conversion error: unexpected var {s}."
   -- And.
   | Tree.node "and" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkApp2 (mkConst ``And) t1 t2
+    return mkAnd t1 t2
   -- Equality.
   | Tree.node "eq" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkApp2 (mkConst ``Eq) t1 t2
+    mkEq t1 t2
   -- Less than or equal to.
   | Tree.node "le" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
@@ -164,9 +165,7 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "sub" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkAppN
-      (mkConst ``Sub.sub ([levelZero] : List Level))
-      #[(mkConst ``Real), (mkConst ``Real.instSubReal), t1, t2]
+    return mkRealHBinAppExpr ``HSub.hSub ``instHSub 1 ``Real.instSubReal t1 t2
   -- Multiplication.
   | Tree.node "mul" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
@@ -188,11 +187,14 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   -- Pow.
   | Tree.node "pow" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
-    let t2 ← treeToExpr vars t2
-    return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
+    if let Tree.leaf "0.5" := t2 then
+      return mkAppN (mkConst ``Real.sqrt) #[t1]
+    else
+      let t2 ← treeToExpr vars t2
+      return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
   -- Error.
   | Tree.node op children =>
-    throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children"
+    throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children."
 where
   mkRealHBinAppExpr (opName instHName : Name) (nTyArgs : Nat) (instName : Name)
     (e1 e2 : Expr) : Expr :=
@@ -229,14 +231,14 @@ def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
           objFun := objFun,
           constraints := constraints
         }
-  | _ => throwError "Tree to SolutionExpr conversion error: unexpected tree structure"
+  | _ => throwError "Tree to SolutionExpr conversion error: unexpected tree structure."
 
 def CvxLean.stringToSolutionExpr (vars : List Name) (s : String) :
   MetaM (Meta.SolutionExpr) := do
   let t ← stringToTree s
   match ← treeToSolutionExpr vars t with
   | some se => return se
-  | none => throwError "String to SolutionExpr conversion error"
+  | none => throwError "String to SolutionExpr conversion error."
 
 end EggToMinimization
 
@@ -350,26 +352,46 @@ def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
   dbg_trace s!"Running egg request: {request.toJson}"
   runEggRequestRaw request.toJson >>= parseEggResponse
 
+macro "iterative_conv_num " t:tactic : tactic => 
+  `(tactic| internally_do (try { norm_num } <;> $t))
+
 -- TODO(RFM): Not hard-coded.
 -- The bool indicates whether they need solve an equality.
 def findTactic (s : String) : MetaM (Bool × Syntax) := do
   match s with
   | "mul-exp" =>
-    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [←Real.exp_add])))
+    return (true, ← `(tactic| iterative_conv_num (rw [←Real.exp_add])))
   | "le-log" =>
-    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [←Real.log_le_log] <;> positivity)))
+    return (true, ← `(tactic| iterative_conv_num (rw [←Real.log_le_log] <;> positivity)))
   | "log-exp" =>
-    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [Real.log_exp])))
+    return (true, ← `(tactic| iterative_conv_num (rw [Real.log_exp])))
   | "pow-exp" =>
-    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [←Real.exp_mul])))
+    return (true, ← `(tactic| iterative_conv_num (rw [←Real.exp_mul])))
+  | "div-exp" =>
+    return (true, ← `(tactic| iterative_conv_num (rw [Real.exp_sub])))
+  | "add-0-right" => 
+    return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "sub-add" => 
+    return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "log-1" => 
+    return (true, ← `(tactic| iterative_conv_num (rw [Real.log_one])))
+  -- | "and-assoc" => 
+  --   return (true, ← `(tactic| iterative_conv_num (rw [and_assoc])))
+  | "mul-1-right" => 
+    return (true, ← `(tactic| iterative_conv_num (ring)))
+  | "le-div-one" => 
+    return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> positivity)))
   | "map-objFun-log" =>
     return (false, ← `(tactic| map_objFun_log))
   | _ => throwError "Unknown rewrite name {s}."
 
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
+  -- let gExpr ← Meta.matchSolutionExpr g
+  -- NOTE(RFM): No whnf
+  let gTy := (← MVarId.getDecl g).type
+  let gExpr ← Meta.matchSolutionExprFromExpr gTy
 
-  let gExpr ← Meta.matchSolutionExpr g
   let vars ← withLambdaBody gExpr.constraints fun p _ => do
     let pr ← Meta.mkProjections gExpr.domain p
     return pr.map (Prod.fst)
@@ -384,21 +406,26 @@ elab "convexify" : tactic => withMainContext do
 
   for step in steps do
     let g ← getMainGoal
-    let gExpr ← Meta.matchSolutionExpr g
+
+    -- NOTE(RFM): No whnf
+    let gTy := (← MVarId.getDecl g).type
+    let gExpr ← Meta.matchSolutionExprFromExpr gTy
 
     let expectedTerm := step.expectedTerm
     let expectedSolutionExpr ← stringToSolutionExpr vars expectedTerm
     let expectedExpr := expectedSolutionExpr.toExpr
     let (needsEq, tac) ← findTactic step.rewriteName
     if needsEq then
-      let eq ← mkAppM `Eq #[expectedExpr, gExpr.toExpr]
+      let eq ← mkEq expectedExpr gExpr.toExpr
+      check eq
       let gs ← g.apply (← mkAppM `Eq.mp #[← mkFreshExprMVar eq])
       let gs1 ← evalTacticAt tac gs[1]!
-      dbg_trace s!"After eval {step.rewriteName} {gs.length} {gs1.length}"
       if gs1.length == 0 then
         replaceMainGoal gs
       else
-        throwError "Failed to rewrite {step.rewriteName}."
+        dbg_trace s!"Failed to rewrite {step.rewriteName}."
+        replaceMainGoal gs
+        break
     else
       let gs1 ← evalTacticAt tac g
       replaceMainGoal gs1
@@ -414,7 +441,7 @@ lemma test : Solution (
       subject to
         hx : 0 < x
         hy : 0 < y
-        h : x ^ 0.2 ≤ (10.123)
+        h : x ^ 2 ≤ (10.123)
 ) := by
   map_exp
   convexify
