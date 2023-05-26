@@ -156,6 +156,10 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
     return mkAppN
       (mkConst ``Neg.neg ([levelZero] : List Level))
       #[(mkConst ``Real), (mkConst ``Real.instNegReal), t]
+  -- Square root. 
+  | Tree.node "sqrt" #[t] => do
+    let t ← treeToExpr vars t
+    return mkAppN (mkConst ``Real.sqrt) #[t]
   -- Addition.
   | Tree.node "add" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
@@ -187,11 +191,8 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   -- Pow.
   | Tree.node "pow" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
-    if let Tree.leaf "0.5" := t2 then
-      return mkAppN (mkConst ``Real.sqrt) #[t1]
-    else
-      let t2 ← treeToExpr vars t2
-      return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
+    let t2 ← treeToExpr vars t2
+    return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
   -- Error.
   | Tree.node op children =>
     throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children."
