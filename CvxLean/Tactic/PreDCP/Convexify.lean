@@ -36,7 +36,7 @@ partial def CvxLean.Tree.surroundVars (t : Tree String String) (vars : List Stri
 
 -- TODO(RFM): Construct this map with commands, not hard-coded. For every key
 -- we have the name, the arity and the extra args.
-def Convexify.opMap : HashMap String (String × Nat × Array String) := 
+def Convexify.opMap : HashMap String (String × Nat × Array String) :=
   HashMap.ofList [
     ("prob",        ("prob", 2, #[])),
     ("objFun",      ("objFun", 1, #[])),
@@ -63,7 +63,7 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
       if let some (op', arity, extraArgs) := Convexify.opMap.find? op then
         if children.size ≠ arity then
           throwError s!"The operator {op} has arity {children.size}, but it should have arity {arity}."
-        let children' ← children.mapM adjustOps 
+        let children' ← children.mapM adjustOps
         let children' := children' ++ extraArgs.map Tree.leaf
         return Tree.node op' children'
       else
@@ -158,7 +158,7 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "add" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkRealHBinAppExpr ``HAdd.hAdd ``instHAdd ``Real.instAddReal t1 t2
+    return mkRealHBinAppExpr ``HAdd.hAdd ``instHAdd 1 ``Real.instAddReal t1 t2
   -- Subtraction.
   | Tree.node "sub" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
@@ -170,12 +170,12 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "mul" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkRealHBinAppExpr ``HMul.hMul ``instHMul ``Real.instMulReal t1 t2
+    return mkRealHBinAppExpr ``HMul.hMul ``instHMul 1 ``Real.instMulReal t1 t2
   -- Division.
   | Tree.node "div" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkRealHBinAppExpr ``HDiv.hDiv ``instHDiv ``Real.instDivReal t1 t2
+    return mkRealHBinAppExpr ``HDiv.hDiv ``instHDiv 1 ``Real.instDivReal t1 t2
   -- Log.
   | Tree.node "log" #[t] => do
     let t ← treeToExpr vars t
@@ -188,17 +188,19 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "pow" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
-    return mkRealHBinAppExpr ``HPow.hPow ``instHPow ``Real.instPowReal t1 t2
+    return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
   -- Error.
   | Tree.node op children =>
     throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children"
 where
-  mkRealHBinAppExpr (opName instHName instName : Name) (e1 e2 : Expr) : Expr := 
-    let inst := mkAppN (mkConst instHName [levelZero])
-      #[(mkConst ``Real), (mkConst instName)]
+  mkRealHBinAppExpr (opName instHName : Name) (nTyArgs : Nat) (instName : Name)
+    (e1 e2 : Expr) : Expr :=
+    let R := Lean.mkConst ``Real
+    let inst := mkAppN (mkConst instHName (List.replicate nTyArgs levelZero))
+      (Array.mk (List.replicate nTyArgs R) ++ [Lean.mkConst instName])
     mkAppN
       (mkConst opName [levelZero, levelZero, levelZero])
-      #[(mkConst ``Real), (mkConst ``Real), (mkConst ``Real), inst, e1, e2]
+      #[R, R, R, inst, e1, e2]
 
 def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
   MetaM (Option Meta.SolutionExpr) := do
@@ -348,15 +350,20 @@ def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
   runEggRequestRaw request.toJson >>= parseEggResponse
 
 -- TODO(RFM): Not hard-coded.
-def findTactic (s : String) : MetaM Syntax := do
+-- The bool indicates whether they need solve an equality.
+def findTactic (s : String) : MetaM (Bool × Syntax) := do
   match s with
   | "mul-exp" =>
-    return ← `(tactic| internally_do (rw [Real.exp_add] <;> positivity))
+    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [←Real.exp_add])))
   | "le-log" =>
-    return ← `(tactic| internally_do (rw [Real.log_le_log] <;> positivity))
+    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [←Real.log_le_log] <;> positivity)))
   | "log-exp" =>
-    return ← `(tactic| internally_do (rw [Real.log_exp]))
-  | _ => throwError "Unknown rewrite name."
+    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [Real.log_exp])))
+  | "pow-exp" =>
+    return (true, ← `(tactic| internally_do (try { norm_num } <;> rw [←Real.exp_mul])))
+  | "map-objFun-log" =>
+    return (false, ← `(tactic| map_objFun_log))
+  | _ => throwError "Unknown rewrite name {s}."
 
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
@@ -368,7 +375,6 @@ elab "convexify" : tactic => withMainContext do
   let varsStr := vars.map toString
 
   let gStr ← DCP.uncheckedTreeString gExpr varsStr
-  dbg_trace s!"Goal: {gStr}"
 
   let eggRequest := {
     target := gStr
@@ -382,19 +388,25 @@ elab "convexify" : tactic => withMainContext do
     let expectedTerm := step.expectedTerm
     let expectedSolutionExpr ← stringToSolutionExpr vars expectedTerm
     let expectedExpr := expectedSolutionExpr.toExpr
-    let eq ← mkAppM `Eq #[expectedExpr, gExpr.toExpr]
-    let gs ← g.apply (← mkAppM `Eq.mp #[← mkFreshExprMVar eq])
-    let gs1 ← evalTacticAt (← findTactic step.rewriteName) gs[1]!
-    if gs1.length == 0 then
-      replaceMainGoal gs
+    let (needsEq, tac) ← findTactic step.rewriteName
+    if needsEq then
+      let eq ← mkAppM `Eq #[expectedExpr, gExpr.toExpr]
+      let gs ← g.apply (← mkAppM `Eq.mp #[← mkFreshExprMVar eq])
+      let gs1 ← evalTacticAt tac gs[1]!
+      dbg_trace s!"After eval {step.rewriteName} {gs.length} {gs1.length}"
+      if gs1.length == 0 then
+        replaceMainGoal gs
+      else
+        throwError "Failed to rewrite {step.rewriteName}."
     else
-      replaceMainGoal gs
-      throwError "Failed to rewrite goal."
+      let gs1 ← evalTacticAt tac g
+      replaceMainGoal gs1
 
   return ()
 
 open Minimization Real
 
+set_option maxHeartbeats 1000000 in
 lemma test : Solution (
     optimization (x y : ℝ)
       minimize (x * y)
@@ -405,4 +417,5 @@ lemma test : Solution (
 ) := by
   map_exp
   convexify
+  norm_num -- clean up numbers
   sorry
