@@ -375,21 +375,21 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("add-assoc"; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))"),
 
-    rw!("add-0-right"; "(add ?a 0)" => "?a"),
+    // rw!("add-0-right"; "(add ?a 0)" => "?a"),
 
-    rw!("add-0-left"; "(add 0 ?a)" => "?a"),
+    // rw!("add-0-left"; "(add 0 ?a)" => "?a"),
     
     rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
 
     rw!("mul-assoc"; "(mul (mul ?a ?b) ?c)" => "(mul ?a (mul ?b ?c))"),
 
-    rw!("mul-1-right"; "(mul ?a 1)" => "?a"),
+    // rw!("mul-1-right"; "(mul ?a 1)" => "?a"),
 
-    rw!("mul-1-left"; "(mul 1 ?a)" => "?a"),
+    // rw!("mul-1-left"; "(mul 1 ?a)" => "?a"),
 
-    rw!("mul-0-right"; "(mul ?a 0)" => "0"),
+    // rw!("mul-0-right"; "(mul ?a 0)" => "0"),
 
-    rw!("mul-0-left"; "(mul 0 ?a)" => "0"),
+    // rw!("mul-0-left"; "(mul 0 ?a)" => "0"),
 
     rw!("add-sub"; "(add ?a (sub ?b ?c))" => "(sub (add ?a ?b) ?c)"),
 
@@ -418,7 +418,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("div-mul"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
 
-    rw!("div-1"; "(div ?a 1.0)" => "?a"),
+    // rw!("div-1"; "(div ?a 1.0)" => "?a"),
     
     rw!("div-add"; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))" 
         if is_not_zero("?c")),
@@ -430,11 +430,11 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sub-div"; "(sub (div ?a ?b) (div ?c ?b))" => "(div (sub ?a ?c) ?b)"),
 
-    rw!("sub-0"; "(sub ?a 0)" => "?a"),
+    // rw!("sub-0"; "(sub ?a 0)" => "?a"),
 
-    rw!("pow-1"; "(pow ?a 1)" => "?a"),
+    // rw!("pow-1"; "(pow ?a 1)" => "?a"),
 
-    rw!("pow-0"; "(pow ?a 0)" => "1"),
+    // rw!("pow-0"; "(pow ?a 0)" => "1"),
 
     rw!("pow-add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"),
 
