@@ -1,4 +1,5 @@
 import Lean
+import Mathlib.Tactic.NormNum
 import CvxLean.Tactic.Basic.RemoveConstr
 import CvxLean.Tactic.DCP.Dcp
 import CvxLean.Tactic.DCP.AtomLibrary
@@ -358,6 +359,9 @@ def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
 macro "iterative_conv_num " t:tactic : tactic => 
   `(tactic| internally_do (try { norm_num } <;> $t))
 
+macro "posimptivity" : tactic => 
+  `(tactic| norm_num <;> positivity)
+
 theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
   ⟨fun h => by { 
     have hxmem := Set.mem_Ioi.2 hx
@@ -376,27 +380,29 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
   | "mul-exp", _ => 
     return (true, ← `(tactic| simp only [←Real.exp_add] <;> norm_num))
   | "le-log", EggRewriteDirection.Forward =>
-    return (true, ← `(tactic| conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by positivity) (by positivity)] ))
+    return (true, ← `(tactic| try { conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)] }))
   | "eq-log", EggRewriteDirection.Forward =>
-    return (true, ← `(tactic| conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by positivity) (by positivity)] ))
+    return (true, ← `(tactic| try { conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)] }))
   | "log-exp", _ =>
     return (true, ← `(tactic| simp only [Real.log_exp] <;> norm_num))
   | "pow-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_mul] <;> norm_num))
   | "div-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_sub] <;> norm_num))
-  | "sub-add", _ => 
-    return (true, ← `(tactic| simp only [←add_sub] <;> norm_num))
+  | "add-sub", _ => 
+    return (true, ← `(tactic| simp only [add_sub] <;> norm_num))
   | "div-add", _ => 
     return (true, ← `(tactic| simp only [add_div] <;> norm_num))
   | "log-1", _ => 
     return (true, ← `(tactic| simp only [Real.log_one] <;> norm_num))
   | "sub-mul-left", _ => 
-    return (false, ← `(tactic| simp only [←mul_sub] <;> norm_num))
-  | "div-pow", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, Real.rpow_neg (by positivity)]))
+    return (true, ← `(tactic| simp only [←mul_sub] <;> norm_num))
+  | "div-pow", _ => 
+    return (true, ← `(tactic| try { conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, ←Real.rpow_neg (by posimptivity)] }))
   | "mul-comm", _ => 
     return (true, ← `(tactic| simp only [mul_comm] <;> norm_num))
+  | "add-comm", _ => 
+    return (true, ← `(tactic| simp only [add_comm] <;> norm_num))
   | "div-mul", _ => 
     return (true, ← `(tactic| simp only [←mul_div] <;> norm_num))
   | "sqrt_eq_rpow", _ => 
@@ -406,7 +412,9 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> norm_num; positivity)))
   | "map-objFun-log", EggRewriteDirection.Forward =>
     return (false, ← `(tactic| map_objFun_log))
-  | s, _ => throwError "Unknown rewrite name {s}."
+  | rewriteName, direction => 
+    throwError "Unknown rewrite name {rewriteName}({direction})."
+#check mkNullNode
 
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
@@ -447,12 +455,15 @@ elab "convexify" : tactic => withMainContext do
         replaceMainGoal gs
       else
         dbg_trace s!"Failed to rewrite {step.rewriteName}."
-        replaceMainGoal gs
+        replaceMainGoal (gs ++ gs1)
         break
     else
       dbg_trace s!"Rewrote {step.rewriteName}."
       let gs1 ← evalTacticAt tac g
       replaceMainGoal gs1
+
+  -- Used to get rid of the `OfScientific`s.
+  Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode
 
   return ()
 
@@ -468,7 +479,6 @@ lemma test : Solution (
 ) := by
   map_exp
   convexify
-  norm_num -- clean up numbers
   sorry
 
 lemma test2 : Solution (
@@ -484,5 +494,4 @@ lemma test2 : Solution (
       h7 : x * y = z) := by 
   map_exp
   convexify
-  norm_num -- clean up numbers
   sorry
