@@ -363,6 +363,12 @@ macro "iterative_conv_num " t:tactic : tactic =>
 macro "posimptivity" : tactic => 
   `(tactic| norm_num <;> positivity)
 
+lemma and_eq_and {A B C D : Prop} (h1 : A = C) (h2 : B = D) : (A ∧ B) = (C ∧ D):= by
+  rw [h1, h2]
+
+macro "split_ands" : tactic => 
+  `(tactic| repeat (apply and_eq_and ; try { rfl }))
+
 theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
   ⟨fun h => by { 
     have hxmem := Set.mem_Ioi.2 hx
@@ -386,6 +392,8 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| try { conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)] }))
   | "log-exp", _ =>
     return (true, ← `(tactic| simp only [Real.log_exp] <;> norm_num))
+  | "log-div", EggRewriteDirection.Forward => 
+    return (true, ← `(tactic| congr; funext; rw [Real.log_div (by positivity) (by positivity)]; norm_num))
   | "pow-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_mul] <;> norm_num))
   | "div-exp", _ =>
@@ -400,17 +408,18 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| try { conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, ←Real.rpow_neg (by posimptivity)] }))
   | "mul-comm", _ => 
     return (true, ← `(tactic| simp only [mul_comm] <;> norm_num))
+  | "mul-assoc", _ => 
+    return (true, ← `(tactic| simp only [mul_assoc] <;> norm_num))
   | "add-comm", _ => 
     return (true, ← `(tactic| simp only [add_comm] <;> norm_num))
+  | "mul-div", _ => 
+    return (true, ← `(tactic| simp only [mul_div] <;> norm_num))
   | "div-mul", _ => 
     return (true, ← `(tactic| simp only [←mul_div] <;> norm_num))
   | "sqrt_eq_rpow", _ => 
     return (true, ← `(tactic| simp only [Real.sqrt_eq_rpow] <;> norm_num))
-  -- NOTE(RFM): Only ones that still works iteratively.
   | "le-div-one", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> norm_num; positivity)))
-  | "log-div", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| internally_do (rw [Real.log_div] <;> try { positivity } <;> norm_num)))
+    return (true, ← `(tactic| congr <;> funext <;> split_ands <;> try { rw [←div_le_one (by posimptivity)]; norm_num } <;> norm_num))
   -- NOTE(RFM): Only instance of a rewriting without proving equality.
   | "map-objFun-log", EggRewriteDirection.Forward =>
     return (false, ← `(tactic| map_objFun_log))
@@ -448,8 +457,8 @@ elab "convexify" : tactic => withMainContext do
     let expectedExpr := expectedSolutionExpr.toExpr
     let (needsEq, tac) ← findTactic step.rewriteName step.direction
     if needsEq then
-      let eq ← mkEq expectedExpr gExpr.toExpr
-      let gs ← g.apply (← mkAppM `Eq.mp #[← mkFreshExprMVar eq])
+      let eq ← mkEq gExpr.toExpr expectedExpr
+      let gs ← g.apply (← mkAppM `Eq.mpr #[← mkFreshExprMVar eq])
       let gs1 ← evalTacticAt tac gs[1]!
       if gs1.length == 0 then
         dbg_trace s!"Rewrote {step.rewriteName}."
