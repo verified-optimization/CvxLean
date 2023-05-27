@@ -42,6 +42,7 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("prob",        ("prob", 2, #[])),
     ("objFun",      ("objFun", 1, #[])),
     ("constraints", ("constraints", 1, #[])),
+    ("maximizeNeg", ("neg", 1, #[])),
     ("var",         ("var", 1, #[])),
     ("and",         ("and", 2, #[])),
     ("eq",          ("eq", 2, #[])),
@@ -393,8 +394,6 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| simp only [add_sub] <;> norm_num))
   | "div-add", _ => 
     return (true, ← `(tactic| simp only [add_div] <;> norm_num))
-  | "log-1", _ => 
-    return (true, ← `(tactic| simp only [Real.log_one] <;> norm_num))
   | "sub-mul-left", _ => 
     return (true, ← `(tactic| simp only [←mul_sub] <;> norm_num))
   | "div-pow", _ => 
@@ -407,14 +406,16 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| simp only [←mul_div] <;> norm_num))
   | "sqrt_eq_rpow", _ => 
     return (true, ← `(tactic| simp only [Real.sqrt_eq_rpow] <;> norm_num))
+  -- NOTE(RFM): Only ones that still works iteratively.
   | "le-div-one", EggRewriteDirection.Forward => 
-    -- NOTE(RFM): Only one that still works iteratively.
     return (true, ← `(tactic| iterative_conv_num (rw [←div_le_one] <;> norm_num; positivity)))
+  | "log-div", EggRewriteDirection.Forward => 
+    return (true, ← `(tactic| internally_do (rw [Real.log_div] <;> try { positivity } <;> norm_num)))
+  -- NOTE(RFM): Only instance of a rewriting without proving equality.
   | "map-objFun-log", EggRewriteDirection.Forward =>
     return (false, ← `(tactic| map_objFun_log))
   | rewriteName, direction => 
     throwError "Unknown rewrite name {rewriteName}({direction})."
-#check mkNullNode
 
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
