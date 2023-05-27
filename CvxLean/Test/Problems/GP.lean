@@ -6,9 +6,10 @@ noncomputable section GP
 open CvxLean Minimization Real
 
 -- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (4)
+-- NOTE(RFM): `maximize` does not work because it is set to `Neg.neg`.
 def gp1 :=
   optimization (x y z : ℝ) 
-    minimize (x / y)
+    minimize 1 / (x / y)
     subject to 
       h1 : 0 < x
       h2 : 0 < y
