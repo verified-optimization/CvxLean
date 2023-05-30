@@ -95,11 +95,19 @@ def gp3 :=
       h5 : x + 2 * y + 3 * z ≤ 1
       h6 : (1 / 2) * x * y = 1
 
-set_option maxHeartbeats 100000000
+set_option maxHeartbeats 1000000
 reduction red3/dcp3 : gp3 := by
   map_exp
-  norm_num1
   convexify
   exact done
+
+#print dcp3
+-- def dcp3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+-- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+--   minimize exp (-(y * (1 / 2)) - x - z) + (23 * (exp (z + x) / 10) + 4 * exp (y + (z + x)))
+--   subject to
+--     _ : 1 / 3 * exp (-(y * 2) + -(2 * x)) + 1 / 3 * (4 * exp (y * (1 / 2) - z)) ≤ 1
+--     _ : exp x + (exp y * 2 + exp z * 3) ≤ 1
+--     _ : y + (x - log 2) = 0
 
 end GP
