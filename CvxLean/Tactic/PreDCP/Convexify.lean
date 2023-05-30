@@ -434,9 +434,15 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
   | rewriteName, direction => 
     throwError "Unknown rewrite name {rewriteName}({direction})."
 
+-- Used to get rid of the `OfScientific`s.
+def norm_num_clean_up : TacticM Unit :=
+  Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (simpOnly := true) (useSimp := false)
+
 elab "convexify" : tactic => withMainContext do
   let g ← getMainGoal
 
+  norm_num_clean_up
+  
   -- NOTE(RFM): No whnf.              
   let gTy := (← MVarId.getDecl g).type
   let gExpr ← Meta.matchSolutionExprFromExpr gTy
@@ -480,7 +486,6 @@ elab "convexify" : tactic => withMainContext do
       let gs1 ← evalTacticAt tac g
       replaceMainGoal gs1
 
-  -- Used to get rid of the `OfScientific`s.
-  Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode
+  norm_num_clean_up
 
   return ()
