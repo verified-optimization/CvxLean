@@ -46,8 +46,13 @@ partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
 where 
   findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
     if isConstant e vars then
-      let ppe ← Lean.PrettyPrinter.ppExpr e
-      return Tree.leaf s!"{ppe}"
+      if e.getAppFn.constName == `HDiv.hDiv then
+        let a ← Lean.PrettyPrinter.ppExpr <| e.getArg! 4
+        let b ← Lean.PrettyPrinter.ppExpr <| e.getArg! 5
+        return Tree.node "div" #[Tree.leaf s!"{a}", Tree.leaf s!"{b}"]
+      else
+        let ppe ← Lean.PrettyPrinter.ppExpr e
+        return Tree.leaf s!"{ppe}"
     if e.isFVar ∧ vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.leaf (toString n) 
