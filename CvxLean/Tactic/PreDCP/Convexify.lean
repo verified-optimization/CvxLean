@@ -393,11 +393,17 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
   | "log-exp", _ =>
     return (true, ← `(tactic| simp only [Real.log_exp] <;> norm_num))
   | "log-div", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| congr; funext; rw [Real.log_div (by positivity) (by positivity)]; norm_num))
+    return (true, ← `(tactic| congr <;> funext <;> split_ands <;> try { rw [Real.log_div (by positivity) (by positivity)] <;> norm_num }))
+  | "log-mul", _ => 
+    return (true, ← `(tactic| congr <;> funext <;> split_ands <;> try { rw [Real.log_mul (by positivity) (by positivity)] <;> norm_num }))
   | "pow-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_mul] <;> norm_num))
   | "div-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_sub] <;> norm_num))
+  | "add-assoc", _ => 
+    return (true, ← `(tactic| simp only [add_assoc] <;> norm_num))
+  | "add-mul", _ => 
+    return (true, ← `(tactic| simp only [add_mul] <;> norm_num))
   | "add-sub", _ => 
     return (true, ← `(tactic| simp only [add_sub] <;> norm_num))
   | "div-add", _ => 
@@ -410,6 +416,8 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| simp only [mul_comm] <;> norm_num))
   | "mul-assoc", _ => 
     return (true, ← `(tactic| simp only [mul_assoc] <;> norm_num))
+  | "mul-add", _ => 
+    return (true, ← `(tactic| simp only [mul_add] <;> norm_num))
   | "add-comm", _ => 
     return (true, ← `(tactic| simp only [add_comm] <;> norm_num))
   | "mul-div", _ => 
@@ -476,32 +484,3 @@ elab "convexify" : tactic => withMainContext do
   Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode
 
   return ()
-
-open Minimization Real
-
-lemma test : Solution (
-    optimization (x y : ℝ)
-      minimize (x * y)
-      subject to
-        hx : 0 < x
-        hy : 0 < y
-        h : x ^ 2 ≤ -10.123
-) := by
-  map_exp
-  convexify
-  sorry
-
-lemma test2 : Solution (
-  optimization (x y z : ℝ) 
-    minimize (x / y)
-    subject to 
-      h1 : 0 < x
-      h2 : 0 < y
-      h3 : 0 < z
-      h4 : 2 <= x
-      h5 : x <= 3 
-      h6 : x^2 + 3 * y / z <= sqrt x
-      h7 : x * y = z) := by 
-  map_exp
-  convexify
-  sorry
