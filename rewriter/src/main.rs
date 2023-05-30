@@ -2,7 +2,7 @@ use egg::{rewrite as rw, *};
 use core::cmp::Ordering;
 use fxhash::FxHashSet as HashSet;
 use ordered_float::NotNan;
-use std::{fmt, io};
+use std::{fs, fmt, io};
 use serde::{Deserialize, Serialize};
 
 pub type Constant = NotNan<f64>;
@@ -42,6 +42,7 @@ type EGraph = egg::EGraph<Optimization, Meta>;
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Meta;
 
+// TODO(RFM): Remove "Valid", split Real and Prop.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Curvature {
     Convex,
@@ -52,25 +53,62 @@ pub enum Curvature {
     Unknown,
 }
 
+/*
+        Unknown          Unknown
+        /     \             |
+    Convex   Concave      Valid
+        \     /
+         Affine
+           |
+        Constant
+ */
 impl PartialOrd for Curvature {
     fn partial_cmp(&self, other:&Curvature) -> Option<Ordering> {
         if *self == *other {
             return Some(Ordering::Equal);
         }
-        if *self == Curvature::Convex {
+        // Constant < Non-constant.
+        if *self == Curvature::Constant {
             return Some(Ordering::Less);
         } 
-        if *other == Curvature::Convex {
+        // Non-constant > Constant.
+        if *other == Curvature::Constant {
             return Some(Ordering::Greater);
         }
-        if *self == Curvature::Unknown {
-            return Some(Ordering::Greater);
-        }
-        if *other == Curvature::Unknown {
+        // Affine < Non-affine.
+        if *self == Curvature::Affine {
             return Some(Ordering::Less);
         }
-        // NOTE(RFM): Egg unwraps this value so it cannot be None.
-        return Some(Ordering::Equal);
+        // Non-affine > Affine.
+        if *other == Curvature::Affine {
+            return Some(Ordering::Greater);
+        }
+        // Convex < Unknown.
+        if *self == Curvature::Convex && *other == Curvature::Unknown {
+            return Some(Ordering::Less);
+        }
+        // Unknown > Convex.
+        if *self == Curvature::Unknown && *other == Curvature::Convex {
+            return Some(Ordering::Greater);
+        }
+        // Concave < Unknown.
+        if *self == Curvature::Concave && *other == Curvature::Unknown {
+            return Some(Ordering::Less);
+        }
+        // Unknown > Concave.
+        if *self == Curvature::Unknown && *other == Curvature::Concave {
+            return Some(Ordering::Greater);
+        }
+        // Valid < Unknown.
+        if *self == Curvature::Valid && *other == Curvature::Unknown {
+            return Some(Ordering::Less);
+        }
+        // Unknown > Valid.
+        if *self == Curvature::Unknown && *other == Curvature::Valid {
+            return Some(Ordering::Greater);
+        }
+
+        return None;
     }
 }
 
@@ -325,6 +363,17 @@ fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     }
 }
 
+fn is_not_one(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var = var.parse().unwrap();
+    move |egraph, _, subst| {
+        if let Some((n, _)) = &egraph[subst[var]].data.constant {
+            *(n) != 1.0
+        } else {
+            true
+        }
+    }
+}
+
 fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
@@ -336,36 +385,47 @@ fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     }
 }
 
+fn not_has_log(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var = var.parse().unwrap();
+    move |egraph, _, subst| {
+        !egraph[subst[var]].data.has_log
+    }
+}
+
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("eq-add"; "(eq ?a (add ?b ?c))" => "(eq (sub ?a ?c) ?b)"),
+    // rw!("eq-add"; "(eq ?a (add ?b ?c))" => "(eq (sub ?a ?c) ?b)"),
 
-    rw!("eq-sub"; "(eq ?a (sub ?b ?c))" => "(eq (add ?a ?c) ?b)"),
+    // rw!("eq-sub"; "(eq ?a (sub ?b ?c))" => "(eq (add ?a ?c) ?b)"),
 
-    rw!("eq-mul"; "(eq ?a (mul ?b ?c))" => "(eq (div ?a ?c) ?b)" 
-        if is_not_zero("?c")),
+    // rw!("eq-mul"; "(eq ?a (mul ?b ?c))" => "(eq (div ?a ?c) ?b)" 
+    //     if is_not_zero("?c")),
 
-    rw!("eq-div"; "(eq ?a (div ?b ?c))" => "(eq (mul ?a ?c) ?b)" 
-        if is_not_zero("?c")),
+    // rw!("eq-div"; "(eq ?a (div ?b ?c))" => "(eq (mul ?a ?c) ?b)" 
+    //     if is_not_zero("?c")),
 
-    rw!("eq-sub-zero"; "(eq ?a ?b)" => "(eq (sub ?a ?b) 0)"),
+    rw!("eq-sub-zero"; "(eq ?a ?b)" => "(eq (sub ?a ?b) 0)"
+        if is_not_zero("?b")),
 
     rw!("eq-div-one"; "(eq ?a ?b)" => "(eq (div ?a ?b) 1)" 
+        if is_not_zero("?b") if is_not_one("?b")),
+
+    // rw!("le-sub"; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)"),
+
+    // rw!("le-add"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
+
+    // rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+    //     if is_not_zero("?c")),
+
+    // rw!("le-div"; "(le ?a (div ?b ?c))" => "(le (mul ?a ?c) ?b)" 
+    //     if is_not_zero("?c")),
+
+    rw!("le-sub-zero"; "(le ?a ?b)" => "(le (sub ?a ?b) 0)" 
         if is_not_zero("?b")),
-
-    rw!("le-sub"; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)"),
-
-    rw!("le-add"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
-
-    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-        if is_not_zero("?c")),
-
-    rw!("le-div"; "(le ?a (div ?b ?c))" => "(le (mul ?a ?c) ?b)" 
-        if is_not_zero("?c")),
-
-    rw!("le-sub-zero"; "(le ?a ?b)" => "(le (sub ?a ?b) 0)"),
 
     rw!("le-div-one"; "(le ?a ?b)" => "(le (div ?a ?b) 1)" 
-        if is_not_zero("?b")),
+        if is_not_zero("?b") if is_not_one("?b")),
+
+    // NOTE(RFM): Turn all rws above into a normalization step?
 
     rw!("add-comm"; "(add ?a ?b)" => "(add ?b ?a)"),
 
@@ -377,11 +437,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("add-sub"; "(add ?a (sub ?b ?c))" => "(sub (add ?a ?b) ?c)"),
 
-    rw!("mul-add"; "(mul ?a (add ?b ?c))" => "(add (mul ?a ?b) (mul ?a ?c))"),
-
-    rw!("add-mul"; "(add (mul ?a ?b) (mul ?a ?c))" => "(mul ?a (add ?b ?c))"),
-
-    rw!("add-mul-same"; "(add ?a (mul ?b ?a))" => "(mul ?a (add 1 ?b))"),
+    rw!("add-mul"; "(mul (add ?a ?b) ?c)" => "(add (mul ?a ?c) (mul ?b ?c))"),
 
     rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
 
@@ -424,9 +480,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
 
-    rw!("exp-0"; "(exp 0)" => "1"),
+    // rw!("exp-0"; "(exp 0)" => "1"),
 
-    rw!("log-1"; "(log 1)" => "0"),
+    // rw!("log-1"; "(log 1)" => "0"),
 
     rw!("exp-add"; "(exp (add ?a ?b))" => "(mul (exp ?a) (exp ?b))"),
 
@@ -447,13 +503,13 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("log-exp"; "(log (exp ?a))" => "?a"),
 
     rw!("eq-log"; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" 
-        if is_gt_zero("?a") if is_gt_zero("?b")),
+        if is_gt_zero("?a") if is_gt_zero("?b") if not_has_log("?a") if not_has_log("?b")),
 
     rw!("le-log"; "(le ?a ?b)" => "(le (log ?a) (log ?b))" 
-        if is_gt_zero("?a") if is_gt_zero("?b")),
+        if is_gt_zero("?a") if is_gt_zero("?b") if not_has_log("?a") if not_has_log("?b")),
 
     rw!("map-objFun-log"; "(objFun ?a)" => "(objFun (log ?a))" 
-        if is_gt_zero("?a")),
+        if is_gt_zero("?a") if not_has_log("?a")),
 
     // rw!("map-domain-exp"; "(prob (objFun ?o) (constraints ?cs))" => 
     //     { MapExp {} })
@@ -498,7 +554,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return Curvature::Unknown;
             }
             Optimization::Eq([a, b]) => {
-                if get_curvature(a) == Curvature::Affine && get_curvature(b) == Curvature::Affine {
+                if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
                     return Curvature::Valid;
                 }
                 return Curvature::Unknown;
@@ -653,9 +709,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                             } else if get_curvature(a) == Curvature::Affine {
                                 return Curvature::Affine;
                             }
-                        } else {
-                            return Curvature::Constant;
-                        }
+                        } 
                         return Curvature::Unknown;
                     }
                     _ => { return Curvature::Unknown; }
@@ -721,7 +775,8 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
         return None
     } else {
         for child in &term.children {
-            let child_res = get_rewrite_name_and_direction(child);
+            let child_res = 
+                get_rewrite_name_and_direction(child);
             if child_res.is_some() {
                 return child_res;
             }
@@ -731,7 +786,7 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
     return None;
 }
 
-fn get_steps(s: String) -> Vec<Step> {
+fn get_steps(s: String, dot: bool) -> Vec<Step> {
     let expr: RecExpr<Optimization> = s.parse().unwrap();
 
     let runner = 
@@ -740,6 +795,12 @@ fn get_steps(s: String) -> Vec<Step> {
         .with_expr(&expr)
         .run(&rules());
     
+    if dot {
+        println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
+        let dot_str =  runner.egraph.dot().to_string();
+        fs::write("test.dot", dot_str).expect("");
+    }
+
     let root = runner.roots[0];
 
     let best_cost;
@@ -761,7 +822,7 @@ fn get_steps(s: String) -> Vec<Step> {
         explanation.make_flat_explanation();
     
     let mut res = Vec::new();
-    if best_cost == Curvature::Convex {
+    if best_cost != Curvature::Concave && best_cost != Curvature::Unknown {
         for i in 0..flat_explanation.len() {
             let expl = &flat_explanation[i];
             let expected_term = expl.get_recexpr().to_string();
@@ -810,7 +871,7 @@ fn main_json() -> io::Result<()> {
                 match req {
                     Request::PerformRewrite { target } => 
                     Response::Success {
-                        steps: get_steps(target)
+                        steps: get_steps(target, false)
                     }
                 }
             }
