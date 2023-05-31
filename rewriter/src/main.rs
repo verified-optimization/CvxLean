@@ -24,6 +24,7 @@ define_language! {
         "log" = Log(Id),
         "exp" = Exp(Id),
         "var" = Var(Id),
+        "param" = Param(Id),
         Constant(Constant),
         Symbol(Symbol),
     }
@@ -287,6 +288,7 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
             }
+            Optimization::Param(_) => {} 
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
                 constant = Some((*f, format!("{}", f).parse().unwrap()));
@@ -736,6 +738,11 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             }
             Optimization::Var(_a) => {
                 return Curvature::Affine;
+            }
+            Optimization::Param(_a) => {
+                // NOTE(RFM): The story for DPP is a bit more complicated, but 
+                // let's treat them as numerical constants for now.
+                return Curvature::Constant;
             }
             Optimization::Symbol(_sym) => {
                 // Irrelevant.
