@@ -11,8 +11,7 @@ define_language! {
     pub enum Optimization {
         "prob" = Prob([Id; 2]),
         "objFun" = ObjFun(Id),
-        "constraints" = Constraints(Id),
-        "and" = And([Id; 2]),
+        "constraints" = Constraints(Box<[Id]>),
         "eq" = Eq([Id; 2]),
         "le" = Le([Id; 2]),
         "neg" = Neg(Id),
@@ -169,11 +168,9 @@ impl Analysis<Optimization> for Meta {
                 
             }
             Optimization::Constraints(a) => {
-                free_vars.extend(get_vars(a));
-            }
-            Optimization::And([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
+                for c in a.iter() {
+                    free_vars.extend(get_vars(c));
+                }
             }
             Optimization::Eq([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -545,13 +542,14 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return Curvature::Unknown;
             }
             Optimization::Constraints(a) => {
-                return costs(*a);
-            }
-            Optimization::And([a, b]) => {
-                if get_curvature(a) == Curvature::Valid && get_curvature(b) == Curvature::Valid {
-                    return Curvature::Valid;
+                let mut curvature = Curvature::Valid;
+                for c in a.iter() {
+                    if costs(*c) != Curvature::Valid {
+                        curvature = Curvature::Unknown;
+                        break;
+                    }
                 }
-                return Curvature::Unknown;
+                return curvature;
             }
             Optimization::Eq([a, b]) => {
                 if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
@@ -886,4 +884,11 @@ fn main_json() -> io::Result<()> {
 
 fn main() {
     main_json().unwrap();
+}
+
+#[test]
+fn test() {
+    let s = "(prob (objFun (exp (var x))) (constraints (le (pow (exp (var x)) 2) -(10123 / 1000))))".to_string();
+    let steps = get_steps(s, false);
+    println!("{:?}", steps);
 }
