@@ -17,17 +17,12 @@ partial def CvxLean.Tree.toString : Tree String String → String
     "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
   | Tree.leaf n => n
 
-partial def CvxLean.Tree.and : List (Tree String String) → Tree String String
-  | [] => Tree.leaf "true"
-  | [t] => t
-  | t1::t2::ts => Tree.node "and" #[t1, Tree.and (t2::ts)]
-
 def CvxLean.Tree.ofOCTree (ocTree : OC (Tree String String)) :
   Tree String String :=
   let objFun := ocTree.objFun
   let constr := ocTree.constr
   let objFunNode := Tree.node "objFun" #[objFun]
-  let constrNode := Tree.node "constraints" #[Tree.and constr.data]
+  let constrNode := Tree.node "constraints" (Array.mk constr.data)
   Tree.node "prob" #[objFunNode, constrNode]
 
 partial def CvxLean.Tree.surroundVars (t : Tree String String) (vars : List String) :=
@@ -41,10 +36,9 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
   HashMap.ofList [
     ("prob",        ("prob", 2, #[])),
     ("objFun",      ("objFun", 1, #[])),
-    ("constraints", ("constraints", 1, #[])),
+    ("constraints", ("constraints", 0, #[])),
     ("maximizeNeg", ("neg", 1, #[])),
     ("var",         ("var", 1, #[])),
-    ("and",         ("and", 2, #[])),
     ("eq",          ("eq", 2, #[])),
     ("le",          ("le", 2, #[])),
     ("neg",         ("neg", 1, #[])),
@@ -64,7 +58,7 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   match t with
   | Tree.node op children =>
       if let some (op', arity, extraArgs) := Convexify.opMap.find? op then
-        if children.size ≠ arity then
+        if children.size ≠ arity && op' != "constraints" then
           throwError s!"The operator {op} has arity {children.size}, but it should have arity {arity}."
         let children' ← children.mapM adjustOps
         let children' := children' ++ extraArgs.map Tree.leaf
@@ -137,11 +131,6 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
       return mkFVar (FVarId.mk (Name.mkSimple s))
     else
       throwError "Tree to Expr conversion error: unexpected var {s}."
-  -- And.
-  | Tree.node "and" #[t1, t2] => do
-    let t1 ← treeToExpr vars t1
-    let t2 ← treeToExpr vars t2
-    return mkAnd t1 t2
   -- Equality.
   | Tree.node "eq" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
@@ -213,9 +202,10 @@ where
 def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
   MetaM (Option Meta.SolutionExpr) := do
   match t with
-  | Tree.node "prob" #[Tree.node "objFun" #[objFun], Tree.node "constraints" #[constr]] => do
+  | Tree.node "prob" #[Tree.node "objFun" #[objFun], Tree.node "constraints" constr] => do
     let objFun ← treeToExpr (vars.map toString) objFun
-    let constr ← treeToExpr (vars.map toString) constr
+    let constr ← constr.mapM <| treeToExpr (vars.map toString)
+    let constr := Meta.composeAnd constr.data
 
     -- NOTE(RFM): Assuming all variables are real.
     let fvars := Array.mk $ vars.map (fun v => mkFVar (FVarId.mk v))
