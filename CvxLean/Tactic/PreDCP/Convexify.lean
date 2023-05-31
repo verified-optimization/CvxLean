@@ -39,6 +39,7 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("constraints", ("constraints", 0, #[])),
     ("maximizeNeg", ("neg", 1, #[])),
     ("var",         ("var", 1, #[])),
+    ("param",       ("param", 1, #[])),
     ("eq",          ("eq", 2, #[])),
     ("le",          ("le", 2, #[])),
     ("neg",         ("neg", 1, #[])),
@@ -131,6 +132,9 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
       return mkFVar (FVarId.mk (Name.mkSimple s))
     else
       throwError "Tree to Expr conversion error: unexpected var {s}."
+  -- Parameters.
+  | Tree.node "param" #[Tree.leaf s] =>
+    return mkConst (Name.mkSimple s)
   -- Equality.
   | Tree.node "eq" #[t1, t2] => do
     let t1 ← treeToExpr vars t1

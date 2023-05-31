@@ -6,6 +6,7 @@ import CvxLean.Lib.Missing.Array
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 import CvxLean.Meta.Missing.Expr
+import CvxLean.Tactic.Solver.Float.OptimizationParam
 
 namespace CvxLean
 
@@ -46,6 +47,8 @@ partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
 where 
   findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
     if isConstant e vars then
+      if ← isOptimizationParam e.constName then 
+        return Tree.node "param" #[Tree.leaf (toString e.constName)]
       let mut e := e
       let mut res := Tree.leaf "unknown"
       let mut hasNeg := false
@@ -65,6 +68,7 @@ where
     if e.isFVar ∧ vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.leaf (toString n) 
+    
     let potentialAtoms ← findRegisteredAtoms e vars
     
     -- Just get the first one for now.
