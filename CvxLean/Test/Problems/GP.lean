@@ -5,6 +5,8 @@ noncomputable section GP
 
 open CvxLean Minimization Real
 
+section Basic
+
 lemma test : Solution (
     optimization (x : ℝ)
       minimize (x)
@@ -30,7 +32,12 @@ lemma test2 : Solution (
   convexify
   sorry
 
+end Basic
+
+section GPTutorialPaper
+
 -- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (4)
+
 -- NOTE(RFM): `maximize` does not work because it is set to `Neg.neg`.
 def gp1 :=
   optimization (x y z : ℝ) 
@@ -61,6 +68,38 @@ reduction red/dcp1 : gp1 := by
 --     _ : exp (x * (3 / 2)) + 3 * exp (y + (-(x * (1 / 2)) - z)) ≤ 1
 --     _ : x - y = 2 * z
 
+-- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (5)
+
+@[optimizationParam]
+def Awall : ℝ := 10
+
+@[optimizationParam]
+def Aflr : ℝ := 10
+
+@[optimizationParam]
+def α : ℝ := 3
+
+@[simp]
+lemma α_pos : 0 < α := by unfold α; norm_num
+
+@[optimizationParam]
+def β : ℝ := 4
+
+@[simp]
+lemma β_pos : 0 < β := by unfold β; norm_num
+
+@[optimizationParam]
+def γ : ℝ := 5
+
+@[simp]
+lemma γ_pos : 0 < γ := by unfold γ; norm_num
+
+@[optimizationParam]
+def δ : ℝ := 6
+
+@[simp]
+lemma δ_pos : 0 < δ := by unfold δ; norm_num
+
 def gp2 :=
   optimization (h w d : ℝ) 
     minimize (1 / h) * (1 / w) * (1 / d)
@@ -68,7 +107,12 @@ def gp2 :=
       h1 : 0 < h
       h2 : 0 < w
       h3 : 0 < d
-      h4 : 2 * (h * d + w * d) ≤ 10 -- A_wall
+      h4 : 2 * (h * d + w * d) ≤ Awall
+      h5 : w * d ≤ Aflr
+      h6 : α ≤ h/w
+      h7 : h/w ≤ β  
+      h8 : γ ≤ d/w
+      h9 : d/w ≤ δ
 
 reduction red2/dcp2 : gp2 := by
   map_exp
@@ -78,9 +122,16 @@ reduction red2/dcp2 : gp2 := by
 #print dcp2
 -- def dcp2 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (h : ℝ) (w : ℝ) (d : ℝ) 
---   minimize -h + -w - d
+--   minimize -h + (-w - d)
 --   subject to
---     _ : 2 * exp (d + h) + 2 * exp (d + w) ≤ 10
+--     _ : 2 * exp (d + h) + 2 * exp (w + d) ≤ Awall
+--     _ : exp (w + d) ≤ Aflr
+--     _ : log α ≤ h - w
+--     _ : exp (h - w) ≤ β
+--     _ : log γ ≤ d - w
+--     _ : d ≤ log δ + w
+
+-- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf 2.1
 
 def gp3 := 
   optimization ( x y z : ℝ) 
@@ -109,5 +160,7 @@ reduction red3/dcp3 : gp3 := by
 --     _ : 1 / 3 * exp (-(y * 2) + -(2 * x)) + 1 / 3 * (4 * exp (y * (1 / 2) - z)) ≤ 1
 --     _ : exp x + (exp y * 2 + exp z * 3) ≤ 1
 --     _ : y + (x - log 2) = 0
+
+end GPTutorialPaper
 
 end GP
