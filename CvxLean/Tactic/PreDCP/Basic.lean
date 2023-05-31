@@ -53,7 +53,7 @@ elab "prove_exp_log" : tactic => do
   let gs ← evalTacticAt (← 
     `(tactic| 
         simp [LogMap.log, ExpMap.exp];
-        convert rfl <;> rw [exp_log (by assumption)])) g
+        congr <;> rw [exp_log (by assumption)])) g
   replaceMainGoal gs
 
 macro "make_positive_constraints_true" : tactic => 
@@ -77,23 +77,6 @@ macro "map_exp" : tactic =>
         (hfg := by prove_exp_log) <;>
       dsimp only [Function.comp, ExpMap.exp, LogMap.log] <;>
       remove_positive_constraints)
-
-open Parser.Tactic
-
-syntax (name := internally_do) "internally_do " tactic : tactic
-@[tactic internally_do]
-def evalInternallyDo : Tactic := fun stx =>
-  match stx with
-  | `(tactic| internally_do $tac) => do 
-    for i in [2:10] do 
-      let g ← getMainGoal
-      let iStx := Syntax.mkNumLit i.repr
-      let gs ← evalTacticAt (← 
-        `(tactic| try { convert rfl using $iStx <;> $tac })) g
-      replaceMainGoal gs
-      if gs.length == 0 then 
-        return ()
-  | _  => throwUnsupportedSyntax
 
 end Tactic
 

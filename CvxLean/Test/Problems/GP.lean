@@ -134,6 +134,7 @@ reduction red2/dcp2 : gp2 := by
 
 -- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf 2.1
 
+-- NOTE(RFM): We don't have the power atom yet.
 def gp3 := 
   optimization ( x y z : ℝ) 
     --minimize (x ^ (-1)) * y ^ (-1 / 2) * z ^ (-1) + 2.3 * x * z + 4 * x * y * z
