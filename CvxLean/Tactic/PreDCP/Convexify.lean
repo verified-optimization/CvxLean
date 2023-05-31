@@ -382,6 +382,8 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
     return (true, ← `(tactic| simp only [←Real.exp_add] <;> norm_num))
   | "le-log", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| try { conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)] }))
+  | "le-sub", EggRewriteDirection.Forward =>
+    return (true, ← `(tactic| simp only [le_sub_iff_add_le] <;> norm_num))
   | "eq-log", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| try { conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)] }))
   | "log-exp", _ =>
