@@ -892,10 +892,3 @@ fn main_json() -> io::Result<()> {
 fn main() {
     main_json().unwrap();
 }
-
-#[test]
-fn test() {
-    let s = "(prob (objFun (exp (var x))) (constraints (le (pow (exp (var x)) 2) -(10123 / 1000))))".to_string();
-    let steps = get_steps(s, false);
-    println!("{:?}", steps);
-}
