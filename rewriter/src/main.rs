@@ -392,15 +392,15 @@ fn not_has_log(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
 }
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    // rw!("eq-add"; "(eq ?a (add ?b ?c))" => "(eq (sub ?a ?c) ?b)"),
+    rw!("eq-add"; "(eq ?a (add ?b ?c))" => "(eq (sub ?a ?c) ?b)"),
 
-    // rw!("eq-sub"; "(eq ?a (sub ?b ?c))" => "(eq (add ?a ?c) ?b)"),
+    rw!("eq-sub"; "(eq ?a (sub ?b ?c))" => "(eq (add ?a ?c) ?b)"),
 
-    // rw!("eq-mul"; "(eq ?a (mul ?b ?c))" => "(eq (div ?a ?c) ?b)" 
-    //     if is_not_zero("?c")),
+    rw!("eq-mul"; "(eq ?a (mul ?b ?c))" => "(eq (div ?a ?c) ?b)" 
+        if is_not_zero("?c")),
 
-    // rw!("eq-div"; "(eq ?a (div ?b ?c))" => "(eq (mul ?a ?c) ?b)" 
-    //     if is_not_zero("?c")),
+    rw!("eq-div"; "(eq ?a (div ?b ?c))" => "(eq (mul ?a ?c) ?b)" 
+        if is_not_zero("?c")),
 
     rw!("eq-sub-zero"; "(eq ?a ?b)" => "(eq (sub ?a ?b) 0)"
         if is_not_zero("?b")),
@@ -408,15 +408,15 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("eq-div-one"; "(eq ?a ?b)" => "(eq (div ?a ?b) 1)" 
         if is_not_zero("?b") if is_not_one("?b")),
 
-    // rw!("le-sub"; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)"),
+    rw!("le-sub"; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)"),
 
-    // rw!("le-add"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
+    rw!("le-add"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
 
-    // rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-    //     if is_not_zero("?c")),
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_not_zero("?c")),
 
-    // rw!("le-div"; "(le ?a (div ?b ?c))" => "(le (mul ?a ?c) ?b)" 
-    //     if is_not_zero("?c")),
+    rw!("le-div"; "(le ?a (div ?b ?c))" => "(le (mul ?a ?c) ?b)" 
+        if is_not_zero("?c")),
 
     rw!("le-sub-zero"; "(le ?a ?b)" => "(le (sub ?a ?b) 0)" 
         if is_not_zero("?b")),
