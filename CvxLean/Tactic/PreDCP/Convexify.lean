@@ -111,17 +111,17 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
       -- NOTE(RFM): This is not ideal, but it works if we use norm_num all the
       -- time.
       let divisionRingToOfScientific :=
-        mkApp2 (mkConst ``DivisionRing.toOfScientific ([levelZero] : List Level))
+        mkApp2 (mkConst ``DivisionRing.toOfScientific [levelZero])
           (mkConst ``Real)
           (mkConst ``Real.instDivisionRingReal)
       let realOfScientific :=
-        mkApp2 (mkConst ``OfScientific.ofScientific ([levelZero] : List Level))
+        mkApp2 (mkConst ``OfScientific.ofScientific [levelZero])
           (mkConst ``Real)
           divisionRingToOfScientific
       let num := mkApp3 realOfScientific
         (mkNatLit res.mantissa.natAbs) (toExpr true) (mkNatLit res.exponent)
       if res.mantissa < 0 then
-        return mkApp3 (mkConst ``Neg.neg ([levelZero] : List Level))
+        return mkApp3 (mkConst ``Neg.neg [levelZero])
           (mkConst ``Real) (mkConst ``Real.instNegReal) num
       else
         return num
@@ -151,7 +151,7 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
   | Tree.node "neg" #[t] => do
     let t ← treeToExpr vars t
     return mkAppN
-      (mkConst ``Neg.neg ([levelZero] : List Level))
+      (mkConst ``Neg.neg [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instNegReal), t]
   -- Square root. 
   | Tree.node "sqrt" #[t] => do
@@ -351,15 +351,13 @@ def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
   dbg_trace s!"Running egg request: {request.toJson}"
   runEggRequestRaw request.toJson >>= parseEggResponse
 
-macro "iterative_conv_num " t:tactic : tactic => 
-  `(tactic| internally_do (try { norm_num } <;> $t))
-
 macro "posimptivity" : tactic => 
   `(tactic| norm_num <;> positivity)
 
 lemma and_eq_and {A B C D : Prop} (h1 : A = C) (h2 : B = D) : (A ∧ B) = (C ∧ D):= by
-  rw [h1, h2]
+  congr
 
+-- TODO(RFM): Do I need this? Can I just use congr?
 macro "split_ands" : tactic => 
   `(tactic| repeat (apply and_eq_and ; try { rfl }))
 
