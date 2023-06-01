@@ -1,13 +1,9 @@
 import CvxLean.Lib.Minimization 
 import CvxLean.Tactic.DCP.AtomLibrary
 
-attribute [-instance] coeDecidableEq
-attribute [-simp] Set.inj_on_empty Set.inj_on_singleton Quot.lift_on₂_mk 
-  Quot.lift_on_mk Quot.lift₂_mk
-
 open Minimization
 
-variable {R D E F : Type} [Preorderₓ R]
+variable {R D E F : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 /-
   p := min { f(x) | c_p(x) }
@@ -36,7 +32,7 @@ def MinEquiv.toFwd (E : MinEquiv p q) : Solution p → Solution q :=
       have h₂ := sol.optimality psi_y;
       -- f(psi(y)) <= g(y)
       have h₃ := E.psi_optimality y.point y.feasibility;
-      exact le_transₓ (le_transₓ h₁ h₂) h₃
+      exact le_trans (le_trans h₁ h₂) h₃
   }
 
 def MinEquiv.toBwd (E : MinEquiv p q) : Solution q → Solution p := 
@@ -52,16 +48,16 @@ def MinEquiv.toBwd (E : MinEquiv p q) : Solution q → Solution p :=
       have h₂ := sol.optimality phi_y;
       -- g(phi(y)) <= f(y)
       have h₃ := E.phi_optimality y.point y.feasibility;
-      exact le_transₓ (le_transₓ h₁ h₂) h₃
+      exact le_trans (le_trans h₁ h₂) h₃
   }
 
 def MinEquiv.refl : MinEquiv p p := 
   { phi := id, 
     psi := id,
     phi_feasibility := fun _ hx => hx,
-    phi_optimality := fun _ _ => le_reflₓ _,
+    phi_optimality := fun _ _ => le_refl _,
     psi_feasibility := fun _ hy => hy,
-    psi_optimality := fun _ _ => le_reflₓ _ }
+    psi_optimality := fun _ _ => le_refl _ }
 
 def MinEquiv.symm (E : MinEquiv p q) : MinEquiv q p := 
   { phi := E.psi, 
@@ -82,7 +78,7 @@ def MinEquiv.trans (E₁ : MinEquiv p q) (E₂ : MinEquiv q r) :
       have h₁ := E₂.phi_optimality (E₁.phi x) (E₁.phi_feasibility x hx);
       -- g(phi₁(x)) <= f(x)
       have h₂ := E₁.phi_optimality x hx;
-      exact le_transₓ h₁ h₂,
+      exact le_trans h₁ h₂,
     psi_feasibility := fun y hy =>
       E₁.psi_feasibility (E₂.psi y) (E₂.psi_feasibility y hy),
     psi_optimality := fun y hy => by 
@@ -90,7 +86,7 @@ def MinEquiv.trans (E₁ : MinEquiv p q) (E₂ : MinEquiv q r) :
       have h₁ := E₁.psi_optimality (E₂.psi y) (E₂.psi_feasibility y hy);
       -- g(psi₂(y)) <= h(y)
       have h₂ := E₂.psi_optimality y hy;
-      exact le_transₓ h₁ h₂
+      exact le_trans h₁ h₂
   }
 
 instance : 
@@ -146,9 +142,9 @@ def MinimizationQ.constraints_comm
   { phi := id, 
     psi := id,
     phi_feasibility := fun _ hx => And.comm.mp hx,
-    phi_optimality := fun _ _ => le_reflₓ _,
+    phi_optimality := fun _ _ => le_refl _,
     psi_feasibility := fun _ hy => And.comm.mp hy,
-    psi_optimality := fun _ _ => le_reflₓ _ }
+    psi_optimality := fun _ _ => le_refl _ }
 
 -- Useful to have this.
 def MinimizationQ.constraints_comm_l
@@ -159,9 +155,9 @@ def MinimizationQ.constraints_comm_l
   { phi := id, 
     psi := id,
     phi_feasibility := fun _ hx => ⟨hx.1, And.comm.mp hx.2⟩,
-    phi_optimality := fun _ _ => le_reflₓ _,
+    phi_optimality := fun _ _ => le_refl _,
     psi_feasibility := fun _ hy => ⟨hy.1, And.comm.mp hy.2⟩,
-    psi_optimality := fun _ _ => le_reflₓ _ }
+    psi_optimality := fun _ _ => le_refl _ }
 
 def MinimizationQ.constraints_assoc 
   {D : Type} {f : D → Real} {cs₁ cs₂ cs₃ : D → Prop} :
@@ -170,10 +166,10 @@ def MinimizationQ.constraints_assoc
   Quotient.sound <| Nonempty.intro <|
   { phi := id, 
     psi := id,
-    phi_feasibility := fun _ hx => And.assoc.mp hx,
-    phi_optimality := fun _ _ => le_reflₓ _,
-    psi_feasibility := fun _ hy => And.assoc.mpr hy,
-    psi_optimality := fun _ _ => le_reflₓ _ }
+    phi_feasibility := fun _ hx => and_assoc.mp hx,
+    phi_optimality := fun _ _ => le_refl _,
+    psi_feasibility := fun _ hy => and_assoc.mpr hy,
+    psi_optimality := fun _ _ => le_refl _ }
 
 
 section QuotientExample 
@@ -206,31 +202,9 @@ noncomputable def MinEquiv.map_domain_exp
     phi_optimality := fun x hx => by
       simp only [objFun, constraints, Function.comp] at hx ⊢;
       rw [Real.exp_log hx.1]
-      exact le_reflₓ _,
-    psi_feasibility := fun x hx => hx -- by 
-      -- simp only [constraints, Function.comp] at hx ⊢;
-      -- exact hx -- ⟨Real.exp_pos _, hx⟩,
-    psi_optimality := fun x hx => by
-      --simp only [objFun, constraints, Function.comp] at hx ⊢;
-      exact le_reflₓ _
+    psi_feasibility := fun x hx => hx
+    psi_optimality := fun x _ => le_refl _
   }
-
--- noncomputable def MinEquiv.add_exp_pos 
---   {f : Real → Real} {cs : Real → Prop} :
---   MinEquiv 
---     { objFun := f, constraints := cs } 
---     { objFun := f, constraints := fun x => 0 < Real.exp x ∧ cs x } :=
---   { phi := id,
---     psi := id, 
---     phi_feasibility := fun x hx => by
---       simp only [constraints, Function.comp] at hx ⊢;
---       exact ⟨Real.exp_pos _, hx⟩,
---     phi_optimality := fun x _ => le_reflₓ _,
---     psi_feasibility := fun x hx => by
---       simp only [constraints, Function.comp] at hx ⊢;
---       exact hx.2,
---     psi_optimality := fun x _ => le_reflₓ _
---   }
 
 noncomputable def MinEquiv.log_le_log
   {f : Real → Real} {cs : Real → Prop} {g h : Real → Real} :
@@ -244,11 +218,11 @@ noncomputable def MinEquiv.log_le_log
     phi_feasibility := fun x hx => by
       simp only [constraints, Function.comp] at hx ⊢;
       exact ⟨hx.1, hx.2.1, (Real.log_le_log hx.1 hx.2.1).2 hx.2.2.1, hx.2.2.2⟩,
-    phi_optimality := fun x _ => le_reflₓ _,
+    phi_optimality := fun x _ => le_refl _,
     psi_feasibility := fun x hx => by
       simp only [constraints, Function.comp] at hx ⊢;
       exact ⟨hx.1, hx.2.1, (Real.log_le_log hx.1 hx.2.1).1 hx.2.2.1, hx.2.2.2⟩,
-    psi_optimality := fun x _ => le_reflₓ _
+    psi_optimality := fun x _ => le_refl _
   }
 
 noncomputable def MinEquiv.rewrite_constraints 
@@ -262,11 +236,11 @@ noncomputable def MinEquiv.rewrite_constraints
     phi_feasibility := fun x hx => by
       simp only [constraints, Function.comp] at hx ⊢;
       exact (hcsds x).1 hx
-    phi_optimality := fun x _ => le_reflₓ _,
+    phi_optimality := fun x _ => le_refl _,
     psi_feasibility := fun x hx => by
       simp only [constraints, Function.comp] at hx ⊢;
       exact (hcsds x).2 hx
-    psi_optimality := fun x _ => le_reflₓ _
+    psi_optimality := fun x _ => le_refl _
   }
 
 noncomputable def MinEquiv.rewrite_objective 
@@ -279,9 +253,9 @@ noncomputable def MinEquiv.rewrite_objective
   { phi := id,
     psi := id,
     phi_feasibility := fun x hx => hx,
-    phi_optimality := fun x hx => by dsimp; rw [hfg x hx]; exact le_reflₓ _,
+    phi_optimality := fun x hx => by dsimp; rw [hfg x hx],
     psi_feasibility := fun x hx => hx,
-    psi_optimality := fun x hx => by dsimp; rw [hfg x hx]; exact le_reflₓ _
+    psi_optimality := fun x hx => by dsimp; rw [hfg x hx],
   }
 
 noncomputable def MinEquiv.log_le_log_no_cs
@@ -296,53 +270,144 @@ noncomputable def MinEquiv.log_le_log_no_cs
       fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).2 h.2.2⟩, 
       fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).1 h.2.2⟩⟩)  
 
-open CvxLean
 
-set_option pp.optMinimization false
+noncomputable section QCP
 
-noncomputable def calcTest : MinEquiv 
-      (optimization (x : Real) 
-        minimize x 
-        subject to 
-          h₁ : 0 < x 
-          h₂ : 1 ≤ x)
-      (optimization (x : Real)
-        minimize Real.exp x
-        subject to  
-          h₁ : 0 < Real.exp x
-          h : Real.log 1 ≤ Real.log (Real.exp x)) := by {
-  calc 
-    MinEquiv 
-      (optimization (x : Real) 
-        minimize x 
-        subject to 
-          h₁ : 0 < x 
-          h₂ : 1 ≤ x)
-      (optimization (x : Real) 
-        minimize Real.exp x 
-        subject to 
-          h₁ : 0 < Real.exp x 
-          h₂ : 1 ≤ Real.exp x):= by exact MinEquiv.map_domain_exp
-    MinEquiv _ 
-      (optimization (x : Real) 
-        minimize Real.exp x 
-        subject to 
-          h₀ : 0 < (1 : Real)
-          h₁ : 0 < Real.exp x
-          h₂ : 1 ≤ Real.exp x) := by sorry -- exact MinEquiv.add_exp_pos 
-    MinEquiv _ 
-      (optimization (x : Real) 
-        minimize Real.exp x 
-        subject to 
-          h₀ : 0 < (1 : Real)
-          h₁ : 0 < Real.exp x
-          h₂ : Real.log 1 ≤ Real.log (Real.exp x)) := by exact MinEquiv.log_le_log_no_cs
-    -- MinEquiv _ 
-    --   (optimization (x : Real) 
-    --     minimize Real.exp (Real.exp x) 
-    --     subject to 
-    --       h : 1 ≤ Real.exp (Real.exp x)) := by refine MinEquiv.map_domain_exp
-    }
+open CvxLean Real
 
-end Example 
+def p1 := 
+  optimization (x y : Real) 
+  minimize (sqrt x) / y 
+  subject to
+    h1 : 0 < y
+    h2 : exp x ≤ y
 
+def p2 (t : Real) := 
+  optimization (x y : Real)
+  minimize (0 : Real) 
+  subject to 
+    h1 : (sqrt x) ≤ t * y
+    h2 : exp x ≤ y
+
+def p3 := 
+  optimization (x y : Real)
+  minimize (0 : Real)
+  subject to 
+    h1 : 0 < y 
+    h2 : exp x ≤ y 
+    h3 : ∃ a b, ∀ t, (a ≤ t → t ≤ b → (sqrt x) / y ≤ t)
+
+def p4 (t : Real) := 
+  optimization (x y : Real)
+  minimize t
+  subject to 
+    h1 : 0 < y ∧ exp x ≤ y ∧ (sqrt x) / y ≤ t
+
+def p5 := 
+  optimization (x y : Real)
+  minimize (0 : Real)
+  subject to 
+    h1 : 0 < y 
+    h2 : exp x ≤ y 
+    h3 : ∃ t, ((sqrt x) / y ≤ t)
+
+def p6 := 
+  optimization (x y t : Real)
+  minimize (t : Real)
+  subject to 
+    h1 : 0 < y 
+    h2 : exp x ≤ y 
+    h3 : (sqrt x) / y ≤ t
+
+variable {R E P : Type} [Preorder R] [Zero R]
+
+def parametrize (p : Minimization E R) : Minimization (R → E) R := 
+  { objFun := fun _ => (0 : R),
+    constraints := fun f => ∃ t, p.constraints (f t) ∧ p.objFun (f t) ≤ t }
+
+def m14 (s : Solution p1) : Σ a b, ∀ t ∈ Set.Icc a b, Solution (p4 t) := sorry
+-- fun s1 =>
+--   { point := s1.point,
+--     feasibility := by 
+--       refine' ⟨s1.feasibility.1, s1.feasibility.2, _⟩
+--       exact le_refl _
+--     optimality := fun fp => by
+--       simp [p1, p4, objFun] }
+
+-- #check wellFounded_iff
+
+-- def m41 : (Σ a b, ∀ t : Set.Icc a b, Solution (p4 t.val)) → Solution p1 := fun ⟨a, b, s⟩ =>
+--   { point := s4.point,
+--     feasibility := by 
+--       simp [p1, p4, constraints]
+--       exact ⟨s4.feasibility.1, s4.feasibility.2.1⟩ 
+--     optimality := fun fp => by
+--       have hs4 := s4.feasibility
+--       have hs4o := s4.optimality
+--       have hfp := fp.feasibility
+--       simp [p1, p4, objFun, constraints] at hs4 hs4o hfp ⊢
+--       sorry }
+
+-- def eq1p1 : MinEquiv p1 (parametrize p1) := {
+--   phi := fun ⟨x, y⟩ t => ⟨x, y⟩,
+--   psi := fun f => sorry
+--   phi_feasibility := fun x hx => by
+--     simp [p1, parametrize, constraints] at hx ⊢;
+--     refine' ⟨hx, _⟩;
+--     existsi ((sqrt x.fst) / x.snd);
+--     exact le_refl _
+--   phi_optimality := fun x hx => by
+--     simp [p1, parametrize, objFun] at hx ⊢;
+--     exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1)
+--   psi_feasibility := fun x hx => by
+--     simp [p1, parametrize, constraints] at hx ⊢;
+--     sorry
+--   psi_optimality := fun x hx => by 
+--     simp [p1, parametrize, objFun] at hx ⊢;
+--     sorry
+-- }
+
+def eq13 : MinEquiv p1 p6 := { 
+    phi := id
+    psi := id
+    phi_feasibility := fun ⟨x, y⟩  hx => by
+      simp [p1, p3, constraints] at hx ⊢;
+      refine' ⟨hx.1, hx.2 , _⟩;
+      existsi (sqrt x / y), 0;
+      intros t hlb hub 
+      exact hlb
+    phi_optimality := fun x hx => by
+      simp [p1, constraints] at hx 
+      simp [p1, p3, objFun]
+      exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1),
+    psi_feasibility := fun x hx => by
+      simp [p1, p3, constraints] at hx ⊢;
+      exact ⟨hx.1, hx.2.1⟩ 
+    psi_optimality := fun x hx => by 
+      simp [p3, constraints] at hx 
+      simp [p1, p3, objFun]
+      exact hx.2.2
+
+def eq13 : MinEquiv p1 p3 := { 
+    phi := id
+    psi := id
+    phi_feasibility := fun ⟨x, y⟩  hx => by
+      simp [p1, p3, constraints] at hx ⊢;
+      refine' ⟨hx.1, hx.2 , _⟩;
+      existsi (sqrt x / y), 0;
+      intros t hlb hub 
+      exact hlb
+    phi_optimality := fun x hx => by
+      simp [p1, constraints] at hx 
+      simp [p1, p3, objFun]
+      exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1),
+    psi_feasibility := fun x hx => by
+      simp [p1, p3, constraints] at hx ⊢;
+      exact ⟨hx.1, hx.2.1⟩ 
+    psi_optimality := fun x hx => by 
+      simp [p3, constraints] at hx 
+      simp [p1, p3, objFun]
+      exact hx.2.2
+  }
+
+end QCP
