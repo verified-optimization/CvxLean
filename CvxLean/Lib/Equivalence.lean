@@ -368,46 +368,43 @@ def m14 (s : Solution p1) : Σ a b, ∀ t ∈ Set.Icc a b, Solution (p4 t) := so
 -- }
 
 def eq13 : MinEquiv p1 p6 := { 
-    phi := id
-    psi := id
+    phi := fun ⟨x, y⟩ => ⟨x, y, (sqrt x) / y⟩, 
+    psi := fun ⟨x, y, t⟩ => ⟨x, y⟩,
     phi_feasibility := fun ⟨x, y⟩  hx => by
-      simp [p1, p3, constraints] at hx ⊢;
-      refine' ⟨hx.1, hx.2 , _⟩;
-      existsi (sqrt x / y), 0;
-      intros t hlb hub 
-      exact hlb
+      simp [p1, p6, constraints] at hx ⊢;
+      exact hx
     phi_optimality := fun x hx => by
       simp [p1, constraints] at hx 
-      simp [p1, p3, objFun]
-      exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1),
+      simp [p1, p6, objFun]
     psi_feasibility := fun x hx => by
-      simp [p1, p3, constraints] at hx ⊢;
+      simp [p1, p6, constraints] at hx ⊢;
       exact ⟨hx.1, hx.2.1⟩ 
     psi_optimality := fun x hx => by 
-      simp [p3, constraints] at hx 
-      simp [p1, p3, objFun]
+      simp [p6, constraints] at hx 
+      simp [p1, p6, objFun]
       exact hx.2.2
+}
 
-def eq13 : MinEquiv p1 p3 := { 
-    phi := id
-    psi := id
-    phi_feasibility := fun ⟨x, y⟩  hx => by
-      simp [p1, p3, constraints] at hx ⊢;
-      refine' ⟨hx.1, hx.2 , _⟩;
-      existsi (sqrt x / y), 0;
-      intros t hlb hub 
-      exact hlb
-    phi_optimality := fun x hx => by
-      simp [p1, constraints] at hx 
-      simp [p1, p3, objFun]
-      exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1),
-    psi_feasibility := fun x hx => by
-      simp [p1, p3, constraints] at hx ⊢;
-      exact ⟨hx.1, hx.2.1⟩ 
-    psi_optimality := fun x hx => by 
-      simp [p3, constraints] at hx 
-      simp [p1, p3, objFun]
-      exact hx.2.2
-  }
+-- def eq13 : MinEquiv p1 p3 := { 
+--     phi := id
+--     psi := id
+--     phi_feasibility := fun ⟨x, y⟩  hx => by
+--       simp [p1, p3, constraints] at hx ⊢;
+--       refine' ⟨hx.1, hx.2 , _⟩;
+--       existsi (sqrt x / y), 0;
+--       intros t hlb hub 
+--       exact hlb
+--     phi_optimality := fun x hx => by
+--       simp [p1, constraints] at hx 
+--       simp [p1, p3, objFun]
+--       exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1),
+--     psi_feasibility := fun x hx => by
+--       simp [p1, p3, constraints] at hx ⊢;
+--       exact ⟨hx.1, hx.2.1⟩ 
+--     psi_optimality := fun x hx => by 
+--       simp [p3, constraints] at hx 
+--       simp [p1, p3, objFun]
+--       exact hx.2.2
+--   }
 
 end QCP
