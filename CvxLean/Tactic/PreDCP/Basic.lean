@@ -14,6 +14,17 @@ noncomputable instance : ExpMap ℝ :=
 instance [ExpMap α] [ExpMap β] : ExpMap (α × β) := 
   ⟨fun x => ⟨ExpMap.exp x.1, ExpMap.exp x.2⟩⟩
 
+class ExpMapAt (α : Type u) := 
+  (exp : ℕ → α → α)
+
+noncomputable instance : ExpMapAt ℝ := 
+  ⟨fun _ => Real.exp⟩
+
+instance [ExpMapAt α] [ExpMapAt β] : ExpMapAt (α × β) where 
+  exp
+    | 0, x => ⟨ExpMapAt.exp 0 x.1, x.2⟩
+    | n + 1, x => ⟨x.1, ExpMapAt.exp n x.2⟩
+
 class LogMap (α : Type u) :=
   (log : α → α)
 
@@ -22,6 +33,17 @@ noncomputable instance : LogMap ℝ :=
 
 instance [LogMap α] [LogMap β] : LogMap (α × β) :=
   ⟨fun x => ⟨LogMap.log x.1, LogMap.log x.2⟩⟩
+
+class LogMapAt (α : Type u) :=
+  (log : ℕ → α → α)
+
+noncomputable instance : LogMapAt ℝ :=
+  ⟨fun _ => Real.log⟩
+
+instance [LogMapAt α] [LogMapAt β] : LogMapAt (α × β) where
+  log
+    | 0, x => ⟨LogMapAt.log 0 x.1, x.2⟩
+    | n + 1, x => ⟨x.1, LogMapAt.log n x.2⟩
 
 namespace Tactic
 
@@ -77,6 +99,35 @@ macro "map_exp" : tactic =>
         (hfg := by prove_exp_log) <;>
       dsimp only [Function.comp, ExpMap.exp, LogMap.log] <;>
       remove_positive_constraints)
+
+elab "prove_exp_log_at" : tactic => do
+  let g ← getMainGoal 
+  let (_, g) ← g.intros
+  let g ← g.casesAnd
+  let gs ← evalTacticAt (← 
+    `(tactic| 
+        simp [LogMapAt.log, ExpMapAt.exp];
+        congr <;> rw [exp_log (by assumption)])) g
+  replaceMainGoal gs
+
+macro "map_exp_at " i:num : tactic =>
+  `(tactic| 
+      apply map_domain 
+        (g := fun x => ExpMapAt.exp $i x)
+        (f := fun x => LogMapAt.log $i x)
+        (hfg := by prove_exp_log_at) <;>
+      dsimp only [Function.comp, ExpMapAt.exp, LogMapAt.log] <;>
+      remove_positive_constraints)
+
+lemma x : Minimization.Solution (
+  optimization (x y : ℝ)
+    minimize x * y 
+    subject to 
+      h1 : 0 < x
+      h2 : 0 < y
+      h : x * y ≤ 10 
+) := by 
+  map_exp_at 0
 
 end Tactic
 
