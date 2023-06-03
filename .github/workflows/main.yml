@@ -1,23 +1,28 @@
 name: CI
 
 on:
-  # Runs on pushes targeting the default branch.
   push:
     branches: ["main"]
+  
+  pull_request:
+    branches: ["main"]
 
-  # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages.
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build: 
     runs-on: ubuntu-latest
     steps:
+      - name: Install MOSEK
+        env:
+          MOSEK_LIC: ${{secrets.MOSEK_LIC}}
+        run: | 
+          set -o pipefail
+          curl -sSfL https://download.mosek.com/stable/10.0.12/mosektoolslinux64x86.tar.bz2 | tar xj
+          mv mosek $HOME
+          echo "$HOME/mosek/10.0/tools/platform/linux64x86/bin" >> $GITHUB_PATH
+          echo "$MOSEK_LIC" > $HOME/mosek.lic
+          echo "MOSEKLM_LICENSE_FILE=$HOME/mosek.lic" >> $GITHUB_ENV
       - name: Install elan
         run: |
           set -o pipefail
@@ -27,4 +32,5 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build CvxLean
-        run: ./build.sh
+        run: |
+          ./build.sh
