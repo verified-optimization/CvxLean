@@ -119,16 +119,6 @@ macro "map_exp_at " i:num : tactic =>
       dsimp only [Function.comp, ExpMapAt.exp, LogMapAt.log] <;>
       remove_positive_constraints)
 
-lemma x : Minimization.Solution (
-  optimization (x y : ℝ)
-    minimize x * y 
-    subject to 
-      h1 : 0 < x
-      h2 : 0 < y
-      h : x * y ≤ 10 
-) := by 
-  map_exp_at 0
-
 end Tactic
 
 end CvxLean
