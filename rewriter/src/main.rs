@@ -438,7 +438,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("add-mul"; "(mul (add ?a ?b) ?c)" => "(add (mul ?a ?c) (mul ?b ?c))"),
 
-    rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
+    //rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
 
     rw!("sub-mul-left"; "(sub (mul ?a ?b) (mul ?a ?c))" => 
         "(mul ?a (sub ?b ?c))"),
@@ -453,19 +453,19 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul-div"; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)" 
         if is_not_zero("?c")),
 
-    rw!("div-mul"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
+    //rw!("div-mul"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
     
     rw!("div-add"; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))" 
         if is_not_zero("?c")),
 
-    rw!("add-div"; "(add (div ?a ?b) (div ?c ?b))" => "(div (add ?a ?c) ?b)"),
+    //rw!("add-div"; "(add (div ?a ?b) (div ?c ?b))" => "(div (add ?a ?c) ?b)"),
 
     rw!("div-sub"; "(div (sub ?a ?b) ?c)" => "(sub (div ?a ?c) (div ?b ?c))" 
         if is_not_zero("?c")),
 
     rw!("pow-add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"),
 
-    rw!("mul-pow"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"),
+    //rw!("mul-pow"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"),
 
     rw!("pow-sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow ?a ?c))" 
         if is_not_zero("?a")),
@@ -479,15 +479,11 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
 
-    // rw!("exp-0"; "(exp 0)" => "1"),
-
-    // rw!("log-1"; "(log 1)" => "0"),
-
-    rw!("exp-add"; "(exp (add ?a ?b))" => "(mul (exp ?a) (exp ?b))"),
+    //rw!("exp-add"; "(exp (add ?a ?b))" => "(mul (exp ?a) (exp ?b))"),
 
     rw!("mul-exp"; "(mul (exp ?a) (exp ?b))" => "(exp (add ?a ?b))"),
 
-    rw!("exp-sub"; "(exp (sub ?a ?b))" => "(div (exp ?a) (exp ?b))"),
+    //rw!("exp-sub"; "(exp (sub ?a ?b))" => "(div (exp ?a) (exp ?b))"),
 
     rw!("div-exp"; "(div (exp ?a) (exp ?b))" => "(exp (sub ?a ?b))"),
 
@@ -501,17 +497,24 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("log-exp"; "(log (exp ?a))" => "?a"),
 
+    // NOTE(RFM): The following two rewrites are acceptable because they 
+    // rewrite Props so it is not affecting the curvature of the underlying 
+    // expressions.
     rw!("eq-log"; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" 
-        if is_gt_zero("?a") if is_gt_zero("?b") if not_has_log("?a") if not_has_log("?b")),
+        if is_gt_zero("?a") if is_gt_zero("?b") 
+        if not_has_log("?a") if not_has_log("?b")),
 
     rw!("le-log"; "(le ?a ?b)" => "(le (log ?a) (log ?b))" 
-        if is_gt_zero("?a") if is_gt_zero("?b") if not_has_log("?a") if not_has_log("?b")),
+        if is_gt_zero("?a") if is_gt_zero("?b") 
+        if not_has_log("?a") if not_has_log("?b")),
 
+    // NOTE(RFM): The following rewrite is acceptable because we enforce log 
+    // to only be applied once. Otherwise, we would have incompatible 
+    // curvatures in the same e-class.
     rw!("map-objFun-log"; "(objFun ?a)" => "(objFun (log ?a))" 
         if is_gt_zero("?a") if not_has_log("?a")),
 
-    // rw!("map-domain-exp"; "(prob (objFun ?o) (constraints ?cs))" => 
-    //     { MapExp {} })
+    
 ]}
 
 #[derive(Debug)]
@@ -532,16 +535,13 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
 
         match enode {
             Optimization::Prob([a, b]) => {
-                if get_curvature(a) == Curvature::Convex && get_curvature(b) == Curvature::Valid {
-                    return Curvature::Convex;
+                if get_curvature(b) == Curvature::Valid {
+                    return get_curvature(a);
                 }
                 return Curvature::Unknown;
             }
             Optimization::ObjFun(a) => {
-                if get_curvature(a) == Curvature::Convex || get_curvature(a) == Curvature::Affine {
-                    return Curvature::Convex;
-                }
-                return Curvature::Unknown;
+                return get_curvature(a);
             }
             Optimization::Constraints(a) => {
                 let mut curvature = Curvature::Valid;
@@ -741,7 +741,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             }
             Optimization::Param(_a) => {
                 // NOTE(RFM): The story for DPP is a bit more complicated, but 
-                // let's treat them as numerical constants for now.
+                // let's treat them as numerical constants as in DCP.
                 return Curvature::Constant;
             }
             Optimization::Symbol(_sym) => {
@@ -819,6 +819,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         best = best_found;
         best_cost = best_cost_found;
     }
+    println!("Best cost: {:?}", best_cost);
 
     let mut egraph = runner.egraph;
     let mut explanation : Explanation<Optimization> = 
@@ -827,7 +828,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         explanation.make_flat_explanation();
     
     let mut res = Vec::new();
-    if best_cost != Curvature::Concave && best_cost != Curvature::Unknown {
+    if best_cost <= Curvature::Convex {
         for i in 0..flat_explanation.len() {
             let expl = &flat_explanation[i];
             let expected_term = expl.get_recexpr().to_string();
@@ -891,4 +892,18 @@ fn main_json() -> io::Result<()> {
 
 fn main() {
     main_json().unwrap();
+}
+
+#[test]
+fn test() {
+    let s = "(prob 
+        (objFun (var x)) 
+        (constraints 
+            (le 1 (exp (var x)))
+        )
+    )".to_string();
+    let s = "(objFun (exp (var x)))".to_string();
+
+    let steps = get_steps(s, true);
+    println!("{:?}", steps);
 }
