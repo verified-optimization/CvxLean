@@ -49,8 +49,9 @@ def getProblemName (term : Syntax) : MetaM Lean.Name := do
 
 /-- Get solution expression and reduction expression from optimization problem. 
 -/
+-- NOTE(RFM): Also send backwardMap.
 def getReducedProblemAndReduction (prob : Expr) 
-: MetaM (Meta.SolutionExpr × Expr) := do
+: MetaM (Meta.SolutionExpr × Expr × Expr) := do
   let probTy ← inferType prob
   if ¬ probTy.isAppOf ``Minimization then 
     throwError "The command `solve` expects a minimization."
@@ -65,13 +66,17 @@ def getReducedProblemAndReduction (prob : Expr)
     (mkConst ``Minimization.Solution) 
     #[domain, codomain, codomainPreorderInst, prob]
 
-  let (_, probReduction) ← DCP.canonizeGoalFromExpr probSol
+  let probOpt ← Meta.matchSolutionExprFromExpr probSol
+  trace[Meta.debug] "probOpt: {probOpt.objFun}"
+  -- NOTE(RFM): We should get the value from this applied to the float sol point.
+
+  let (_, (forwardMap, backwardMap, probReduction)) ← DCP.canonizeGoalFromExpr probSol
   
   let probReducedSol := match (← inferType probReduction) with 
   | Expr.forallE _ r _ _ => r 
   | _ => default
 
-  return (← Meta.matchSolutionExprFromExpr probReducedSol, probReduction)
+  return (← Meta.matchSolutionExprFromExpr probReducedSol, probReduction, backwardMap)
 
 /-- Add problem declaration inferring type. -/
 def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool) 
@@ -99,15 +104,11 @@ unsafe def evalSolve : CommandElab := fun stx =>
       let probTerm ← whnf probTerm
 
       -- Create prob.reduced.
-      let (probReducedExpr, probReduction) ← 
+      let (probReducedExpr, probReduction, backwardMap) ← 
         getReducedProblemAndReduction probTerm
 
       -- Expression of type Minimization.
       let probReducedOpt := probReducedExpr.toMinExpr
-
-      -- Domain, codomain and optimization problem (useful to build terms).
-      let probReducedSignature := 
-        #[probReducedExpr.domain, probReducedExpr.codomain, probReducedOpt]
 
       let probName ← getProblemName probInstance.raw
       
@@ -139,67 +140,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
         -- Solution makes sense, handle the numerical solution.
         let solPointExpr ← Meta.exprFromSol probReducedExpr solPoint
 
-        -- Define prob.reduced.fakeSolution : Solution probReduced.
-
-        -- Create sorry'd feasibility proof.
-        let fakeFeasibility ← mkSyntheticSorry $ mkAppN (mkConst ``constraints) 
-          (probReducedSignature ++ #[solPointExpr])
-
-        -- Create sorry'd optimality proof.
-        let feasPointTy := mkAppN (mkConst ``FeasPoint) probReducedSignature
-        let objFunFeasPointVal := mkAppN (mkConst ``objFun)
-          (probReducedSignature ++ #[solPointExpr])
-        let fakeOptimality ← mkSyntheticSorry $ ← withLocalDeclD `y feasPointTy 
-          fun y => do
-            let hasLe := mkAppN (mkConst ``Preorder.toLE ([levelZero] : List Level)) 
-              #[probReducedExpr.codomain, probReducedExpr.codomainPreorder]
-            let le := mkAppN (mkConst ``LE.le ([levelZero] : List Level)) 
-              #[probReducedExpr.codomain, hasLe]
-            let pointVal := mkAppN (mkConst ``FeasPoint.point)
-              (probReducedSignature ++ #[y])
-            let objFunPointVal := mkAppN (mkConst ``objFun)
-              (probReducedSignature ++ #[pointVal])
-            mkForallFVars #[y] (mkAppN le #[objFunFeasPointVal, objFunPointVal])
-        
-        -- Put everything together in a `Solution`.
-        let probReducedFakeSol := mkAppN (mkConst ``Solution.mk)
-          #[probReducedExpr.domain,
-            probReducedExpr.codomain,
-            probReducedExpr.codomainPreorder,
-            probReducedOpt,
-            solPointExpr, 
-            fakeFeasibility, 
-            fakeOptimality]
-        check probReducedFakeSol
-
-        -- Define `prob.fakeSolution` of type `Solution prob` by applying the
-        -- reduction, i.e. `probReduction probReduced.fakeSolution`.
-        let probFakeSol := mkApp probReduction probReducedFakeSol
-        check probFakeSol
-
-        -- Apply `realToFloat` to `prob.fakeSolution.point` and (hopefully) 
-        -- obtain a point `y` in `float(D)`.
-        let probFakeSolPoint := mkAppN (mkConst ``Solution.point)
-          #[probReducedExpr.domain,
-            probReducedExpr.codomain,
-            probReducedExpr.codomainPreorder,
-            probReducedOpt,
-            probFakeSol]
-        
-        trace[Meta.debug] "probFakeSolPoint: {probFakeSolPoint}."
-        -- NOTE: Cannot use whnf here because it introduces _Privates...
-        let probFakeSolPoint ← whnfUntilValue probFakeSolPoint
-        --reduce probFakeSolPoint false false false 
-        --whnfUntilValue
-        trace[Meta.debug] "probFakeSolPoint reduced: {probFakeSolPoint}."
-        let probSolPointFloat ← realToFloat probFakeSolPoint
-        let probSolPointFloat ← reduceExpr probSolPointFloat
-        trace[Meta.debug] "probSolPointFloat: {probSolPointFloat}."
-        check probSolPointFloat
-        -- NOTE: This last reduction is only needed if we want the resulting
-        -- term to be nice. But can lead to timeouts.
-        -- let probSolPointFloat ← reduceExpr probSolPointFloat
-        -- trace[Meta.debug] "probSolPointFloat reduced: {probSolPointFloat}."
+        let probSolPointFloat ← whnf <| ← realToFloat <| mkAppN backwardMap #[solPointExpr]
 
         -- Add the solution point to the environment.
         addProblemDeclaration (probName ++ `solution) probSolPointFloat true

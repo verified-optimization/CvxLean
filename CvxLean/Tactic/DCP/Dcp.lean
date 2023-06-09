@@ -728,8 +728,10 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     (optimality := optimality)
 
 /-- -/
+-- NOTE(RFM): Temporarily changing this to not only return the map from 
+-- solution to solution but also the forward and backward maps.
 def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
-  MetaM (Expr × Expr) := do
+  MetaM (Expr × (Expr × Expr × Expr)) := do
   -- Extract objective and constraints from `goalExprs`.
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
@@ -754,7 +756,7 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
   let pat ← mkProcessedAtomTree objFun constraints originalVarsDecls
 
   -- Create new goal and reduction.
-  let reduction ← withExistingLocalDecls pat.originalVarsDecls.toList do
+  let (forwardMap, backwardMap, reduction) ← withExistingLocalDecls pat.originalVarsDecls.toList do
       let xs := pat.originalVarsDecls.map fun decl => mkFVar decl.fvarId
     
       let forwardMap ← makeForwardMap goalExprs.domain xs pat.forwardImagesNewVars
@@ -807,9 +809,8 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
             return (objFunBackward, constrBackward)
 
         let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinExpr, newProblem.toMinExpr]
-        trace[Meta.debug] "checking1..."
         check res
-        trace[Meta.debug] "check succeeded"
+        
         let res := mkApp res (mkBVar 0) -- Insert new goal here later.
         let res := mkApp6 res
           forwardMap
@@ -819,29 +820,27 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
           constrForward
           constrBackward
         let res := mkLambda `sol Lean.BinderInfo.default newProblemExpr res
-        trace[Meta.debug] "checking2..."
-        trace[Meta.debug] "res: {res}"
-        check res -- Determine types of sorries.
-        trace[Meta.debug] "check succeeded"
+
+        check res
         let res ← instantiateMVars res
-        return res
+        return (forwardMap, backwardMap, res)
+    
   let newGoal ← mkFreshExprMVar none
 
-  return (newGoal, reduction)
+  return (newGoal, (forwardMap, backwardMap, reduction))
 
 /-- -/
-def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × Expr) := do 
+def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × (Expr × Expr × Expr)) := do 
   let goalExprs ← Meta.matchSolutionExprFromExpr goalExpr
   canonizeGoalFromSolutionExpr goalExprs
 
 /-- -/
 def canonizeGoal (goal : MVarId) : MetaM MVarId := do
   let goalExprs ← Meta.matchSolutionExpr goal
-  let (newGoal, reduction) ← canonizeGoalFromSolutionExpr goalExprs
+  let (newGoal, (forwardMap, backwardMap, reduction)) ← canonizeGoalFromSolutionExpr goalExprs
   let assignment := mkApp reduction newGoal
   check assignment
   goal.assign assignment
-  trace[Meta.debug] "assignment: {assignment}"
   return newGoal.mvarId!
 
 def uncheckedTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
