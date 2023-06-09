@@ -106,11 +106,11 @@ lemma MinimizationB.equiv_refl (p : MinimizationB) :
   MinimizationB.equiv p p :=
   ⟨MinEquiv.refl _⟩
 
-lemma Minimization.equiv_symm {p q : MinimizationB} : 
+lemma MinimizationB.equiv_symm {p q : MinimizationB} : 
   MinimizationB.equiv p q → MinimizationB.equiv q p :=
   fun ⟨E⟩ => ⟨@MinEquiv.symm Real p.D q.D _ p.prob q.prob E⟩ 
 
-lemma Minimization.equiv_trans {p q r : MinimizationB} : 
+lemma MinimizationB.equiv_trans {p q r : MinimizationB} : 
   MinimizationB.equiv p q → MinimizationB.equiv q r → MinimizationB.equiv p r :=
   fun ⟨E₁⟩ ⟨E₂⟩ => 
     ⟨@MinEquiv.trans Real p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
@@ -119,8 +119,8 @@ instance : Setoid MinimizationB :=
   { r := MinimizationB.equiv,
     iseqv := 
       { refl := MinimizationB.equiv_refl, 
-        symm := Minimization.equiv_symm, 
-        trans := Minimization.equiv_trans } }
+        symm := MinimizationB.equiv_symm, 
+        trans := MinimizationB.equiv_trans } }
 
 -- NOTE: Q for quotient.
 
@@ -269,142 +269,3 @@ noncomputable def MinEquiv.log_le_log_no_cs
     exact ⟨
       fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).2 h.2.2⟩, 
       fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).1 h.2.2⟩⟩)  
-
-
-noncomputable section QCP
-
-open CvxLean Real
-
-def p1 := 
-  optimization (x y : Real) 
-  minimize (sqrt x) / y 
-  subject to
-    h1 : 0 < y
-    h2 : exp x ≤ y
-
-def p2 (t : Real) := 
-  optimization (x y : Real)
-  minimize (0 : Real) 
-  subject to 
-    h1 : (sqrt x) ≤ t * y
-    h2 : exp x ≤ y
-
-def p3 := 
-  optimization (x y : Real)
-  minimize (0 : Real)
-  subject to 
-    h1 : 0 < y 
-    h2 : exp x ≤ y 
-    h3 : ∃ a b, ∀ t, (a ≤ t → t ≤ b → (sqrt x) / y ≤ t)
-
-def p4 (t : Real) := 
-  optimization (x y : Real)
-  minimize t
-  subject to 
-    h1 : 0 < y ∧ exp x ≤ y ∧ (sqrt x) / y ≤ t
-
-def p5 := 
-  optimization (x y : Real)
-  minimize (0 : Real)
-  subject to 
-    h1 : 0 < y 
-    h2 : exp x ≤ y 
-    h3 : ∃ t, ((sqrt x) / y ≤ t)
-
-def p6 := 
-  optimization (x y t : Real)
-  minimize (t : Real)
-  subject to 
-    h1 : 0 < y 
-    h2 : exp x ≤ y 
-    h3 : (sqrt x) / y ≤ t
-
-variable {R E P : Type} [Preorder R] [Zero R]
-
-def parametrize (p : Minimization E R) : Minimization (R → E) R := 
-  { objFun := fun _ => (0 : R),
-    constraints := fun f => ∃ t, p.constraints (f t) ∧ p.objFun (f t) ≤ t }
-
-def m14 (s : Solution p1) : Σ a b, ∀ t ∈ Set.Icc a b, Solution (p4 t) := sorry
--- fun s1 =>
---   { point := s1.point,
---     feasibility := by 
---       refine' ⟨s1.feasibility.1, s1.feasibility.2, _⟩
---       exact le_refl _
---     optimality := fun fp => by
---       simp [p1, p4, objFun] }
-
--- #check wellFounded_iff
-
--- def m41 : (Σ a b, ∀ t : Set.Icc a b, Solution (p4 t.val)) → Solution p1 := fun ⟨a, b, s⟩ =>
---   { point := s4.point,
---     feasibility := by 
---       simp [p1, p4, constraints]
---       exact ⟨s4.feasibility.1, s4.feasibility.2.1⟩ 
---     optimality := fun fp => by
---       have hs4 := s4.feasibility
---       have hs4o := s4.optimality
---       have hfp := fp.feasibility
---       simp [p1, p4, objFun, constraints] at hs4 hs4o hfp ⊢
---       sorry }
-
--- def eq1p1 : MinEquiv p1 (parametrize p1) := {
---   phi := fun ⟨x, y⟩ t => ⟨x, y⟩,
---   psi := fun f => sorry
---   phi_feasibility := fun x hx => by
---     simp [p1, parametrize, constraints] at hx ⊢;
---     refine' ⟨hx, _⟩;
---     existsi ((sqrt x.fst) / x.snd);
---     exact le_refl _
---   phi_optimality := fun x hx => by
---     simp [p1, parametrize, objFun] at hx ⊢;
---     exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1)
---   psi_feasibility := fun x hx => by
---     simp [p1, parametrize, constraints] at hx ⊢;
---     sorry
---   psi_optimality := fun x hx => by 
---     simp [p1, parametrize, objFun] at hx ⊢;
---     sorry
--- }
-
-def eq13 : MinEquiv p1 p6 := { 
-    phi := fun ⟨x, y⟩ => ⟨x, y, (sqrt x) / y⟩, 
-    psi := fun ⟨x, y, t⟩ => ⟨x, y⟩,
-    phi_feasibility := fun ⟨x, y⟩  hx => by
-      simp [p1, p6, constraints] at hx ⊢;
-      exact hx
-    phi_optimality := fun x hx => by
-      simp [p1, constraints] at hx 
-      simp [p1, p6, objFun]
-    psi_feasibility := fun x hx => by
-      simp [p1, p6, constraints] at hx ⊢;
-      exact ⟨hx.1, hx.2.1⟩ 
-    psi_optimality := fun x hx => by 
-      simp [p6, constraints] at hx 
-      simp [p1, p6, objFun]
-      exact hx.2.2
-}
-
--- def eq13 : MinEquiv p1 p3 := { 
---     phi := id
---     psi := id
---     phi_feasibility := fun ⟨x, y⟩  hx => by
---       simp [p1, p3, constraints] at hx ⊢;
---       refine' ⟨hx.1, hx.2 , _⟩;
---       existsi (sqrt x / y), 0;
---       intros t hlb hub 
---       exact hlb
---     phi_optimality := fun x hx => by
---       simp [p1, constraints] at hx 
---       simp [p1, p3, objFun]
---       exact div_nonneg (sqrt_nonneg _) (le_of_lt hx.1),
---     psi_feasibility := fun x hx => by
---       simp [p1, p3, constraints] at hx ⊢;
---       exact ⟨hx.1, hx.2.1⟩ 
---     psi_optimality := fun x hx => by 
---       simp [p3, constraints] at hx 
---       simp [p1, p3, objFun]
---       exact hx.2.2
---   }
-
-end QCP
