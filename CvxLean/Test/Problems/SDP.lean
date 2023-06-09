@@ -5,16 +5,16 @@ section SDP
 
 open CvxLean Minimization Real
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def A1 : Matrix (Finₓ 2) (Finₓ 2) ℝ :=
 fun i j => 
   (#[#[23.90853599,  0.40930502]
    , #[ 0.79090389, 21.30303590]][i.val]!)[j.val]!
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def b1 : ℝ := 8.0
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def C1 : Matrix (Finₓ 2) (Finₓ 2) ℝ :=
 fun i j => 
   (#[#[0.31561605, 0.97905625]

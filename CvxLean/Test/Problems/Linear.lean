@@ -73,7 +73,7 @@ solve linear4
 #eval linear4.solution.2.1 -- 4.000000
 #eval linear4.solution.2.2 -- 2.500000
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def A5 : Matrix (Fin 4) (Fin 4) ℝ := 
   fun i j => 
     (#[#[ 0.51417013, -1.40067196,  0.71943208,  0.58510080]
@@ -81,11 +81,11 @@ noncomputable def A5 : Matrix (Fin 4) (Fin 4) ℝ :=
      , #[ 0.39224659, -0.61942485,  1.73666095,  2.46240110]
      , #[ 1.76713469,  0.61389781,  0.80559111, -0.12640489]][i.val]!)[j.val]!
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def b5 : Fin 4 → ℝ := 
   fun i => #[ 10.56567387,  21.07609985,  23.43361457,  15.14706378][i.val]!
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def c5 : Fin 4 → ℝ := 
   fun i => #[ 0.14794342, -0.19493149,  0.31361829,  1.13959857][i.val]!
 
