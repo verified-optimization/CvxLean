@@ -28,9 +28,9 @@ section RealToFloat
 
 #realToFloat @Minimization.mk Real Real (fun (x : Real) => x) (fun (x : Real) => x <= 0)
 
--- Test optimizationParam.
+-- Test optimization_param.
 
-@[optimizationParam]
+@[optimization_param]
 noncomputable def A : ℝ := 1
 
 #realToFloat A
