@@ -66,17 +66,12 @@ structure Relaxation {R D E : Type} [Preorder R] (p : Minimization D R) (q : Min
   feasibility : ∀ y, q.constraints y → p.constraints (f y)
   bounded : ∀ y, q.constraints y → p.objFun (f y) ≤ q.objFun y
 
--- NOTE(RFM): I also need v >= 0.
 def relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin m) → ℝ) :
-  Relaxation (problem1 K V A k v a) (problem2 K V A k v a) := 
-  { f := fun ⟨x, T, y⟩ => ⟨x, sqrt y⟩,
-    feasibility := fun ⟨x, T, y⟩ ⟨hT, hk, hv, ha, hy⟩ => by 
-      simp [constraints, problem1, problem2, objFun] at hT hk hv ha hy ⊢
-      have hynn : 0 ≤ y := le_trans (pow_nonneg (le_trans zero_le_one hT) 2) hy
-      rw [sq_sqrt hynn]
-      sorry
-    bounded := fun ⟨xopt, Topt⟩ ⟨hTopt, hkopt, hvopt, haopt⟩ => by
-      simp at hTopt hkopt hvopt haopt
+  Relaxation (problem2 K V A k v a) (problem1 K V A k v a) := 
+  { f := fun ⟨x, T⟩ => ⟨x, T, T ^ 2⟩,
+    feasibility := fun ⟨x, T⟩ ⟨hT, hk, hv, ha⟩ => ⟨hT, hk, hv, ha, le_refl _⟩,
+    bounded := fun ⟨x, T⟩ ⟨hT, hk, hv, ha⟩ => by
+      simp at hT hk hv ha
       simp [problem1, problem2, objFun, constraints]
       sorry
   }
