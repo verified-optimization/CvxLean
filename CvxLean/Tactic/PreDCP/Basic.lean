@@ -11,6 +11,9 @@ class ExpMap (α : Type u) :=
 noncomputable instance : ExpMap ℝ := 
   ⟨Real.exp⟩
 
+noncomputable instance : ExpMap (Fin n → ℝ) := 
+  ⟨fun x i => Real.exp (x i)⟩
+
 instance [ExpMap α] [ExpMap β] : ExpMap (α × β) := 
   ⟨fun x => ⟨ExpMap.exp x.1, ExpMap.exp x.2⟩⟩
 
@@ -30,6 +33,9 @@ class LogMap (α : Type u) :=
 
 noncomputable instance : LogMap ℝ :=
   ⟨Real.log⟩
+
+noncomputable instance : LogMap (Fin n → ℝ) :=
+  ⟨fun x i => Real.log (x i)⟩
 
 instance [LogMap α] [LogMap β] : LogMap (α × β) :=
   ⟨fun x => ⟨LogMap.log x.1, LogMap.log x.2⟩⟩
@@ -75,7 +81,7 @@ elab "prove_exp_log" : tactic => do
   let gs ← evalTacticAt (← 
     `(tactic| 
         simp [LogMap.log, ExpMap.exp];
-        congr <;> rw [exp_log (by assumption)])) g
+        congr <;> funext <;> rw [exp_log (by simp [*] <;> positivity)])) g
   replaceMainGoal gs
 
 macro "make_positive_constraints_true" : tactic => 
