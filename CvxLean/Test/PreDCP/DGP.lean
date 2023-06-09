@@ -175,7 +175,7 @@ section GP6
 -- objFun : (x ^ (-1)) * y ^ (-1 / 2) * z ^ (-1) + 2.3 * x * z + 4 * x * y * z
 -- h4 : (1 / 3) * x ^ (-2) * y ^ (-2) + (4 / 3) * y ^ (1 / 2) * z ^ (-1) ≤ 1
 def gp6 := 
-  optimization ( x y z : ℝ) 
+  optimization (x y z : ℝ) 
     minimize (1 / x) * (1 / sqrt y) * (1 / z) + (2.3) * x * z + 4 * x * y * z
     subject to 
       h1 : 0 < x
@@ -199,3 +199,39 @@ reduction red6/dcp6 : gp6 := by
 --     _ : 1 / 3 * exp (-(y * 2) + -(2 * x)) + 1 / 3 * (4 * exp (y * (1 / 2) - z)) ≤ 1
 --     _ : exp x + (exp y * 2 + exp z * 3) ≤ 1
 --     _ : y + (x - log 2) = 0
+
+end GP6 
+
+section GP7
+
+@[optimization_param] def σ : Fin 5 → ℝ := fun _ => 0.5
+@[optimization_param] def Pmin : Fin 5 → ℝ := fun _ => 0.1
+@[optimization_param] def Pmax : Fin 5 → ℝ := fun _ => 5 
+@[optimization_param] def SINRmin : ℝ := 0.2
+@[optimization_param] def G : Matrix (Fin 5) (Fin 5) ℝ := fun i j => 
+   (#[#[ 1.0,  0.1, 0.2, 0.1, 0.05]
+    , #[ 0.1,  1.0, 0.1, 0.1, 0.05]
+    , #[ 0.2,  0.1, 1.0, 0.2,  0.2]
+    , #[ 0.1,  0.1, 0.2, 1.0,  0.1]
+    , #[0.05, 0.05, 0.2, 0.1,  1.0]][i]!)[j]!
+
+open BigOperators
+
+def gp7 := 
+  optimization (P : Fin 5 → ℝ) 
+    minimize ∑ i, P i 
+    subject to 
+      h1 : ∀ i, 0 < P i
+      h2 : ∀ i, Pmin i ≤ P i
+      h3 : ∀ i, P i ≤ Pmax i
+      h4 : ∀ i, (σ i + ∑ k, if i ≠ k then G i k * P k else 0) / (G i i * P i) ≤ 1 / SINRmin
+
+set_option trace.Meta.debug true
+
+lemma test : Solution gp7 := by 
+  unfold gp7 
+  map_exp
+  dcp
+  sorry
+
+end GP7
