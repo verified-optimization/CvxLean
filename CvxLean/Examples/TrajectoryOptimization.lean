@@ -60,12 +60,34 @@ def sol2 : Solution (problem2 K V A k v a) :=
       linarith
   }
 
+-- p is a realaxation of q.
+structure Relaxation {R D E : Type} [Preorder R] (p : Minimization D R) (q : Minimization E R) where 
+  f : E → D
+  feasibility : ∀ y, q.constraints y → p.constraints (f y)
+  bounded : ∀ y, q.constraints y → p.objFun (f y) ≤ q.objFun y
+
+-- NOTE(RFM): I also need v >= 0.
+def relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin m) → ℝ) :
+  Relaxation (problem1 K V A k v a) (problem2 K V A k v a) := 
+  { f := fun ⟨x, T, y⟩ => ⟨x, sqrt y⟩,
+    feasibility := fun ⟨x, T, y⟩ ⟨hT, hk, hv, ha, hy⟩ => by 
+      simp [constraints, problem1, problem2, objFun] at hT hk hv ha hy ⊢
+      have hynn : 0 ≤ y := le_trans (pow_nonneg (le_trans zero_le_one hT) 2) hy
+      rw [sq_sqrt hynn]
+      sorry
+    bounded := fun ⟨xopt, Topt⟩ ⟨hTopt, hkopt, hvopt, haopt⟩ => by
+      simp at hTopt hkopt hvopt haopt
+      simp [problem1, problem2, objFun, constraints]
+      sorry
+  }
+
+-- TODO: Move.
 lemma smul_le_of_le_of_nonneg 
   {a b : ℝ} (hab : a ≤ b) {v : Fin n → ℝ} (hv : ∀ i, 0 ≤ v i) :
   a • v ≤ b • v := fun i =>
   mul_le_mul_of_nonneg_right hab (hv i)
 
-lemma relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin m) → ℝ)
+lemma relaxation_tight (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin m) → ℝ)
   (hvnn : ∀ i, 0 ≤ v i) : 
   Solution (problem1 K V A k v a) → Solution (problem2 K V A k v a) := 
   fun ⟨⟨xopt, Topt⟩, ⟨hTopt, hkopt, hvopt, haopt⟩, hoptimality⟩ => {
@@ -75,17 +97,13 @@ lemma relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin m) → ℝ)
       simp at hTopt hkopt hvopt haopt hT hk hv ha hy
       simp only [problem1, problem2, objFun, constraints] at hoptimality ⊢
       have hToptnn := le_trans zero_le_one hTopt
-      have hToptpos := lt_of_lt_of_le zero_lt_one hTopt
       have hToptsub1nn := sub_nonneg_of_le hTopt
       have hTnn := le_trans zero_le_one hT
-      have hTpos := lt_of_lt_of_le zero_lt_one hT
-      have hTsub1nn := sub_nonneg_of_le hT
       have hT2nn := pow_nonneg hTnn 2
       have h1leT2 := pow_le_pow_of_le_left zero_le_one hT 2
       simp only [one_pow] at h1leT2
       have hynn := le_trans hT2nn hy
       have h1ley := le_trans h1leT2 hy
-      have hsqrtynn := sqrt_nonneg y
       have h1lesqrty := sqrt_le_sqrt h1ley 
       simp only [sqrt_one] at h1lesqrty
       have hTlesqrty := (le_sqrt hTnn hynn).2 hy
