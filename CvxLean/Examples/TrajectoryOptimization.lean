@@ -6,7 +6,9 @@ open Matrix Real
 
 noncomputable section TrajectoryOptimization
 
-def problem1 (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :=
+open Matrix
+
+def original (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :=
   optimization (x : Fin m → ℝ) (T : ℝ) 
     minimize T 
     subject to 
@@ -15,7 +17,7 @@ def problem1 (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :=
       hv : V.mulVec x ≤ T • v
       ha : A.mulVec x ≤ T ^ 2 • a
 
-def problem2 (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :=
+def relaxed (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :=
   optimization (x : Fin m → ℝ) (T : ℝ) (y : ℝ) 
     minimize y - T 
     subject to 
@@ -34,15 +36,15 @@ def k : (Fin 1) → ℝ := fun _ => -1
 def v : (Fin 1) → ℝ := fun _ => -2
 def a : (Fin 1) → ℝ := fun _ => 1
 
-def sol1 : Solution (problem1 K V A k v a) := 
+def originalSol : Solution (original K V A k v a) := 
   { point := ⟨4, 2⟩,
     feasibility := by 
-      simp [K, V, A, k, v, a, problem1]
+      simp [K, V, A, k, v, a, original]
       simp [mulVec, dotProduct, Pi.hasLe, constraints, OfNat.ofNat]
       norm_num,
     optimality := by 
       rintro ⟨⟨x, T⟩, hc⟩
-      simp [K, V, A, k, v, a, problem1] at hc ⊢
+      simp [K, V, A, k, v, a, original] at hc ⊢
       simp [mulVec, dotProduct, Pi.hasLe, constraints, objFun] at hc ⊢
       rcases hc with ⟨hT, hk, hv, ha⟩
       have h := le_trans hv ha 
@@ -50,15 +52,15 @@ def sol1 : Solution (problem1 K V A k v a) :=
       exact le_of_mul_le_mul_left h (lt_of_lt_of_le zero_lt_one hT)
   }
 
-def sol2 : Solution (problem2 K V A k v a) := 
+def relaxedSol : Solution (relaxed K V A k v a) := 
   { point := ⟨2, 1, 2⟩,
     feasibility := by 
-      simp [K, V, A, k, v, a, problem2]
+      simp [K, V, A, k, v, a, relaxed]
       simp [mulVec, dotProduct, Pi.hasLe, constraints, OfNat.ofNat]
       norm_num,
     optimality := by 
       rintro ⟨⟨x, T, y⟩, hc⟩
-      simp [K, V, A, k, v, a, problem2] at hc ⊢
+      simp [K, V, A, k, v, a, relaxed] at hc ⊢
       simp [mulVec, dotProduct, Pi.hasLe, constraints, objFun] at hc ⊢
       rcases hc with ⟨hT, hk, hv, ha, hy⟩
       linarith
@@ -78,8 +80,8 @@ structure Relaxation {R D E : Type} [Preorder R]
 notation p " ⊇ᵣ " q => Relaxation p q
 
 -- NOTE(RFM): problem2 is a relaxation of problem1.
-def relaxation12 (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :
-  (problem2 K V A k v a) ⊇ᵣ (problem1 K V A k v a) := 
+def relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :
+  (relaxed K V A k v a) ⊇ᵣ (original K V A k v a) := 
   { f := ⟨
       fun ⟨x, T⟩ => ⟨x, T, T ^ 2⟩, 
       fun ⟨x₁, T₁⟩ ⟨x₂, T₂⟩ h => by simp at h ⊢; exact ⟨h.1, h.2.1⟩ ⟩,
@@ -96,15 +98,15 @@ lemma smul_le_of_le_of_nonneg
 -- Note that this only makes sense together with the map that induces the solution 
 -- map, in this case (x, T) ↦ (x, T, T ^ 2).
 -- TODO(RFM): Package it as definition.
-lemma relaxation12_tight (K V A : Matrix (Fin n) (Fin m) ℝ) 
+def relaxation_tight (K V A : Matrix (Fin n) (Fin m) ℝ) 
   (k v a : (Fin n) → ℝ) (hvnn : ∀ i, 0 ≤ v i) : 
-  Solution (problem1 K V A k v a) → Solution (problem2 K V A k v a) := 
+  Solution (original K V A k v a) → Solution (relaxed K V A k v a) := 
   fun ⟨⟨xopt, Topt⟩, ⟨hTopt, hkopt, hvopt, haopt⟩, hoptimality⟩ => {
     point := ⟨xopt, Topt, Topt ^ 2⟩,
     feasibility := ⟨hTopt, hkopt, hvopt, haopt, le_refl _⟩,
     optimality := fun ⟨⟨x, T, y⟩, ⟨hT, hk, hv, ha, hy⟩⟩ => by 
       simp at hTopt hkopt hvopt haopt hT hk hv ha hy
-      simp only [problem1, problem2, objFun, constraints] at hoptimality ⊢
+      simp only [original, relaxed, objFun, constraints] at hoptimality ⊢
       have hToptnn := le_trans zero_le_one hTopt
       have hToptsub1nn := sub_nonneg_of_le hTopt
       have hTnn := le_trans zero_le_one hT
@@ -142,16 +144,17 @@ lemma relaxation12_tight (K V A : Matrix (Fin n) (Fin m) ℝ)
           rw [rpow_two, rpow_two, pow_two, pow_two]
           simp only [mul_one] at hintermediate
           exact hintermediate
-        exact le_trans hTopt2subToptleT2subT hT2subTleysubT } } 
+        exact le_trans hTopt2subToptleT2subT hT2subTleysubT } 
+      } 
 
 -- NOTE(RFM): In fact, we can show that every solution of problem2 satisfies the 
 -- condition y = T ^ 2 provided that the vector v is nonnegative.
-lemma relaxation12_tight' (K V A : Matrix (Fin n) (Fin m) ℝ) 
+def relaxation_tight' (K V A : Matrix (Fin n) (Fin m) ℝ) 
   (k v a : (Fin n) → ℝ) (hvnn : ∀ i, 0 ≤ v i) : 
-  ∀ s : Solution (problem2 K V A k v a), s.point.2.2 = s.point.2.1 ^ 2 := by
+  ∀ s : Solution (relaxed K V A k v a), s.point.2.2 = s.point.2.1 ^ 2 := by
   rintro ⟨⟨x, T, y⟩, ⟨hT, hk, hv, ha, hy⟩, hoptimality⟩
   simp at hT hk hv ha hy
-  simp only [problem2, objFun, constraints] at hoptimality ⊢;
+  simp only [relaxed, objFun, constraints] at hoptimality ⊢;
   suffices y ≤ T ^ 2 by exact le_antisymm this (rpow_two _ ▸ hy)
   -- NOTE(RFM): Up to line 167 is taken from the previous proof.
   have hTnn := le_trans zero_le_one hT
