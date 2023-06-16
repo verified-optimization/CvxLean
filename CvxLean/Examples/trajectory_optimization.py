@@ -5,11 +5,11 @@ K = -1
 V = -1
 A = 1
 k = -1
-v = -2
+v = -3
 a = 1
 
 x1 = cp.Variable((1))
-t1 = 2.0 # Picked by hand
+t1 = 3.0 # Picked by hand
 p1 = cp.Problem(
     cp.Minimize(t1), [
     1 <= t1,
@@ -88,63 +88,66 @@ print(x2.value, t2.value, y2.value)
 
 x3 = cp.Variable((1))
 t3 = cp.Variable((1))
-v3 = cp.vstack([x3, t3])
-X3 = cp.Variable((2, 2), PSD=True)
-Z3 = cp.Variable((3, 3), PSD=True)
-A3 = np.array([[0, 0], [0, a]])
-a3 = np.array([A, 0])
-
-k3 = cp.Variable((1))
-
+# v3 = cp.vstack([x3, t3])
+# X3 = cp.Variable((2, 2), PSD=True)
+# Z3 = cp.Variable((3, 3), PSD=True)
+# A3 = np.array([[0, 0], [0, a]])
+# a3 = np.array([A, 0])
 # X = [[x^2, xt], [xt, t^2]]
 
 # X11 - t^2 = (sqrt(X11) - t) * (sqrt(X11) + t)
 # t - t^2 = t * (1 - t)
 # log(t - t^2) = log(t) + log(1 - t)
 
+Q0 = np.array([
+    [0,   0,   0],
+    [0,   0, 1/2],
+    [0, 1/2,   0]
+])
+Q1 = np.array([
+    [0,    0,    0],
+    [0,    0, -1/2],
+    [0, -1/2,    1]
+])
+Q2 = np.array([
+    [  0, 0, K/2],
+    [  0, 0,   0],
+    [K/2, 0,  -k]
+])
+Q3 = np.array([
+    [  0,    0,  V/2],
+    [  0,    0, -v/2],
+    [V/2, -v/2,    0]
+])
+Q4 = np.array([
+    [  0,  0, A/2],
+    [  0, -a,   0],
+    [A/2,  0,   0]
+])
+
+z = cp.vstack([x3, t3, 1])
+Z = cp.Variable((3, 3), PSD=True)
+
 p3 = cp.Problem(
-    cp.Minimize(cp.norm(X3)), [
-    1 <= t3,
-    K * x3 <= k,
-    V * x3 <= v * t3,
-
-    # A * x3 <= a * t3 ** 2,
-
-    # RLT
-    x3 <= X3[0,1],
-    t3 <= X3[1,1],
-
-    K * X3[0,0] <= k * x3,
-    K * X3[0,1] <= k * t3,
-
-    V * X3[0,0] <= k * X3[0,1],
-    V * X3[0,1] <= k * X3[1,1],
-
-    A * x3 <= a * X3[1,1],
-    
-    # SDP Shor
-    a3.T @ v3 <= cp.trace(A3 @ X3),
-    Z3[0, 0] == X3[0, 0],
-    Z3[0, 1] == X3[0, 1],
-    Z3[0, 2] == x3,
-    Z3[1, 0] == X3[1, 0],
-    Z3[1, 1] == X3[1, 1],
-    Z3[1, 2] == t3,
-    Z3[2, 0] == x3,
-    Z3[2, 1] == t3,
-    Z3[2, 2] == 1,
-    Z3 >> 0,
+    cp.Minimize(cp.trace(Q0 @ Z)), [
+    cp.trace(Q1 @ Z) <= 0,
+    cp.trace(Q2 @ Z) <= 0,
+    cp.trace(Q3 @ Z) <= 0,
+    cp.trace(Q4 @ Z) <= 0,
+    cp.vstack([
+        cp.hstack([[[1]], z.T]), 
+        cp.hstack([z, Z])]) >> 0,
 ])
 p3.solve()
 print(p3.status)
 print(p3.value)
 print(x3.value, t3.value)
-print(v3.value)
-print(X3.value)
-print(v3.value @ v3.value.T)
+# print(v3.value)
+# print(X3.value)
+# print(v3.value @ v3.value.T)
 print(K * x3.value, k, K * x3.value <= k) 
 print(V * x3.value, v * t3.value, V * x3.value <= v * t3.value)
 print(A * x3.value, a * t3.value ** 2, A * x3.value <= a * t3.value ** 2)
-print(np.linalg.eigvals(v3.value @ v3.value.T))
-print(np.linalg.eigvals(X3.value))
-print(np.linalg.matrix_rank(X3.value))
+# print(np.linalg.eigvals(v3.value @ v3.value.T))
+# print(np.linalg.eigvals(X3.value))
+print(np.linalg.matrix_rank(Z.value))
