@@ -5,11 +5,11 @@ K = -1
 V = -1
 A = 1
 k = -1
-v = -3
+v = -2
 a = 1
 
 x1 = cp.Variable((1))
-t1 = 3.0 # Picked by hand
+t1 = 2.0 # Picked by hand
 p1 = cp.Problem(
     cp.Minimize(t1), [
     1 <= t1,
@@ -126,7 +126,7 @@ Q4 = np.array([
 ])
 
 z = cp.vstack([x3, t3, 1])
-Z = cp.Variable((3, 3), PSD=True)
+Z = cp.Variable((z.shape[0], z.shape[0]), PSD=True)
 
 p3 = cp.Problem(
     cp.Minimize(cp.trace(Q0 @ Z)), [
@@ -136,12 +136,13 @@ p3 = cp.Problem(
     cp.trace(Q4 @ Z) <= 0,
     cp.vstack([
         cp.hstack([[[1]], z.T]), 
-        cp.hstack([z, Z])]) >> 0,
+        cp.hstack([    z,   Z])]) >> 0,
 ])
 p3.solve()
 print(p3.status)
 print(p3.value)
 print(x3.value, t3.value)
+print(Z.value)
 # print(v3.value)
 # print(X3.value)
 # print(v3.value @ v3.value.T)
@@ -149,5 +150,5 @@ print(K * x3.value, k, K * x3.value <= k)
 print(V * x3.value, v * t3.value, V * x3.value <= v * t3.value)
 print(A * x3.value, a * t3.value ** 2, A * x3.value <= a * t3.value ** 2)
 # print(np.linalg.eigvals(v3.value @ v3.value.T))
-# print(np.linalg.eigvals(X3.value))
+print(np.linalg.eigvals(Z.value))
 print(np.linalg.matrix_rank(Z.value))
