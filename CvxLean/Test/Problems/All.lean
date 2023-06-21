@@ -4,4 +4,3 @@ import CvxLean.Test.Problems.Log
 import CvxLean.Test.Problems.SDP 
 import CvxLean.Test.Problems.SO 
 import CvxLean.Test.Problems.LogDet
-import CvxLean.Test.Problems.GP
