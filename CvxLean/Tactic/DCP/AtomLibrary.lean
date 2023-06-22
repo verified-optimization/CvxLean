@@ -3,6 +3,7 @@ import CvxLean.Lib.Cones
 import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Missing.Vec
 import CvxLean.Lib.Missing.Matrix
+import Mathlib.LinearAlgebra.Matrix.PosDef
 import CvxLean.Syntax.Minimization
 
 namespace CvxLean
@@ -547,16 +548,14 @@ solutionEqualsAtom by
   rfl;
 feasibility (c_exp : by 
   simp [expCone]
-  --rw [Real.exp_log cond]
-  sorry)
+  rw [Real.exp_log cond])
 optimality by
   intros y hy
   simp [expCone] at c_exp 
   have hxpos := lt_of_lt_of_le (exp_pos t) c_exp
   have hypos := lt_of_lt_of_le hxpos hy
   have hexptley := le_trans c_exp hy
-  --exact (le_log_iff_exp_le hypos).2 hexptley
-  sorry
+  exact (le_log_iff_exp_le hypos).2 hexptley
 vconditionElimination 
   (cond : by
     intros y hy
@@ -689,9 +688,9 @@ implementationVars
 implementationObjective Real.Matrix.PSDCone A
 implementationConstraints
 solution
-solutionEqualsAtom sorry -- by simp [Real.Matrix.PSDCone]
+solutionEqualsAtom by simp [Real.Matrix.PSDCone]
 feasibility
-optimality sorry -- by simp [Real.Matrix.PSDCone]
+optimality by simp [Real.Matrix.PSDCone]
 vconditionElimination
 
 declare_atom Matrix.logDet [concave] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : Real.log A.det :=
