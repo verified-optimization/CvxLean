@@ -4,6 +4,7 @@ import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Missing.Vec
 import CvxLean.Lib.Missing.Matrix
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.LinearAlgebra.Matrix.LDL
 import CvxLean.Syntax.Minimization
 
 namespace CvxLean
@@ -707,10 +708,15 @@ implementationConstraints
                                Z.transpose  A;
     X)
 solution 
-  (t := sorry) 
-  (Y := sorry) 
+  (t := 
+    have : Decidable (A.PosDef) := Classical.dec _ 
+    if h : A.PosDef then Vec.log (LDL.diagEntries h) else 0) 
+  (Y :=
+    have : Decidable (A.PosDef) := Classical.dec _ 
+    if h : A.PosDef then (LDL.diag h).mul (LDL.lower h).transpose else 0) 
 solutionEqualsAtom by
-  sorry
+  simp only [dif_pos hA, Vec.sum, Vec.log]
+  exact Matrix.LogDetAtom.solution_eq_atom hA
 feasibility 
   (c_exp : by
     sorry)
