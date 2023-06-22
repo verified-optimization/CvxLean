@@ -6,12 +6,6 @@ import CvxLean.Lib.Missing.List
 
 namespace Matrix
 
-def PosSemidef [Fintype n] (A : Matrix n n ℝ) : Prop := 
-  sorry
-
-def PosDef [Fintype n] (A : Matrix n n ℝ) : Prop := 
-  sorry
-
 instance [Preorder α] : Preorder (Matrix m n α) :=
 { le := fun A B => ∀ i j, A i j ≤ B i j
   le_refl := fun _ _ _ => le_refl _
@@ -129,7 +123,7 @@ theorem trace_add' {m} [Fintype m] (A B : Matrix m m ℝ)
 
 theorem transpose_zero' {m} [Fintype m] 
   : Matrix.transpose (0 : Matrix m m ℝ) = 0 := by
-  funext i j ; simp [Matrix.transpose, id]
+  funext i _ ; simp [Matrix.transpose, id]
 
 theorem transpose_add' {m} [Fintype m] (A B : Matrix m m ℝ)
   : Matrix.transpose (A + B) = Matrix.transpose A + Matrix.transpose B := by
@@ -139,7 +133,7 @@ theorem fromBlocks_smul' {n m l o} (κ : ℝ)
   (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) 
   : κ • Matrix.fromBlocks A B C D = Matrix.fromBlocks (κ • A) (κ • B) (κ • C) (κ • D) := by
   funext i j ; cases i <;> cases j <;> rw [Pi.smul_apply, Pi.smul_apply] <;> 
-  simp [Matrix.fromBlocks] <;> rfl
+  simp [Matrix.fromBlocks]
 
 theorem mul_zero' {m} [Fintype m] (A : Matrix m m ℝ)
   : Matrix.mul A (0 : Matrix m m ℝ) = 0 := by
