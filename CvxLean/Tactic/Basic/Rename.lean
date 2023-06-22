@@ -1,7 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Basic.DomainEquiv
-import CvxLean.Lib.Missing.Mathlib
 
 namespace CvxLean
 
