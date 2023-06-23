@@ -96,82 +96,72 @@ lemma PosDef.PosDef_sqrt {A : Matrix n n ℝ} (hA : A.PosDef) :
   rw [det_transpose]
   apply det_ne_zero_of_right_inverse hA.1.eigenvectorMatrix_mul_inv
 
-lemma pos_semidef.pos_def_iff_det_ne_zero [decidable_eq n] {M : matrix n n ℝ} (hM : M.pos_semidef) :
-  M.pos_def ↔ M.det ≠ 0 :=
-begin
-  refine ⟨pos_def.det_ne_zero, λ hdet, ⟨hM.1, _⟩⟩,
-  intros x hx,
-  apply lt_of_le_of_ne' (hM.2 x),
-  rw [←hM.sqrt_mul_sqrt, ←mul_vec_mul_vec, dot_product_mul_vec, ←transpose_transpose hM.1.sqrt,
-    vec_mul_transpose, transpose_transpose, ← conj_transpose_eq_transpose,
-    hM.pos_semidef_sqrt.1.eq],
-  simp only [is_R_or_C.re_to_real, star, id],
-  change @inner ℝ (euclidean_space ℝ _) _ (hM.1.sqrt.mul_vec x) (hM.1.sqrt.mul_vec x) ≠ 0,
-  intro hinner,
-  have sqrtMdet0 : hM.1.sqrt.det = 0,
-    from exists_mul_vec_eq_zero_iff.1 ⟨x, hx, inner_self_eq_zero.1 hinner⟩,
-  rw [←hM.sqrt_mul_sqrt, det_mul, sqrtMdet0, mul_zero] at hdet,
+lemma PosSemidef.PosDef_iff_det_ne_zero [DecidableEq n] {M : Matrix n n ℝ} (hM : M.PosSemidef) :
+  M.PosDef ↔ M.det ≠ 0 := by
+  refine' ⟨PosDef.det_ne_zero, _⟩; intro hdet; refine' ⟨hM.1, _⟩
+  intros x hx
+  apply lt_of_le_of_ne' (hM.2 x)
+  rw [←hM.sqrt_mul_sqrt, ←mulVec_mulVec, dotProduct_mulVec, ←transpose_transpose hM.1.sqrt,
+    vecMul_transpose, transpose_transpose, ← conjTranspose_eq_transpose,
+    hM.PosSemidef_sqrt.1.eq]
+  simp only [IsROrC.re_to_real, star, id]
+  change @inner ℝ (EuclideanSpace ℝ _) _ (hM.1.sqrt.mulVec x) (hM.1.sqrt.mulVec x) ≠ 0
+  intro hinner
+  have sqrtMdet0 : hM.1.sqrt.det = 0 := by 
+    refine' exists_mulVec_eq_zero_iff.1 ⟨x, hx, _⟩
+    rw [inner_self_eq_zero.1 hinner]
+  rw [←hM.sqrt_mul_sqrt, det_mul, sqrtMdet0, mul_zero] at hdet
   apply hdet rfl
-end
 
 /-- Subadditivity lemma for positive semidefinite matrices. This version assumes that one of the
 matrices is positive definite. See `det_add_det_le_det_add` for the more general statement.
 
 The argument is taken from Andreas Thom's comment on mathoverflow:
 https://mathoverflow.net/questions/65424/determinant-of-sum-of-positive-definite-matrices/65430#65430 -/
-lemma det_add_det_le_det_add' [nonempty n] (A B : matrix n n ℝ)
-    (hA : A.pos_def) (hB : B.pos_semidef) :
-  A.det + B.det ≤ (A + B).det :=
-begin
-  let sqrtA := hA.1.sqrt,
-  have is_unit_det_sqrtA, from is_unit_iff_ne_zero.2 hA.pos_def_sqrt.det_ne_zero,
-  have : is_unit sqrtA, from (is_unit_iff_is_unit_det _).2 is_unit_det_sqrtA,
-  have is_hermitian_sqrtA : sqrtA⁻¹.is_hermitian,
-  { apply is_hermitian.nonsingular_inv (hA.pos_semidef.pos_semidef_sqrt.1),
-    exact is_unit_det_sqrtA },
-  have pos_semidef_ABA : (sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).pos_semidef,
-    from pos_semidef.mul_mul_of_is_hermitian hB is_hermitian_sqrtA,
-  let μ := pos_semidef_ABA.1.eigenvalues,
-  calc
-    A.det + B.det = A.det * (1 + (sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det) :
-      begin
-        rw [det_mul, det_mul, mul_comm _ B.det, mul_assoc, ←det_mul, ←matrix.mul_inv_rev,
-          hA.pos_semidef.sqrt_mul_sqrt, mul_add, mul_one, mul_comm, mul_assoc, ←det_mul,
-          nonsing_inv_mul _ (is_unit_iff_ne_zero.2 hA.det_ne_zero), det_one, mul_one]
-      end
-    ... = A.det * (1 + ∏ i, μ i) :
-      begin
-        rw pos_semidef_ABA.1.det_eq_prod_eigenvalues,
-        refl
-      end
-    ... ≤ A.det * ∏ i, (1 + μ i) :
-      begin
-        apply (mul_le_mul_left hA.det_pos).2,
-        apply finset.one_add_prod_le_prod_one_add μ pos_semidef_ABA.eigenvalues_nonneg
-      end
-    ... = A.det * (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det :
-      begin
-        congr',
-        refine (det_eq_prod_eigenvalues pos_semidef_ABA.1.eigenvector_basis
-          (λ i, 1 + (pos_semidef_ABA.1.eigenvalues i)) _).symm,
-        intro i,
-        convert pos_semidef_ABA.1.has_eigenvector_one_add i,
-        simp only [map_add, to_lin'_one, to_lin'_mul, add_left_inj],
-        refl,
-      end
-    ... = (A+B).det :
-      begin
-        rw [← det_mul, ← det_conj this (A + B)],
-        apply congr_arg,
-        rw ←hA.pos_semidef.sqrt_mul_sqrt,
-        change sqrtA ⬝ sqrtA ⬝ (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹) = sqrtA ⬝ (sqrtA ⬝ sqrtA + B) ⬝ sqrtA⁻¹,
-        rw [matrix.mul_add, matrix.mul_one, matrix.mul_add, matrix.add_mul,
-          matrix.mul_assoc, matrix.mul_assoc, matrix.mul_assoc, matrix.mul_assoc,
-          ← matrix.mul_assoc _ _ (B ⬝ _),
-          matrix.mul_nonsing_inv _ is_unit_det_sqrtA, matrix.one_mul, matrix.mul_one,
-          hA.pos_semidef.sqrt_mul_sqrt, matrix.mul_assoc]
-      end
-end
+lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ)
+    (hA : A.PosDef) (hB : B.PosSemidef) :
+  A.det + B.det ≤ (A + B).det := by
+  let sqrtA := hA.1.sqrt
+  have isUnit_det_sqrtA := 
+    isUnit_iff_ne_zero.2 hA.PosDef_sqrt.det_ne_zero
+  have : IsUnit sqrtA := 
+    (isUnit_iff_isUnit_det _).2 isUnit_det_sqrtA
+  have IsHermitian_sqrtA : sqrtA⁻¹.IsHermitian
+  { apply IsHermitian.nonsingular_inv (hA.posSemidef.PosSemidef_sqrt.1)
+    exact isUnit_det_sqrtA }
+  have PosSemidef_ABA : (sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).PosSemidef := 
+    PosSemidef.mul_mul_of_IsHermitian hB IsHermitian_sqrtA
+  let μ := PosSemidef_ABA.1.eigenvalues
+  calc A.det + B.det 
+    = A.det * (1 + (sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det) := by
+        rw [det_mul, det_mul, mul_comm _ B.det, mul_assoc, ←det_mul, ←Matrix.mul_inv_rev,
+          hA.posSemidef.sqrt_mul_sqrt, mul_add, mul_one, mul_comm, mul_assoc, ←det_mul,
+          nonsing_inv_mul _ (isUnit_iff_ne_zero.2 hA.det_ne_zero), det_one, mul_one]
+  _ = A.det * (1 + ∏ i, μ i) := by
+        rw [PosSemidef_ABA.1.det_eq_prod_eigenvalues]
+        rfl
+  _ ≤ A.det * ∏ i, (1 + μ i) := by
+      apply (mul_le_mul_left hA.det_pos).2
+      apply Finset.one_add_prod_le_prod_one_add μ PosSemidef_ABA.eigenvalues_nonneg
+  _ = A.det * (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det := by
+      rw [mul_eq_mul_left_iff]; left; symm
+      rw [det_eq_prod_eigenvalues PosSemidef_ABA.1.eigenvectorBasis
+        (fun i => 1 + (PosSemidef_ABA.1.eigenvalues i)) _]
+      { simp }
+      intro i
+      convert PosSemidef_ABA.1.has_eigenvector_one_add i using 1
+      simp only [map_add, toLin'_one, toLin'_mul, add_left_inj]
+      rfl
+  _ = (A + B).det := by
+      rw [← det_mul, ← det_conj this (A + B)],
+      apply congr_arg,
+      rw ←hA.pos_semidef.sqrt_mul_sqrt,
+      change sqrtA ⬝ sqrtA ⬝ (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹) = sqrtA ⬝ (sqrtA ⬝ sqrtA + B) ⬝ sqrtA⁻¹,
+      rw [matrix.mul_add, matrix.mul_one, matrix.mul_add, matrix.add_mul,
+        matrix.mul_assoc, matrix.mul_assoc, matrix.mul_assoc, matrix.mul_assoc,
+        ← matrix.mul_assoc _ _ (B ⬝ _),
+        matrix.mul_nonsing_inv _ is_unit_det_sqrtA, matrix.one_mul, matrix.mul_one,
+        hA.pos_semidef.sqrt_mul_sqrt, matrix.mul_assoc]
 
 /-- Subadditivity lemma for positive semidefinite matrices. -/
 lemma det_add_det_le_det_add [nonempty n] (A B : matrix n n ℝ)
