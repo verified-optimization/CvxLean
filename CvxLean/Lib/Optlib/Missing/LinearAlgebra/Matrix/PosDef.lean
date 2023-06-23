@@ -16,6 +16,16 @@ lemma PosDef.eigenvalues_pos {M : Matrix n n ℝ} (hM : M.PosDef) [DecidableEq n
   simpa only [h_det, not_isUnit_zero] using
     isUnit_det_of_invertible hM.1.eigenvectorMatrixᵀ
 
+lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) : M.det ≠ 0 := by
+  rw [← Matrix.nondegenerate_iff_det_ne_zero]
+  intros v hv
+  have hv' := hv (star v)
+  rw [← star_eq_zero]
+  by_contra h
+  have := hM.2 (star v) h
+  rw [star_star, hv'] at this
+  simp at this
+
 lemma PosSemidef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 ≤ f i) :
   (diagonal f).PosSemidef := by
   refine' ⟨isHermitian_diagonal _, _⟩
@@ -57,5 +67,16 @@ lemma PosDef.conjTranspose_mul_mul [DecidableEq n]
   intros x hx
   convert hM.2 (N.mulVec x) (fun h => hx (eq_zero_of_mulVec_eq_zero hN h)) using 2
   rw [Matrix.mul_assoc, mulVec_mulVec, ←mulVec_mulVec, dotProduct_mulVec, star_mulVec]
+
+lemma IsHermitian.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜}
+  (hM : M.IsHermitian) (hMdet : IsUnit M.det):
+  M⁻¹.IsHermitian := by
+  refine' (Matrix.inv_eq_right_inv _).symm
+  rw [conjTranspose_nonsing_inv, hM.eq, mul_nonsing_inv _ hMdet]
+
+lemma PosSemidef.mul_mul_of_IsHermitian {M N : Matrix n n 𝕜}
+    (hM : M.PosSemidef) (hN : N.IsHermitian) :
+  (N ⬝ M ⬝ N).PosSemidef :=
+by convert hM.conjTranspose_mul_mul M N; exact hN.symm
 
 end Matrix 
