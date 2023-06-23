@@ -32,6 +32,10 @@ lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) :
   rw [star_star, hv'] at this
   simp at this
 
+lemma PosDef.isUnit_det [DecidableEq n]
+  {M : Matrix n n ℝ} (hM : M.PosDef) : IsUnit M.det :=
+  isUnit_iff_ne_zero.2 hM.det_ne_zero
+
 noncomputable instance PosDef.Invertible 
   [DecidableEq n] {M : Matrix n n ℝ} (hM : M.PosDef) : Invertible M :=
   invertibleOfIsUnitDet M (isUnit_iff_ne_zero.2 hM.det_ne_zero)
@@ -105,5 +109,22 @@ lemma PosSemidef.add {M N : Matrix n n 𝕜} (hM : M.PosSemidef) (hN : N.PosSemi
   refine' ⟨hM.1.add hN.1, _⟩; intros x
   simp only [add_mulVec, dotProduct_add, map_add]
   apply add_nonneg (hM.2 x) (hN.2 x)
+
+lemma isUnit_det_of_PosDef_inv [DecidableEq n]
+  {M : Matrix n n ℝ} (h : M⁻¹.PosDef) :
+  IsUnit M.det := by
+  apply isUnit_iff_ne_zero.2
+  have := h.isUnit_det
+  rw [det_nonsing_inv, isUnit_ring_inverse] at this
+  apply IsUnit.ne_zero this
+
+lemma PosDef_inv_iff_PosDef [DecidableEq n]
+  (M : Matrix n n ℝ) : M⁻¹.PosDef ↔ M.PosDef := by
+  constructor
+  { intros hM
+    rw [← Matrix.nonsing_inv_nonsing_inv M (isUnit_det_of_PosDef_inv hM)]
+    apply hM.nonsingular_inv }
+  { intros hM 
+    exact hM.nonsingular_inv }
 
 end Matrix 

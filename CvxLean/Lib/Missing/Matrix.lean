@@ -12,6 +12,9 @@ instance [Preorder α] : Preorder (Matrix m n α) :=
   le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
   lt_iff_le_not_le := fun _ _ => refl _ }
 
+def abs (A : Matrix m n ℝ) : Matrix m n ℝ := 
+  fun i j => Abs.abs (A i j)
+
 def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α := 
   Finset.sum Finset.univ fun i => (Finset.sum Finset.univ fun j => X i j)
 
@@ -185,14 +188,14 @@ def transpose (α) (M : Matrix m n α) : Matrix n m α
 def diag (α) (M : Matrix n n α) : n → α
   | x => M x x
 
-instance [Add α] : Add (Matrix m n α) where
-  add A B i j := (A i j) + (B i j)
+-- instance [Add α] : Add (Matrix m n α) where
+--   add A B i j := (A i j) + (B i j)
 
-instance [Sub α] : Sub (Matrix m n α) where
-  sub A B i j := (A i j) - (B i j)
+-- instance [Sub α] : Sub (Matrix m n α) where
+--   sub A B i j := (A i j) - (B i j)
 
-instance [Abs α] : Abs (Matrix m n α) where
-  abs A i j := abs (A i j)
+-- instance [Abs α] : Abs (Matrix m n α) where
+--   abs A i j := abs (A i j)
 
 def mul [Mul α] [Add α] (M : Matrix (Fin l) (Fin m) α) (N : Matrix (Fin m) (Fin n) α) : Matrix (Fin l) (Fin n) α :=
 fun i k => (fun j => M i j) ⬝ᵥᶜ (fun j => N j k)

@@ -1,4 +1,6 @@
 import CvxLean.Lib.Missing.Vec
+import CvxLean.Lib.Optlib.CovarianceEstimation
+import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.PosDef
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Conv.ConvOpt
@@ -8,6 +10,7 @@ import CvxLean.Command.Solve
 open Real
 open Minimization
 open CvxLean
+open BigOperators
 open Matrix
 
 noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) := 
@@ -15,7 +18,7 @@ noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n �
     maximize (∏ i, gaussianPdf R (y i))
     subject to 
       c_pos_def : R.PosDef
-      c_sparse : R⁻¹.abs.sum <= α
+      c_sparse : R⁻¹.abs.sum ≤ α
 
 reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n → ℝ) :
   problem n N α y := by
@@ -25,39 +28,39 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
   · intros R S hR hS h
     apply neg_le_neg
     simp only [maximizeNeg] at h
-    rwa [neg_negₓ, neg_negₓ, 
-      @neg_le_neg_iff Real _ _ (OrderedAddCommGroup.to_covariant_class_left_le _) _,
-      log_le_log] at h
-    exact prod_gaussian_pdf_pos S y hS.1
-    exact prod_gaussian_pdf_pos R y hR.1
-  simp only [Function.comp, neg_negₓ, maximizeNeg]
+    rwa [neg_neg, neg_neg, neg_le_neg_iff, log_le_log] at h
+    exact prod_gaussianPdf_pos S y hS.1
+    exact prod_gaussianPdf_pos R y hR.1
+  simp only [Function.comp, neg_neg, maximizeNeg]
   -- move logarithm and sum inward:
   apply rewrite_objective
   · intros R hR
     simp only [log_prod_gaussianPdf _ R hR.1,
       Finset.sum_add_distrib, Finset.sum_neg_distrib, neg_div]
     rewrite [Finset.sum_const, Finset.sum_const, Finset.card_fin]
-    rw [← Finset.sum_div, sum_quad_form, @Real.log_sqrt (det R)]
-    apply hR.1.pos_semidef.det_nonneg
+    rw [← Finset.sum_div, sum_quadForm, @Real.log_sqrt (det R)]
+    apply hR.1.posSemidef.det_nonneg
   -- variable change using matrix inverse:
   apply map_domain (f := (·⁻¹)) (g := (·⁻¹))
   · intros R hR
-    simp only [nonsing_inv_nonsing_inv R hR.1.is_unit_det]
+    simp only [nonsing_inv_nonsing_inv R hR.1.isUnit_det]
   -- dissolve matrix inverse:
-  simp only [Function.comp, Matrix.posdef_inv_iff_posdef]
+  simp only [Function.comp, Matrix.PosDef_inv_iff_PosDef]
   apply rewrite_objective
   · intros R hR
-    rewrite [nonsing_inv_nonsing_inv R (hR.1.is_unit_det),
+    rewrite [nonsing_inv_nonsing_inv R (hR.1.isUnit_det),
       Matrix.det_nonsing_inv]
     rewrite [Real.inverse_eq_inv, Real.log_inv]
-    have : (bit0 One.one : ℝ) = 2 := by rw [← one_add_one_eq_two]; rfl
-    simp only [this]
+    -- have : (OfNat.ofNat 2 : ℝ) = 2 := by rfl
+    simp only [instOfNat]
     rfl
   apply rewrite_constraints
   · intros R
-    rw [And.congr_right_iff]
+    rw [and_congr_right_iff]
     intro hR
-    rw [nonsing_inv_nonsing_inv R hR.is_unit_det]
+    rw [nonsing_inv_nonsing_inv R hR.isUnit_det]
+
+set_option trace.Meta.debug true
 
 #print problem₂
 
