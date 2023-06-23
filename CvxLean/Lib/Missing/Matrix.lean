@@ -51,30 +51,6 @@ theorem add_dotProduct' {m} [Fintype m] (x x' : m → ℝ) (y : m → ℝ)
   unfold Matrix.dotProduct ; simp only [←Finset.sum_add_distrib]
   apply congr_arg ; ext i ; simp ; ring
 
-def toUpperTri 
-  {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] (A : Matrix m m α) 
-  : Matrix m m α := 
-  fun i j => if i ≤ j then A i j else 0
-
-theorem toUpperTri_zero 
-  {α m} [LE m] [DecidableRel (· ≤ · : m → m → Prop)] [Zero α] 
-  : Matrix.toUpperTri (0 : Matrix m m α) = 0 := by
-  funext i j ; simp [Matrix.toUpperTri] 
-
-theorem toUpperTri_smul 
-  {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
-  (A : Matrix m m ℝ) (κ : ℝ)
-  : κ • Matrix.toUpperTri A = Matrix.toUpperTri (κ • A) := by
-  funext i j ; rw [Pi.smul_apply, Pi.smul_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h]
-
-theorem toUpperTri_add 
-  {m} [Fintype m] [LE m] [DecidableRel (· ≤ · : m → m → Prop)] 
-  (A B : Matrix m m ℝ)
-  : Matrix.toUpperTri (A + B) = Matrix.toUpperTri A + Matrix.toUpperTri B := by
-  funext i j ; rw [Pi.add_apply, Pi.add_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h]
-
 theorem sum_zero {n} 
   : Matrix.sum (0 : Matrix (Fin n) (Fin n) ℝ) = 0 := by
   simp [Matrix.sum, Matrix.zero_apply]
