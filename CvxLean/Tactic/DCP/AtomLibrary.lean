@@ -3,6 +3,7 @@ import CvxLean.Lib.Cones
 import CvxLean.Lib.Missing.Real
 import CvxLean.Lib.Missing.Vec
 import CvxLean.Lib.Missing.Matrix
+import CvxLean.Lib.Optlib.LogDet
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.LDL
 import CvxLean.Syntax.Minimization
@@ -716,17 +717,38 @@ solution
     if h : A.PosDef then (LDL.diag h).mul (LDL.lower h).transpose else 0) 
 solutionEqualsAtom by
   simp only [dif_pos hA, Vec.sum, Vec.log]
-  exact Matrix.LogDetAtom.solution_eq_atom hA
+  rw [Matrix.LogDetAtom.solution_eq_atom hA]
+  congr
 feasibility 
   (c_exp : by
-    sorry)
+    simp only [Real.Vec.expCone, dif_pos hA]
+    intro i
+    show Real.expCone ((Real.log (LDL.diagEntries hA i))) 1
+      (Matrix.diag ((LDL.diag hA).mul (LDL.lower hA).transpose) i)
+    rw [← Real.exp_iff_expCone, Real.exp_log]
+    exact Matrix.LogDetAtom.feasibility_exp hA i
+    exact Matrix.LDL.diagEntries_pos hA i)
   (c_posdef : by
-    sorry)
+    simp only [dif_pos hA]
+    convert Matrix.LogDetAtom.feasibility_PosDef' hA rfl rfl rfl)
 optimality by
-  sorry
+  have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by 
+    intro i
+    rw [Real.exp_iff_expCone]
+    apply c_exp
+  -- TODO(RFM): Why does exact fail here?
+  have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
+    (Matrix.diagonal (Matrix.diag Y)) ht (by convert rfl) (by convert rfl) c_posdef
+  refine' Eq.mp _ h
+  congr
 vconditionElimination 
   (hA : by
-    sorry)
+    have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by 
+      intro i
+      rw [Real.exp_iff_expCone]
+      apply c_exp
+    exact @Matrix.LogDetAtom.cond_elim (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
+      (Matrix.diagonal (Matrix.diag Y)) ht (by convert rfl) (by convert rfl) c_posdef)
 
 declare_atom Matrix.abs [convex] 
   (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? 
