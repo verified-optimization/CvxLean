@@ -7,6 +7,12 @@ variable {𝕜 : Type _} [IsROrC 𝕜] {m n : Type _} [Fintype m] [Fintype n]
 lemma PosSemidef.eigenvalues_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) [DecidableEq n] (i : n) : 0 ≤ hM.1.eigenvalues i :=
 by rw [hM.1.eigenvalues_eq]; apply hM.2
 
+lemma PosSemidef.det_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) [DecidableEq n] : 0 ≤ det M := by
+  rw [hM.1.det_eq_prod_eigenvalues]
+  apply Finset.prod_nonneg
+  intros i _hi
+  apply eigenvalues_nonneg hM
+
 lemma PosDef.eigenvalues_pos {M : Matrix n n ℝ} (hM : M.PosDef) [DecidableEq n] (i : n) : 0 < hM.1.eigenvalues i := by
   rw [hM.1.eigenvalues_eq]
   apply hM.2 _
@@ -25,6 +31,10 @@ lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) :
   have := hM.2 (star v) h
   rw [star_star, hv'] at this
   simp at this
+
+noncomputable instance PosDef.Invertible 
+  [DecidableEq n] {M : Matrix n n ℝ} (hM : M.PosDef) : Invertible M :=
+  invertibleOfIsUnitDet M (isUnit_iff_ne_zero.2 hM.det_ne_zero)
 
 lemma PosSemidef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 ≤ f i) :
   (diagonal f).PosSemidef := by
@@ -78,5 +88,11 @@ lemma PosSemidef.mul_mul_of_IsHermitian {M N : Matrix n n 𝕜}
     (hM : M.PosSemidef) (hN : N.IsHermitian) :
   (N ⬝ M ⬝ N).PosSemidef :=
 by convert hM.conjTranspose_mul_mul M N; exact hN.symm
+
+lemma PosSemidef.add {M N : Matrix n n 𝕜} (hM : M.PosSemidef) (hN : N.PosSemidef) :
+  (M + N).PosSemidef := by
+  refine' ⟨hM.1.add hN.1, _⟩; intros x
+  simp only [add_mulVec, dotProduct_add, map_add]
+  apply add_nonneg (hM.2 x) (hN.2 x)
 
 end Matrix 
