@@ -84,6 +84,17 @@ lemma IsHermitian.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜}
   refine' (Matrix.inv_eq_right_inv _).symm
   rw [conjTranspose_nonsing_inv, hM.eq, mul_nonsing_inv _ hMdet]
 
+lemma PosDef.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) :
+  M⁻¹.PosDef := by
+  refine' ⟨IsHermitian.nonsingular_inv hM.1 (isUnit_iff_ne_zero.2 hM.det_ne_zero), _⟩
+  intros x hx
+  have hMMinv := (mul_nonsing_inv _ (isUnit_iff_ne_zero.2 hM.det_ne_zero))
+  have hMinvdet : M⁻¹.det ≠ 0 := det_ne_zero_of_left_inverse hMMinv
+  have := hM.2 (M⁻¹.mulVec x) (λ h => hx (eq_zero_of_mulVec_eq_zero hMinvdet h))
+  rw [mulVec_mulVec, hMMinv, one_mulVec, star_dotProduct] at this
+  rw [← IsROrC.conj_re]
+  exact this
+
 lemma PosSemidef.mul_mul_of_IsHermitian {M N : Matrix n n 𝕜}
     (hM : M.PosSemidef) (hN : N.IsHermitian) :
   (N ⬝ M ⬝ N).PosSemidef :=
