@@ -738,7 +738,7 @@ optimality by
     apply c_exp
   -- TODO(RFM): Why does exact fail here?
   have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
-    (Matrix.diagonal (Matrix.diag Y)) ht (by convert rfl) (by convert rfl) c_posdef
+    (Matrix.diagonal Y.diag) ht (by convert rfl) (by convert rfl) c_posdef
   refine' Eq.mp _ h
   congr
 vconditionElimination 
@@ -752,14 +752,14 @@ vconditionElimination
 
 declare_atom Matrix.abs [convex] 
   (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? 
-  : abs M :=
+  : M.abs :=
 vconditions
 implementationVars (T : Matrix (Fin m) (Fin n) ℝ)
 implementationObjective T
 implementationConstraints
   (c_pos : Real.Matrix.posOrthCone (T - M : Matrix (Fin m) (Fin n) ℝ))
   (c_neg : Real.Matrix.posOrthCone (T + M : Matrix (Fin m) (Fin n) ℝ))
-solution (T := abs M)
+solution (T := M.abs)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by 
