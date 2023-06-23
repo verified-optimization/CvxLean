@@ -48,7 +48,7 @@ vecMul (star (x ⊕ᵥ y)) (fromBlocks A B Bᴴ D) ⬝ᵥ (x ⊕ᵥ y) =
     conjTranspose_nonsing_inv, star_mulVec]
   abel
 
-lemma isHermitian.fromBlocks₁₁ [Fintype m] [DecidableEq m]
+lemma IsHermitian.fromBlocks₁₁ [Fintype m] [DecidableEq m]
   {A : Matrix m m 𝕜} (B : Matrix m n 𝕜) (D : Matrix n n 𝕜)
   (hA : A.IsHermitian) :
   (Matrix.fromBlocks A B Bᴴ D).IsHermitian ↔ (D - Bᴴ ⬝ A⁻¹ ⬝ B).IsHermitian := by
@@ -64,19 +64,19 @@ lemma isHermitian.fromBlocks₁₁ [Fintype m] [DecidableEq m]
     rw [← sub_add_cancel D]
     apply IsHermitian.add h hBAB }
 
-lemma isHermitian.fromBlocks₂₂ [Fintype n] [DecidableEq n]
+lemma IsHermitian.fromBlocks₂₂ [Fintype n] [DecidableEq n]
   (A : Matrix m m 𝕜) (B : Matrix m n 𝕜) {D : Matrix n n 𝕜}
   (hD : D.IsHermitian) :
   (Matrix.fromBlocks A B Bᴴ D).IsHermitian ↔ (A - B ⬝ D⁻¹ ⬝ Bᴴ).IsHermitian := by
   rw [←isHermitian_submatrix_equiv (Equiv.sumComm n m), Equiv.sumComm_apply,
     fromBlocks_submatrix_sum_swap_sum_swap]
-  convert isHermitian.fromBlocks₁₁ _ _ hD <;> rw [conjTranspose_conjTranspose]
+  convert IsHermitian.fromBlocks₁₁ _ _ hD <;> rw [conjTranspose_conjTranspose]
 
-lemma posSemidef.fromBlocks₁₁ [Fintype m] [DecidableEq m] [Fintype n]
+lemma PosSemidef.fromBlocks₁₁ [Fintype m] [DecidableEq m] [Fintype n]
   {A : Matrix m m 𝕜} (B : Matrix m n 𝕜) (D : Matrix n n 𝕜)
   (hA : A.PosDef) [Invertible A] :
   (fromBlocks A B Bᴴ D).PosSemidef ↔ (D - Bᴴ ⬝ A⁻¹ ⬝ B).PosSemidef := by
-  rw [PosSemidef, isHermitian.fromBlocks₁₁ _ _ hA.1]
+  rw [PosSemidef, IsHermitian.fromBlocks₁₁ _ _ hA.1]
   constructor
   { -- NOTE(RFM): refine λ h, ⟨h.1, λ x, _⟩,
     intro h; refine' ⟨h.1, _⟩; intro x 
@@ -100,7 +100,7 @@ lemma PosSemidef.fromBlocks₂₂ [Fintype m] [Fintype n] [DecidableEq n]
   (fromBlocks A B Bᴴ D).PosSemidef ↔ (A - B ⬝ D⁻¹ ⬝ Bᴴ).PosSemidef := by
   rw [←posSemidef_submatrix_equiv (Equiv.sumComm n m), Equiv.sumComm_apply,
     fromBlocks_submatrix_sum_swap_sum_swap]
-  convert @posSemidef.fromBlocks₁₁ m n 𝕜 _ _ _ _ _ _ _ hD _ <;>
+  convert @PosSemidef.fromBlocks₁₁ m n 𝕜 _ _ _ _ _ _ _ hD _ <;>
   rw [conjTranspose_conjTranspose]
 
 end Matrix 
