@@ -141,40 +141,38 @@ lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ)
         rw [PosSemidef_ABA.1.det_eq_prod_eigenvalues]
         rfl
   _ ≤ A.det * ∏ i, (1 + μ i) := by
-      apply (mul_le_mul_left hA.det_pos).2
-      apply Finset.one_add_prod_le_prod_one_add μ PosSemidef_ABA.eigenvalues_nonneg
+        apply (mul_le_mul_left hA.det_pos).2
+        apply Finset.one_add_prod_le_prod_one_add μ PosSemidef_ABA.eigenvalues_nonneg
   _ = A.det * (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det := by
-      rw [mul_eq_mul_left_iff]; left; symm
-      rw [det_eq_prod_eigenvalues PosSemidef_ABA.1.eigenvectorBasis
-        (fun i => 1 + (PosSemidef_ABA.1.eigenvalues i)) _]
-      { simp }
-      intro i
-      convert PosSemidef_ABA.1.has_eigenvector_one_add i using 1
-      simp only [map_add, toLin'_one, toLin'_mul, add_left_inj]
-      rfl
+        rw [mul_eq_mul_left_iff]; left; symm
+        rw [det_eq_prod_eigenvalues PosSemidef_ABA.1.eigenvectorBasis
+          (fun i => 1 + (PosSemidef_ABA.1.eigenvalues i)) _]
+        { simp }
+        intro i
+        convert PosSemidef_ABA.1.has_eigenvector_one_add i using 1
+        simp only [map_add, toLin'_one, toLin'_mul, add_left_inj]
+        rfl
   _ = (A + B).det := by
-      rw [← det_mul, ← det_conj this (A + B)],
-      apply congr_arg,
-      rw ←hA.pos_semidef.sqrt_mul_sqrt,
-      change sqrtA ⬝ sqrtA ⬝ (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹) = sqrtA ⬝ (sqrtA ⬝ sqrtA + B) ⬝ sqrtA⁻¹,
-      rw [matrix.mul_add, matrix.mul_one, matrix.mul_add, matrix.add_mul,
-        matrix.mul_assoc, matrix.mul_assoc, matrix.mul_assoc, matrix.mul_assoc,
-        ← matrix.mul_assoc _ _ (B ⬝ _),
-        matrix.mul_nonsing_inv _ is_unit_det_sqrtA, matrix.one_mul, matrix.mul_one,
-        hA.pos_semidef.sqrt_mul_sqrt, matrix.mul_assoc]
+        rw [← det_mul, ← det_conj this (A + B)]
+        apply congr_arg
+        rw [←hA.posSemidef.sqrt_mul_sqrt]
+        change sqrtA ⬝ sqrtA ⬝ (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹) = sqrtA ⬝ (sqrtA ⬝ sqrtA + B) ⬝ sqrtA⁻¹
+        rw [Matrix.mul_add, Matrix.mul_one, Matrix.mul_add, Matrix.add_mul,
+          Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc,
+          ← Matrix.mul_assoc _ _ (B ⬝ _),
+          Matrix.mul_nonsing_inv _ isUnit_det_sqrtA, Matrix.one_mul, Matrix.mul_one,
+          hA.posSemidef.sqrt_mul_sqrt, Matrix.mul_assoc]
 
 /-- Subadditivity lemma for positive semidefinite matrices. -/
-lemma det_add_det_le_det_add [nonempty n] (A B : matrix n n ℝ)
-    (hA : A.pos_semidef) (hB : B.pos_semidef) :
-  A.det + B.det ≤ (A + B).det :=
-begin
-  by_cases hA' : A.det = 0,
-  { by_cases hB' : B.det = 0,
-    { simp [hA', hB'],
-      apply (hA.add hB).det_nonneg },
-    { rw [add_comm A B, add_comm A.det B.det],
-      apply det_add_det_le_det_add' _ _ (hB.pos_def_iff_det_ne_zero.2 hB') hA }, },
-  { apply det_add_det_le_det_add' _ _ (hA.pos_def_iff_det_ne_zero.2 hA') hB },
-end
+lemma det_add_det_le_det_add [Nonempty n] (A B : Matrix n n ℝ)
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+  A.det + B.det ≤ (A + B).det := by
+  by_cases hA' : A.det = 0
+  { by_cases hB' : B.det = 0
+    { simp [hA', hB']
+      apply (hA.add hB).det_nonneg }
+    { rw [add_comm A B, add_comm A.det B.det]
+      apply det_add_det_le_det_add' _ _ (hB.PosDef_iff_det_ne_zero.2 hB') hA } }
+  { apply det_add_det_le_det_add' _ _ (hA.PosDef_iff_det_ne_zero.2 hA') hB }
 
-end matrix
+end Matrix
