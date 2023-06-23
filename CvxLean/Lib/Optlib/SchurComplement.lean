@@ -94,7 +94,7 @@ lemma posSemidef.fromBlocks₁₁ [Fintype m] [DecidableEq m] [Fintype n]
     { rw [← dotProduct_mulVec _ _ (x ∘ Sum.inr)] 
       apply h.2 } }
 
-lemma posSemidef.fromBlocks₂₂ [Fintype m] [Fintype n] [DecidableEq n]
+lemma PosSemidef.fromBlocks₂₂ [Fintype m] [Fintype n] [DecidableEq n]
   (A : Matrix m m 𝕜) (B : Matrix m n 𝕜) {D : Matrix n n 𝕜}
   (hD : D.PosDef) [Invertible D] :
   (fromBlocks A B Bᴴ D).PosSemidef ↔ (A - B ⬝ D⁻¹ ⬝ Bᴴ).PosSemidef := by
