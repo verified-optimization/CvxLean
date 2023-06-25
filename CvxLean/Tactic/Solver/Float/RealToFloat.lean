@@ -8,6 +8,9 @@ import CvxLean.Tactic.Solver.Float.Cones
 import CvxLean.Tactic.Solver.Float.OptimizationParam
 import CvxLean.Tactic.Solver.Float.RealToFloatExt
 
+import CvxLean.Lib.Optlib.CovarianceEstimation
+import CvxLean.Lib.Optlib.LogDet
+
 namespace CvxLean
 
 open Lean Lean.Elab Lean.Meta Lean.Elab.Command Lean.Elab.Term
@@ -156,6 +159,9 @@ addRealToFloat (i) : @HMul.hMul Real Real Real i :=
 addRealToFloat (i) : @instHMul Real i := 
   @HMul.mk Float Float Float Float.mul
 
+addRealToFloat (i) (k) : @HSMul.hSMul ℕ ℝ ℝ i k := 
+  fun r => Float.ofNat k * r
+
 addRealToFloat (i) : @HDiv.hDiv Real Real Real i := 
   Float.div 
 
@@ -164,6 +170,9 @@ addRealToFloat (i) : @instHDiv Real i :=
 
 addRealToFloat (i) : @HPow.hPow Real Nat Real i := 
   fun f n => Float.pow f (Float.ofNat n)
+
+addRealToFloat (i) : @HPow.hPow Real Real Real i := 
+  fun f n => Float.pow f n
 
 addRealToFloat (i) : @instHPow Real i := 
   @HPow.mk Float Float Float Float.pow
@@ -211,16 +220,16 @@ addRealToFloat : @Matrix.transpose.{0,0,0} :=
 addRealToFloat : @Matrix.diagonal.{0,0} := 
   @Matrix.Computable.diagonal.{0,0} 
 
-addRealToFloat : @Matrix.fromBlocks := 
+addRealToFloat : @Matrix.fromBlocks.{0, 0, 0, 0, 0} := 
   @Matrix.Computable.fromBlocks
 
 addRealToFloat : @Matrix.diag.{0,0} := 
   @Matrix.Computable.diag.{0,0}
 
-addRealToFloat (m) (i) (hm) : @Vec.sum Real i (Fin m) hm := 
-  fun v => (@Matrix.Computable.vecToArray Float (Zero.mk (0 : Float)) m v).foldl (· + ·) 0
+addRealToFloat (m) (i) (hm) : @Vec.sum.{0} Real i (Fin m) hm := 
+  fun v => (@Matrix.Computable.vecToArray.{0} Float (Zero.mk (0 : Float)) m v).foldl (· + ·) 0
 
-addRealToFloat (m) (i) (hm) : @Matrix.sum Real (Fin m) hm i := 
+addRealToFloat (m) (i) (hm) : @Matrix.sum (Fin m) Real hm i := 
   fun M => (@Matrix.Computable.toArray Float (Zero.mk (0 : Float)) m M).foldl (fun acc v => acc + v.foldl (· + ·) 0) 0
 
 addRealToFloat (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) Real i1 i2 i3 := 
@@ -239,6 +248,18 @@ addRealToFloat (n : Nat) (i) :
 addRealToFloat (n : Nat) (i1) (i2) : 
   @Matrix.mul (Fin n) (Fin n) (Fin n) ℝ (Fin.fintype n) i1 i2 := 
   @Matrix.Computable.mul Float (Zero.mk (0 : Float)) n n n instMulFloat instAddFloat
+
+addRealToFloat (n : Nat) : @Matrix.PosDef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
+  @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLTFloat
+
+addRealToFloat (n : Nat) : @Matrix.PosSemidef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
+  @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLEFloat
+
+def Matrix.toUpperTri' [LinearOrder m] [Zero α]
+  (A : Matrix m m α) : Matrix m m α :=
+fun i j => if i ≤ j then A i j else 0
+
+addRealToFloat : @Matrix.toUpperTri.{0,0} := @Matrix.toUpperTri'.{0,0}
 
 end Matrix
 
@@ -261,5 +282,12 @@ addRealToFloat : @Real.Vec.expCone := @Float.Vec.expCone
 addRealToFloat (n) (i) : @Real.Matrix.PSDCone (Fin n) i := @Float.Matrix.PSDCone n
 
 end Cones
+
+section CovarianceEstimation
+
+addRealToFloat (N n : ℕ) : @covarianceMatrix N n :=
+  @Matrix.Computable.covarianceMatrix Float (Zero.mk (0 : Float)) ⟨Float.add⟩ ⟨Float.mul⟩ ⟨Float.div⟩ N n (@instOfNatFloat N)
+
+end CovarianceEstimation
 
 end CvxLean

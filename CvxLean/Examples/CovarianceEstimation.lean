@@ -51,8 +51,6 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
     rewrite [nonsing_inv_nonsing_inv R (hR.1.isUnit_det),
       Matrix.det_nonsing_inv]
     rewrite [Real.inverse_eq_inv, Real.log_inv]
-    -- have : (OfNat.ofNat 2 : ℝ) = 2 := by rfl
-    simp only [instOfNat]
     rfl
   apply rewrite_constraints
   · intros R
@@ -65,7 +63,12 @@ set_option trace.Meta.debug true
 #print problem₂
 
 set_option maxHeartbeats 20000000
-solve problem₂ 2 4 1 ![![0,2],![2,0],![-2,0],![0,-2]]
+solve problem₂ 2 4 1 ![![0,2],![2,0],![2,0],![0,2]]
+-- NOTE(RFM): Does not work because there is a metavariable 'OfNat ℝ 2' in the
+-- last '-2'. If we remove the '-' then the reduction goes through but we get 
+-- another error about an unknown universe parameter. That is probably an issue 
+-- with real-to-float.
+-- solve problem₂ 2 4 1 (fun i j => if i = 0 then (if j = 0 then (0 : ℝ) else (2 : ℝ)) else if i = 1 then (if j = 0 then (2 : ℝ) else (0 : ℝ)) else if i = 2 then (if j = 0 then (2 : ℝ) else (0 : ℝ)) else if i = 3 then (if j = 0 then (0 : ℝ) else (2 : ℝ)) else (0 : ℝ))
 
 #print problem₂.reduced
 
