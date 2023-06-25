@@ -84,7 +84,7 @@ def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool)
   let ty ← inferType e 
   let reducibility := Lean.ReducibilityHints.regular 0
   let safety := DefinitionSafety.safe
-  let defVal := mkDefinitionValEx n ([] : List Lean.Name) ty e reducibility safety ([] : List Lean.Name)
+  let defVal := mkDefinitionValEx n ([] : List Lean.Name) ty e reducibility safety ([n] : List Lean.Name)
   let decl := Declaration.defnDecl defVal
   if compile then
     Lean.addAndCompile decl 
@@ -102,6 +102,14 @@ unsafe def evalSolve : CommandElab := fun stx =>
     liftTermElabM <| do 
       let probTerm ← elabTerm probInstance.raw none
       let probTerm ← whnf probTerm
+      let probTerm ← instantiateMVars probTerm
+
+      -- NOTE(RFM): Needed to solve the "OfNat" mvar bug.
+      for mvarId in ← getMVars probTerm do 
+        try {
+          let mvarVal ← synthInstance (← mvarId.getDecl).type
+          mvarId.assign mvarVal }
+        catch _ => pure ()
 
       -- Create prob.reduced.
       let (probReducedExpr, probReduction, backwardMap) ← 
