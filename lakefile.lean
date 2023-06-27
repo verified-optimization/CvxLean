@@ -4,7 +4,8 @@ open System Lake DSL
 package CvxLean
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "a7a9993c2dcd85d5655ccfec23d59c5ef9b25b2b"
+  "https://github.com/leanprover-community/mathlib4" @ 
+  "a7a9993c2dcd85d5655ccfec23d59c5ef9b25b2b"
 
 -- meta if get_config? env = some "dev" then
 -- require «doc-gen4» from git 
