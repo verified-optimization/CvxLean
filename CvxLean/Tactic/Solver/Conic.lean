@@ -95,7 +95,20 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
   IO.FS.writeFile inputPath (ToString.toString cbf)
 
   -- Run solver.
-  let out ← IO.Process.output { cmd := "mosek", args := #[inputPath] }
+
+  -- TODO(RFM): Add this to build instructions. Sometimes it is not needed.
+  let mosekBinPath := 
+    "/Users/ramonfernandezmir/Documents/PhD-code/optimisation" ++ 
+    "/mosek/10.0/tools/platform/osxaarch64/bin"
+  let p := if let some p' := ← IO.getEnv "PATH" then 
+    p' ++ ":" ++ mosekBinPath
+  else 
+    mosekBinPath
+  
+  let out ← IO.Process.output { 
+    cmd := "mosek", 
+    args := #[inputPath],
+    env := #[("PATH", p)] }
   if out.exitCode != 0 then
     dbg_trace ("MOSEK exited with code " ++ ToString.toString out.exitCode)
     return Sol.Response.failure out.exitCode.toNat
