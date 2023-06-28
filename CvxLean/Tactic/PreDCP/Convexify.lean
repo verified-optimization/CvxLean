@@ -126,12 +126,26 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
       else
         return num
     | _ => throwError "Tree to Expr conversion error: unexpected num {s}."
+  -- Bounded variables.
+  | Tree.node "bvar" #[Tree.leaf s] =>
+    throwError "Tree to Expr conversion error: unexpected bvar {s}."
   -- Variables.
   | Tree.node "var" #[Tree.leaf s] =>
     if s ∈ vars then
       return mkFVar (FVarId.mk (Name.mkSimple s))
     else
       throwError "Tree to Expr conversion error: unexpected var {s}."
+  -- Vector variables.
+  | Tree.node "vecVar" #[Tree.leaf s] =>
+    if s ∈ vars then
+      return mkFVar (FVarId.mk (Name.mkSimple s))
+    else
+      throwError "Tree to Expr conversion error: unexpected vecVar {s}."
+  | Tree.node "matVar" #[Tree.leaf s] =>
+    if s ∈ vars then
+      return mkFVar (FVarId.mk (Name.mkSimple s))
+    else
+      throwError "Tree to Expr conversion error: unexpected matVar {s}."
   -- Parameters.
   | Tree.node "param" #[Tree.leaf s] =>
     return mkConst (Name.mkSimple s)
@@ -140,6 +154,11 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
     mkEq t1 t2
+  -- Not Equality.
+  | Tree.node "neq" #[t1, t2] => do
+    let t1 ← treeToExpr vars t1
+    let t2 ← treeToExpr vars t2
+    return mkNot (← mkEq t1 t2)
   -- Less than or equal to.
   | Tree.node "le" #[t1, t2] => do
     let t1 ← treeToExpr vars t1
