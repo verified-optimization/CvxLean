@@ -222,16 +222,21 @@ def gp7 :=
     minimize ∑ i, P i 
     subject to 
       h1 : ∀ i, 0 < P i
-      h2 : ∀ i, Pmin i ≤ P i
-      h3 : ∀ i, P i ≤ Pmax i
-      h4 : ∀ i, (σ i + ∑ k, if i ≠ k then G i k * P k else 0) / (G i i * P i) ≤ 1 / SINRmin
+      h2 : Pmin ≤ P
+      h3 : P ≤ Pmax
+      -- h4 : (fun i => (σ i + Vec.sum (fun k => if i ≠ k then G i k * P k else 0)) / (G i i * P i)) ≤ fun _ => 1 / SINRmin
+      -- NOTE(RFM): Work in vector notaton, avoiding functions and bvars.
+      -- TOOD(RFM): Add diagonal and diag to the atom library.
+      h5 : (σ + (G - (Matrix.diagonal G.diag)).vecMul P) ≤ (1 / SINRmin) • ((Matrix.diagonal G.diag).vecMul P)
 
 set_option trace.Meta.debug true
 
 lemma test : Solution gp7 := by 
   unfold gp7 
-  map_exp
-  dcp
+  -- map_exp
+  -- NOTE(RFM): Vec.exp instead of exp.
+  unchecked_tree
+  -- dcp
   sorry
 
 end GP7
