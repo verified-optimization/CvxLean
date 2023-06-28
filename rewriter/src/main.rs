@@ -12,8 +12,24 @@ define_language! {
         "prob" = Prob([Id; 2]),
         "objFun" = ObjFun(Id),
         "constraints" = Constraints(Box<[Id]>),
+
+        "bvar" = BVar(Id),     // Fin n
+        "var" = Var(Id),       // Real
+        "vecVar" = VecVar(Id), // Fin n -> Real
+        "matVar" = MatVar(Id), // Fin n -> Fin m -> Real
+        "param" = Param(Id),
+        Symbol(Symbol),
+        Constant(Constant),
+
         "eq" = Eq([Id; 2]),
+        "neq" = NEq([Id; 2]),
         "le" = Le([Id; 2]),
+        "if" = If([Id; 3]),
+        "forall" = Forall([Id; 2]),
+
+        "vecAccess" = VecAccess([Id; 2]),
+        "matAccess" = MatAccess([Id; 3]),
+
         "neg" = Neg(Id),
         "sqrt" = Sqrt(Id),
         "add" = Add([Id; 2]),
@@ -23,10 +39,8 @@ define_language! {
         "pow" = Pow([Id; 2]),
         "log" = Log(Id),
         "exp" = Exp(Id),
-        "var" = Var(Id),
-        "param" = Param(Id),
-        Constant(Constant),
-        Symbol(Symbol),
+
+        "vecSum" = VecSum(Id),
     }
 }
 
@@ -133,6 +147,14 @@ pub struct Data {
     has_exp: bool,
 }
 
+fn get_free_vars_data(egraph: &EGraph, a: &Id) -> Option<(Id, Symbol)> {
+    // Assume that after var there is always a symbol.
+    match egraph[*a].nodes[0] { 
+        Optimization::Symbol(s) => { return Some((*a, s)); }
+        _ => { return None }
+    }
+}
+
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
@@ -173,7 +195,34 @@ impl Analysis<Optimization> for Meta {
                     free_vars.extend(get_vars(c));
                 }
             }
+
+            Optimization::BVar(a) => {}
+            Optimization::Var(a) => {
+                if let Some(d) = get_free_vars_data(egraph, a) {
+                    free_vars.insert(d);
+                }
+            }
+            Optimization::VecVar(a) => {
+                if let Some(d) = get_free_vars_data(egraph, a) {
+                    free_vars.insert(d);
+                }
+            }
+            Optimization::MatVar(a) => {
+                if let Some(d) = get_free_vars_data(egraph, a) {
+                    free_vars.insert(d);
+                }
+            }
+            Optimization::Param(_) => {} 
+            Optimization::Symbol(_) => {}
+            Optimization::Constant(f) => {
+                constant = Some((*f, format!("{}", f).parse().unwrap()));
+            }
+
             Optimization::Eq([a, b]) => {
+                free_vars.extend(get_vars(a));
+                free_vars.extend(get_vars(b));
+            }
+            Optimization::NEq([a, b]) => {
                 free_vars.extend(get_vars(a));
                 free_vars.extend(get_vars(b));
             }
@@ -181,6 +230,22 @@ impl Analysis<Optimization> for Meta {
                 free_vars.extend(get_vars(a));
                 free_vars.extend(get_vars(b));
             }
+            Optimization::If([c, t, e]) => {
+                free_vars.extend(get_vars(c));
+                free_vars.extend(get_vars(t));
+                free_vars.extend(get_vars(e));
+            }
+            Optimization::Forall([x, f]) => {
+                free_vars.extend(get_vars(f));
+            }
+
+            Optimization::VecAccess([v, i]) => {
+                free_vars.extend(get_vars(v));
+            }
+            Optimization::MatAccess([m, i, j]) => {
+                free_vars.extend(get_vars(m));
+            }
+
             Optimization::Neg(a) => {
                 free_vars.extend(get_vars(a));
                 match get_constant(a) {
@@ -279,19 +344,9 @@ impl Analysis<Optimization> for Meta {
                 }
                 has_exp = true;
             }
-            Optimization::Var(a) => {
-                // Assume that after var there is always a symbol.
-                match egraph[*a].nodes[0] { 
-                    Optimization::Symbol(s) => {
-                        free_vars.insert((*a, s)); 
-                    }
-                    _ => {}
-                }
-            }
-            Optimization::Param(_) => {} 
-            Optimization::Symbol(_) => {}
-            Optimization::Constant(f) => {
-                constant = Some((*f, format!("{}", f).parse().unwrap()));
+
+            Optimization::VecSum(v) => {
+                free_vars.extend(get_vars(v));
             }
         }
 
@@ -553,7 +608,39 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 }
                 return curvature;
             }
+            
+            Optimization::BVar(_a) => {
+                return Curvature::Affine;
+            }
+            Optimization::Var(_a) => {
+                return Curvature::Affine;
+            }
+            Optimization::VecVar(_a) => {
+                return Curvature::Affine;
+            }
+            Optimization::MatVar(_a) => {
+                return Curvature::Affine;
+            }
+            Optimization::Param(_a) => {
+                // NOTE(RFM): The story for DPP is a bit more complicated, but 
+                // let's treat them as numerical constants as in DCP.
+                return Curvature::Constant;
+            }
+            Optimization::Symbol(_sym) => {
+                // Irrelevant.
+                return Curvature::Unknown;
+            }
+            Optimization::Constant(_f) => {
+                return Curvature::Constant;
+            }
+
             Optimization::Eq([a, b]) => {
+                if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
+                    return Curvature::Valid;
+                }
+                return Curvature::Unknown;
+            }
+            Optimization::NEq([a, b]) => {
                 if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
                     return Curvature::Valid;
                 }
@@ -573,6 +660,31 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                     _ => { return Curvature::Unknown; }
                 } 
             }
+            Optimization::If([c, t, e]) => {
+                if get_curvature(c) == Curvature::Valid {
+                    if get_curvature(t) == get_curvature(e) {
+                        return get_curvature(t);
+                    }
+                }
+                return Curvature::Unknown;
+            }
+            Optimization::Forall([x, f]) => {
+                return get_curvature(f);
+            }
+
+            Optimization::VecAccess([v, i]) => {
+                if get_curvature(v) == Curvature::Affine {
+                    return Curvature::Affine;
+                }
+                return Curvature::Unknown;
+            }
+            Optimization::MatAccess([m, i, j]) => {
+                if get_curvature(m) == Curvature::Affine {
+                    return Curvature::Affine;
+                }
+                return Curvature::Unknown;
+            }
+
             Optimization::Neg(a) => {
                 match get_curvature(a) {
                     Curvature::Convex   => { return Curvature::Concave; }
@@ -736,20 +848,9 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 }
                 return Curvature::Unknown;
             }
-            Optimization::Var(_a) => {
-                return Curvature::Affine;
-            }
-            Optimization::Param(_a) => {
-                // NOTE(RFM): The story for DPP is a bit more complicated, but 
-                // let's treat them as numerical constants as in DCP.
-                return Curvature::Constant;
-            }
-            Optimization::Symbol(_sym) => {
-                // Irrelevant.
-                return Curvature::Unknown;
-            }
-            Optimization::Constant(_f) => {
-                return Curvature::Constant;
+
+            Optimization::VecSum(v) => {
+                return get_curvature(v);
             }
         }
     }
