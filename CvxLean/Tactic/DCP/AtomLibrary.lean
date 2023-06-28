@@ -166,6 +166,30 @@ optimality by
   intros y' hx
   apply mul_le_mul_of_nonneg_right hx hy
 
+declare_atom smul [affine] (n : ℕ)& (y : ℝ)+ : n • y :=
+bconditions
+homogenity by
+  rw [smul_zero, add_zero, smul_zero, add_zero, smul_comm]
+additivity by
+  rw [smul_zero, add_zero, smul_add]
+optimality by
+  intros y' hy
+  apply smul_le_smul_of_nonneg hy (Nat.zero_le _)
+
+declare_atom div [affine] (x : ℝ)+ (y : ℝ)& : x / y :=
+bconditions (hy : (0 : ℝ) ≤ y)
+homogenity by
+  simp [mul_div]
+additivity by
+  simp [add_div]
+optimality by
+  intros x' hx
+  by_cases h : 0 = y
+  · rw [← h, div_zero, div_zero]
+  · rw [div_le_div_right]
+    apply hx
+    apply lt_of_le_of_ne hy h
+
 end RealAffine
 
 -- Affine operations on vectors.
@@ -220,20 +244,6 @@ optimality by
   intros _ _
   apply hx
 
-declare_atom div [affine] (x : ℝ)+ (y : ℝ)& : x / y :=
-bconditions (hy : (0 : ℝ) ≤ y)
-homogenity by
-  simp [mul_div]
-additivity by
-  simp [add_div]
-optimality by
-  intros x' hx
-  by_cases h : 0 = y
-  · rw [← h, div_zero, div_zero]
-  · rw [div_le_div_right]
-    apply hx
-    apply lt_of_le_of_ne hy h
-
 declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
 bconditions
 homogenity by
@@ -252,15 +262,13 @@ additivity by
   rw [Matrix.zero_dotProduct, add_zero, Matrix.add_dotProduct]
 optimality le_refl _
 
-declare_atom smul [affine] (n : ℕ)& (y : ℝ)+ : n • y :=
+declare_atom Vec.smul [affine] (m : Nat)& (r : ℝ)& (x : Fin m → ℝ)? : r • x :=
 bconditions
 homogenity by
   rw [smul_zero, add_zero, smul_zero, add_zero, smul_comm]
 additivity by
   rw [smul_zero, add_zero, smul_add]
-optimality by
-  intros y' hy
-  apply smul_le_smul_of_nonneg hy (Nat.zero_le _)
+optimality le_refl _
 
 end VecAffine
 
