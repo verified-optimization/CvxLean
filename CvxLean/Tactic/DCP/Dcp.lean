@@ -898,7 +898,9 @@ syntax (name := uncheckedTree) "unchecked_tree" : tactic
 def evalPreDcpTree : Tactic 
   | `(tactic| unchecked_tree) => do 
     let goal ← Elab.Tactic.getMainGoal
-    let _ ← DCP.uncheckedTree goal
+    let t ← DCP.uncheckedTree goal
+    let s ← (toMessageData t).toString
+    trace[Meta.debug] s!"unchecked tree: {s}"
     pure ()
   | _ => throwUnsupportedSyntax
 
