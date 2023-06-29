@@ -12,7 +12,7 @@ noncomputable instance : ExpMap ℝ :=
   ⟨Real.exp⟩
 
 noncomputable instance : ExpMap (Fin n → ℝ) := 
-  ⟨fun x i => Real.exp (x i)⟩
+  ⟨Vec.exp⟩
 
 instance [ExpMap α] [ExpMap β] : ExpMap (α × β) := 
   ⟨fun x => ⟨ExpMap.exp x.1, ExpMap.exp x.2⟩⟩
@@ -35,7 +35,7 @@ noncomputable instance : LogMap ℝ :=
   ⟨Real.log⟩
 
 noncomputable instance : LogMap (Fin n → ℝ) :=
-  ⟨fun x i => Real.log (x i)⟩
+  ⟨Vec.log⟩
 
 instance [LogMap α] [LogMap β] : LogMap (α × β) :=
   ⟨fun x => ⟨LogMap.log x.1, LogMap.log x.2⟩⟩
@@ -80,7 +80,7 @@ elab "prove_exp_log" : tactic => do
   let g ← g.casesAnd
   let gs ← evalTacticAt (← 
     `(tactic| 
-        simp [LogMap.log, ExpMap.exp];
+        simp [LogMap.log, ExpMap.exp, Vec.log, Vec.exp];
         congr <;> funext <;> rw [exp_log (by simp [*] <;> positivity)])) g
   replaceMainGoal gs
 

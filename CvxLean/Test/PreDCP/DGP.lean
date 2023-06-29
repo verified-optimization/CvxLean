@@ -233,8 +233,7 @@ set_option trace.Meta.debug true
 
 lemma test : Solution gp7 := by 
   unfold gp7 
-  -- map_exp
-  -- NOTE(RFM): Vec.exp instead of exp.
+  map_exp
   unchecked_tree
   -- dcp
   sorry
