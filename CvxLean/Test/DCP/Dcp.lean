@@ -24,7 +24,7 @@ open Real
 
 set_option trace.Meta.debug true
 noncomputable def test000 : Solution $
-  optimization (x : Finₓ 3 → ℝ) (y : ℝ)
+  optimization (x : Fin 3 → ℝ) (y : ℝ)
     minimize y
     subject to
       c0 : exp (Vec.sum (Vec.exp x)) ≤ y
@@ -38,7 +38,7 @@ noncomputable def test001' (h : 0 ≤ (2 : ℝ)) (h : 0 ≤ (3 : ℝ)) : Solutio
     subject to
       c1 : (exp x) * (exp y) ≤ 3 * x
 := by
-  pre_dcp_tree
+  unchecked_tree
   dcp
   sorry
 
@@ -148,14 +148,13 @@ noncomputable def test2 : Solution $
   sorry
 
 noncomputable def test_log_det : Solution $
-  optimization (M : Matrix (Finₓ n) (Finₓ n) ℝ)
+  optimization (M : Matrix (Fin n) (Fin n) ℝ)
     minimize (0 : ℝ)
     subject to
       c0 : 0 ≤ Real.log M.det
       c_pos_def : M.PosDef
 := by
-  dcp_score
-  -- dcp
+  dcp
   sorry
 
 
