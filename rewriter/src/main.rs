@@ -35,6 +35,7 @@ define_language! {
         "exp" = Exp(Id),
 
         "vecSum" = VecSum(Id),
+        "vecSMul" = VecSMul([Id; 2]),
 
         "matVecMul" = MatVecMul([Id; 2]),
         "matDiag" = MatDiag(Id),         // Mat -> Vec
@@ -328,6 +329,10 @@ impl Analysis<Optimization> for Meta {
             }
 
             Optimization::VecSum(v) => {
+                free_vars.extend(get_vars(v));
+            }
+            Optimization::VecSMul([k, v]) => {
+                free_vars.extend(get_vars(k));
                 free_vars.extend(get_vars(v));
             }
 
@@ -822,12 +827,24 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             Optimization::VecSum(v) => {
                 return get_curvature(v);
             }
+            Optimization::VecSMul([k, v]) => {
+                // TODO(RFM): More cases?
+                if get_curvature(k) == Curvature::Constant && 
+                   get_curvature(v) == Curvature::Affine {
+                    return Curvature::Affine;
+                } else {
+                    return Curvature::Unknown;
+                }
+            } 
 
             Optimization::MatVecMul([v, m]) => {
-                if get_curvature(v) == Curvature::Constant {
-                    return get_curvature(m);
-                } else if get_curvature(m) == Curvature::Constant {
-                    return get_curvature(v);
+                // TODO(RFM): More cases?
+                if get_curvature(v) == Curvature::Constant && 
+                   get_curvature(m) == Curvature::Affine {
+                    return Curvature::Affine;
+                } else if get_curvature(v) == Curvature::Affine && 
+                          get_curvature(m) == Curvature::Constant {
+                    return Curvature::Affine;
                 } else {
                     return Curvature::Unknown;
                 }
