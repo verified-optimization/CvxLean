@@ -13,7 +13,6 @@ define_language! {
         "objFun" = ObjFun(Id),
         "constraints" = Constraints(Box<[Id]>),
 
-        "bvar" = BVar(Id),     // Fin n
         "var" = Var(Id),       // Real
         "vecVar" = VecVar(Id), // Fin n -> Real
         "matVar" = MatVar(Id), // Fin n -> Fin m -> Real
@@ -24,11 +23,6 @@ define_language! {
         "eq" = Eq([Id; 2]),
         "neq" = NEq([Id; 2]),
         "le" = Le([Id; 2]),
-        "if" = If([Id; 3]),
-        "forall" = Forall([Id; 2]),
-
-        "vecAccess" = VecAccess([Id; 2]),
-        "matAccess" = MatAccess([Id; 3]),
 
         "neg" = Neg(Id),
         "sqrt" = Sqrt(Id),
@@ -41,6 +35,10 @@ define_language! {
         "exp" = Exp(Id),
 
         "vecSum" = VecSum(Id),
+
+        "matVecMul" = MatVecMul([Id; 2]),
+        "matDiag" = MatDiag(Id),         // Mat -> Vec
+        "matDiagonal" = MatDiagonal(Id), // Vec -> Mat
     }
 }
 
@@ -196,7 +194,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
 
-            Optimization::BVar(a) => {}
             Optimization::Var(a) => {
                 if let Some(d) = get_free_vars_data(egraph, a) {
                     free_vars.insert(d);
@@ -229,21 +226,6 @@ impl Analysis<Optimization> for Meta {
             Optimization::Le([a, b]) => {
                 free_vars.extend(get_vars(a));
                 free_vars.extend(get_vars(b));
-            }
-            Optimization::If([c, t, e]) => {
-                free_vars.extend(get_vars(c));
-                free_vars.extend(get_vars(t));
-                free_vars.extend(get_vars(e));
-            }
-            Optimization::Forall([x, f]) => {
-                free_vars.extend(get_vars(f));
-            }
-
-            Optimization::VecAccess([v, i]) => {
-                free_vars.extend(get_vars(v));
-            }
-            Optimization::MatAccess([m, i, j]) => {
-                free_vars.extend(get_vars(m));
             }
 
             Optimization::Neg(a) => {
@@ -347,6 +329,17 @@ impl Analysis<Optimization> for Meta {
 
             Optimization::VecSum(v) => {
                 free_vars.extend(get_vars(v));
+            }
+
+            Optimization::MatVecMul([a, b]) => {
+                free_vars.extend(get_vars(a));
+                free_vars.extend(get_vars(b));
+            }
+            Optimization::MatDiag(a) => {
+                free_vars.extend(get_vars(a));
+            }
+            Optimization::MatDiagonal(a) => {
+                free_vars.extend(get_vars(a));
             }
         }
 
@@ -609,9 +602,6 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return curvature;
             }
             
-            Optimization::BVar(_a) => {
-                return Curvature::Affine;
-            }
             Optimization::Var(_a) => {
                 return Curvature::Affine;
             }
@@ -635,13 +625,15 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             }
 
             Optimization::Eq([a, b]) => {
-                if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
+                if get_curvature(a) <= Curvature::Affine && 
+                   get_curvature(b) <= Curvature::Affine {
                     return Curvature::Valid;
                 }
                 return Curvature::Unknown;
             }
             Optimization::NEq([a, b]) => {
-                if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
+                if get_curvature(a) <= Curvature::Affine && 
+                   get_curvature(b) <= Curvature::Affine {
                     return Curvature::Valid;
                 }
                 return Curvature::Unknown;
@@ -659,30 +651,6 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                     (Curvature::Constant, Curvature::Constant) => { return Curvature::Valid; }
                     _ => { return Curvature::Unknown; }
                 } 
-            }
-            Optimization::If([c, t, e]) => {
-                if get_curvature(c) == Curvature::Valid {
-                    if get_curvature(t) == get_curvature(e) {
-                        return get_curvature(t);
-                    }
-                }
-                return Curvature::Unknown;
-            }
-            Optimization::Forall([x, f]) => {
-                return get_curvature(f);
-            }
-
-            Optimization::VecAccess([v, i]) => {
-                if get_curvature(v) == Curvature::Affine {
-                    return Curvature::Affine;
-                }
-                return Curvature::Unknown;
-            }
-            Optimization::MatAccess([m, i, j]) => {
-                if get_curvature(m) == Curvature::Affine {
-                    return Curvature::Affine;
-                }
-                return Curvature::Unknown;
             }
 
             Optimization::Neg(a) => {
@@ -831,7 +799,8 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return Curvature::Unknown;
             }
             Optimization::Log(a) => {
-                if get_curvature(a) == Curvature::Affine || get_curvature(a) == Curvature::Concave {
+                if get_curvature(a) == Curvature::Affine || 
+                   get_curvature(a) == Curvature::Concave {
                     return Curvature::Concave;
                 }
                 if get_curvature(a) == Curvature::Constant {
@@ -840,7 +809,8 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return Curvature::Unknown;
             }
             Optimization::Exp(a) => {
-                if get_curvature(a) == Curvature::Affine || get_curvature(a) == Curvature::Convex {
+                if get_curvature(a) == Curvature::Affine || 
+                   get_curvature(a) == Curvature::Convex {
                     return Curvature::Convex;
                 }
                 if get_curvature(a) == Curvature::Constant {
@@ -851,6 +821,22 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
 
             Optimization::VecSum(v) => {
                 return get_curvature(v);
+            }
+
+            Optimization::MatVecMul([v, m]) => {
+                if get_curvature(v) == Curvature::Constant {
+                    return get_curvature(m);
+                } else if get_curvature(m) == Curvature::Constant {
+                    return get_curvature(v);
+                } else {
+                    return Curvature::Unknown;
+                }
+            }
+            Optimization::MatDiag(m) => {
+                return get_curvature(m);
+            }
+            Optimization::MatDiagonal(m) => {
+                return get_curvature(m);
             }
         }
     }
@@ -868,7 +854,8 @@ struct Step {
     expected_term : String,
 }
 
-fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(String, Direction)> {
+fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> 
+    Option<(String, Direction)> {
     if let Some(rule_name) = &term.backward_rule {
         return Some((rule_name.to_string(), Direction::Backward));
     }
@@ -902,7 +889,9 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         .run(&rules());
     
     if dot {
-        println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
+        println!(
+            "Creating graph with {:?} nodes.", 
+            runner.egraph.total_number_of_nodes());
         let dot_str =  runner.egraph.dot().to_string();
         fs::write("test.dot", dot_str).expect("");
     }
