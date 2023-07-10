@@ -5,6 +5,7 @@ import CvxLean.Tactic.DCP.Dcp
 import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.PreDCP.Basic
 import CvxLean.Tactic.PreDCP.Sexp
+import CvxLean.Tactic.Solver.InferDimension
 
 open Lean Elab Meta Tactic Term IO
 open CvxLean
@@ -25,10 +26,18 @@ def CvxLean.Tree.ofOCTree (ocTree : OC (Tree String String)) :
   let constrNode := Tree.node "constraints" (Array.mk constr.data)
   Tree.node "prob" #[objFunNode, constrNode]
 
-partial def CvxLean.Tree.surroundVars (t : Tree String String) (vars : List String) :=
+partial def CvxLean.Tree.surroundVars (t : Tree String String) 
+  (vars : HashMap Name (String × Expr × Nat × Nat)) :=
   match t with
-  | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
-  | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
+  | Tree.leaf s => 
+      let sn := Name.mkSimple s
+      if vars.contains sn then 
+        let (tyStr, _, _n, _m) := vars.find! sn
+        Tree.node tyStr #[Tree.leaf s]
+      else 
+        t
+  | Tree.node n children => 
+      Tree.node n (children.map (surroundVars · vars))
 
 -- TODO(RFM): Construct this map with commands, not hard-coded. For every key
 -- we have the name, the arity and the extra args.
@@ -37,9 +46,11 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("prob",        ("prob", 2, #[])),
     ("objFun",      ("objFun", 1, #[])),
     ("constraints", ("constraints", 0, #[])),
+
     ("maximizeNeg", ("neg", 1, #[])),
     ("var",         ("var", 1, #[])),
     ("param",       ("param", 1, #[])),
+
     ("eq",          ("eq", 2, #[])),
     ("le",          ("le", 2, #[])),
     ("neg",         ("neg", 1, #[])),
@@ -51,7 +62,18 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("sqrt",        ("sqrt", 1, #[])),
     ("div",         ("div", 2, #[])),
     ("log",         ("log", 1, #[])),
-    ("exp",         ("exp", 1, #[]))
+    ("exp",         ("exp", 1, #[])),
+
+    ("Vec.exp",         ("vecExp", 2, #[])),
+    ("Vec.le",          ("vecLe", 3, #[])),
+    ("Vec.add",         ("vecAdd", 3, #[])),
+    ("Vec.sum",         ("vecSum", 2, #[])), -- Arg 1 is vec size.
+    ("Vec.smul",        ("vecSMul", 3, #[])),
+    ("Matrix.sub",      ("matSub", 4, #[])),
+    ("Matrix.vecMul1",  ("matVecMul", 4, #[])),
+    ("Matrix.vecMul2",  ("matVecMul", 4, #[])),
+    ("Matrix.diag",     ("matDiag", 2, #[])),
+    ("Matrix.diagonal", ("matDiagonal", 2, #[]))
   ]
 
 partial def CvxLean.Tree.adjustOps (t : Tree String String) :
@@ -69,12 +91,14 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
-def CvxLean.DCP.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
-  MetaM String := do
+def CvxLean.DCP.uncheckedTreeString (m : Meta.SolutionExpr) 
+  (vars : HashMap Name (String × Expr × Nat × Nat)) : MetaM String := do
   let ocTree ← DCP.uncheckedTreeFromSolutionExpr m
   -- NOTE(RFM): Some empty constraints here coming from conditions?
   let ocTree := { ocTree with constr := ocTree.constr.filter (·.size > 1)}
   let tree := Tree.ofOCTree ocTree
+  let s ← (toMessageData tree).toString
+  dbg_trace s!"TREE: {s}"
   let tree := Tree.surroundVars tree vars
   let tree ← tree.adjustOps
   return tree.toString
@@ -103,7 +127,12 @@ def CvxLean.stringToTree (s : String) : MetaM (Tree String String) := do
 noncomputable instance Real.instDivReal : Div ℝ :=
   by infer_instance
 
-partial def CvxLean.treeToExpr (vars : List String) : Tree String String → MetaM Expr
+noncomputable instance Vec.instSMulReal : SMul ℝ (Fin n → ℝ) :=
+  by infer_instance
+
+partial def CvxLean.treeToExpr 
+  (vars : HashMap Name (String × Expr × Nat × Nat)) : 
+  Tree String String → MetaM Expr
   -- Numbers.
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
@@ -126,24 +155,24 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
       else
         return num
     | _ => throwError "Tree to Expr conversion error: unexpected num {s}."
-  -- Bounded variables.
-  | Tree.node "bvar" #[Tree.leaf s] =>
-    throwError "Tree to Expr conversion error: unexpected bvar {s}."
   -- Variables.
   | Tree.node "var" #[Tree.leaf s] =>
-    if s ∈ vars then
-      return mkFVar (FVarId.mk (Name.mkSimple s))
+    let n := Name.mkSimple s
+    if vars.contains n then
+      return mkFVar (FVarId.mk n)
     else
       throwError "Tree to Expr conversion error: unexpected var {s}."
   -- Vector variables.
   | Tree.node "vecVar" #[Tree.leaf s] =>
-    if s ∈ vars then
-      return mkFVar (FVarId.mk (Name.mkSimple s))
+    let n := Name.mkSimple s
+    if vars.contains n then
+      return mkFVar (FVarId.mk n)
     else
       throwError "Tree to Expr conversion error: unexpected vecVar {s}."
   | Tree.node "matVar" #[Tree.leaf s] =>
-    if s ∈ vars then
-      return mkFVar (FVarId.mk (Name.mkSimple s))
+    let n := Name.mkSimple s
+    if vars.contains n then
+      return mkFVar (FVarId.mk n)
     else
       throwError "Tree to Expr conversion error: unexpected matVar {s}."
   -- Parameters.
@@ -209,10 +238,51 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
     return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
+  -- TODO(RFM): How can I simplify the next conversions?
+  -- Vector sum.
+  | Tree.node "vecSum" #[t] => do
+    let t ← treeToExpr vars t
+    -- return mkAppN (mkConst ``Vec.sum) #[t]
+    throwError "Tree to Expr conversion error: not implemented."
+  -- Vector scalar multiplication.
+  | Tree.node "vecSMul" #[t1, t2] => do
+    let t1 ← treeToExpr vars t1
+    let t2 ← treeToExpr vars t2
+    let vty ← inferType t2
+    let d ← inferDimension vty
+    if d.length == 1 && d[0]!.2 == 1 then
+      let d := d[0]!.1
+      let R := Lean.mkConst ``Real
+      let inst := mkAppN (mkConst ``Vec.instSMulReal) #[toExpr d]
+      let instH := 
+        mkAppN (mkConst ``instHSMul [levelZero, levelZero]) #[R, vty, inst]
+      return mkHBinAppExpr R vty vty ``HSMul.hSMul instH t1 t2
+    else 
+      throwError "Tree to Expr conversion error: unexpected vector dimension {d}."
+  -- Vector multiplication.
+  | Tree.node "matVecMul" #[t1, t2] => do 
+    let t1 ← treeToExpr vars t1
+    let t2 ← treeToExpr vars t2
+    let vty1 ← inferType t1
+    let vty2 ← inferType t2
+    let R := Lean.mkConst ``Real
+    throwError "Tree to Expr conversion error: not implemented."
+  -- Matrix to diagonal.
+  | Tree.node "matDiag" #[t] => do
+    throwError "Tree to Expr conversion error: not implemented."
+  -- Matrix of diagonal.
+  | Tree.node "matDiagonal" #[t] => do
+    throwError "Tree to Expr conversion error: not implemented."
   -- Error.
   | Tree.node op children =>
     throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children."
 where
+  mkHBinAppExpr (T1 T2 TR : Expr) (opName : Name) (inst : Expr) (e1 e2 : Expr) : 
+    Expr :=
+    mkAppN
+      (mkConst opName [levelZero, levelZero, levelZero])
+      #[T1, T2, TR, inst, e1, e2]
+  
   mkRealHBinAppExpr (opName instHName : Name) (nTyArgs : Nat) (instName : Name)
     (e1 e2 : Expr) : Expr :=
     let R := Lean.mkConst ``Real
@@ -222,17 +292,17 @@ where
       (mkConst opName [levelZero, levelZero, levelZero])
       #[R, R, R, inst, e1, e2]
 
-def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
-  MetaM (Option Meta.SolutionExpr) := do
+def CvxLean.treeToSolutionExpr (vars : List Name) 
+  (varsInfo : HashMap Name (String × Expr × Nat × Nat)) 
+  (t : Tree String String) : MetaM (Option Meta.SolutionExpr) := do
   match t with
   | Tree.node "prob" #[Tree.node "objFun" #[objFun], Tree.node "constraints" constr] => do
-    let objFun ← treeToExpr (vars.map toString) objFun
-    let constr ← constr.mapM <| treeToExpr (vars.map toString)
+    let objFun ← treeToExpr varsInfo objFun
+    let constr ← constr.mapM <| treeToExpr varsInfo
     let constr := Meta.composeAnd constr.data
 
-    -- NOTE(RFM): Assuming all variables are real.
-    let fvars := Array.mk $ vars.map (fun v => mkFVar (FVarId.mk v))
-    let vars := vars.map (fun v => (v, Lean.mkConst ``Real))
+    let fvars := Array.mk $ vars.map (fun n => mkFVar (FVarId.mk n))
+    let vars := vars.map (fun n => (n, (varsInfo.find! n).2.1))
     let domain := Meta.composeDomain vars
     withLocalDeclD `p domain fun p => do
       Meta.withDomainLocalDecls domain p fun xs prs => do
@@ -251,10 +321,11 @@ def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
         }
   | _ => throwError "Tree to SolutionExpr conversion error: unexpected tree structure."
 
-def CvxLean.stringToSolutionExpr (vars : List Name) (s : String) :
+def CvxLean.stringToSolutionExpr (vars : List Name) 
+  (varsInfo : HashMap Name (String × Expr × Nat × Nat)) (s : String) :
   MetaM (Meta.SolutionExpr) := do
   let t ← stringToTree s
-  match ← treeToSolutionExpr vars t with
+  match ← treeToSolutionExpr vars varsInfo t with
   | some se => return se
   | none => throwError "String to SolutionExpr conversion error."
 
@@ -451,6 +522,14 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
 def norm_num_clean_up (useSimp : Bool) : TacticM Unit :=
   Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (useSimp := useSimp)
 
+def Expr.isVecType (e : Expr) : Bool := 
+  e.isArrow
+
+def Expr.isMatType (e : Expr) : Bool := 
+  match e with
+  | Expr.forallE _ _ b _ => Expr.isVecType b
+  | _ => false
+
 elab "convexify" : tactic => withMainContext do
   norm_num_clean_up (useSimp := false)
 
@@ -463,9 +542,30 @@ elab "convexify" : tactic => withMainContext do
   let vars ← withLambdaBody gExpr.constraints fun p _ => do
     let pr ← Meta.mkProjections gExpr.domain p
     return pr.map (Prod.fst)
-  let varsStr := vars.map toString
+  dbg_trace s!"Vars: {vars}"
 
-  let gStr ← DCP.uncheckedTreeString gExpr varsStr
+  let varsInfo ← withLambdaBody gExpr.constraints fun p _ => do
+    let pr ← Meta.mkProjections gExpr.domain p
+    let mut h := HashMap.empty
+    for (v, ty, _) in pr do
+      let d ← inferDimension ty
+      if d.length == 1 then 
+        let (n, m) := d[0]!
+        let tyStr := 
+          if Expr.isVecType ty then 
+            "vecVar" 
+          else if Expr.isMatType ty then
+            "matVar"
+          else 
+            "var"
+        h := h.insert v (tyStr, ty, n, m)
+      else 
+        throwError "convexify: cannot infer dimension of {ty}."
+    return h
+
+  dbg_trace s!"HERE"
+  let gStr ← DCP.uncheckedTreeString gExpr varsInfo
+  dbg_trace s!"Goal: {gStr}"
 
   let eggRequest := {
     target := gStr
@@ -480,7 +580,7 @@ elab "convexify" : tactic => withMainContext do
     let gExpr ← Meta.matchSolutionExprFromExpr gTy
 
     let expectedTerm := step.expectedTerm
-    let expectedSolutionExpr ← stringToSolutionExpr vars expectedTerm
+    let expectedSolutionExpr ← stringToSolutionExpr vars varsInfo expectedTerm
     let expectedExpr := expectedSolutionExpr.toExpr
     let (needsEq, tac) ← findTactic step.rewriteName step.direction
     if needsEq then
