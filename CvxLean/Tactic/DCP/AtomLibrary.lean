@@ -71,8 +71,8 @@ optimality by
   intros x' hx hx0 i j
   exact (hx0 i j).trans (hx i j)
 
-declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
-  rotatedSoCone v w x :=
+declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ 
+  (x : (Fin n) → ℝ)? : rotatedSoCone v w x :=
 optimality by
   intros v' w' hv hw h
   unfold rotatedSoCone at *
@@ -83,15 +83,15 @@ optimality by
     norm_num
   · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
 
-declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
-  Vec.rotatedSoCone v w x :=
+declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ 
+  (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? : Vec.rotatedSoCone v w x :=
 optimality by
   unfold Vec.rotatedSoCone
   intros v' w' hv hw h i
   apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
   
-declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : 
-  Matrix.PSDCone A :=
+declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& 
+  (A : Matrix.{0,0,0} m m ℝ)? : Matrix.PSDCone A :=
 optimality fun h => h
 
 end Cones
@@ -207,7 +207,8 @@ additivity by
   ring
 optimality le_refl _
 
-declare_atom Vec.add [affine] (m : Nat)&  (x : Fin m → ℝ)+ (y : Fin m → ℝ)+ : x + y :=
+declare_atom Vec.add [affine] (m : Nat)&  (x : Fin m → ℝ)+ (y : Fin m → ℝ)+ : 
+  x + y :=
 bconditions
 homogenity by
   simp [smul_add]
@@ -217,7 +218,8 @@ optimality by
   intros x' y' hx hy i
   apply add_le_add (hx i) (hy i)
 
-declare_atom Vec.sub [affine] (m : Nat)& (x : Fin m → ℝ)+ (y : Fin m → ℝ)- : x - y :=
+declare_atom Vec.sub [affine] (m : Nat)& (x : Fin m → ℝ)+ (y : Fin m → ℝ)- : 
+  x - y :=
 bconditions
 homogenity by
   simp [smul_sub]
@@ -244,7 +246,8 @@ optimality by
   intros _ _
   apply hx
 
-declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
+declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& 
+  (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
 bconditions
 homogenity by
   rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero, 
@@ -253,7 +256,8 @@ additivity by
   rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
 optimality le_refl _
 
-declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y := 
+declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? 
+  (y : Fin m → ℝ)& : Matrix.dotProduct x y := 
 bconditions
 homogenity by
   rw [Matrix.zero_dotProduct, smul_zero, add_zero, add_zero,
@@ -290,7 +294,8 @@ optimality by
   . exact hx
   . exact hy
 
-declare_atom Matrix.sum [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)+ : Matrix.sum X :=
+declare_atom Matrix.sum [affine] (m : Nat)& 
+  (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)+ : Matrix.sum X :=
 bconditions
 homogenity by
   simp only [Matrix.sum_zero]
@@ -303,20 +308,33 @@ optimality by
   apply Finset.sum_le_sum (fun i _ => Finset.sum_le_sum (fun j _ => ?_))
   apply hX
 
-declare_atom Matrix.vecMul1 [affine] (m : Nat)& (n : Nat)& (v : Fin m → ℝ)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? : 
-  Matrix.vecMul v M := 
+declare_atom Matrix.vecMul1 [affine] (m : Nat)& (n : Nat)& (v : Fin m → ℝ)& 
+  (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? : Matrix.vecMul v M := 
 bconditions
 homogenity by
   simp only [Matrix.vecMul_zero, smul_zero, add_zero]
   ext i
   simp only [Matrix.vecMul]
   rw [Pi.smul_apply, ←dotProduct_smul]
-  congr
+  rfl
 additivity by
   simp only [Matrix.vecMul_zero, add_zero, Matrix.vecMul_add]
 optimality le_refl _
 
-declare_atom Matrix.nth [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& : X i :=
+declare_atom Matrix.vecMul2 [affine] (m : Nat)& (n : Nat)& (v : Fin m → ℝ)? 
+  (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)& : Matrix.vecMul v M :=
+bconditions
+homogenity by
+  simp only [Matrix.zero_vecMul, smul_zero, add_zero]
+  ext i 
+  simp only [Matrix.vecMul]
+  rw [Pi.smul_apply, smul_dotProduct]
+additivity by
+  simp only [Matrix.zero_vecMul, add_zero, Matrix.add_vecMul]
+optimality le_refl _
+
+declare_atom Matrix.nth [affine] (m : Nat)& 
+  (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& : X i :=
 bconditions
 homogenity by
   rw [Pi.zero_apply, add_zero, smul_zero, add_zero]
@@ -326,7 +344,8 @@ additivity by
   rfl
 optimality le_refl _
 
-declare_atom Matrix.nth2 [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& (j : Fin m)& : X i j :=
+declare_atom Matrix.nth2 [affine] (m : Nat)& 
+  (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& (j : Fin m)& : X i j :=
 bconditions
 homogenity by
   rw [Pi.zero_apply, Pi.zero_apply, smul_zero]
@@ -336,8 +355,9 @@ additivity by
   rfl
 optimality le_refl _
 
--- TODO: make argument increasing, without breaking det-log-atom
-declare_atom Matrix.diag [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : A.diag :=
+-- TODO(RFM): Make argument increasing, without breaking det-log-atom.
+declare_atom Matrix.diag [affine] (n : ℕ)& 
+  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : A.diag :=
 bconditions
 homogenity by
   rw [Matrix.diag_zero, add_zero, smul_zero, add_zero]
@@ -347,7 +367,8 @@ additivity by
   rfl
 optimality le_refl _
 
-declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Fin n → ℝ)+ : Matrix.diagonal d :=
+declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Fin n → ℝ)+ : 
+  Matrix.diagonal d :=
 bconditions
 homogenity by
   rw [Matrix.diagonal_zero', add_zero, smul_zero, add_zero, 
@@ -358,7 +379,8 @@ optimality by
   intros d' hd i j
   by_cases h : i = j <;> simp [Matrix.diagonal, h, hd j]
 
-declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
+declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& 
+  (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
 bconditions
 homogenity by 
   rw [Matrix.trace_zero', add_zero, smul_zero, add_zero, Matrix.trace_smul']
@@ -370,8 +392,8 @@ optimality by
   intros i _
   exact hA i i
 
-declare_atom Matrix.toUpperTri [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
-  Matrix.toUpperTri A :=
+declare_atom Matrix.toUpperTri [affine] (n : ℕ)& 
+  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : Matrix.toUpperTri A :=
 bconditions
 homogenity by
   rw [Matrix.toUpperTri_zero, add_zero, smul_zero, add_zero, 
@@ -382,8 +404,8 @@ optimality by
   intros A' hA i j
   by_cases h : i ≤ j <;> simp [Matrix.toUpperTri, h] ; exact hA i j
 
-declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
-  A.transpose :=
+declare_atom Matrix.transpose [affine] (n : ℕ)& 
+  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : A.transpose :=
 bconditions
 homogenity by
   rw [Matrix.transpose_zero', smul_zero]
@@ -414,7 +436,8 @@ optimality by
   . exact hC _ _
   . exact hD _ _
 
-declare_atom Matrix.add [affine] (m : Type)& (n : Type)& (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)+ : A + B :=
+declare_atom Matrix.add [affine] (m : Type)& (n : Type)& 
+  (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)+ : A + B :=
 bconditions
 homogenity by
   rw [add_zero, add_zero, smul_zero, add_zero, smul_add]
@@ -458,7 +481,8 @@ additivity by
 optimality le_refl _
 
 declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)& 
-  (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)& (v : Fin n → ℝ)? : Matrix.mulVec M v :=
+  (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)& (v : Fin n → ℝ)? : 
+  Matrix.mulVec M v :=
 bconditions
 homogenity by
   rw [Matrix.mulVec_zero', smul_zero, add_zero, add_zero, Matrix.mulVec_smul']
@@ -618,7 +642,8 @@ section Vec
 
 open Vec
 
-declare_atom Vec.le [concave] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ : x ≤ y :=
+declare_atom Vec.le [concave] (n : Nat)& (x : (Fin n) → ℝ)- 
+  (y : (Fin n) → ℝ)+ : x ≤ y :=
 vconditions
 implementationVars
 implementationObjective Real.Vec.posOrthCone (y - x : (Fin n) → ℝ)
@@ -716,10 +741,12 @@ feasibility
 optimality by simp [Real.Matrix.PSDCone]
 vconditionElimination
 
-declare_atom Matrix.logDet [concave] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : Real.log A.det :=
+declare_atom Matrix.logDet [concave] (n : ℕ)& 
+  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : Real.log A.det :=
 vconditions (hA : A.PosDef)
 implementationVars (t : Fin n → ℝ) (Y : Matrix (Fin n) (Fin n) ℝ)
--- The lower left values of `Y` are unused. CVXPy uses a vector `z` instead of a matrix `Y`.
+-- The lower left values of `Y` are unused. CVXPy uses a vector `z` instead of
+-- a matrix `Y`.
 implementationObjective Vec.sum t
 implementationConstraints 
   (c_exp : Real.Vec.expCone t 1 Y.diag)
@@ -758,8 +785,9 @@ optimality by
     rw [Real.exp_iff_expCone]
     apply c_exp
   -- TODO(RFM): Why does exact fail here?
-  have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
-    (Matrix.diagonal Y.diag) ht (by convert rfl) (by convert rfl) c_posdef
+  have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y 
+    (Matrix.toUpperTri Y) (Matrix.diagonal Y.diag) ht 
+    (by convert rfl) (by convert rfl) c_posdef
   refine' Eq.mp _ h
   congr
 vconditionElimination 
@@ -769,7 +797,8 @@ vconditionElimination
       rw [Real.exp_iff_expCone]
       apply c_exp
     exact @Matrix.LogDetAtom.cond_elim (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
-      (Matrix.diagonal (Matrix.diag Y)) ht (by convert rfl) (by convert rfl) c_posdef)
+      (Matrix.diagonal (Matrix.diag Y)) ht 
+      (by convert rfl) (by convert rfl) c_posdef)
 
 declare_atom Matrix.abs [convex] 
   (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? 
