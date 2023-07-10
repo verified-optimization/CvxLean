@@ -277,7 +277,7 @@ section MatrixAffine
 
 open Matrix
 
-declare_atom Matrix.vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ : 
+declare_atom Matrix.vecCons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ : 
   Matrix.vecCons x y :=
 bconditions
 homogenity by
@@ -302,6 +302,19 @@ optimality by
   intros X' hX
   apply Finset.sum_le_sum (fun i _ => Finset.sum_le_sum (fun j _ => ?_))
   apply hX
+
+declare_atom Matrix.vecMul1 [affine] (m : Nat)& (n : Nat)& (v : Fin m → ℝ)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? : 
+  Matrix.vecMul v M := 
+bconditions
+homogenity by
+  simp only [Matrix.vecMul_zero, smul_zero, add_zero]
+  ext i
+  simp only [Matrix.vecMul]
+  rw [Pi.smul_apply, ←dotProduct_smul]
+  congr
+additivity by
+  simp only [Matrix.vecMul_zero, add_zero, Matrix.vecMul_add]
+optimality le_refl _
 
 declare_atom Matrix.nth [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)? (i : Fin m)& : X i :=
 bconditions
