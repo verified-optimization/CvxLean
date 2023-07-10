@@ -59,9 +59,11 @@ section Real
 
 variable {m : Type u} {n : Type v} (x y : m → Real)
 
+@[reducible]
 noncomputable def exp : m → Real := 
   fun i => Real.exp (x i)
 
+@[reducible]
 noncomputable def log : m → Real := 
   fun i => Real.log (x i)
 
