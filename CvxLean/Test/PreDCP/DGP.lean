@@ -1,5 +1,6 @@
 import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Lib.Equivalence
 
 noncomputable section GP
 
@@ -215,6 +216,14 @@ section GP7
     , #[ 0.1,  0.1, 0.2, 1.0,  0.1]
     , #[0.05, 0.05, 0.2, 0.1,  1.0]][i]!)[j]!
 
+lemma G_diag_pos : ∀ i, 0 < G i i := by
+  intro i; simp [G]
+  fin_cases i <;> simp [getElem!, Array.getElem_eq_data_get] <;> norm_num
+
+lemma G_symm : ∀ i j, G i j = G j i := by
+  intro i j; simp [G]
+  fin_cases i <;> fin_cases j <;> simp [getElem!, Array.getElem_eq_data_get]
+
 open BigOperators
 
 def gp7 := 
@@ -224,25 +233,130 @@ def gp7 :=
       h1 : ∀ i, 0 < P i
       h2 : Pmin ≤ P
       h3 : P ≤ Pmax
-      -- h4 : (fun i => (σ i + Vec.sum (fun k => if i ≠ k then G i k * P k else 0)) / (G i i * P i)) ≤ fun _ => 1 / SINRmin
+      h4 : ∀ i, ((σ i + ∑ k, if i ≠ k then G i k * P k else 0) / (G i i * P i)) ≤ 1 / SINRmin
       -- NOTE(RFM): Work in vector notaton, avoiding functions and bvars.
       -- TODO(RFM): Add diagonal and diag to the atom library.
-      h5 : (σ + (G - (Matrix.diagonal G.diag)).vecMul P) ≤ 
-           (1 / SINRmin) • ((Matrix.diagonal G.diag).vecMul P)
+      -- h5 : (σ + (G - (Matrix.diagonal G.diag)).vecMul P) ≤ 
+      --      (1 / SINRmin) • ((Matrix.diagonal G.diag).vecMul P)
+
+def gp7' := 
+  optimization (P : Fin 5 → ℝ) 
+    minimize Vec.sum P
+    subject to 
+      h1 : ∀ i, 0 < P i
+      h2 : Pmin ≤ P
+      h3 : P ≤ Pmax
+      h5 : σ + ((G - (Matrix.diagonal G.diag)) - (1 / SINRmin) • (Matrix.diagonal G.diag)).vecMul P ≤ 0
+
+def equiv7 : MinEquiv gp7 gp7' := {
+  phi := id,
+  psi := id,
+  phi_feasibility := fun P hP => by {
+    simp only [gp7, gp7', constraints] at hP ⊢
+    rcases hP with ⟨hPpos, hPmin, hPmax, hle⟩
+    refine ⟨hPpos, hPmin, hPmax, ?_⟩
+    intros i 
+    have hlei := hle i
+    simp at hlei ⊢
+    simp [Matrix.vecMul, Matrix.dotProduct, Matrix.diagonal, Matrix.diag]
+    rw [div_le_iff (mul_pos (G_diag_pos i) (hPpos i))] at hlei
+    have sum_mul_sub : ∀ (a b : Fin 5 → ℝ), 
+      ∑ k, P k * ((a k) - (b k)) = 
+      ∑ k, P k * (a k) - ∑ k, P k * b k := fun a b => by
+      rw [←Finset.sum_sub_distrib]
+      apply congr_arg; ext k
+      rw [mul_sub]
+    rw [sum_mul_sub]
+    have sum_mul_ite_eq : 
+      (∑ k, P k * if k = i then SINRmin⁻¹ * G k k else 0) = 
+      SINRmin⁻¹ * (G i i * P i) := by 
+      simp [mul_comm (P i) _, mul_assoc _ _ (P i)]
+    rw [sum_mul_ite_eq]
+    have sum_mul_nondiagonal : 
+      ∑ k, P k * (G k i - if k = i then G k k else 0) = 
+      ∑ k, if i = k then 0 else G i k * P k := by
+      apply congr_arg; ext k
+      simp [mul_ite, @eq_comm _ k i]
+      by_cases i = k <;> simp [h]
+      rw [G_symm k i, mul_comm]
+    rw [sum_mul_nondiagonal]
+    rw [add_sub, sub_le_iff_le_add, zero_add]
+    exact hlei
+  }
+  psi_feasibility := fun P hP => by {
+    sorry
+  }
+  phi_optimality := fun P hP => by simp [gp7, gp7']
+  psi_optimality := fun P hP => by simp [gp7, gp7']
+}
 
 set_option trace.Meta.debug true
 
 lemma test : Solution gp7 := by 
   unfold gp7 
-  map_exp
+  -- map_exp
 
   -- TODO(RFM): remove_constr is buggy, applying withLambdaBody after it fails,
   -- potentially because the term built is not a simple lambda term.
-  conv_constr => 
-    { rw [eq_true (fun _ => by positivity : ∀ _, _ < _)] }
-  conv in (True ∧ _) => rw [true_and]
-
-  convexify
+  -- conv_constr => 
+  --   { rw [eq_true (fun _ => by positivity : ∀ _, _ < _)] }
+  -- conv in (True ∧ _) => rw [true_and]
+  dcp
+  -- convexify
   sorry
 
 end GP7
+
+namespace GP8 
+-- h_min = 1
+--     h_max = 10
+--     w_min = 1
+--     w_max = 10
+--     R_max = 2
+--     F_1 = 10
+--     F_2 = 10 
+--     sigma = 0.01
+
+--     A8 = cp.Variable(pos=True)
+--     h8 = cp.Variable(pos=True)
+--     w8 = cp.Variable(pos=True)
+--     r8 = cp.Variable(pos=True)
+
+--     dgp8 = cp.Problem(
+--         cp.Minimize(2 * A8 * cp.sqrt(w8 ** 2 + h8 ** 2)), [
+--             F_1 * cp.sqrt(w8 ** 2 + h8 ** 2) / 2 * h8 <= sigma * A8,
+--             F_2 * cp.sqrt(w8 ** 2 + h8 ** 2) / 2 * w8 <= sigma * A8,
+--             h_min <= h8,
+--             h8 <= h_max,
+--             w_min <= w8,
+--             w8 <= w_max,
+--             0.21 * r8 ** 2 <= A8 / (2 * np.pi),
+--             cp.sqrt(A8 / (2 * np.pi) + r8 ** 2) <= R_max,
+--         ])
+
+@[optimization_param] def hmin : ℝ := 1
+@[optimization_param] def hmax : ℝ := 10
+@[optimization_param] def wmin : ℝ := 1
+@[optimization_param] def wmax : ℝ := 10
+@[optimization_param] def Rmax : ℝ := 2
+@[optimization_param] def F₁ : ℝ := 10
+@[optimization_param] def F₂ : ℝ := 10
+@[optimization_param] def σ : ℝ := 0.01
+
+def trussDesign := 
+  optimization (h w R r : ℝ)
+    minimize (2 * (2 * π * (R^2 - r^2)) * (sqrt (w^2 + h^2)))
+    subject to 
+      h1 : F₁ * sqrt (w^2 + h^2) / 2 * h ≤ σ * (2 * π * (R^2 - r^2))
+      h2 : F₂ * sqrt (w^2 + h^2) / 2 * w ≤ σ * (2 * π * (R^2 - r^2))
+      h3 : hmin ≤ h
+      h4 : h ≤ hmax
+      h5 : wmin ≤ w
+      h6 : w ≤ wmax
+      h7 : 1.1 * r ≤ R
+      h8 : R ≤ Rmax
+
+reduction φ/trussDesign₂ : trussDesign := by 
+  apply map_domain
+
+end GP8 
