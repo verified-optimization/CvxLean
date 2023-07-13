@@ -170,11 +170,44 @@ def dgp7():
     #                 [-2.30258509 -2.30258509 -1.60943791  0.         -2.30258509]
     #                 [-2.99573227 -2.99573227 -1.60943791 -2.30258509  0.        ]]) + var283 <= 1.6094379124341003
 
+def dgp8():
+    h_min = 1
+    h_max = 10
+    w_min = 1
+    w_max = 10
+    R_max = 2
+    F_1 = 10
+    F_2 = 10 
+    sigma = 0.01
+
+    A8 = cp.Variable(pos=True)
+    h8 = cp.Variable(pos=True)
+    w8 = cp.Variable(pos=True)
+    r8 = cp.Variable(pos=True)
+
+    dgp8 = cp.Problem(
+        cp.Minimize(2 * A8 * cp.sqrt(w8 ** 2 + h8 ** 2)), [
+            F_1 * cp.sqrt(w8 ** 2 + h8 ** 2) / 2 * h8 <= sigma * A8,
+            F_2 * cp.sqrt(w8 ** 2 + h8 ** 2) / 2 * w8 <= sigma * A8,
+            h_min <= h8,
+            h8 <= h_max,
+            w_min <= w8,
+            w8 <= w_max,
+            0.21 * r8 ** 2 <= A8 / (2 * np.pi),
+            cp.sqrt(A8 / (2 * np.pi) + r8 ** 2) <= R_max,
+        ])
+
+    dcp8 = cp.Dgp2Dcp(dgp8).reduce()
+
+    print(dcp8)
+
+
 if __name__ == "__main__":
-    dgp1()
-    dgp2()
-    dgp3()
-    dgp4()
-    dgp5()
-    dgp6()
-    dgp7()
+    # dgp1()
+    # dgp2()
+    # dgp3()
+    # dgp4()
+    # dgp5()
+    # dgp6()
+    # dgp7()
+    dgp8()
