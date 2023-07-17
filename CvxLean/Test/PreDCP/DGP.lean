@@ -1,6 +1,8 @@
 import CvxLean.Command.Solve
+import CvxLean.Tactic.Basic.Rename
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Lib.Equivalence
+import Mathlib.Data.Real.Pi.Bounds
 
 noncomputable section GP
 
@@ -345,18 +347,77 @@ namespace GP8
 
 def trussDesign := 
   optimization (h w R r : ℝ)
-    minimize (2 * (2 * π * (R^2 - r^2)) * (sqrt (w^2 + h^2)))
+    minimize (2 * (2 * π * (R ^ 2 - r^2)) * (sqrt (w ^ 2 + h ^ 2)))
     subject to 
-      h1 : F₁ * sqrt (w^2 + h^2) / 2 * h ≤ σ * (2 * π * (R^2 - r^2))
-      h2 : F₂ * sqrt (w^2 + h^2) / 2 * w ≤ σ * (2 * π * (R^2 - r^2))
-      h3 : hmin ≤ h
-      h4 : h ≤ hmax
-      h5 : wmin ≤ w
-      h6 : w ≤ wmax
-      h7 : 1.1 * r ≤ R
-      h8 : R ≤ Rmax
+      h1  : 0 < h
+      h2  : 0 < w
+      h3  : 0 < R
+      h4  : 0 < r
+      h5  : F₁ * sqrt (w ^ 2 + h ^ 2) / 2 * h ≤ σ * (2 * π * (R ^ 2 - r ^ 2))
+      h6  : F₂ * sqrt (w ^ 2 + h ^ 2) / 2 * w ≤ σ * (2 * π * (R ^ 2 - r ^ 2))
+      h7  : hmin ≤ h
+      h8  : h ≤ hmax
+      h9  : wmin ≤ w
+      h10 : w ≤ wmax
+      h11 : 1.1 * r ≤ R
+      h12 : R ≤ Rmax
+
+#check mul_ne_zero
+
+lemma Real.pi_pos : 0 < Real.pi := sorry
+lemma Real.pi_nonneg : 0 ≤ Real.pi := sorry
 
 reduction φ/trussDesign₂ : trussDesign := by 
-  apply map_domain
+  have hchange : ∀ R r, 0 < R → 0 < r → 
+    (2 * π * (sqrt (R / (2 * π) + r ^ 2) ^ 2 - r ^ 2)) = R := by 
+    intros R r hR hr
+    sorry
+  apply map_domain 
+    (E := ℝ × ℝ × ℝ × ℝ) 
+    -- (g := by { 
+    --   rintro ⟨h, w, R, r⟩
+    --   -- replace A := R
+    --   exact ⟨h, w, sqrt (R / (2 * π) + r ^ 2), r⟩ 
+    -- })
+    (g := fun hwRr => ⟨hwRr.1, hwRr.2.1, sqrt (hwRr.2.2.1 / (2 * π) + hwRr.2.2.2 ^ 2), hwRr.2.2.2⟩)
+    -- (f := by {
+    --   rintro ⟨h, w, A, r⟩
+    --   -- replace R := A
+    --   exact ⟨h, w, 2 * π * (A ^ 2 - r ^ 2), r⟩ 
+    -- })
+    (f := fun hwAr => ⟨hwAr.1, hwAr.2.1, 2 * π * (hwAr.2.2.1 ^ 2 - hwAr.2.2.2 ^ 2), hwAr.2.2.2⟩)
+  case hfg => 
+    rintro ⟨h, w, R, r⟩ ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+    simp at h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 ⊢
+    rw [←sq_eq_sq (sqrt_nonneg _) (le_of_lt h3)]
+    have hnn : 0 ≤ 2 * π * (R ^ 2 - r ^ 2) / (2 * π) + r ^ 2 := by
+      apply add_nonneg
+      { apply div_nonneg 
+        { apply mul_nonneg 
+          { apply mul_nonneg 
+            { positivity }
+            { exact Real.pi_nonneg } }
+          { rw [sub_nonneg, Real.rpow_two, Real.rpow_two, sq_le_sq]
+            rw [abs_eq_self.2 (le_of_lt h3), abs_eq_self.2 (le_of_lt h4)]
+            have hlt : (1 : ℝ) < 1.1 := by norm_num
+            replace hlt := mul_lt_mul hlt (le_refl r) h4 (by norm_num)
+            rw [one_mul] at hlt
+            exact le_of_lt (lt_of_lt_of_le hlt h11) } }
+        { apply mul_nonneg 
+          { positivity }
+          { exact Real.pi_nonneg } } }
+      { rw [Real.rpow_two]
+        exact sq_nonneg _ }
+    have heq := sq_sqrt hnn
+    simp only [← Real.rpow_two] at heq ⊢
+    rw [heq]
+    apply add_eq_of_eq_sub
+    apply div_eq_of_eq_mul (mul_ne_zero (by norm_num) (ne_of_lt Real.pi_pos).symm)
+    ring
+  
+  simp [Function.comp]
+  rename_opt_var [h, w, A, r] 
+
+  --exact done
 
 end GP8 
