@@ -415,6 +415,11 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
         if is_not_zero("?c")),
 
+    // NOTE(RFM): The b != 1 condition is to avoid infinite chains in 
+    // combination with le-div-one.
+    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
+        if is_not_zero("?c") if is_not_one("?b")),
+
     rw!("le-div"; "(le ?a (div ?b ?c))" => "(le (mul ?a ?c) ?b)" 
         if is_not_zero("?c")),
 
@@ -424,9 +429,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("le-div-one"; "(le ?a ?b)" => "(le (div ?a ?b) 1)" 
         if is_not_zero("?b") if is_not_one("?b")),
 
-    // NOTE(RFM): Turn all rws above into a normalization step?
+    // NOTE(RFM): Turn all rws above into a normalization step? 
 
-    rw!("add-comm"; "(add ?a ?b)" => "(add ?b ?a)"),
+    rw!("add-comm"; "(add ?a ?b)" => "(add ?b ?a)"), 
 
     rw!("add-assoc"; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))"),
     
@@ -486,6 +491,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     //rw!("exp-sub"; "(exp (sub ?a ?b))" => "(div (exp ?a) (exp ?b))"),
 
     rw!("div-exp"; "(div (exp ?a) (exp ?b))" => "(exp (sub ?a ?b))"),
+    
+    rw!("inv-exp"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
 
     rw!("pow-exp"; "(pow (exp ?a) ?b)" => "(exp (mul ?a ?b))"),
 
@@ -515,7 +522,19 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
         if is_gt_zero("?a") if not_has_log("?a")),
 
     
-]}
+] }
+
+pub fn example_rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
+    rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
+
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_not_zero("?c")),
+    
+    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
+        if is_not_zero("?c")),
+    
+    rw!("inv-exp"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
+] }
 
 #[derive(Debug)]
 struct DCPScore<'a> {
@@ -719,7 +738,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return Curvature::Unknown;
             }
             Optimization::Log(a) => {
-                if get_curvature(a) == Curvature::Affine || get_curvature(a) == Curvature::Concave {
+                if get_curvature(a) == Curvature::Affine {
                     return Curvature::Concave;
                 }
                 if get_curvature(a) == Curvature::Constant {
@@ -728,7 +747,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return Curvature::Unknown;
             }
             Optimization::Exp(a) => {
-                if get_curvature(a) == Curvature::Affine || get_curvature(a) == Curvature::Convex {
+                if get_curvature(a) == Curvature::Affine {
                     return Curvature::Convex;
                 }
                 if get_curvature(a) == Curvature::Constant {
@@ -798,7 +817,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         Runner::default()
         .with_explanations_enabled()
         .with_expr(&expr)
-        .run(&rules());
+        .run(&example_rules());
     
     if dot {
         println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
@@ -828,7 +847,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         explanation.make_flat_explanation();
     
     let mut res = Vec::new();
-    if best_cost <= Curvature::Convex {
+    if best_cost <= Curvature::Convex || best_cost <= Curvature::Valid {
         for i in 0..flat_explanation.len() {
             let expl = &flat_explanation[i];
             let expected_term = expl.get_recexpr().to_string();
@@ -902,7 +921,9 @@ fn test() {
             (le 1 (exp (var x)))
         )
     )".to_string();
-    let s = "(objFun (exp (var x)))".to_string();
+    let s = "(le (div 1 (sqrt (var x))) (exp (var x)))".to_string();
+    // let s = "(le (div 1 (exp (var x))) (sqrt (var x)))".to_string();
+    // let s = "(le (exp (neg (var x))) (sqrt (var x)))".to_string();
 
     let steps = get_steps(s, true);
     println!("{:?}", steps);
