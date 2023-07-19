@@ -9,12 +9,14 @@ noncomputable section HypersonicShapeDesign
 open Matrix
 
 def problem (a b : ℝ) :=
-  optimization (x : ℝ) 
-    minimize Real.sqrt (1 / (x ^ 2) - 1)
+  optimization (Δx : ℝ) 
+    minimize Real.sqrt (1 / (Δx ^ 2) - 1)
     subject to 
-      h1 : 0 < x
-      h2 : x ≤ 1
-      h3 : a * (1 / x) - (1 - b) * Real.sqrt (1 - x ^ 2) ≤ 0 
+      h1 : 0 < Δx
+      h2 : Δx ≤ 1
+      h3 : a * (1 / Δx) - (1 - b) * Real.sqrt (1 - Δx ^ 2) ≤ 0 
+
+#check sq_le_sq
 
 reduction red/problem₂ (a b : ℝ) : problem a b := by 
   unfold problem 
@@ -45,5 +47,37 @@ reduction red/problem₂ (a b : ℝ) : problem a b := by
     simp only [rpow_two (Real.sqrt _)]
     rw [sq_sqrt hinvx2subone]
     simp only [rpow_two] }
+  apply rewrite_constraints (ds := fun x => 
+    0 < x ∧ x ≤ 1 ∧ a ^ 2 * (1 / x) ^ 2 ≤ (1 - b) ^ 2 * (1 - x ^ 2))
+  { intros x
+    sorry }
+  exact done
+
+
+def hypersonicShapeDesign₂ (a b : ℝ) :=
+  optimization (Δx : ℝ) 
+    minimize 1 / (Δx ^ 2) - 1
+    subject to 
+      h1 : 0 < Δx
+      h2 : Δx ≤ 1
+      h3 : a ^ 2 * (1 / (Δx  ^ 2)) + (1 - b) ^ 2 * (Δx ^ 2) ≤ (1 - b) ^ 2
+
+def hypersonicShapeDesign₃ (a b : ℝ) :=
+  optimization (Δx2 : ℝ) 
+    minimize 1 / Δx2 - 1
+    subject to 
+      h2 : Δx2 ≤ 1
+      h3 : a ^ 2 * (1 / Δx2) + (1 - b) ^ 2 * Δx2 ≤ (1 - b) ^ 2
+
+example : Solution (hypersonicShapeDesign₂ 0.5 0.5) := by 
+  unfold hypersonicShapeDesign₂
+  dcp
+  sorry
+
+example : Solution (hypersonicShapeDesign₃ 0.5 0.5) := by 
+  unfold hypersonicShapeDesign₃
+  dcp
+  sorry
+
 
 end HypersonicShapeDesign
