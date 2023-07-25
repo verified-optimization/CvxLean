@@ -98,7 +98,7 @@ lemma smul_le_of_le_of_nonneg
 -- Note that this only makes sense together with the map that induces the solution 
 -- map, in this case (x, T) ↦ (x, T, T ^ 2).
 -- TODO(RFM): Package it as definition.
-def relaxation_tight (K V A : Matrix (Fin n) (Fin m) ℝ) 
+def relaxationTight (K V A : Matrix (Fin n) (Fin m) ℝ) 
   (k v a : (Fin n) → ℝ) (hvnn : ∀ i, 0 ≤ v i) : 
   Solution (original K V A k v a) → Solution (relaxed K V A k v a) := 
   fun ⟨⟨xopt, Topt⟩, ⟨hTopt, hkopt, hvopt, haopt⟩, hoptimality⟩ => {
@@ -179,5 +179,116 @@ def relaxation_tight' (K V A : Matrix (Fin n) (Fin m) ℝ)
   exact rpow_two _ ▸ (sqrt_le_iff.1 hsqrtyleT).2
 
 end Relaxation
+
+def originalBezier (K V A : ℝ) (k v a : ℝ) :=
+  optimization (x0 x1 x2 : ℝ) (T : ℝ) 
+    minimize T 
+    subject to 
+      hT : 1 ≤ T 
+      hk0 : K * x0 ≤ k 
+      hk1 : K * x1 ≤ k
+      hk2 : K * x2 ≤ k
+      hv1 : 2 * V * (x1 - x0) ≤ T * v
+      hv2 : 2 * V * (x2 - x1) ≤ T * v
+      ha : 2 * A * (x2 - 2 * x1 + x0) ≤ T ^ 2 * a
+
+def relaxedBezier (K V A : ℝ) (k v a : ℝ) :=
+  optimization (x0 x1 x2 : ℝ) (T : ℝ) (y : ℝ) 
+    minimize y - T 
+    subject to 
+      hT : 1 ≤ T 
+      hk0 : K * x0 ≤ k 
+      hk1 : K * x1 ≤ k
+      hk2 : K * x2 ≤ k
+      hv10 : 2 * V * (x1 - x0) ≤ T * v
+      hv21 : 2 * V * (x2 - x1) ≤ T * v
+      ha : 2 * A * (x2 - 2 * x1 + x0) ≤ y * a
+      hy : T ^ 2 ≤ y
+
+#check Lean.MetaM
+
+def relaxationBezierTight (K V A : ℝ) (k v a : ℝ)  : 
+  Solution (originalBezier K V A k v a) → Solution (relaxedBezier K V A k v a) := 
+  fun ⟨⟨x0opt, x1opt, x2opt, Topt⟩, 
+       ⟨hTopt, hk0opt, hk1opt, hk2opt, hv1opt, hv2opt, haopt⟩, hoptimality⟩ => {
+    point := ⟨x0opt, x1opt, x2opt, Topt, Topt ^ 2⟩,
+    feasibility := ⟨hTopt, hk0opt, hk1opt, hk2opt, hv1opt, hv2opt, haopt, le_refl _⟩,
+    optimality := fun ⟨⟨x0, x1, x2, T, y⟩, ⟨hT, hk0, hk1, hk2, hv1, hv2, ha, hy⟩⟩ => by {
+      simp at hT hk0 hk1 hk2 hv1 hv2 ha hy
+      simp only [originalBezier, relaxedBezier, objFun, constraints] at hoptimality ⊢;
+      have hToptnn := le_trans zero_le_one hTopt
+      have hToptsub1nn := sub_nonneg_of_le hTopt
+      have hTnn := le_trans zero_le_one hT
+      have hT2nn := pow_nonneg hTnn 2
+      have h1leT2 := pow_le_pow_of_le_left zero_le_one hT 2
+      simp only [one_pow] at h1leT2
+      have hynn := le_trans hT2nn hy
+      have h1ley := le_trans h1leT2 hy
+      have h1lesqrty := sqrt_le_sqrt h1ley 
+      simp only [sqrt_one] at h1lesqrty
+      have hTlesqrty := (le_sqrt hTnn hynn).2 hy
+      have ha' : 2 * A * (x2 - 2 * x1 + x0) ≤ (sqrt y) ^ 2 * a := by 
+        rw [rpow_two, sq_sqrt hynn]
+        exact ha
+
+
+      have h1 : 2 * V * (x0 - x0) ≤ T * v := sorry
+      have h := 
+        hoptimality ⟨
+          ⟨x0, x1, x2, T⟩, 
+          ⟨sorry, sorry, sorry, sorry, sorry, sorry, sorry⟩⟩
+      simp at h
+      have hv : 
+          2 * V * (x1 - x0) ≤ (sqrt y) * v 
+        ∧ 2 * V * (x2 - x1) ≤ (sqrt y) * v := by {
+          by_cases h : 0 ≤ v
+          { -- This is trivial
+            sorry }
+          { have h := le_of_not_le h
+            by_contra hc
+            simp only [not_and_or, not_le] at hc
+            have hvT := mul_nonpos_of_nonneg_of_nonpos hTnn h
+            have hv1' := le_trans hv1 hvT
+            have hv2' := le_trans hv2 hvT
+            simp [mul_sub] at hv1' hv2'
+            rcases hc with (hc1 | hc2)
+            { have := lt_of_lt_of_le hc1 hv1
+              -- simp [mul_sub] at hv1 hv2
+              have : 2 * V * x2 - 2 * V * x1 - 2 * V * x0 ≤ 2 * T * v := by 
+                have := add_le_add hv1 hv2
+                have := add_le_add this hv1
+                have := add_le_add this hv2
+                ring_nf at this
+                sorry
+              
+              sorry }
+            { sorry } 
+          }
+      }
+      have hToptlesqrty := 
+        hoptimality ⟨
+          ⟨x0, x1, x2, sqrt y⟩, 
+          ⟨h1lesqrty, hk0, hk1, hk2, hv.1, hv.2, ha'⟩⟩
+      simp at hToptlesqrty
+      have hTopt2ley : Topt ^ 2 ≤ y := 
+        rpow_two _ ▸ (le_sqrt hToptnn hynn).1 hToptlesqrty
+      rcases (lt_trichotomy T Topt) with (hTltTopt | hTeqTopt | hToptltT)
+      { exact sub_le_sub (rpow_two Topt ▸ hTopt2ley) (le_of_lt hTltTopt) }
+      { rw [hTeqTopt] at hy ⊢
+        simp [hy] }
+      { have hToptleT := le_of_lt hToptltT
+        have hT2subTleysubT : T ^ 2 - T ≤ y - T := 
+          sub_le_sub (rpow_two _ ▸ hy) (le_refl _)
+        have hTopt2subToptleT2subT : Topt ^ 2 - Topt ≤ T ^ 2 - T := by 
+          have hToptsub1leTsub1 := sub_le_sub hToptleT (le_refl 1)
+          have hintermediate : Topt * Topt - Topt * 1 ≤ T * T - T * 1 := by 
+            rw [←mul_sub, ←mul_sub]
+            apply mul_le_mul hToptleT hToptsub1leTsub1 hToptsub1nn hTnn
+          rw [rpow_two, rpow_two, pow_two, pow_two]
+          simp only [mul_one] at hintermediate
+          exact hintermediate
+        exact le_trans hTopt2subToptleT2subT hT2subTleysubT } 
+    } 
+  }
 
 end TrajectoryOptimization
