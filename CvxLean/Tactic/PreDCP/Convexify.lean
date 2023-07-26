@@ -376,12 +376,17 @@ theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Rea
 -- TODO(RFM): Not hard-coded.
 -- NOTE(RFM): The bool indicates whether they need solve an equality.
 def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
+  | "inv-exp", _ => 
+    return (true, ← `(tactic| simp only [Real.exp_neg] <;> norm_num))
   | "mul-exp", _ => 
     return (true, ← `(tactic| simp only [←Real.exp_add] <;> norm_num))
   | "le-log", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| try { conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)] }))
   | "le-sub", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| simp only [le_sub_iff_add_le] <;> norm_num))
+  -- TODO(RFM): This is buggy.
+  | "le-mul-rev", _ => 
+    return (true, ← `(tactic| congr <;> funext <;> split_ands <;> try { rw [div_le_iff (by positivity)] <;> norm_num }))
   | "eq-log", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| try { conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)] }))
   | "log-exp", _ =>
