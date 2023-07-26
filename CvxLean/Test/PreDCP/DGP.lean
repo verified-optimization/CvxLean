@@ -129,6 +129,7 @@ section GP5
 
 -- NOTE(RFM): We need to provide proofs of positivity. For now, we just add 
 -- them as simp lemmas.
+@[simp] lemma Aflr_pos : 0 < Aflr := by unfold Aflr; norm_num
 @[simp] lemma α_pos : 0 < α := by unfold α; norm_num
 @[simp] lemma β_pos : 0 < β := by unfold β; norm_num
 @[simp] lemma γ_pos : 0 < γ := by unfold γ; norm_num
@@ -157,12 +158,12 @@ reduction red5/dcp5 : gp5 := by
 #print dcp5
 -- def dcp5 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (h : ℝ) (w : ℝ) (d : ℝ) 
---   minimize -d + -w + -h
+--   minimize -d + (-h + -w)
 --   subject to
---     _ : 2 * exp (h + d) + 2 * exp (w + d) ≤ Awall
---     _ : exp (w + d) ≤ Aflr
+--     _ : 2 * (exp (d + h) + exp (w + d)) ≤ Awall
+--     _ : w + d ≤ log Aflr
 --     _ : log α ≤ h - w
---     _ : exp (h - w) ≤ β
+--     _ : h ≤ log β + w
 --     _ : log γ ≤ d - w
 --     _ : d ≤ log δ + w
 
@@ -204,34 +205,6 @@ end GP6
 
 section GP7
 
-@[optimization_param] def σ : Fin 5 → ℝ := fun _ => 0.5
-@[optimization_param] def Pmin : Fin 5 → ℝ := fun _ => 0.1
-@[optimization_param] def Pmax : Fin 5 → ℝ := fun _ => 5 
-@[optimization_param] def SINRmin : ℝ := 0.2
-@[optimization_param] def G : Matrix (Fin 5) (Fin 5) ℝ := fun i j => 
-   (#[#[ 1.0,  0.1, 0.2, 0.1, 0.05]
-    , #[ 0.1,  1.0, 0.1, 0.1, 0.05]
-    , #[ 0.2,  0.1, 1.0, 0.2,  0.2]
-    , #[ 0.1,  0.1, 0.2, 1.0,  0.1]
-    , #[0.05, 0.05, 0.2, 0.1,  1.0]][i]!)[j]!
 
-open BigOperators
-
-def gp7 := 
-  optimization (P : Fin 5 → ℝ) 
-    minimize ∑ i, P i 
-    subject to 
-      h1 : ∀ i, 0 < P i
-      h2 : ∀ i, Pmin i ≤ P i
-      h3 : ∀ i, P i ≤ Pmax i
-      h4 : ∀ i, (σ i + ∑ k, if i ≠ k then G i k * P k else 0) / (G i i * P i) ≤ 1 / SINRmin
-
-set_option trace.Meta.debug true
-
-lemma test : Solution gp7 := by 
-  unfold gp7 
-  map_exp
-  dcp
-  sorry
 
 end GP7
