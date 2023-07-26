@@ -5,7 +5,7 @@ def almostdgp1():
 
     agp1 = cp.Problem(
         cp.Minimize(x1), [
-            x1 ** 2 <= -10.123,
+            x1 ** 2 - 10.123 <= 0,
         ])
 
     print("agp1.is_dgp():")
@@ -22,7 +22,7 @@ def almostdgp2():
 
     agp2 = cp.Problem(
         cp.Minimize(x2), [
-            x2 * y2 <= -5.382,
+            x2 * y2 - 5.382 <= 0,
         ])
 
     print("agp2.is_dgp():")
@@ -54,7 +54,42 @@ def almostdgp3():
     print(agp3.is_dcp())
     # False
 
+def almostdgp4():
+    x4 = cp.Variable(pos=True)
+    y4 = cp.Variable(pos=True)
+
+    agp4 = cp.Problem(
+        cp.Minimize(1 / (x4 * y4)), [
+            x4 * y4 <= 2 - x4 - y4,
+        ])
+
+    print("agp4.is_dgp():")
+    print(agp4.is_dgp())
+    # False
+
+    print("agp4.is_dcp():")
+    print(agp4.is_dcp())
+    # False
+
+def almostdgp5():
+    x5 = cp.Variable(pos=True)
+    y5 = cp.Variable(pos=True)
+
+    agp5 = cp.Problem(
+        cp.Minimize(1 / (x5 * y5)), [
+            #x5 * y5 <= 2 - x5 - y5,
+        ])
+
+    print("agp5.is_dgp():")
+    print(agp5.is_dgp())
+    # False
+
+    print("agp5.is_dcp():")
+    print(agp5.is_dcp())
+    # False
+
 if __name__ == "__main__":
     almostdgp1()
     almostdgp2()
     almostdgp3()
+    almostdgp4()
