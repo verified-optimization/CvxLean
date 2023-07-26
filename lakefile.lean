@@ -38,7 +38,7 @@ SchedulerM (BuildJob FilePath) :=
     }
 
 @[default_target]
-target «egg-convexify» (pkg : Package) : FilePath := do
+target EggConvexify (pkg : Package) : FilePath := do
   let buildDir := pkg.dir / "rewriter"
   let binFile := buildDir / "target" / "release" / "egg-convexify"
   let dest := buildDir / "utils" / "egg-convexify"
