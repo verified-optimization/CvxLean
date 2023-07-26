@@ -554,13 +554,10 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
 
         match enode {
             Optimization::Prob([a, b]) => {
-                if get_curvature(b) == Curvature::Valid {
-                    return get_curvature(a);
-                } 
-                else if get_curvature(b) < get_curvature(a) {
+                if get_curvature(b) <= get_curvature(a) {
                     return get_curvature(a);
                 }
-                else if get_curvature(a) < get_curvature(b) {
+                else if get_curvature(a) <= get_curvature(b) {
                     return get_curvature(b);
                 }
                 return Curvature::Unknown;
@@ -571,7 +568,6 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             Optimization::Constraints(a) => {
                 let mut curvature = Curvature::Constant;
                 for c in a.iter() {
-                    // TODO(RFM): Take care of convex-concave case.
                     if curvature < costs(*c) {
                         curvature = costs(*c);
                         break;
@@ -581,7 +577,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             }
             Optimization::Eq([a, b]) => {
                 if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
-                    return Curvature::Valid;
+                    return Curvature::Affine;
                 }
                 return Curvature::Unknown;
             }
@@ -817,7 +813,7 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
     return None;
 }
 
-fn get_steps(s: String, dot: bool) -> Vec<Step> {
+fn get_steps(s: String, debug: bool) -> Vec<Step> {
     let expr: RecExpr<Optimization> = s.parse().unwrap();
 
     let runner = 
@@ -826,7 +822,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         .with_expr(&expr)
         .run(&rules());
     
-    if dot {
+    if debug {
         println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
         let dot_str =  runner.egraph.dot().to_string();
         fs::write("test.dot", dot_str).expect("");
@@ -845,7 +841,10 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         best = best_found;
         best_cost = best_cost_found;
     }
-    //println!("Best cost: {:?}", best_cost);
+    if debug {
+        println!("Best cost: {:?}", best_cost);
+        println!("Best: {:?}", best.to_string());
+    }
 
     let mut egraph = runner.egraph;
     let mut explanation : Explanation<Optimization> = 
@@ -854,7 +853,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         explanation.make_flat_explanation();
     
     let mut res = Vec::new();
-    if best_cost <= Curvature::Convex || best_cost <= Curvature::Valid {
+    if best_cost <= Curvature::Convex {
         for i in 0..flat_explanation.len() {
             let expl = &flat_explanation[i];
             let expected_term = expl.get_recexpr().to_string();
@@ -923,7 +922,14 @@ fn main() {
 #[test]
 fn test() {
     let s = "(le (div 1 (sqrt (var x))) (exp (var x)))".to_string();
-    let s = "(prob (objFun (div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))) (constraints (le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall)) (le (mul (exp (var w)) (exp (var d))) (param Aflr)) (le (param α) (div (exp (var h)) (exp (var w)))) (le (div (exp (var h)) (exp (var w))) (param β)) (le (param γ) (div (exp (var d)) (exp (var w)))) (le (div (exp (var d)) (exp (var w))) (param δ))))".to_string();
+    let s = "(prob 
+        (objFun (add (add (mul (mul (div 1 (exp (var x))) (div 1 (sqrt (exp (var y))))) (div 1 (exp (var z)))) (mul (mul (div 23 10) (exp (var x))) (exp (var z)))) (mul (mul (mul 4 (exp (var x))) (exp (var y))) (exp (var z))))) 
+        (constraints 
+            (le (add (mul (mul (div 1 3) (div 1 (pow (exp (var x)) 2))) (div 1 (pow (exp (var y)) 2))) (mul (mul (div 4 3) (sqrt (exp (var y)))) (div 1 (exp (var z))))) 1) 
+            (le (add (add (exp (var x)) (mul 2 (exp (var y)))) (mul 3 (exp (var z)))) 1) 
+            (eq (mul (mul (div 1 2) (exp (var x))) (exp (var y))) 1)
+        ))".to_string();
     let steps = get_steps(s, true);
     println!("{:?}", steps);
 }
+
