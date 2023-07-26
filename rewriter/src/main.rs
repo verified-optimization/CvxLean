@@ -817,7 +817,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         Runner::default()
         .with_explanations_enabled()
         .with_expr(&expr)
-        .run(&example_rules());
+        .run(&rules());
     
     if dot {
         println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
@@ -838,7 +838,7 @@ fn get_steps(s: String, dot: bool) -> Vec<Step> {
         best = best_found;
         best_cost = best_cost_found;
     }
-    println!("Best cost: {:?}", best_cost);
+    //println!("Best cost: {:?}", best_cost);
 
     let mut egraph = runner.egraph;
     let mut explanation : Explanation<Optimization> = 
@@ -915,15 +915,7 @@ fn main() {
 
 #[test]
 fn test() {
-    let s = "(prob 
-        (objFun (var x)) 
-        (constraints 
-            (le 1 (exp (var x)))
-        )
-    )".to_string();
     let s = "(le (div 1 (sqrt (var x))) (exp (var x)))".to_string();
-    // let s = "(le (div 1 (exp (var x))) (sqrt (var x)))".to_string();
-    // let s = "(le (exp (neg (var x))) (sqrt (var x)))".to_string();
 
     let steps = get_steps(s, true);
     println!("{:?}", steps);
