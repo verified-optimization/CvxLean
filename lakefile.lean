@@ -44,3 +44,17 @@ target EggConvexify (pkg : Package) : FilePath := do
   let dest := buildDir / "utils" / "egg-convexify"
   let manifestFile := buildDir / "Cargo.toml"
   buildCargo binFile manifestFile dest #[]
+
+script CleanEgg := do
+  let targetDir : FilePath := "." / "rewriter" / "target"
+  let utilsDir : FilePath  := "." / "rewriter" / "utils"
+  let out ← 
+  IO.Process.output { 
+    cmd := "rm"
+    args := #["-rf", targetDir.toString]
+  } *> 
+  IO.Process.output { 
+    cmd := "rm"
+    args := #["-rf", utilsDir.toString]
+  }
+  pure out.exitCode
