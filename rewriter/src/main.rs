@@ -556,6 +556,12 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             Optimization::Prob([a, b]) => {
                 if get_curvature(b) == Curvature::Valid {
                     return get_curvature(a);
+                } 
+                else if get_curvature(b) < get_curvature(a) {
+                    return get_curvature(a);
+                }
+                else if get_curvature(a) < get_curvature(b) {
+                    return get_curvature(b);
                 }
                 return Curvature::Unknown;
             }
@@ -563,10 +569,11 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 return get_curvature(a);
             }
             Optimization::Constraints(a) => {
-                let mut curvature = Curvature::Valid;
+                let mut curvature = Curvature::Constant;
                 for c in a.iter() {
-                    if costs(*c) != Curvature::Valid {
-                        curvature = Curvature::Unknown;
+                    // TODO(RFM): Take care of convex-concave case.
+                    if curvature < costs(*c) {
+                        curvature = costs(*c);
                         break;
                     }
                 }
@@ -580,15 +587,15 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             }
             Optimization::Le([a, b]) => {
                 match (get_curvature(a), get_curvature(b)) {
-                    (Curvature::Convex,   Curvature::Concave)  => { return Curvature::Valid; }
-                    (Curvature::Convex,   Curvature::Affine)   => { return Curvature::Valid; }
-                    (Curvature::Convex,   Curvature::Constant) => { return Curvature::Valid; }
-                    (Curvature::Affine,   Curvature::Concave)  => { return Curvature::Valid; }
-                    (Curvature::Constant, Curvature::Concave)  => { return Curvature::Valid; }
-                    (Curvature::Affine,   Curvature::Affine)   => { return Curvature::Valid; }
-                    (Curvature::Constant, Curvature::Affine)   => { return Curvature::Valid; }
-                    (Curvature::Affine,   Curvature::Constant) => { return Curvature::Valid; }
-                    (Curvature::Constant, Curvature::Constant) => { return Curvature::Valid; }
+                    (Curvature::Convex,   Curvature::Concave)  => { return Curvature::Convex; }
+                    (Curvature::Convex,   Curvature::Affine)   => { return Curvature::Convex; }
+                    (Curvature::Convex,   Curvature::Constant) => { return Curvature::Convex; }
+                    (Curvature::Affine,   Curvature::Concave)  => { return Curvature::Convex; }
+                    (Curvature::Constant, Curvature::Concave)  => { return Curvature::Convex; }
+                    (Curvature::Affine,   Curvature::Affine)   => { return Curvature::Affine; }
+                    (Curvature::Constant, Curvature::Affine)   => { return Curvature::Affine; }
+                    (Curvature::Affine,   Curvature::Constant) => { return Curvature::Affine; }
+                    (Curvature::Constant, Curvature::Constant) => { return Curvature::Constant; }
                     _ => { return Curvature::Unknown; }
                 } 
             }
@@ -916,7 +923,7 @@ fn main() {
 #[test]
 fn test() {
     let s = "(le (div 1 (sqrt (var x))) (exp (var x)))".to_string();
-
+    let s = "(prob (objFun (div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))) (constraints (le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall)) (le (mul (exp (var w)) (exp (var d))) (param Aflr)) (le (param α) (div (exp (var h)) (exp (var w)))) (le (div (exp (var h)) (exp (var w))) (param β)) (le (param γ) (div (exp (var d)) (exp (var w)))) (le (div (exp (var d)) (exp (var w))) (param δ))))".to_string();
     let steps = get_steps(s, true);
     println!("{:?}", steps);
 }
