@@ -34,7 +34,7 @@ open Lean Widget ProofWidgets
 structure PlotLyProps where 
   x : Array Float
   y : Array Float
-  z : Array (Array Float)
+  z : Array (Array (Option Float))
   deriving ToJson, FromJson, Inhabited
 
 #mkrpcenc PlotLyProps
@@ -43,13 +43,13 @@ structure PlotLyProps where
 def PlotLyDisplay : Component PlotLyProps where
   javascript := include_str ".." / ".." / ".." / "lake-packages" / "proofwidgets" / "build" / "js" / "plotly.js"
 
-open scoped Jsx in
-partial def draw3DPlot : THtml :=
-  <PlotLyDisplay 
-    x={#[0,0.5,1]}
-    y={#[0,5,10]}
-    z={#[#[0, 1, 2], #[3, 4, 5], #[6, 7, 8]] } />
+-- open scoped Jsx in
+-- partial def draw3DPlot : THtml :=
+--   <PlotLyDisplay 
+--     x={#[0,0.5,1].map some}
+--     y={#[0,5,10].map some}
+--     z={(#[#[0, 1, 2], #[3, 4, 5]].map (Array.map some)).push #[some 6, some 8, none] } />
 
-#html draw3DPlot
+-- #html draw3DPlot
 
 end Plotly

@@ -181,7 +181,7 @@ addRealToFloat (i) : @instHPow Real i :=
   @HPow.mk Float Float Float Float.pow
 
 addRealToFloat (i) : @LE.le Real i := 
-  Float.le 
+  @LE.le Float instLEFloat 
 
 -- TODO: define Float.pi using foreign function interface
 addRealToFloat : Real.pi := 
