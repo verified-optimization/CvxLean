@@ -11,6 +11,9 @@ require mathlib from git
 -- require «doc-gen4» from git 
 --   "https://github.com/leanprover/doc-gen4" @ "main"
 
+require proofwidgets from git 
+  "https://github.com/EdAyers/ProofWidgets4"@"v0.0.3"
+
 @[default_target]
 lean_lib CvxLeanTest
 
