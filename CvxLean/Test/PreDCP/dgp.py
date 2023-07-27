@@ -128,10 +128,24 @@ def dgp6():
     #            -0.6931471805599453 + var196 + var197 == 0.0
 
 
+def dgp6_():
+    x6 = cp.Variable(pos=True)
+    y6 = cp.Variable(pos=True)
+
+    gp6 = cp.Problem(
+        cp.Minimize(x6), [
+            cp.sqrt (x6 * x6 + y6) <= 1,
+        ])
+
+    dcp6 = cp.Dgp2Dcp(gp6).reduce()
+
+    print(dcp6)
+
 if __name__ == "__main__":
     dgp1()
     dgp2()
     dgp3()
     dgp4()
-    dgp5()
-    dgp6()
+    dgp5() # rename
+    dgp6() # rename
+    dgp6_()
