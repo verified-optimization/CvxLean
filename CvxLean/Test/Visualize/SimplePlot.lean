@@ -13,7 +13,7 @@ noncomputable def plotExp :=
 
 set_option trace.Meta.debug true
 
-#plot1D plotExp
+#plot1D plotExp [[1.0, 10.0]]
 
 end Plot
 
