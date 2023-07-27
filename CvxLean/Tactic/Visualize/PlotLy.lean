@@ -32,6 +32,8 @@ section Plotly
 open Lean Widget ProofWidgets
 
 structure PlotLyProps where 
+  x : Array Float
+  y : Array Float
   z : Array (Array Float)
   deriving ToJson, FromJson, Inhabited
 
@@ -44,6 +46,8 @@ def PlotLyDisplay : Component PlotLyProps where
 open scoped Jsx in
 partial def draw3DPlot : THtml :=
   <PlotLyDisplay 
+    x={#[0,0.5,1]}
+    y={#[0,5,10]}
     z={#[#[0, 1, 2], #[3, 4, 5], #[6, 7, 8]] } />
 
 #html draw3DPlot
