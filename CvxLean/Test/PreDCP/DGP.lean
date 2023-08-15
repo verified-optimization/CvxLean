@@ -94,9 +94,9 @@ def gp4 :=
       h1 : 0 < x
       h2 : 0 < y
       h3 : 0 < z
-      h4 : 2 <= x
-      h5 : x <= 3 
-      h6 : x^2 + 3 * y / z <= sqrt x
+      h4 : 2 ≤ x
+      h5 : x ≤ 3 
+      h6 : x^2 + 3 * y / z ≤ sqrt x
       h7 : x / y = z ^ 2
 
 reduction red4/dcp4 : gp4 := by 
@@ -145,10 +145,10 @@ def gp5 :=
       h3 : 0 < d
       h4 : 2 * (h * d + w * d) ≤ Awall
       h5 : w * d ≤ Aflr
-      h6 : α ≤ h/w
-      h7 : h/w ≤ β  
-      h8 : γ ≤ d/w
-      h9 : d/w ≤ δ
+      h6 : α ≤ h / w
+      h7 : h / w ≤ β  
+      h8 : γ ≤ d / w
+      h9 : d / w ≤ δ
 
 reduction red5/dcp5 : gp5 := by
   map_exp
