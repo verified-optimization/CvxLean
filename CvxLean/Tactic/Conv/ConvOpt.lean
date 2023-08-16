@@ -9,18 +9,13 @@ namespace Tactic.Conv
 
 open Lean.Elab Lean.Elab.Tactic Lean.Elab.Tactic.Conv Lean.Meta Meta
 
--- syntax (name := convOpt) 
---   "conv_opt" "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
-
 syntax (name := convObj) 
   "conv_obj" "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
 
 syntax (name := convConstr) 
   "conv_constr" (ident)? "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
 
-/-- -/
--- NOTE(AB): This cannot be written as Meta because convert is not Meta...
--- NOTE(RFM): Are user's ever supposed to use this tactic directly?
+/-- Wrapper function to enter conv mode on an optimization problem. -/
 def convertOpt (goal : MVarId) (changeObjFun : Bool) (conv : TacticM Unit) : 
   TacticM MVarId := do
   -- Check if goal is actually an optimization problem.
@@ -49,12 +44,6 @@ def convertOpt (goal : MVarId) (changeObjFun : Bool) (conv : TacticM Unit) :
     | [goal] => return goal
     | _ => throwError "conv_opt error: Unexpected number of subgoals."
   return goal
-
--- @[tactic convOpt]
--- partial def evalConvOpt : Tactic := fun stx => match stx with
--- | `(tactic| conv_opt => $code) => do
---   replaceMainGoal [← convertOpt (← getMainGoal) do evalTactic code.raw]
--- | _ => throwUnsupportedSyntax
 
 section ConvObj
 
