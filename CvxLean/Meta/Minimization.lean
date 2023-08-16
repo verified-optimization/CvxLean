@@ -43,7 +43,7 @@ def matchSolutionExprFromExpr (goalType : Expr) : MetaM SolutionExpr := do
             domain') codomain') objFun) constraints) => do
     return SolutionExpr.mk domain codomain codomainPreorder 
       domain' codomain' objFun constraints 
-  | _ => throwError "goal not of the form 'Minimization.Solution (...)'"
+  | _ => throwError "Goal not of the form `Minimization.Solution ...`."
 
 /-- Applies `matchSolutionExprFromExpr` to goal. -/
 def matchSolutionExpr (goal : MVarId) : MetaM SolutionExpr := do

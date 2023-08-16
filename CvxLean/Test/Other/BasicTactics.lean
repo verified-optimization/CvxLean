@@ -81,8 +81,9 @@ noncomputable example : Solution $
     rw [Real.exp_le_exp]
   conv_constr cz =>
     rw [add_comm]
+  conv_obj => 
+    rw [add_comm]
   sorry
-
 
 noncomputable example : Solution $
   optimization (x y z : ℝ)

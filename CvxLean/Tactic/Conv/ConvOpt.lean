@@ -21,29 +21,59 @@ syntax (name := convConstr)
 /-- -/
 -- NOTE(AB): This cannot be written as Meta because convert is not Meta...
 -- NOTE(RFM): Are user's ever supposed to use this tactic directly?
-def convertOpt (goal : MVarId) (conv : TacticM Unit) : TacticM MVarId := do
-   let target ← MVarId.getType goal
-   let (targetNew, proof) ← convert target do
-     -- TODO: Check if goal is actually an optimization problem.
-     -- NOTE(RFM): Why is the goal replaced twice?
-     replaceMainGoal <| List.filterMap id <| ← Conv.congr <| ← getMainGoal
-     replaceMainGoal <| List.filterMap id <| ← Conv.congr <| ← getMainGoal
-     evalTactic (← `(tactic| rfl)).raw
-     evalTactic (← `(conv| ext $(mkIdent `p))).raw
-     evalTactic (← `(conv| show_vars $(mkIdent `p))).raw
-     conv
-   let goal ← MVarId.replaceTargetEq goal targetNew proof
-   let goal ←
-      match ← evalTacticAt (← `(tactic| try rfl)).raw goal with
-      | [goal] => return goal
-      | _ => throwError "Unexpected number of subgoals in convertOpt."
-   return goal
+def convertOpt (goal : MVarId) (changeObjFun : Bool) (conv : TacticM Unit) : 
+  TacticM MVarId := do
+  -- Check if goal is actually an optimization problem.
+  let _ ← matchSolutionExpr goal 
+  let target ← MVarId.getType goal
+  let (targetNew, proof) ← convert target do
+    -- Use `congr` to get rid of `Solution`.
+    replaceMainGoal <| List.filterMap id <| ← Conv.congr <| ← getMainGoal
+    -- Use `congr` to split objFun and constraints.
+    replaceMainGoal <| List.filterMap id <| ← Conv.congr <| ← getMainGoal
+    if let [objFunGoal, constrsGoal] ← getGoals then 
+      let toIgnore := if changeObjFun then constrsGoal else objFunGoal
+      let toChange := if changeObjFun then objFunGoal else constrsGoal
+      if let [] ← evalTacticAt (← `(tactic| rfl)).raw toIgnore then 
+        replaceMainGoal [toChange]
+      else 
+        throwError "conv_opt error: Failed to close subgoals."
+      evalTactic (← `(conv| ext $(mkIdent `p))).raw
+      evalTactic (← `(conv| show_vars $(mkIdent `p))).raw
+      conv
+    else 
+      throwError "conv_opt error: Unexpected goal type."
+  let goal ← MVarId.replaceTargetEq goal targetNew proof
+  let goal ←
+    match ← evalTacticAt (← `(tactic| try rfl)).raw goal with
+    | [goal] => return goal
+    | _ => throwError "conv_opt error: Unexpected number of subgoals."
+  return goal
 
 -- @[tactic convOpt]
 -- partial def evalConvOpt : Tactic := fun stx => match stx with
 -- | `(tactic| conv_opt => $code) => do
 --   replaceMainGoal [← convertOpt (← getMainGoal) do evalTactic code.raw]
 -- | _ => throwUnsupportedSyntax
+
+section ConvObj
+
+/-- Enter conv mode on the objective function. -/
+partial def convertObj (goal : MVarId) (conv : TacticM Unit) : 
+  TacticM MVarId := do
+  convertOpt goal (changeObjFun := true) do
+    replaceMainGoal <| [← getMainGoal]
+    conv
+
+@[tactic convObj]
+partial def evalConvObj : Tactic := fun stx => match stx with
+  | `(tactic| conv_obj => $code) => do
+      replaceMainGoal [← convertObj (← getMainGoal) do evalTactic code.raw]
+  | _ => throwUnsupportedSyntax
+
+end ConvObj 
+
+section ConvConstr
 
 /-- Split ands in conv goal. -/
 partial def splitAnds (goal : MVarId) : TacticM (List MVarId) := do
@@ -66,14 +96,14 @@ partial def splitAnds (goal : MVarId) : TacticM (List MVarId) := do
 /-- Enter conv mode setting all constraints as subgoals. -/
 partial def convertConstr (goal : MVarId) (conv : TacticM Unit) : 
   TacticM MVarId := do
-  convertOpt goal do
+  convertOpt goal (changeObjFun := false) do
     replaceMainGoal <| ← splitAnds <| ← getMainGoal 
     conv
 
 /-- Enter conv mode on a specific constraint. -/
 partial def convertConstrWithName (h : Name) (goal : MVarId) 
   (conv : TacticM Unit) : TacticM MVarId := do
-  convertOpt goal do
+  convertOpt goal (changeObjFun := false) do
     let constrs ← splitAnds <| ← getMainGoal 
     let mut found := false
     for constr in constrs do 
@@ -104,6 +134,8 @@ partial def evalConvConstr : Tactic := fun stx => match stx with
       replaceMainGoal 
         [← convertConstrWithName h.getId (← getMainGoal) do evalTactic code.raw]
   | _ => throwUnsupportedSyntax
+
+end ConvConstr
 
 end Tactic.Conv
 
