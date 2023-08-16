@@ -32,15 +32,15 @@ opaque dd : Prop
 opaque ee : Prop
 
 noncomputable example : Solution $
-  optimization (x y z xx : ℝ)
-    minimize (((c * x) * y) * z) * xx
+  optimization (x y z w : ℝ)
+    minimize (((c * x) * y) * z) * w
     subject to
       a : aa
       b : bb
       c : cc 
       d : dd 
       e : ee := by
-  reorder_constr [e,d,c,a,b]
+  reorder_constr [e, d, c, a, b]
   sorry
 
 noncomputable example : Solution $
@@ -51,8 +51,11 @@ noncomputable example : Solution $
       l : a * x + b * y = d
       hsqrt : 0 ≤ x
       hlog : 0 < a * sqrt x + b := by
-  domain_equiv Equiv.refl ({** ℝ ** xx **} × {** ℝ ** y**})
-  domain_equiv (Equiv.mk (fun (p : {** ℝ ** y**} × {** ℝ ** x**}) => (p.2, p.1)) (fun p => (p.2, p.1)) sorry sorry)
+  domain_equiv Equiv.refl ({** ℝ ** w **} × {** ℝ ** y **})
+  domain_equiv (Equiv.mk 
+    (fun (p : {** ℝ ** y **} × {** ℝ ** x **}) => (p.2, p.1)) 
+    (fun p => (p.2, p.1)) sorry sorry)
+  case
   sorry
 
 noncomputable example : Solution $
@@ -74,8 +77,10 @@ noncomputable example : Solution $
       cz : z = x + y
       cxy : exp x ≤ exp y := by
   reorder_constr [cxy, cz]
-  conv_constr =>
+  conv_constr cxy =>
     rw [Real.exp_le_exp]
+  conv_constr cz =>
+    rw [add_comm]
   sorry
 
 
