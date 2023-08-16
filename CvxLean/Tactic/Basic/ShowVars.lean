@@ -19,7 +19,7 @@ namespace Meta
 
 open Lean.Meta Lean.Elab.Tactic
 
-/-- -/
+/-- Replace `p` projections by variable names. -/
 def showVars (goal : MVarId) (p : FVarId) : MetaM MVarId := do
   -- Revert variables after p.
   let (revertedVars, goal) ← MVarId.withContext goal do
