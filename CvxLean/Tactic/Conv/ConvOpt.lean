@@ -57,7 +57,7 @@ partial def convertObj (goal : MVarId) (conv : TacticM Unit) :
 @[tactic convObj]
 partial def evalConvObj : Tactic := fun stx => match stx with
   | `(tactic| conv_obj => $code) => do
-      replaceMainGoal [← convertObj (← getMainGoal) do evalTactic code.raw]
+    replaceMainGoal [← convertObj (← getMainGoal) do evalTactic code.raw]
   | _ => throwUnsupportedSyntax
 
 end ConvObj 
@@ -71,13 +71,12 @@ partial def splitAnds (goal : MVarId) : TacticM (List MVarId) := do
   | Expr.app (Expr.app (Expr.const ``And _) p) _q => do
     let (mp, mq) ← match List.filterMap id <| ← Conv.congr <| goal with
       | [mp, mq] => pure (mp, mq)
-      | _ => throwError "Unexpected number of subgoals in splitAnds."
-    dbg_trace s!"{← getLabelName p}"
+      | _ => throwError ("conv_constr error: Unexpected number of subgoals " ++ 
+          "in splitAnds.")
     let tag ← getLabelName p
     mp.setTag tag
     return mp :: (← splitAnds mq)
   | _ => do 
-    dbg_trace s!"{← getLabelName lhs}"
     let tag ← getLabelName lhs 
     goal.setTag tag
     return [goal]
@@ -101,7 +100,7 @@ partial def convertConstrWithName (h : Name) (goal : MVarId)
         found := true
         replaceMainGoal [constr]
         conv
-        -- NOTE(RFM): Ensure that labels are not lost after tactic is applied.
+        -- Ensure that labels are not lost after tactic is applied.
         let g ← getMainGoal 
         let (lhs, rhs) ← getLhsRhsCore g 
         let lhsWithLabel := mkLabel t lhs
