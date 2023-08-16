@@ -11,7 +11,7 @@ namespace Meta
 
 /-- Attach a CvxLean label to an expression. They are used to indicate variable
   names in a domain type and names of constraints. -/
-def mkLabel (name : Name) (e : Expr) := 
+def mkLabel (name : Name) (e : Expr) : Expr := 
   mkMData (MData.empty.setName `CvxLeanLabel name) e
 
 variable [MonadControlT MetaM m] [Monad m]
@@ -39,7 +39,7 @@ open Lean.Elab
 @[term_elab namedConstraint] 
 def elabNamedConstraint : Term.TermElab := fun stx expectedType? => do
   match stx with
-  | `({** $t ** $id**}) =>
+  | `({** $t ** $id **}) =>
     match id.raw with
     | Syntax.ident _ _ val _ =>
       let e ← Term.elabTerm t expectedType?
