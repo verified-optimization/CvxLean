@@ -268,13 +268,19 @@ def surroundQuotes (s : String) : String :=
   "\"" ++ s ++ "\""
 
 structure EggRequest where
+  domains : List (String × String)
   target : String
 
-def EggRequest.toJson (e : EggRequest) : String := "{"
-  ++ surroundQuotes "request" ++ ":"
-  ++ surroundQuotes "PerformRewrite" ++ ","
-  ++ surroundQuotes "target" ++ ":" ++ (surroundQuotes e.target)
-  ++ "}"
+def EggRequest.toJson (e : EggRequest) : String := 
+  "{" ++ 
+  surroundQuotes "request" ++ " : " ++ surroundQuotes "PerformRewrite" ++ ", " ++ 
+  surroundQuotes "domains" ++ " : " ++ 
+    "[" ++
+    (", ".intercalate <| e.domains.map (fun (s, d) => 
+      "(" ++ (surroundQuotes s) ++ "," ++ (surroundQuotes d) ++ ")")) ++
+    "]" ++ ", " ++
+  surroundQuotes "target" ++ " : " ++ (surroundQuotes e.target) ++ 
+  "}"
 
 inductive EggRewriteDirection where
   | Forward
@@ -374,18 +380,18 @@ theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Rea
   }, fun h => by rw [h]⟩
 
 -- TODO(RFM): Use this lemma instead of exp_neg.
-lemma Real.exp_neg2 : ∀ x : ℝ, exp (-x) = 1 / exp x := by
+lemma Real.exp_neg_one_div : ∀ x : ℝ, exp (-x) = 1 / exp x := by
   intro x
   rw [Real.exp_neg, inv_eq_one_div]
 
 -- TODO(RFM): Not hard-coded.
 -- NOTE(RFM): The bool indicates whether they need solve an equality.
 def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
-  | "inv-exp", _ => 
-    return (true, ← `(tactic| simp only [Real.exp_neg2] <;> norm_num))
-  | "mul-exp", _ => 
+  | "inv-exp", _ => -- exp-neg-one-div
+    return (true, ← `(tactic| simp only [Real.exp_neg_one_div] <;> norm_num))
+  | "mul-exp", _ => -- exp-add
     return (true, ← `(tactic| simp only [←Real.exp_add] <;> norm_num))
-  | "le-log", EggRewriteDirection.Forward =>
+  | "le-log", EggRewriteDirection.Forward => -- log-le-log
     return (true, ← `(tactic| try { conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)] }))
   | "le-sub", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| simp only [le_sub_iff_add_le] <;> norm_num))
@@ -395,7 +401,7 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool × Syntax)
   | "eq-log", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| try { conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)] }))
   | "log-exp", _ =>
-    return (true, ← `(tactic| simp only [Real.log_exp]))
+    return (true, ← `(tactic| simp only [Real.log_exp] <;> norm_num))
   | "log-div", EggRewriteDirection.Forward => 
     return (true, ← `(tactic| congr <;> funext <;> split_ands <;> try { rw [Real.log_div (by positivity) (by positivity)] <;> norm_num }))
   | "log-mul", _ => 
@@ -459,6 +465,7 @@ elab "convexify" : tactic => withMainContext do
   let gStr ← DCP.uncheckedTreeString gExpr varsStr
 
   let eggRequest := {
+    domains := []
     target := gStr
   }
   let steps := ← runEggRequest eggRequest
@@ -490,6 +497,15 @@ elab "convexify" : tactic => withMainContext do
       let gs1 ← evalTacticAt tac g
       replaceMainGoal gs1
 
-  norm_num_clean_up (useSimp := true)
+  norm_num_clean_up (useSimp := false)
 
   return ()
+
+lemma x : Minimization.Solution $
+  optimization (x : ℝ) 
+    minimize (0 : ℝ)
+    subject to 
+      h : Real.log (Real.exp x) ≤ 1 := by 
+  convexify
+  
+  sorry
