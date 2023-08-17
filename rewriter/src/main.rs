@@ -1,5 +1,6 @@
 use egg::{rewrite as rw, *};
-use core::cmp::{Ordering, max};
+use core::cmp::Ordering;
+use std::collections::HashMap;
 use fxhash::FxHashSet as HashSet;
 use ordered_float::NotNan;
 use std::{fs, fmt, io};
@@ -38,7 +39,7 @@ fn is_exp(opt: &Optimization) -> bool {
 }
 
 // TODO(RFM): Factor out.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Deserialize, PartialEq, Eq)]
 pub enum Domain {
     Free,
     NonNeg,
@@ -83,6 +84,10 @@ impl PartialOrd for Domain {
     }
 }
 
+fn domain_is_free(d:Domain) -> bool {
+    return d == Domain::Free;
+}
+
 fn domain_is_zero(d:Domain) -> bool {
     return d == Domain::Zero;
 }
@@ -96,11 +101,11 @@ fn domain_is_neg(d:Domain) -> bool {
 }
 
 fn domain_is_nonneg(d:Domain) -> bool {
-    return d == Domain::NonNeg || domain_is_pos(d);
+    return d == Domain::NonNeg || d == Domain::Zero || domain_is_pos(d);
 }
 
 fn domain_is_nonpos(d:Domain) -> bool {
-    return d == Domain::NonPos || domain_is_neg(d);
+    return d == Domain::NonPos || d == Domain::Zero || domain_is_neg(d);
 }
 
 fn domain_flip(d:Domain) -> Domain {
@@ -120,22 +125,79 @@ fn domain_option_flip(d:Option<Domain>) -> Option<Domain> {
     return d.map(domain_flip);
 }
 
-fn domain_max(d_a:Domain, d_b:Domain) -> Domain {
-    match d_a.partial_cmp(&d_b) {
-        Some(Ordering::Equal)   => { return d_a; }
-        Some(Ordering::Less)    => { return d_b; }
-        Some(Ordering::Greater) => { return d_a; }
-        _                       => { return Domain::Free; }
+fn domain_union(d_a:Domain, d_b:Domain) -> Domain {
+    match (d_a, d_b) {
+        (Domain::Zero, Domain::Pos ) => { return Domain::NonNeg; }
+        (Domain::Pos,  Domain::Zero) => { return Domain::NonNeg; }
+        (Domain::Zero, Domain::Neg ) => { return Domain::NonPos; }
+        (Domain::Neg,  Domain::Zero) => { return Domain::NonPos; }
+        _ => {
+            match d_a.partial_cmp(&d_b) {
+                Some(Ordering::Equal)   => { return d_a; }
+                Some(Ordering::Less)    => { return d_b; }
+                Some(Ordering::Greater) => { return d_a; }
+                _                       => { return Domain::Free; }
+            }
+        }
     }
 }
 
-fn domain_option_max(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
-    match (d_o_a, d_o_b) {
-        (Some(d_a), Some(d_b)) => { 
-            return Some(domain_max(d_a, d_b)); 
+// TODO(RFM): Move.
+pub fn option_map2<T1, T2, U, F>(x1: Option<T1>, x2: Option<T2>, f: F) -> Option<U>
+    where
+        F: FnOnce(T1, T2) -> U,
+    {
+        match (x1, x2) {
+            (Some(x1_val), Some(x2_val)) => { 
+                return Some(f(x1_val, x2_val)); 
+            }
+            _ => { return None; }
         }
-        _ => { return None; }
     }
+
+fn domain_option_union(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    return option_map2(d_o_a, d_o_b, domain_union);
+}
+
+fn domain_add(d_a:Domain, d_b:Domain) -> Domain {
+    match (d_a, d_b) {
+        (Domain::Zero,   _             ) => { return d_b; }
+        (_,              Domain::Zero  ) => { return d_a; }
+        (Domain::NonNeg, Domain::Pos   ) => { return Domain::Pos; }
+        (Domain::Pos,    Domain::NonNeg) => { return Domain::Pos; }
+        (Domain::NonPos, Domain::Neg   ) => { return Domain::Neg; }
+        (Domain::Neg,    Domain::NonPos) => { return Domain::Neg; }
+        _ => { return domain_union(d_a, d_b); }
+    }
+}
+
+fn domain_option_add(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    return option_map2(d_o_a, d_o_b, domain_add);
+}
+
+fn domain_mul(d_a:Domain, d_b:Domain) -> Domain {
+    if domain_is_zero(d_a) || domain_is_zero(d_b) {
+        return Domain::Zero;
+    } else if domain_is_free(d_a) || domain_is_free(d_b) {
+        return Domain::Free;
+    } else if domain_is_nonneg(d_a) && domain_is_nonneg(d_b) {
+        return domain_add(d_a, d_b);
+    } else if domain_is_nonpos(d_a) && domain_is_nonpos(d_b) {
+        return domain_add(d_a, d_b);
+    } else {
+        // Opposite sign case.
+        if domain_is_neg(d_a) {
+            return domain_flip(d_b);
+        } else if domain_is_neg(d_b) {
+            return domain_flip(d_a);
+        } else {
+            return Domain::Free;
+        }
+    }
+}
+
+fn domain_option_mul(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    return option_map2(d_o_a, d_o_b, domain_mul);
 }
 
 type EGraph = egg::EGraph<Optimization, Meta>;
@@ -227,32 +289,6 @@ pub struct Data {
     has_exp: bool,
 }
 
-
-// fn get_domain(score: &mut DCPScore<'_>, enode: &Optimization) -> Domain {
-//     let var_map : HashMap<Symbol, Domain> = 
-//         score.egraph.analysis.domain.clone().into_iter().collect();
-    
-//     match enode {
-//         Optimization::Var(a) => {
-//             match score.egraph[*a].nodes[0] { 
-//                 Optimization::Symbol(s) => {
-//                     match var_map.get(&s) {
-//                         Some(d) => { return d.clone(); }
-//                         None => { return Domain::Free; }
-//                     }
-//                 }
-//                 _ => { return Domain::Free; }
-//             }
-//         }
-//         Optimization::Exp(_) => {
-//             return Domain::Nonnegative;
-//         }
-//         _ => {
-//             return Domain::Free;
-//         }
-//     }
-// }
-
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
 
@@ -261,7 +297,7 @@ impl Analysis<Optimization> for Meta {
         to.has_log = to.has_log || from.has_log;
 
         match (to.domain, from.domain) {
-            (None, Some(d)) => { to.domain = from.domain; }
+            (None, Some(_)) => { to.domain = from.domain; }
             (Some(d_to), Some(d_from)) => {
                 if d_to != d_from { to.domain = None; }
             }
@@ -284,6 +320,8 @@ impl Analysis<Optimization> for Meta {
             |i: &Id| egraph[*i].data.constant.clone();
         let get_domain = 
             |i: &Id| egraph[*i].data.domain.clone();
+        let var_map : HashMap<Symbol, Domain> = 
+            egraph.analysis.domain.clone().into_iter().collect();
 
         let mut free_vars = HashSet::default();
         let mut constant = None;
@@ -323,7 +361,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = flip_domain_option(get_domain(a));
+                domain = domain_option_flip(get_domain(a));
             }
             Optimization::Sqrt(a) => {
                 free_vars.extend(get_vars(a));
@@ -335,7 +373,19 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = get_domain(a);
+
+                let d_o_a = get_domain(a);
+                match d_o_a {
+                    Some(d_a) => { 
+                        if domain_is_nonneg(d_a) {
+                            domain = d_o_a;
+                        } 
+                        // NOTE(RFM): If argument is negative, sqrt in Lean 
+                        // returns zero, but we treat as if it didn't have a 
+                        // domain.
+                    }
+                    _ => ()
+                }
             }
             Optimization::Add([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -349,18 +399,8 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
 
-                match (get_domain(a), get_domain(b)) {
-                    (Some(d_a), Some(d_b)) => {
-                        match d_a.partial_cmp(&d_b) {
-                            Some(Ordering::Equal) => { domain = get_domain(a); }
-                            Some(Ordering::Less) => { domain = get_domain(b); }
-                            Some(Ordering::Greater) => { domain = get_domain(a); }
-                            _ => { domain = Some(Domain::Free); }
-                        }
-                    }
-                    _ => ()
-                }
-                 
+                domain = domain_option_add(
+                    get_domain(a), get_domain(b));
             }
             Optimization::Sub([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -373,7 +413,9 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = Some(Domain::Free);
+                domain = domain_option_add(
+                    get_domain(a), 
+                    domain_option_flip(get_domain(b)));
             }
             Optimization::Mul([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -386,7 +428,8 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = 
+                domain = domain_option_mul(
+                    get_domain(a), get_domain(b))
             }
             Optimization::Div([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -399,10 +442,36 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
+
+                let d_o_b = get_domain(b);
+                match d_o_b {
+                    Some(d_b) => {
+                        if domain_is_pos(d_b) || domain_is_neg(d_b) {
+                            domain = domain_option_mul(
+                                get_domain(a), d_o_b);
+                        }
+                    },
+                    _ => ()
+                }
             }
             Optimization::Pow([a, b]) => {
                 free_vars.extend(get_vars(a));
                 free_vars.extend(get_vars(b));
+
+                let d_o_a = get_domain(a);
+                let d_o_b = get_domain(b);
+                match (d_o_a, d_o_b) {
+                    (Some(d_a), Some(d_b)) => { 
+                        if !domain_is_zero(d_a) && domain_is_zero(d_b) {
+                            // NOTE(RFM): This is technically 1.
+                            domain = Some(Domain::PosConst);
+                        } else if domain_is_pos(d_a) {
+                            domain = d_o_a;
+                        }
+                        // NOTE(RFM): There could be more cases here.
+                    }
+                    _ => ()
+                }
             }
             Optimization::Log(a) => {
                 free_vars.extend(get_vars(a));
@@ -415,6 +484,18 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
                 has_log = true;
+                
+                let d_o_a = get_domain(a);
+                match d_o_a {
+                    Some(d_a) => {
+                        if domain_is_pos(d_a) {
+                            // NOTE(RFM): We do not know if the argument is less 
+                            // than 1 or not, so that's all we can say.
+                            domain = Some(Domain::Free);
+                        }
+                    }
+                    _ => ()
+                }
             }
             Optimization::Exp(a) => {
                 free_vars.extend(get_vars(a));
@@ -427,24 +508,41 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
                 has_exp = true;
+
+                domain = Some(Domain::Pos);
             }
             Optimization::Var(a) => {
                 // Assume that after var there is always a symbol.
                 match egraph[*a].nodes[0] { 
                     Optimization::Symbol(s) => {
                         free_vars.insert((*a, s)); 
+                        match var_map.get(&s) {
+                            Some(d) => { domain = Some(*d); }
+                            _ => ()
+                        }
                     }
                     _ => {}
                 }
             }
-            Optimization::Param(_) => {} 
+            Optimization::Param(_) => {
+                // TODO(RFM): Add domain to parameters.
+            } 
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
                 constant = Some((*f, format!("{}", f).parse().unwrap()));
+                if (*f).is_finite() {
+                    if (*f).into_inner() > 0.0 {
+                        domain = Some(Domain::PosConst);
+                    } else if (*f).into_inner() < 0.0 {
+                        domain = Some(Domain::NegConst);
+                    } else {
+                        domain = Some(Domain::Zero);
+                    }
+                }
             }
         }
 
-        Data { free_vars, constant, has_log, has_exp }
+        Data { free_vars, constant, domain, has_log, has_exp }
     }
 }
 
