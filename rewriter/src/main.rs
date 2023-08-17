@@ -1,9 +1,8 @@
 use egg::{rewrite as rw, *};
-use core::cmp::Ordering;
+use core::cmp::{Ordering, max};
 use fxhash::FxHashSet as HashSet;
 use ordered_float::NotNan;
 use std::{fs, fmt, io};
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 pub type Constant = NotNan<f64>;
@@ -38,12 +37,57 @@ fn is_exp(opt: &Optimization) -> bool {
     }
 }
 
+// TODO(RFM): Factor out.
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub enum Domain {
+    Free,
+    NonNeg,
+    NonPos,
+    Pos,
+    Neg,
+    Zero,
+    PosConst,
+    NegConst
+}
+/*
+           Free
+          /    \
+     NonNeg    NonPos
+       |   \  /   |
+      Pos  Zero  Neg
+       |          |
+    PosConst   NegConst
+ */
+impl PartialOrd for Domain {
+    fn partial_cmp(&self, other:&Domain) -> Option<Ordering> {
+        if *self == *other {
+            return Some(Ordering::Equal);
+        }
+        match (*self, *other) {
+            (Domain::Free,     _               ) => { return Some(Ordering::Greater); }
+            (_,                Domain::Free    ) => { return Some(Ordering::Less);    }
+            (Domain::NonNeg,   Domain::Pos     ) => { return Some(Ordering::Greater); }
+            (Domain::Pos,      Domain::NonNeg  ) => { return Some(Ordering::Less);    }
+            (Domain::NonNeg,   Domain::Zero    ) => { return Some(Ordering::Greater); }
+            (Domain::Zero,     Domain::NonNeg  ) => { return Some(Ordering::Less);    }
+            (Domain::Pos,      Domain::PosConst) => { return Some(Ordering::Greater); }
+            (Domain::PosConst, Domain::Pos     ) => { return Some(Ordering::Less);    }
+            (Domain::NonPos,   Domain::Neg     ) => { return Some(Ordering::Greater); }
+            (Domain::Neg,      Domain::NonPos  ) => { return Some(Ordering::Less);    }
+            (Domain::NonPos,   Domain::Zero    ) => { return Some(Ordering::Greater); }
+            (Domain::Zero,     Domain::NonPos  ) => { return Some(Ordering::Less);    }
+            (Domain::Neg,      Domain::NegConst) => { return Some(Ordering::Greater); }
+            (Domain::NegConst, Domain::Neg     ) => { return Some(Ordering::Less);    }
+            _ => { return None; }
+        }
+    }
+}
+
 type EGraph = egg::EGraph<Optimization, Meta>;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Meta {
-    positive : Vec<Symbol>,
-    nonnegative : Vec<Symbol>
+    domain : Vec<(Symbol, Domain)>,
 }
 
 // TODO(RFM): Remove "Valid", split Real and Prop.
@@ -129,21 +173,40 @@ impl fmt::Display for Curvature {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub enum Domain {
-    Positive,
-    Nonnegative,
-    Free
-}
-
 #[derive(Debug, Clone)]
 pub struct Data {
     free_vars: HashSet<(Id, Symbol)>,
-    free_vars_domain: HashMap<Symbol, Domain>,
+    domain: Option<Domain>,
     constant: Option<(Constant, PatternAst<Optimization>)>,
     has_log: bool,
     has_exp: bool,
 }
+
+
+// fn get_domain(score: &mut DCPScore<'_>, enode: &Optimization) -> Domain {
+//     let var_map : HashMap<Symbol, Domain> = 
+//         score.egraph.analysis.domain.clone().into_iter().collect();
+    
+//     match enode {
+//         Optimization::Var(a) => {
+//             match score.egraph[*a].nodes[0] { 
+//                 Optimization::Symbol(s) => {
+//                     match var_map.get(&s) {
+//                         Some(d) => { return d.clone(); }
+//                         None => { return Domain::Free; }
+//                     }
+//                 }
+//                 _ => { return Domain::Free; }
+//             }
+//         }
+//         Optimization::Exp(_) => {
+//             return Domain::Nonnegative;
+//         }
+//         _ => {
+//             return Domain::Free;
+//         }
+//     }
+// }
 
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
@@ -151,6 +214,14 @@ impl Analysis<Optimization> for Meta {
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         to.has_exp = to.has_exp || from.has_exp;
         to.has_log = to.has_log || from.has_log;
+
+        match (to.domain, from.domain) {
+            (None, Some(d)) => { to.domain = from.domain; }
+            (Some(d_to), Some(d_from)) => {
+                if d_to != d_from { to.domain = None; }
+            }
+            _ => ()
+        }
 
         let before_len = to.free_vars.len();
         to.free_vars.retain(|i| from.free_vars.contains(i));
@@ -166,12 +237,12 @@ impl Analysis<Optimization> for Meta {
             |i: &Id| egraph[*i].data.free_vars.iter().cloned();
         let get_constant = 
             |i: &Id| egraph[*i].data.constant.clone();
-
-        let x = egraph.analysis.positive.clone();
+        let get_domain = 
+            |i: &Id| egraph[*i].data.domain.clone();
 
         let mut free_vars = HashSet::default();
-        let free_vars_domain = HashMap::new();
-        let mut constant: Option<(Constant, PatternAst<Optimization>)> = None;
+        let mut constant = None;
+        let mut domain = None;
         let mut has_log = false;
         let mut has_exp = false;
 
@@ -207,6 +278,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
+                domain = Some(Domain::Free);
             }
             Optimization::Sqrt(a) => {
                 free_vars.extend(get_vars(a));
@@ -218,6 +290,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
+                domain = get_domain(a);
             }
             Optimization::Add([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -230,6 +303,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
+                domain = max(get_domain(a), get_domain(b)); 
             }
             Optimization::Sub([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -242,6 +316,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
+                domain = Some(Domain::Free);
             }
             Optimization::Mul([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -254,6 +329,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
+                domain = 
             }
             Optimization::Div([a, b]) => {
                 free_vars.extend(get_vars(a));
@@ -311,7 +387,7 @@ impl Analysis<Optimization> for Meta {
             }
         }
 
-        Data { free_vars, free_vars_domain, constant, has_log, has_exp }
+        Data { free_vars, constant, has_log, has_exp }
     }
 }
 
@@ -570,6 +646,8 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
             |i: &Id| costs(*i);
         let get_constant = 
             |i: &Id| self.egraph[*i].data.constant.clone();
+        let get_domain = 
+            |i: &Id| self.egraph[*i].data.domain.clone();
 
         match enode {
             Optimization::Prob([a, b]) => {
