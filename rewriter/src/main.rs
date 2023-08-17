@@ -737,8 +737,40 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                     _ => { return Curvature::Unknown; }
                 }
             }
-            Optimization::Pow([_a, _b]) => {
-                return Curvature::Unknown;
+            Optimization::Pow([a, b]) => {
+                match get_constant(b) {
+                    Some((c, _)) => {
+                        match get_curvature(a) {
+                            Curvature::Constant => { 
+                                return Curvature::Constant;
+                            }
+                            Curvature::Affine => {
+                                if c.into_inner() == 0.0 {
+                                    return Curvature::Constant;
+                                } else if c.into_inner() == 1.0 {
+                                    return Curvature::Affine;
+                                } else if c.into_inner() < 0.0 {
+                                    // if x > 0 otherwise unknown.
+                                    return Curvature::Convex;
+                                } else if 0.0 < c.into_inner() && c.into_inner() < 1.0 {
+                                    // if x >= 0 otherwise unknown.
+                                    return Curvature::Concave;
+                                } else if 
+                                    c.into_inner() == (c.into_inner() as u32) as f64 && 
+                                    (c.into_inner() as u32) % 2 == 0 {
+                                    return Curvature::Convex;
+                                } else {
+                                    // if x >= 0 otherwise unknown.
+                                    return Curvature::Convex;
+                                }
+                            }
+                            _ => {
+                                return Curvature::Unknown;
+                            }
+                        }
+                    }
+                    _ => { return Curvature::Unknown; }
+                }
             }
             Optimization::Log(a) => {
                 if get_curvature(a) == Curvature::Affine {
