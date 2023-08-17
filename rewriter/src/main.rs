@@ -546,58 +546,6 @@ impl Analysis<Optimization> for Meta {
     }
 }
 
-#[derive(Default)]
-struct MapExp {}
-
-impl Applier<Optimization, Meta> for MapExp {
-    fn apply_one(
-        &self, 
-        egraph: &mut EGraph, 
-        matched_id: Id, 
-        _subst: &Subst, 
-        _searcher_pattern: Option<&PatternAst<Optimization>>, 
-        _rule_name: Symbol
-    ) -> Vec<Id> {
-        let free_vars : HashSet<(Id, Symbol)> = 
-            egraph[matched_id].data.free_vars.clone();
-
-        let mut res = vec![];
-
-        for (id, sym) in free_vars {            
-            if let Some((_, parent_id)) = egraph[id].parents().last() {
-                if egraph[parent_id].nodes.len() > 1 {
-                    continue;
-                }
-
-                // We make (var x) = (exp (var ux)).
-                if egraph.are_explanations_enabled() {
-                    let (new_id, did_union) = egraph.union_instantiations(
-                        &format!("(var {})", sym).parse().unwrap(),
-                        &format!("(exp (var u{}))", sym).parse().unwrap(),
-                        &Default::default(),
-                        "map-exp".to_string(),
-                    );
-                    if did_union {
-                        egraph[new_id].nodes.retain(|n| is_exp(n));
-                        res.push(parent_id);
-                    }
-                }
-                else {
-                    let y = egraph.add(Optimization::Symbol(sym));
-                    let var = egraph.add(Optimization::Var(y));
-                    let exp = egraph.add(Optimization::Exp(var));
-
-                    if egraph.union(parent_id, exp) {
-                        res.push(parent_id);
-                    }
-                }
-            }
-        }
-        
-        return res; 
-    }
-}
-
 fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
