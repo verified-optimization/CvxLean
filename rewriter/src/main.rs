@@ -96,12 +96,20 @@ fn domain_is_pos(d:Domain) -> bool {
     return d == Domain::Pos || d == Domain::PosConst;
 }
 
+fn domain_option_is_pos(d:Option<Domain>) -> bool {
+    return d.map_or(false, domain_is_pos);
+}
+
 fn domain_is_neg(d:Domain) -> bool {
     return d == Domain::Neg || d == Domain::NegConst;
 }
 
 fn domain_is_nonneg(d:Domain) -> bool {
     return d == Domain::NonNeg || d == Domain::Zero || domain_is_pos(d);
+}
+
+fn domain_option_is_nonneg(d:Option<Domain>) -> bool {
+    return d.map_or(false, domain_is_nonneg);
 }
 
 fn domain_is_nonpos(d:Domain) -> bool {
@@ -951,18 +959,27 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                                 } else if c_val == 1.0 {
                                     return Curvature::Affine;
                                 } else if c_val < 0.0 {
-                                    // NOTE(RFM): Not 100% correct, convex if x > 0 otherwise unknown.
-                                    return Curvature::Convex;
+                                    if domain_option_is_pos(get_domain(a)) {
+                                        return Curvature::Convex;
+                                    } else {
+                                        return Curvature::Unknown;
+                                    }
                                 } else if 0.0 < c_val && c_val < 1.0 {
-                                    // NOTE(RFM): Not 100% correct, convex if x >= 0 otherwise unknown.
-                                    return Curvature::Concave;
+                                    if domain_option_is_nonneg(get_domain(a)) {
+                                        return Curvature::Concave;
+                                    } else {
+                                        return Curvature::Unknown;
+                                    }
                                 } else if 
                                     c_val == (c_val as u32) as f64 && 
                                     (c_val as u32) % 2 == 0 {
                                     return Curvature::Convex;
                                 } else {
-                                    // NOTE(RFM): Not 100% correct, convex if x >= 0 otherwise unknown.
-                                    return Curvature::Convex;
+                                    if domain_option_is_nonneg(get_domain(a)) {
+                                        return Curvature::Convex;
+                                    } else {
+                                        return Curvature::Unknown;
+                                    }
                                 }
                             }
                             _ => { return Curvature::Unknown; }
