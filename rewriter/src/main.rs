@@ -3,6 +3,7 @@ use core::cmp::Ordering;
 use fxhash::FxHashSet as HashSet;
 use ordered_float::NotNan;
 use std::{fs, fmt, io};
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 pub type Constant = NotNan<f64>;
@@ -40,7 +41,10 @@ fn is_exp(opt: &Optimization) -> bool {
 type EGraph = egg::EGraph<Optimization, Meta>;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Meta;
+pub struct Meta {
+    positive : Vec<Symbol>,
+    nonnegative : Vec<Symbol>
+}
 
 // TODO(RFM): Remove "Valid", split Real and Prop.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -126,8 +130,16 @@ impl fmt::Display for Curvature {
 }
 
 #[derive(Debug, Clone)]
+pub enum Domain {
+    Positive,
+    Nonnegative,
+    Free
+}
+
+#[derive(Debug, Clone)]
 pub struct Data {
     free_vars: HashSet<(Id, Symbol)>,
+    free_vars_domain: HashMap<Symbol, Domain>,
     constant: Option<(Constant, PatternAst<Optimization>)>,
     has_log: bool,
     has_exp: bool,
@@ -135,6 +147,7 @@ pub struct Data {
 
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
+
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         to.has_exp = to.has_exp || from.has_exp;
         to.has_log = to.has_log || from.has_log;
@@ -153,8 +166,11 @@ impl Analysis<Optimization> for Meta {
             |i: &Id| egraph[*i].data.free_vars.iter().cloned();
         let get_constant = 
             |i: &Id| egraph[*i].data.constant.clone();
-        
+
+        let x = egraph.analysis.positive.clone();
+
         let mut free_vars = HashSet::default();
+        let free_vars_domain = HashMap::new();
         let mut constant: Option<(Constant, PatternAst<Optimization>)> = None;
         let mut has_log = false;
         let mut has_exp = false;
@@ -295,7 +311,7 @@ impl Analysis<Optimization> for Meta {
             }
         }
 
-        Data { free_vars, constant, has_log, has_exp }
+        Data { free_vars, free_vars_domain, constant, has_log, has_exp }
     }
 }
 
@@ -444,6 +460,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("add-mul"; "(mul (add ?a ?b) ?c)" => "(add (mul ?a ?c) (mul ?b ?c))"),
 
     //rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
+
+    // NOTE(RFM): Testing this.
+    rw!("sub-self"; "(sub ?a ?a)" => "0"),
 
     rw!("sub-mul-left"; "(sub (mul ?a ?b) (mul ?a ?c))" => 
         "(mul ?a (sub ?b ?c))"),
@@ -745,28 +764,27 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                                 return Curvature::Constant;
                             }
                             Curvature::Affine => {
-                                if c.into_inner() == 0.0 {
+                                let c_val = c.into_inner();
+                                if c_val == 0.0 {
                                     return Curvature::Constant;
-                                } else if c.into_inner() == 1.0 {
+                                } else if c_val == 1.0 {
                                     return Curvature::Affine;
-                                } else if c.into_inner() < 0.0 {
-                                    // if x > 0 otherwise unknown.
+                                } else if c_val < 0.0 {
+                                    // NOTE(RFM): Not 100% correct, convex if x > 0 otherwise unknown.
                                     return Curvature::Convex;
-                                } else if 0.0 < c.into_inner() && c.into_inner() < 1.0 {
-                                    // if x >= 0 otherwise unknown.
+                                } else if 0.0 < c_val && c_val < 1.0 {
+                                    // NOTE(RFM): Not 100% correct, convex if x >= 0 otherwise unknown.
                                     return Curvature::Concave;
                                 } else if 
-                                    c.into_inner() == (c.into_inner() as u32) as f64 && 
-                                    (c.into_inner() as u32) % 2 == 0 {
+                                    c_val == (c_val as u32) as f64 && 
+                                    (c_val as u32) % 2 == 0 {
                                     return Curvature::Convex;
                                 } else {
-                                    // if x >= 0 otherwise unknown.
+                                    // NOTE(RFM): Not 100% correct, convex if x >= 0 otherwise unknown.
                                     return Curvature::Convex;
                                 }
                             }
-                            _ => {
-                                return Curvature::Unknown;
-                            }
+                            _ => { return Curvature::Unknown; }
                         }
                     }
                     _ => { return Curvature::Unknown; }
@@ -907,6 +925,8 @@ fn get_steps(s: String, debug: bool) -> Vec<Step> {
 #[serde(tag = "request")]
 enum Request {
     PerformRewrite {
+        positive : Vec<String>,
+        nonnegative : Vec<String>,
         target : String,
     }
 }
@@ -932,7 +952,10 @@ fn main_json() -> io::Result<()> {
             },
             Ok(req) => {
                 match req {
-                    Request::PerformRewrite { target } => 
+                    Request::PerformRewrite 
+                        { positive, 
+                          nonnegative, 
+                          target } => 
                     Response::Success {
                         steps: get_steps(target, false)
                     }
