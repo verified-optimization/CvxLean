@@ -129,7 +129,7 @@ impl fmt::Display for Curvature {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub enum Domain {
     Positive,
     Nonnegative,
@@ -925,8 +925,7 @@ fn get_steps(s: String, debug: bool) -> Vec<Step> {
 #[serde(tag = "request")]
 enum Request {
     PerformRewrite {
-        positive : Vec<String>,
-        nonnegative : Vec<String>,
+        domains : Vec<(String, Domain)>,
         target : String,
     }
 }
@@ -953,9 +952,7 @@ fn main_json() -> io::Result<()> {
             Ok(req) => {
                 match req {
                     Request::PerformRewrite 
-                        { positive, 
-                          nonnegative, 
-                          target } => 
+                        { domains, target } => 
                     Response::Success {
                         steps: get_steps(target, false)
                     }
