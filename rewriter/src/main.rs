@@ -83,6 +83,61 @@ impl PartialOrd for Domain {
     }
 }
 
+fn domain_is_zero(d:Domain) -> bool {
+    return d == Domain::Zero;
+}
+
+fn domain_is_pos(d:Domain) -> bool {
+    return d == Domain::Pos || d == Domain::PosConst;
+}
+
+fn domain_is_neg(d:Domain) -> bool {
+    return d == Domain::Neg || d == Domain::NegConst;
+}
+
+fn domain_is_nonneg(d:Domain) -> bool {
+    return d == Domain::NonNeg || domain_is_pos(d);
+}
+
+fn domain_is_nonpos(d:Domain) -> bool {
+    return d == Domain::NonPos || domain_is_neg(d);
+}
+
+fn domain_flip(d:Domain) -> Domain {
+    match d {
+        Domain::Free     => { return Domain::Free;     }
+        Domain::NonNeg   => { return Domain::NonPos;   }
+        Domain::NonPos   => { return Domain::NonNeg;   }
+        Domain::Pos      => { return Domain::Neg;      }
+        Domain::Neg      => { return Domain::Pos;      }
+        Domain::Zero     => { return Domain::Zero;     }
+        Domain::PosConst => { return Domain::NegConst; }
+        Domain::NegConst => { return Domain::PosConst; }
+    }
+}
+
+fn domain_option_flip(d:Option<Domain>) -> Option<Domain> {
+    return d.map(domain_flip);
+}
+
+fn domain_max(d_a:Domain, d_b:Domain) -> Domain {
+    match d_a.partial_cmp(&d_b) {
+        Some(Ordering::Equal)   => { return d_a; }
+        Some(Ordering::Less)    => { return d_b; }
+        Some(Ordering::Greater) => { return d_a; }
+        _                       => { return Domain::Free; }
+    }
+}
+
+fn domain_option_max(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    match (d_o_a, d_o_b) {
+        (Some(d_a), Some(d_b)) => { 
+            return Some(domain_max(d_a, d_b)); 
+        }
+        _ => { return None; }
+    }
+}
+
 type EGraph = egg::EGraph<Optimization, Meta>;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -97,14 +152,13 @@ pub enum Curvature {
     Concave,
     Affine,
     Constant,
-    Valid,
     Unknown,
 }
 
 /*
-        Unknown          Unknown
-        /     \             |
-    Convex   Concave      Valid
+        Unknown 
+        /     \ 
+    Convex   Concave
         \     /
          Affine
            |
@@ -147,14 +201,6 @@ impl PartialOrd for Curvature {
         if *self == Curvature::Unknown && *other == Curvature::Concave {
             return Some(Ordering::Greater);
         }
-        // Valid < Unknown.
-        if *self == Curvature::Valid && *other == Curvature::Unknown {
-            return Some(Ordering::Less);
-        }
-        // Unknown > Valid.
-        if *self == Curvature::Unknown && *other == Curvature::Valid {
-            return Some(Ordering::Greater);
-        }
 
         return None;
     }
@@ -168,7 +214,6 @@ impl fmt::Display for Curvature {
             Curvature::Affine   => write!(f, "Affine"),
             Curvature::Unknown  => write!(f, "Unknown"),
             Curvature::Constant => write!(f, "Constant"),
-            Curvature::Valid    => write!(f, "Valid"),
         }
     }
 }
@@ -278,7 +323,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = Some(Domain::Free);
+                domain = flip_domain_option(get_domain(a));
             }
             Optimization::Sqrt(a) => {
                 free_vars.extend(get_vars(a));
@@ -303,7 +348,19 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = max(get_domain(a), get_domain(b)); 
+
+                match (get_domain(a), get_domain(b)) {
+                    (Some(d_a), Some(d_b)) => {
+                        match d_a.partial_cmp(&d_b) {
+                            Some(Ordering::Equal) => { domain = get_domain(a); }
+                            Some(Ordering::Less) => { domain = get_domain(b); }
+                            Some(Ordering::Greater) => { domain = get_domain(a); }
+                            _ => { domain = Some(Domain::Free); }
+                        }
+                    }
+                    _ => ()
+                }
+                 
             }
             Optimization::Sub([a, b]) => {
                 free_vars.extend(get_vars(a));
