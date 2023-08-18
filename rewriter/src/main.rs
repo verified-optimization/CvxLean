@@ -1,6 +1,6 @@
 use egg::{rewrite as rw, *};
 use core::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use ordered_float::NotNan;
 use std::{fs, fmt, io};
 use serde::{Deserialize, Serialize};
@@ -114,20 +114,22 @@ impl fmt::Display for Curvature {
 
 #[derive(Debug, Clone)]
 pub struct Data {
-    free_vars: HashMap<Symbol, (Id, u32)>,
+    free_vars: HashSet<(Id, Symbol)>,
     domain: Option<Domain>,
     constant: Option<(Constant, PatternAst<Optimization>)>,
     has_log: bool,
-    has_exp: bool,
 }
 
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
-        to.has_exp = to.has_exp || from.has_exp;
+        let has_log_before = to.has_log;
         to.has_log = to.has_log || from.has_log;
+        let to_has_log_diff = has_log_before != to.has_log;
+        let from_has_log_diff = to.has_log != from.has_log;
 
+        let before_domain = to.domain.clone();
         match (to.domain, from.domain) {
             (None, Some(_)) => { to.domain = from.domain; }
             (Some(d_to), Some(d_from)) => {
@@ -135,19 +137,23 @@ impl Analysis<Optimization> for Meta {
             }
             _ => ()
         }
+        let to_domain_diff = before_domain != to.domain;
+        let from_domain_diff = to.domain != from.domain;
 
-        let before_len = to.free_vars.len();
-        to.free_vars.retain(|i: &Symbol, _| from.free_vars.contains_key(i));
-        
+        let before_free_vars = to.free_vars.len();
+        to.free_vars.retain(|i| from.free_vars.contains(i));
+        let to_free_vars_diff = before_free_vars != to.free_vars.len();
+        let from_free_vars_diff = to.free_vars.len() != from.free_vars.len();
+
         DidMerge(
-            before_len != to.free_vars.len(),
-            to.free_vars.len() != from.free_vars.len(),
+            to_has_log_diff || to_domain_diff || to_free_vars_diff,
+            from_has_log_diff || from_domain_diff || from_free_vars_diff,
         )
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
         let get_vars = 
-            |i: &Id| egraph[*i].data.free_vars.iter().clone();
+            |i: &Id| egraph[*i].data.free_vars.iter().cloned();
         let get_constant = 
             |i: &Id| egraph[*i].data.constant.clone();
         let get_domain = 
@@ -155,11 +161,10 @@ impl Analysis<Optimization> for Meta {
         let domains_map = 
             egraph.analysis.domains.clone();
 
-        let mut free_vars = HashMap::default();
+        let mut free_vars = HashSet::default();
         let mut constant = None;
         let mut domain = None;
         let mut has_log = false;
-        let mut has_exp = false;
 
         match enode {
             Optimization::Prob([a, b]) => {
@@ -339,7 +344,6 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                has_exp = true;
 
                 domain = Some(Domain::Pos);
             }
@@ -347,13 +351,7 @@ impl Analysis<Optimization> for Meta {
                 // Assume that after var there is always a symbol.
                 match egraph[*a].nodes[0] { 
                     Optimization::Symbol(s) => {
-                        if free_vars.contains_key(&s) {
-                            let (a, b) = 
-                                free_vars.get_mut(&s).unwrap();
-                            *b += 1;
-                        } else {
-                            free_vars.insert(s, (*a, 1)); 
-                        }
+                        free_vars.insert((*a, s)); 
                         match domains_map.get(&s) {
                             Some(d) => { domain = Some(*d); }
                             _ => ()
@@ -380,7 +378,7 @@ impl Analysis<Optimization> for Meta {
             }
         }
 
-        Data { free_vars, constant, domain, has_log, has_exp }
+        Data { free_vars, constant, domain, has_log }
     }
 }
 
