@@ -284,14 +284,99 @@ simple_reduction _ _ sol id id
 
 /-- -/
 def rewrite_constraints {cs : D → Prop}
-{f : D → R}
-(hfg : ∀ x, cs x ↔ ds x)
-(sol : Solution
-    { objFun := f
-      constraints := ds })  :
-Solution {objFun := f, constraints := cs} := by
+  {f : D → R}
+  (hfg : ∀ x, cs x ↔ ds x)
+  (sol : Solution { objFun := f, constraints := ds }) :
+  Solution {objFun := f, constraints := cs} := by
   have := funext fun x => (propext (hfg x))
   simpa [this]
+
+def rewrite_constraint_1 {R D} [Preorder R] {c1 c1' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc1 : ∀ x, c1 x ↔ c1' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ cs x  } :=
+  rewrite_constraints (fun x => by rw [hc1]) sol
+
+def rewrite_constraint_2 {R D} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc2 : ∀ x, c2 x ↔ c2' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc2]) sol
+
+def rewrite_constraint_3 {R D} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc3 : ∀ x, c3 x ↔ c3' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc3]) sol
+
+def rewrite_constraint_4 {R D} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc4 : ∀ x, c4 x ↔ c4' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc4]) sol
+
+def rewrite_constraint_5 {R D} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc5 : ∀ x, c5 x ↔ c5' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc5]) sol
+
+def rewrite_constraint_6 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc6 : ∀ x, c6 x ↔ c6' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc6]) sol
+
+def rewrite_constraint_7 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc7 : ∀ x, c7 x ↔ c7' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc7]) sol
+
+def rewrite_constraint_8 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc8 : ∀ x, c8 x ↔ c8' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc8]) sol
+
+def rewrite_constraint_9 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc9 : ∀ x, c9 x ↔ c9' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc9]) sol
+
+def rewrite_constraint_10 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hc10 : ∀ x, c10 x ↔ c10' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x ∧ cs x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10 x ∧ cs x } :=
+  rewrite_constraints (fun x => by rw [hc10]) sol
+
+def rewrite_constraint_last {R D} [Preorder R] {cl cl' : D → Prop} {cs : D → Prop}
+  {f : D → R}
+  (hcl : ∀ x, cl x ↔ cl' x)
+  (sol : Solution { objFun := f, constraints := fun x => cs x ∧ cl' x }) :
+  Solution { objFun := f, constraints := fun x => cs x ∧ cl x } :=
+  rewrite_constraints (fun x => by rw [hcl]) sol
+
+-- example : Solution $ 
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to 
+--       h1 : x <= 1
+--       h2 : x <= 0 := by 
+--   have h : ∀ x : ℝ, x <= 1 ↔ x <= 2 - 1 := sorry 
+--   apply @rewrite_constraint1 ℝ ℝ _ _ _ _ _ h
+--   sorry
 
 end Reductions
 
