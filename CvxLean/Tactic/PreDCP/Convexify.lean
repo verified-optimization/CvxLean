@@ -70,14 +70,24 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   | l => return l
 
 def CvxLean.DCP.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
-  MetaM String := do
+  MetaM (String × Array String) := do
   let ocTree ← DCP.uncheckedTreeFromSolutionExpr m
-  -- NOTE(RFM): Some empty constraints here coming from conditions?
+  -- Detect domain constraints of the form 0 <= x.
+  -- NOTE(RFM): Assume there are no '<' constraints.
+  let nonnegVars := ocTree.constr.filterMap <| fun c =>
+    match c with
+    | Tree.node "le" #[Tree.leaf "0", Tree.leaf v] => 
+        if v ∈ vars then some v else none 
+    | _ => none
+
+  dbg_trace s!"{ocTree.constr.map Tree.toString}"
+
+  -- NOTE(RFM): Some empty constraints here coming from '<' conditions?
   let ocTree := { ocTree with constr := ocTree.constr.filter (·.size > 1)}
   let tree := Tree.ofOCTree ocTree
   let tree := Tree.surroundVars tree vars
   let tree ← tree.adjustOps
-  return tree.toString
+  return (tree.toString, nonnegVars)
 
 end MinimizationToEgg
 
@@ -268,7 +278,7 @@ def surroundQuotes (s : String) : String :=
   "\"" ++ s ++ "\""
 
 structure EggRequest where
-  domains : List (String × String)
+  domains : List (List String)
   target : String
 
 def EggRequest.toJson (e : EggRequest) : String := 
@@ -276,8 +286,8 @@ def EggRequest.toJson (e : EggRequest) : String :=
   surroundQuotes "request" ++ " : " ++ surroundQuotes "PerformRewrite" ++ ", " ++ 
   surroundQuotes "domains" ++ " : " ++ 
     "[" ++
-    (", ".intercalate <| e.domains.map (fun (s, d) => 
-      "(" ++ (surroundQuotes s) ++ "," ++ (surroundQuotes d) ++ ")")) ++
+    (", ".intercalate <| e.domains.map (fun d => 
+      "[" ++ ",".intercalate (d.map surroundQuotes) ++ "]")) ++
     "]" ++ ", " ++
   surroundQuotes "target" ++ " : " ++ (surroundQuotes e.target) ++ 
   "}"
@@ -462,13 +472,13 @@ elab "convexify" : tactic => withMainContext do
     return pr.map (Prod.fst)
   let varsStr := vars.map toString
 
-  let gStr ← DCP.uncheckedTreeString gExpr varsStr
+  let (gStr, nonnegVars) ← DCP.uncheckedTreeString gExpr varsStr
 
   let eggRequest := {
-    domains := []
+    domains := Array.data <| nonnegVars.map (fun v => [v, "NonNeg"]),
     target := gStr
   }
-  let steps := ← runEggRequest eggRequest
+  let steps ← runEggRequest eggRequest
 
   for step in steps do
     let g ← getMainGoal
@@ -505,7 +515,8 @@ lemma x : Minimization.Solution $
   optimization (x : ℝ) 
     minimize (0 : ℝ)
     subject to 
+      hx : 0 <= x
       h : Real.log (Real.exp x) ≤ 1 := by 
   convexify
-  
   sorry
+  

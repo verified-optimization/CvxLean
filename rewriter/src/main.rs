@@ -39,7 +39,7 @@ fn is_exp(opt: &Optimization) -> bool {
 }
 
 // TODO(RFM): Factor out.
-#[derive(Debug, Copy, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Domain {
     Free,
     NonNeg,
@@ -1113,7 +1113,7 @@ fn get_steps(s: String, debug: bool) -> Vec<Step> {
 
 // Taken from https://github.com/opencompl/egg-tactic-code
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(tag = "request")]
 enum Request {
     PerformRewrite {
