@@ -103,7 +103,6 @@ impl Analysis<Optimization> for Meta {
             }
             Optimization::ObjFun(a) => {
                 free_vars.extend(get_vars(a));
-                
             }
             Optimization::Constraints(a) => {
                 for c in a.iter() {
@@ -390,8 +389,6 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("le-div-one"; "(le ?a ?b)" => "(le (div ?a ?b) 1)" 
         if is_not_zero("?b") if is_not_one("?b")),
 
-    // NOTE(RFM): Turn all rws above into a normalization step? 
-
     rw!("add-comm"; "(add ?a ?b)" => "(add ?b ?a)"), 
 
     rw!("add-assoc"; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))"),
@@ -407,7 +404,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
 
     // NOTE(RFM): Testing this.
-    // rw!("sub-self"; "(sub ?a ?a)" => "0"),
+    rw!("sub-self"; "(sub ?a ?a)" => "0"),
 
     rw!("sub-mul-left"; "(sub (mul ?a ?b) (mul ?a ?c))" => 
         "(mul ?a (sub ?b ?c))"),
@@ -506,8 +503,8 @@ struct DCPScore<'a> {
 }
 
 impl<'a> CostFunction<Optimization> for DCPScore<'a> {
-    // Curvature + term size + number of variables (with repetition).
-    // Lexicographic order.
+    // Curvature * term size * number of variables (with repetition).
+    // In lexicographic order.
     type Cost = (Curvature, u32, u32);
     fn cost<C>(&mut self, enode: &Optimization, mut costs: C) -> Self::Cost
     where
@@ -544,6 +541,7 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                     };
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
+                println!("prob: {:?} {:?} {:?}", curvature, term_size, num_vars);
             }
             Optimization::ObjFun(a) => {
                 curvature = get_curvature!(a);
@@ -819,15 +817,23 @@ fn main() {
 #[test]
 fn test() {
     let s = "(le (div 1 (sqrt (var x))) (exp (var x)))".to_string();
-    let s = "(prob 
-        (objFun (add (add (mul (mul (div 1 (exp (var x))) (div 1 (sqrt (exp (var y))))) (div 1 (exp (var z)))) (mul (mul (div 23 10) (exp (var x))) (exp (var z)))) (mul (mul (mul 4 (exp (var x))) (exp (var y))) (exp (var z))))) 
-        (constraints 
-            (le (add (mul (mul (div 1 3) (div 1 (pow (exp (var x)) 2))) (div 1 (pow (exp (var y)) 2))) (mul (mul (div 4 3) (sqrt (exp (var y)))) (div 1 (exp (var z))))) 1) 
-            (le (add (add (exp (var x)) (mul 2 (exp (var y)))) (mul 3 (exp (var z)))) 1) 
-            (eq (mul (mul (div 1 2) (exp (var x))) (exp (var y))) 1)
-        ))".to_string();
-
-    let s = "(prob (objFun (div 1 (div (exp (var x)) (exp (var y))))) (constraints (le 2 (exp (var x))) (le (exp (var x)) 3) (le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x)))) (eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))))".to_string();
+    let s = "(add (var x) (var x))".to_string();
+    // let s = "(prob 
+    //     (objFun (add (add (mul (mul (div 1 (exp (var x))) (div 1 (sqrt (exp (var y))))) (div 1 (exp (var z)))) (mul (mul (div 23 10) (exp (var x))) (exp (var z)))) (mul (mul (mul 4 (exp (var x))) (exp (var y))) (exp (var z))))) 
+    //     (constraints 
+    //         (le (add (mul (mul (div 1 3) (div 1 (pow (exp (var x)) 2))) (div 1 (pow (exp (var y)) 2))) (mul (mul (div 4 3) (sqrt (exp (var y)))) (div 1 (exp (var z))))) 1) 
+    //         (le (add (add (exp (var x)) (mul 2 (exp (var y)))) (mul 3 (exp (var z)))) 1) 
+    //         (eq (mul (mul (div 1 2) (exp (var x))) (exp (var y))) 1)
+    //     ))".to_string();
+    // let s = "(prob 
+    //     (objFun (div 1 (div (exp (var x)) (exp (var y)))))
+    //     (constraints 
+    //         (le 2 (exp (var x))) 
+    //         (le (exp (var x)) 3) 
+    //         (le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x)))) 
+    //         (eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))
+    //     )
+    // )".to_string();
     let steps = get_steps(s, true);
     println!("{:?}", steps);
 }
