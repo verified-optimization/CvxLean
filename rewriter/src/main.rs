@@ -513,12 +513,15 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
     where
         C: FnMut(Id) -> Self::Cost
     {
-        let mut get_curvature =
-            |i: &Id| costs(*i).0;
-        let mut get_term_size =
-            |i: &Id| costs(*i).1;
-        let mut get_num_vars =
-            |i: &Id| costs(*i).2;
+        macro_rules! get_curvature {
+            ($i:expr) => { costs(*$i).0 }
+        }
+        macro_rules! get_term_size {
+            ($i:expr) => { costs(*$i).1 }
+        }
+        macro_rules! get_num_vars {
+            ($i:expr) => { costs(*$i).2 }
+        }
         
         let get_constant = 
             |i: &Id| self.egraph[*i].data.constant.clone();
@@ -532,67 +535,67 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
         match enode {
             Optimization::Prob([a, b]) => {
                 curvature = 
-                    if get_curvature(b) <= get_curvature(a) { 
-                        get_curvature(a)
-                    } else if get_curvature(a) <= get_curvature(b) {
-                        get_curvature(b)
+                    if get_curvature!(b) <= get_curvature!(a) { 
+                        get_curvature!(a)
+                    } else if get_curvature!(a) <= get_curvature!(b) {
+                        get_curvature!(b)
                     } else {
                         Curvature::Unknown
                     };
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::ObjFun(a) => {
-                curvature = get_curvature(a);
-                term_size = 1 + get_term_size(a);
-                num_vars = get_num_vars(a);
+                curvature = get_curvature!(a);
+                term_size = 1 + get_term_size!(a);
+                num_vars = get_num_vars!(a);
             }
             Optimization::Constraints(a) => {
                 curvature = Curvature::Constant;
                 term_size = 0;
                 num_vars = 0;
                 for c in a.iter() {
-                    if curvature < get_curvature(c) {
-                        curvature = get_curvature(c);
+                    if curvature < get_curvature!(c) {
+                        curvature = get_curvature!(c);
                     }
-                    term_size += get_term_size(c);
-                    num_vars += get_num_vars(c);
+                    term_size += get_term_size!(c);
+                    num_vars += get_num_vars!(c);
                 }
             }
             Optimization::Eq([a, b]) => {
                 curvature = 
-                    if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
+                    if get_curvature!(a) <= Curvature::Affine && get_curvature!(b) <= Curvature::Affine {
                         Curvature::Affine
                     } else { 
                         Curvature::Unknown
                     };
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Le([a, b]) => {
-                curvature = curvature::of_le(get_curvature(a), get_curvature(b));
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                curvature = curvature::of_le(get_curvature!(a), get_curvature!(b));
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Neg(a) => {
-                curvature = curvature::of_neg(get_curvature(a));
-                term_size = 1 + get_term_size(a);
-                num_vars = get_num_vars(a);
+                curvature = curvature::of_neg(get_curvature!(a));
+                term_size = 1 + get_term_size!(a);
+                num_vars = get_num_vars!(a);
             }
             Optimization::Sqrt(a) => {
-                curvature = curvature::of_concave_fn(get_curvature(a));
-                term_size = 1 + get_term_size(a);
-                num_vars = get_num_vars(a);
+                curvature = curvature::of_concave_fn(get_curvature!(a));
+                term_size = 1 + get_term_size!(a);
+                num_vars = get_num_vars!(a);
             }
             Optimization::Add([a, b]) => {
-                curvature = curvature::of_add(get_curvature(a), get_curvature(b));
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                curvature = curvature::of_add(get_curvature!(a), get_curvature!(b));
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Sub([a, b]) => {
-                curvature = curvature::of_sub(get_curvature(a), get_curvature(b));
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                curvature = curvature::of_sub(get_curvature!(a), get_curvature!(b));
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Mul([a, b]) => {
                 curvature = match (get_constant(a), get_constant(b)) {
@@ -600,15 +603,15 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                         Curvature::Constant
                     }
                     (Some((c1, _)), None) => {
-                        curvature::of_mul_by_const(get_curvature(b), c1.into_inner())
+                        curvature::of_mul_by_const(get_curvature!(b), c1.into_inner())
                     }
                     (None, Some((c2, _))) => {
-                        curvature::of_mul_by_const(get_curvature(a), c2.into_inner())
+                        curvature::of_mul_by_const(get_curvature!(a), c2.into_inner())
                     }
                     _ => { Curvature::Unknown }
                 };
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Div([a, b]) => {
                 curvature = match (get_constant(a), get_constant(b)) {
@@ -616,32 +619,32 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                         Curvature::Constant
                     }
                     (None, Some((c2, _))) => {
-                        curvature::of_mul_by_const(get_curvature(a), c2.into_inner())
+                        curvature::of_mul_by_const(get_curvature!(a), c2.into_inner())
                     }
                     _ => { Curvature::Unknown }
                 };
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Pow([a, b]) => {
                 curvature = match get_constant(b) {
                     Some((c, _)) => {
-                        curvature::of_pow_by_const(get_curvature(a), c.into_inner(), get_domain(a))
+                        curvature::of_pow_by_const(get_curvature!(a), c.into_inner(), get_domain(a))
                     }
                     _ => { Curvature::Unknown }
                 };
-                term_size = 1 + get_term_size(a) + get_term_size(b);
-                num_vars = get_num_vars(a) + get_num_vars(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Log(a) => {
-                curvature = curvature::of_concave_fn(get_curvature(a));
-                term_size = 1 + get_term_size(a);
-                num_vars = get_num_vars(a);
+                curvature = curvature::of_concave_fn(get_curvature!(a));
+                term_size = 1 + get_term_size!(a);
+                num_vars = get_num_vars!(a);
             }
             Optimization::Exp(a) => {
-                curvature = curvature::of_convex_fn(get_curvature(a));
-                term_size = 1 + get_term_size(a);
-                num_vars = get_num_vars(a);
+                curvature = curvature::of_convex_fn(get_curvature!(a));
+                term_size = 1 + get_term_size!(a);
+                num_vars = get_num_vars!(a);
             }
             Optimization::Var(_a) => {
                 curvature = Curvature::Affine;
