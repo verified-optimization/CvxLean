@@ -105,7 +105,7 @@ pub fn of_concave_fn(c: Curvature) -> Curvature {
     match c {
         Curvature::Concave  => { return Curvature::Concave; }
         Curvature::Affine   => { return Curvature::Concave; }
-        Curvature::Constant => { return Curvature::Concave; }
+        Curvature::Constant => { return Curvature::Constant; }
         _ => { return Curvature::Unknown; }
     }
 }
@@ -114,7 +114,7 @@ pub fn of_convex_fn(c: Curvature) -> Curvature {
     match c {
         Curvature::Convex   => { return Curvature::Convex; }
         Curvature::Affine   => { return Curvature::Convex; }
-        Curvature::Constant => { return Curvature::Convex; }
+        Curvature::Constant => { return Curvature::Constant; }
         _ => { return Curvature::Unknown; }
     }
 }
