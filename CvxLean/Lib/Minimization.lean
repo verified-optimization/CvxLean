@@ -293,80 +293,124 @@ def rewrite_constraints {cs : D → Prop}
 
 def rewrite_constraint_1 {R D} [Preorder R] {c1 c1' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc1 : ∀ x, c1 x ↔ c1' x)
+  (hc1 : ∀ x, cs x → (c1 x ↔ c1' x))
   (sol : Solution { objFun := f, constraints := fun x => c1' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ cs x  } :=
-  rewrite_constraints (fun x => by rw [hc1]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc1 x hx.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc1 x hx.2] at hx; exact hx)
 
 def rewrite_constraint_2 {R D} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc2 : ∀ x, c2 x ↔ c2' x)
+  (hc2 : ∀ x, c1 x → cs x → (c2 x ↔ c2' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc2]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc2 x hx.1 hx.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc2 x hx.1 hx.2.2] at hx; exact hx)
 
 def rewrite_constraint_3 {R D} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc3 : ∀ x, c3 x ↔ c3' x)
+  (hc3 : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc3]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc3 x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc3 x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_4 {R D} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc4 : ∀ x, c4 x ↔ c4' x)
+  (hc4 : ∀ x, c1 x → c2 x → c3 x → cs x → (c4 x ↔ c4' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc4]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc4 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc4 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_5 {R D} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc5 : ∀ x, c5 x ↔ c5' x)
+  (hc5 : ∀ x, c1 x → c2 x → c3 x → c4 x → cs x → (c5 x ↔ c5' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc5]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc5 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc5 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_6 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc6 : ∀ x, c6 x ↔ c6' x)
+  (hc6 : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → cs x → (c6 x ↔ c6' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc6]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc6 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc6 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_7 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc7 : ∀ x, c7 x ↔ c7' x)
+  (hc7 : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → cs x → (c7 x ↔ c7' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc7]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc7 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc7 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_8 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc8 : ∀ x, c8 x ↔ c8' x)
+  (hc8 : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc8]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc8 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc8 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_9 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc9 : ∀ x, c9 x ↔ c9' x)
+  (hc9 : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → cs x → (c9 x ↔ c9' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc9]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc9 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc9 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_10 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hc10 : ∀ x, c10 x ↔ c10' x)
+  (hc10 : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → cs x → (c10 x ↔ c10' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10 x ∧ cs x } :=
-  rewrite_constraints (fun x => by rw [hc10]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hc10 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx)
+    (fun {x} hx => by simp only [←hc10 x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx)
 
 def rewrite_constraint_last {R D} [Preorder R] {cl cl' : D → Prop} {cs : D → Prop}
   {f : D → R}
-  (hcl : ∀ x, cl x ↔ cl' x)
+  (hcl : ∀ x, cs x → (cl x ↔ cl' x))
   (sol : Solution { objFun := f, constraints := fun x => cs x ∧ cl' x }) :
   Solution { objFun := f, constraints := fun x => cs x ∧ cl x } :=
-  rewrite_constraints (fun x => by rw [hcl]) sol
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hcl x hx.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hcl x hx.1] at hx; exact hx)
 
 -- example : Solution $ 
 --   optimization (x : ℝ)
