@@ -103,7 +103,6 @@ pub fn of_neg(c: Curvature) -> Curvature {
 
 pub fn of_concave_fn(c: Curvature) -> Curvature {
     match c {
-        Curvature::Convex   => { return Curvature::Unknown; }
         Curvature::Concave  => { return Curvature::Concave; }
         Curvature::Affine   => { return Curvature::Concave; }
         Curvature::Constant => { return Curvature::Concave; }
@@ -114,7 +113,6 @@ pub fn of_concave_fn(c: Curvature) -> Curvature {
 pub fn of_convex_fn(c: Curvature) -> Curvature {
     match c {
         Curvature::Convex   => { return Curvature::Convex; }
-        Curvature::Concave  => { return Curvature::Unknown; }
         Curvature::Affine   => { return Curvature::Convex; }
         Curvature::Constant => { return Curvature::Convex; }
         _ => { return Curvature::Unknown; }
