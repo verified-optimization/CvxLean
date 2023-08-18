@@ -163,10 +163,6 @@ pub fn option_map2<T1, T2, U, F>(x1: Option<T1>, x2: Option<T2>, f: F) -> Option
         }
     }
 
-fn domain_option_union(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
-    return option_map2(d_o_a, d_o_b, domain_union);
-}
-
 fn domain_add(d_a:Domain, d_b:Domain) -> Domain {
     match (d_a, d_b) {
         (Domain::Zero,   _             ) => { return d_b; }
@@ -194,9 +190,9 @@ fn domain_mul(d_a:Domain, d_b:Domain) -> Domain {
         return domain_add(d_a, d_b);
     } else {
         // Opposite sign case.
-        if domain_is_neg(d_a) {
+        if domain_is_nonpos(d_a) {
             return domain_flip(d_b);
-        } else if domain_is_neg(d_b) {
+        } else if domain_is_nonpos(d_b) {
             return domain_flip(d_a);
         } else {
             return Domain::Free;
@@ -215,14 +211,13 @@ pub struct Meta {
     domain : Vec<(Symbol, Domain)>,
 }
 
-// TODO(RFM): Remove "Valid", split Real and Prop.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Curvature {
+    Unknown,
     Convex,
     Concave,
     Affine,
     Constant,
-    Unknown,
 }
 
 /*
@@ -279,10 +274,10 @@ impl PartialOrd for Curvature {
 impl fmt::Display for Curvature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Curvature::Unknown  => write!(f, "Unknown"),
             Curvature::Convex   => write!(f, "Convex"),
             Curvature::Concave  => write!(f, "Concave"),
             Curvature::Affine   => write!(f, "Affine"),
-            Curvature::Unknown  => write!(f, "Unknown"),
             Curvature::Constant => write!(f, "Constant"),
         }
     }
@@ -646,10 +641,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("add-mul"; "(mul (add ?a ?b) ?c)" => "(add (mul ?a ?c) (mul ?b ?c))"),
 
-    //rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
+    rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
 
     // NOTE(RFM): Testing this.
-    rw!("sub-self"; "(sub ?a ?a)" => "0"),
+    // rw!("sub-self"; "(sub ?a ?a)" => "0"),
 
     rw!("sub-mul-left"; "(sub (mul ?a ?b) (mul ?a ?c))" => 
         "(mul ?a (sub ?b ?c))"),
@@ -664,19 +659,19 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul-div"; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)" 
         if is_not_zero("?c")),
 
-    //rw!("div-mul"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
+    rw!("div-mul"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
     
     rw!("div-add"; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))" 
         if is_not_zero("?c")),
 
-    //rw!("add-div"; "(add (div ?a ?b) (div ?c ?b))" => "(div (add ?a ?c) ?b)"),
+    rw!("add-div"; "(add (div ?a ?b) (div ?c ?b))" => "(div (add ?a ?c) ?b)"),
 
     rw!("div-sub"; "(div (sub ?a ?b) ?c)" => "(sub (div ?a ?c) (div ?b ?c))" 
         if is_not_zero("?c")),
 
     rw!("pow-add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"),
 
-    //rw!("mul-pow"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"),
+    rw!("mul-pow"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"),
 
     rw!("pow-sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow ?a ?c))" 
         if is_not_zero("?a")),
@@ -690,11 +685,11 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
 
-    //rw!("exp-add"; "(exp (add ?a ?b))" => "(mul (exp ?a) (exp ?b))"),
+    rw!("exp-add"; "(exp (add ?a ?b))" => "(mul (exp ?a) (exp ?b))"),
 
     rw!("mul-exp"; "(mul (exp ?a) (exp ?b))" => "(exp (add ?a ?b))"),
 
-    //rw!("exp-sub"; "(exp (sub ?a ?b))" => "(div (exp ?a) (exp ?b))"),
+    rw!("exp-sub"; "(exp (sub ?a ?b))" => "(div (exp ?a) (exp ?b))"),
 
     rw!("div-exp"; "(div (exp ?a) (exp ?b))" => "(exp (sub ?a ?b))"),
     
@@ -778,7 +773,6 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 for c in a.iter() {
                     if curvature < costs(*c) {
                         curvature = costs(*c);
-                        break;
                     }
                 }
                 return curvature;
@@ -1179,6 +1173,8 @@ fn test() {
             (le (add (add (exp (var x)) (mul 2 (exp (var y)))) (mul 3 (exp (var z)))) 1) 
             (eq (mul (mul (div 1 2) (exp (var x))) (exp (var y))) 1)
         ))".to_string();
+
+    let s = "(prob (objFun (div 1 (div (exp (var x)) (exp (var y))))) (constraints (le 2 (exp (var x))) (le (exp (var x)) 3) (le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x)))) (eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))))".to_string();
     let steps = get_steps(s, true);
     println!("{:?}", steps);
 }
