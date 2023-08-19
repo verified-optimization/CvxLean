@@ -546,7 +546,6 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                     };
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
-                println!("prob: {:?} {:?} {:?}", curvature, term_size, num_vars);
             }
             Optimization::ObjFun(a) => {
                 curvature = get_curvature!(a);
