@@ -56,7 +56,7 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a);
                 num_vars = get_num_vars!(a);
             }
-            Optimization::Constr([h, c]) => {
+            Optimization::Constr([_, c]) => {
                 curvature = get_curvature!(c);
                 term_size = 1 + get_term_size!(c);
                 num_vars = get_num_vars!(c);

@@ -1,5 +1,3 @@
-use egg::{*};
-
 use crate::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
