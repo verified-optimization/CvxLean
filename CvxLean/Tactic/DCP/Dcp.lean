@@ -14,16 +14,20 @@ open Lean Lean.Meta
 
 namespace DCP
 
-/-- -/
+/-- Check if `expr` is constant by checking if it contains any free 
+variable from `vars`. -/
 def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
   let fvarSet := (collectFVars {} expr).fvarSet
   for v in vars do
-    if fvarSet.contains v then
-      return false
+    if fvarSet.contains v then return false
   return true
 
-/-- -/
-def findRegisteredAtoms (e : Expr) (vars : Array FVarId) : MetaM (Array (Array Expr × GraphAtomData)) := do
+/-- Return list of all registered atoms that match with a given expression. 
+For every registered atom, it returns: 
+1. The list of arguments as Lean expressions for further matching. 
+2. The atom entry, of type `GraphAtomData`. -/
+def findRegisteredAtoms (e : Expr) : 
+  MetaM (Array (Array Expr × GraphAtomData)) := do
   let discrTree ← getAtomDiscrTree
   let atoms ← discrTree.getMatch (← zetaReduce (← e.removeMData))
   trace[Meta.debug] "discrTree {atoms.size} {e}"
@@ -39,59 +43,6 @@ def findRegisteredAtoms (e : Expr) (vars : Array FVarId) : MetaM (Array (Array E
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms
 
-partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
-  MetaM (OC (Tree String String)) := do
-  withExistingLocalDecls originalVarsDecls.toList do
-    let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-    OC.mapM (fun e => findUncheckedAtoms e (xs.map (·.fvarId!))) oc
-where 
-  findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
-    if isConstant e vars then
-      -- NOTE(RFM): There are special cases for constants with negation and 
-      -- division, but what about something like 2 * 3?
-      if ← isOptimizationParam e.constName then 
-        return Tree.node "param" #[Tree.leaf (toString e.constName)]
-      let mut e := e
-      let mut res := Tree.leaf "unknown"
-      let mut hasNeg := false
-      if e.getAppFn.constName == `Neg.neg then
-        e := e.getArg! 3
-        hasNeg := true
-      if e.getAppFn.constName == `HDiv.hDiv then
-        let a ← Lean.PrettyPrinter.ppExpr <| e.getArg! 4
-        let b ← Lean.PrettyPrinter.ppExpr <| e.getArg! 5
-        res := Tree.node "div" #[Tree.leaf s!"{a}", Tree.leaf s!"{b}"]
-      else
-        let ppe ← Lean.PrettyPrinter.ppExpr e
-        res := Tree.leaf s!"{ppe}"
-      if hasNeg then
-        res := Tree.node "neg" #[res]
-      return res
-    if e.isFVar ∧ vars.contains e.fvarId! then
-      let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
-      return Tree.leaf (toString n) 
-    
-    let potentialAtoms ← findRegisteredAtoms e vars
-    
-    -- Just get the first one for now.
-    let mut res := Tree.leaf "unknown"
-    trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
-    for (args, atom) in potentialAtoms do
-      res := ← processUncheckedAtom e vars atom args 
-      break
-    
-    return res
- 
-  processUncheckedAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr) 
-  : MetaM (Tree String String) := do
-    let mut childTrees := #[]
-    for i in [:args.size] do
-      let arg := args[i]!
-      let childTree ← findUncheckedAtoms arg vars
-      childTrees := childTrees.push childTree
-
-    return Tree.node (toString atom.id) childTrees
-
 /-- -/
 inductive FindAtomResult
 | Success (res : Tree GraphAtomData Expr × Tree (Array Expr) Unit × Tree Curvature Curvature × Tree (Array Expr) (Array Expr))
@@ -103,7 +54,7 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   if e.isFVar ∧ vars.contains e.fvarId! then
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
-  let potentialAtoms ← findRegisteredAtoms e vars
+  let potentialAtoms ← findRegisteredAtoms e
   let mut failedAtoms : Array MessageData := #[]
   if potentialAtoms.size == 0 then
     failedAtoms := failedAtoms.push m!"No atom found for {e}"
@@ -322,7 +273,7 @@ partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array E
     Tree (Array Expr) (Array Expr) →
     MetaM (Tree (Expr × Array Expr) (Expr × Array Expr))
   | Tree.node atom childAtoms, Tree.node args childArgs, 
-      Tree.node reducedExpr childReducedExpr, Tree.node newVars childNewVars,
+      Tree.node _reducedExpr childReducedExpr, Tree.node newVars childNewVars,
       Tree.node newConstrVars childNewConstrVars,
       Tree.node curvature childCurvature,
       Tree.node bconds childBConds => do
@@ -559,6 +510,14 @@ def mkOC (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsD
     let oc := OC.mk objFun (constraints.toArray.map (fun (c : Lean.Name × Expr) => c.2))
     return oc
 
+/-- Same as `mkOC` but keeping constraint tags. The objective function is tagged
+with anonymous. -/
+def mkOCWithNames (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl)
+  : MetaM (OC (Lean.Name × Expr)) := do
+  withExistingLocalDecls originalVarsDecls.toList do
+    let oc := OC.mk (`_, objFun) constraints.toArray
+    return oc
+
 -- TODO: Better error message when discovering a concave atom where convex is expected, and vice versa.
 /-- Construct the atom tree. -/
 def mkAtomTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) : 
@@ -731,7 +690,8 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
 
 /-- -/
 -- NOTE(RFM): Temporarily changing this to not only return the map from 
--- solution to solution but also the forward and backward maps.
+-- solution to solution but also the forward and backward maps. 
+-- TODO(RFM): Better types for return type.
 def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
   MetaM (Expr × (Expr × Expr × Expr)) := do
   -- Extract objective and constraints from `goalExprs`.
@@ -845,40 +805,6 @@ def canonizeGoal (goal : MVarId) : MetaM MVarId := do
   goal.assign assignment
   return newGoal.mvarId!
 
-def uncheckedTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
-  MetaM (OC (Tree String String)) := do
-  let (objFun, constraints, originalVarsDecls)
-    ← withLambdaBody goalExprs.constraints fun p constraints => do
-    let pr := (← Meta.mkProjections goalExprs.domain p).toArray
-    let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
-        fun xs => do
-          return ← xs.mapM fun x => x.fvarId!.getDecl
-    withExistingLocalDecls originalVarsDecls.toList do
-      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ← 
-        Meta.decomposeConstraints constraints
-      let constraints ← 
-        constraints.mapM (fun ((n : Lean.Name), e) => do 
-          return (n, ← Expr.removeMData e))
-      let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
-      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
-      return (objFun, constraints, originalVarsDecls)
-
-  let oc ← mkOC objFun constraints originalVarsDecls
-  let tree ← mkUncheckedTree originalVarsDecls oc
-  return tree
-
-def uncheckedTreeFromExpr (goalExpr : Expr) : 
-  MetaM (OC (Tree String String)) := do 
-  let goalExprs ← Meta.matchSolutionExprFromExpr goalExpr
-  uncheckedTreeFromSolutionExpr goalExprs
-
-def uncheckedTree (goal : MVarId) : MetaM (OC (Tree String String)) := do
-  let goalExprs ← Meta.matchSolutionExpr goal
-  uncheckedTreeFromSolutionExpr goalExprs
-
 end DCP
 
 namespace Tactic
@@ -893,16 +819,6 @@ def evalDcp : Tactic := fun stx => match stx with
   let goal ← Elab.Tactic.getMainGoal
   replaceMainGoal [← DCP.canonizeGoal goal]
 | _ => throwUnsupportedSyntax
-
-syntax (name := uncheckedTree) "unchecked_tree" : tactic 
-
-@[tactic uncheckedTree]
-def evalPreDcpTree : Tactic 
-  | `(tactic| unchecked_tree) => do 
-    let goal ← Elab.Tactic.getMainGoal
-    let _ ← DCP.uncheckedTree goal
-    pure ()
-  | _ => throwUnsupportedSyntax
 
 end Tactic
 
