@@ -9,19 +9,23 @@ use crate::curvature;
 use curvature::Curvature as Curvature;
 
 use crate::optimization;
-use optimization::Optimization as Optimizaiton;
+use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
 
 use crate::rules;
 use rules::rules as rules;
 
+use crate::cost;
+use cost::DCPCost as DCPCost;
+
 #[derive(Serialize, Debug)]
 enum Direction {
-    Forward, Backward
+    Forward, 
+    Backward
 }
 
 #[derive(Serialize, Debug)]
-struct Step {
+pub struct Step {
     rewrite_name : String,
     direction : Direction,
     expected_term : String,
@@ -53,8 +57,8 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
 
 #[derive(Deserialize, Debug)]
 pub struct Minimization {
-    obj_fun : String,
-    constrs : Vec<(String, String)>,
+    pub obj_fun : String,
+    pub constrs : Vec<(String, String)>,
 }
 
 impl ToString for Minimization {
@@ -67,7 +71,9 @@ impl ToString for Minimization {
     }
 }
 
-fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool) -> Vec<Step> {
+/// Return the rewrite steps if egg successfully found a chain of rewrites to
+/// transform the term into DCP form. Return `None` if it didn't.
+pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
     let prob_s = prob.to_string();
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
     
@@ -123,7 +129,9 @@ fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool) ->
                 None => {}
             }
         }
+    } else {
+        return None;
     }
 
-    return res;
+    return Some(res);
 }

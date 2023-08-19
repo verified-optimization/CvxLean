@@ -8,11 +8,11 @@ use optimization::Optimization as Optimization;
 
 #[derive(Debug)]
 pub struct DCPCost<'a> {
-    egraph: &'a optimization::EGraph,
+    pub egraph: &'a optimization::EGraph,
 }
 
 impl<'a> CostFunction<Optimization> for DCPCost<'a> {
-    // Curvature * term size * number of variables (with repetition).
+    // Curvature + term size + number of variables (with repetition).
     // In lexicographic order.
     type Cost = (Curvature, u32, u32);
     fn cost<C>(&mut self, enode: &Optimization, mut costs: C) -> Self::Cost
