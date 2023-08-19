@@ -4,11 +4,22 @@ use serde::{Deserialize, Serialize};
 mod domain;
 use domain::Domain as Domain;
 
+mod curvature;
+
+mod optimization;
+
+mod rules;
+
+mod cost;
+
 mod extract;
 use extract::Minimization as Minimization;
-use extract::Minimization as Step;
+use extract::Step as Step;
+use extract::get_steps as get_steps;
 
-// Taken from https://github.com/opencompl/egg-tactic-code
+mod tests;
+
+// NOTE(RFM): Taken from https://github.com/opencompl/egg-tactic-code
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "request")]
@@ -36,14 +47,17 @@ fn main_json() -> io::Result<()> {
     for read in deserializer.into_iter() {
         let response = match read {
             Err(err) => Response::Error {
-                error: format!("Deserialization error: {}", err),
+                error: format!("Deserialization error: {}.", err),
             },
             Ok(req) => {
                 match req {
                     Request::PerformRewrite 
                         { domains, target } => 
-                    Response::Success {
-                        steps: get_steps(target, domains, false)
+                    match get_steps(target, domains, false) {
+                        Some(steps) => Response::Success { steps },
+                        None => Response::Error {
+                            error: format!("Could not rewrite target into DCP form.")
+                        }
                     }
                 }
             }
