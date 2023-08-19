@@ -205,6 +205,10 @@ partial def CvxLean.treeToExpr (vars : List String) : Tree String String → Met
     let t1 ← treeToExpr vars t1
     let t2 ← treeToExpr vars t2
     return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
+  -- Constr.
+  | Tree.node "constr" #[Tree.leaf s, t] => do
+    let t ← treeToExpr vars t
+    return Meta.mkLabel (Name.mkSimple s) t
   -- Error.
   | Tree.node op children =>
     throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children."
