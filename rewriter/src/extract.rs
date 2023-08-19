@@ -28,16 +28,52 @@ enum Direction {
 pub struct Step {
     rewrite_name : String,
     direction : Direction,
+    location : String,
     expected_term : String,
 }
 
-fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(String, Direction)> {
+fn get_step_aux(term: &FlatTerm<Optimization>, location: &mut Option<String>, expected_term: &mut Option<String>) -> Option<Step> {
+    match term.node {
+        Optimization::ObjFun(_) => {
+            *location = Some("objFun".to_string());
+
+            let o_s = term.children[0].get_recexpr().to_string();
+            *expected_term = Some(o_s);
+        },
+        Optimization::Constr([_, _]) => {
+            let h_s = term.children[0].get_recexpr().to_string();
+            *location = Some(h_s);
+
+            let c_s = term.children[1].get_recexpr().to_string();
+            *expected_term = Some(c_s);
+        }
+        _ => ()
+    }
+
     if let Some(rule_name) = &term.backward_rule {
-        return Some((rule_name.to_string(), Direction::Backward));
+        if location.is_some() && expected_term.is_some() {
+            return Some(Step {
+                rewrite_name: rule_name.to_string(), 
+                direction: Direction::Backward,
+                location: location.clone().unwrap(),
+                expected_term: expected_term.clone().unwrap(),
+            });
+        } else {
+            return None;
+        }
     }
 
     if let Some(rule_name) = &term.forward_rule {
-        return Some((rule_name.to_string(), Direction::Forward));
+        if location.is_some() && expected_term.is_some() {
+            return Some(Step {
+                rewrite_name: rule_name.to_string(), 
+                direction: Direction::Forward,
+                location: location.clone().unwrap(),
+                expected_term: expected_term.clone().unwrap(),
+            });
+        } else {
+            return None;
+        }
     }
 
     if term.node.is_leaf() {
@@ -45,7 +81,7 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
     } else {
         for child in &term.children {
             let child_res = 
-                get_rewrite_name_and_direction(child);
+                get_step_aux(child, location, expected_term);
             if child_res.is_some() {
                 return child_res;
             }
@@ -53,6 +89,10 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
     };
 
     return None;
+}
+
+fn get_step(term: &FlatTerm<Optimization>) -> Option<Step> {
+    return get_step_aux(term, &mut None, &mut None);
 }
 
 #[derive(Deserialize, Debug)]
@@ -121,11 +161,8 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
     if best_cost.0 <= Curvature::Convex {
         for i in 0..flat_explanation.len() {
             let expl = &flat_explanation[i];
-            let expected_term = expl.get_recexpr().to_string();
-            match get_rewrite_name_and_direction(expl) {
-                Some((rewrite_name, direction)) => {
-                    res.push(Step { rewrite_name, direction, expected_term });
-                }
+            match get_step(expl) {
+                Some(step) => { res.push(step); }
                 None => {}
             }
         }
