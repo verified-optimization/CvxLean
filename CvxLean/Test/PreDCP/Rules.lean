@@ -30,27 +30,15 @@ time_cmd reduction invExpObjRedAuto/invExpObjAuto : invExpObj := by
   convexify
   exact done
 
-def rewrite_objective_globally [Preorder R] {cs : D → Prop}
-  {f : D → R}
-  {g : D → R}
-  (hfg : ∀ x, f x = g x)
-  (sol : Solution { objFun := g, constraints := cs }) :
-  Solution {objFun := f, constraints := cs} :=
-simple_reduction _ _ sol id id
-  (fun {x} _ => le_of_eq (hfg x).symm)
-  (fun {x} _ => le_of_eq (hfg x))
-  (fun {_} hx => hx)
-  (fun {_} hx => hx)
-
-time_cmd reduction invExpObjRedManual/invExpObjManual : invExpObj := by
-  unfold invExpObj
-  map_objFun_log
-  apply rewrite_objective_globally 
-    (f := fun x => log (1 / exp x)) 
-    (g := fun x => (log (exp (-x)))) 
-    (hfg := fun x => by simp only [←Real.exp_neg2])
-  -- simp only [←Real.exp_neg2]
-  simp only [Real.log_exp]
+-- time_cmd reduction invExpObjRedManual/invExpObjManual : invExpObj := by
+--   unfold invExpObj
+--   map_objFun_log
+--   apply rewrite_objective
+--     (f := fun x => log (1 / exp x)) 
+--     (g := fun x => (log (exp (-x)))) 
+--     (hfg := fun x _ => by simp only [←Real.exp_neg2])
+--   -- simp only [←Real.exp_neg2]
+--   simp only [Real.log_exp]
 
 def invExpConstr := 
   optimization (x : ℝ)
@@ -77,7 +65,19 @@ def logLeLogConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
     subject to 
-      h : exp x ≤ exp y
+      h : log x ≤ log y
+
+-- NOTE(RFM): Why does it apply the rewrite?
+#check le_sub_iff_add_le
+def leSubConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      h : x ≤ 1 - x
+
+reduction leSubConstrRedAuto/leSubConstrAuto : leSubConstr := by 
+  unfold leSubConstr
+  convexify
 
 def leMulRevConstr := False
 
