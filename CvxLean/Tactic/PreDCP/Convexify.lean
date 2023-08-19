@@ -1,8 +1,7 @@
 import Lean
 import Mathlib.Tactic.NormNum
 import CvxLean.Tactic.Basic.RemoveConstr
-import CvxLean.Tactic.DCP.Dcp
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.PreDCP.UncheckedDCP
 import CvxLean.Tactic.PreDCP.Basic
 import CvxLean.Tactic.PreDCP.Sexp
 
@@ -17,12 +16,13 @@ partial def CvxLean.Tree.toString : Tree String String → String
     "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
   | Tree.leaf n => n
 
-def CvxLean.Tree.ofOCTree (ocTree : OC (Tree String String)) :
+def CvxLean.Tree.ofOCTree (ocTree : OC (String × Tree String String)) :
   Tree String String :=
-  let objFun := ocTree.objFun
-  let constr := ocTree.constr
+  let objFun := ocTree.objFun.2
+  let constrs := ocTree.constr.map 
+    fun (h, c) => Tree.node "constr" #[Tree.leaf h, c]
   let objFunNode := Tree.node "objFun" #[objFun]
-  let constrNode := Tree.node "constraints" (Array.mk constr.data)
+  let constrNode := Tree.node "constrs" constrs
   Tree.node "prob" #[objFunNode, constrNode]
 
 partial def CvxLean.Tree.surroundVars (t : Tree String String) (vars : List String) :=
@@ -36,7 +36,8 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
   HashMap.ofList [
     ("prob",        ("prob", 2, #[])),
     ("objFun",      ("objFun", 1, #[])),
-    ("constraints", ("constraints", 0, #[])),
+    ("constr",      ("constr", 2, #[])),
+    ("constrs",     ("constrs", 0, #[])),
     ("maximizeNeg", ("neg", 1, #[])),
     ("var",         ("var", 1, #[])),
     ("param",       ("param", 1, #[])),
@@ -59,7 +60,7 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   match t with
   | Tree.node op children =>
       if let some (op', arity, extraArgs) := Convexify.opMap.find? op then
-        if children.size ≠ arity && op' != "constraints" then
+        if children.size ≠ arity && op' != "constrs" then
           throwError s!"The operator {op} has arity {children.size}, but it should have arity {arity}."
         let children' ← children.mapM adjustOps
         let children' := children' ++ extraArgs.map Tree.leaf
@@ -69,25 +70,29 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
-def CvxLean.DCP.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
-  MetaM (String × Array String) := do
-  let ocTree ← DCP.uncheckedTreeFromSolutionExpr m
+def CvxLean.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
+  MetaM (OC (String × Tree String String) × Array String) := do
+  let ocTree ← UncheckedDCP.uncheckedTreeFromSolutionExpr m
   -- Detect domain constraints of the form 0 <= x.
   -- NOTE(RFM): Assume there are no '<' constraints.
-  let nonnegVars := ocTree.constr.filterMap <| fun c =>
+  let nonnegVars := ocTree.constr.filterMap <| fun (_, c) =>
     match c with
     | Tree.node "le" #[Tree.leaf "0", Tree.leaf v] => 
         if v ∈ vars then some v else none 
     | _ => none
 
-  dbg_trace s!"{ocTree.constr.map Tree.toString}"
-
   -- NOTE(RFM): Some empty constraints here coming from '<' conditions?
-  let ocTree := { ocTree with constr := ocTree.constr.filter (·.size > 1)}
-  let tree := Tree.ofOCTree ocTree
-  let tree := Tree.surroundVars tree vars
-  let tree ← tree.adjustOps
-  return (tree.toString, nonnegVars)
+  let ocTree := { ocTree with 
+    constr := ocTree.constr.filter (fun (h, c) => c.size > 1)}
+
+  -- TODO(RFM): Functions for this.
+  let ocTree : OC (String × Tree String String) := { 
+    objFun := let (ho, o) := ocTree.objFun; (ho, Tree.surroundVars o vars)
+    constr := ocTree.constr.map (fun (h, c) => (h, Tree.surroundVars c vars)) }
+  let ocTree : OC (String × Tree String String) := {
+    objFun := (ocTree.objFun.1, ← Tree.adjustOps ocTree.objFun.2)
+    constr := ← ocTree.constr.mapM (fun (h, c) => return (h, ← Tree.adjustOps c)) }
+  return (ocTree, nonnegVars)
 
 end MinimizationToEgg
 
@@ -216,7 +221,7 @@ where
 def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
   MetaM (Option Meta.SolutionExpr) := do
   match t with
-  | Tree.node "prob" #[Tree.node "objFun" #[objFun], Tree.node "constraints" constr] => do
+  | Tree.node "prob" #[Tree.node "objFun" #[objFun], Tree.node "constrs" constr] => do
     let objFun ← treeToExpr (vars.map toString) objFun
     let constr ← constr.mapM <| treeToExpr (vars.map toString)
     let constr := Meta.composeAnd constr.data
@@ -240,7 +245,7 @@ def CvxLean.treeToSolutionExpr (vars : List Name) (t : Tree String String) :
           objFun := objFun,
           constraints := constraints
         }
-  | _ => throwError "Tree to SolutionExpr conversion error: unexpected tree structure."
+  | _ => throwError "Tree to SolutionExpr conversion error: unexpected tree structure {t}."
 
 def CvxLean.stringToSolutionExpr (vars : List Name) (s : String) :
   MetaM (Meta.SolutionExpr) := do
@@ -277,19 +282,37 @@ instance : MonadExceptOf String MetaM := {
 def surroundQuotes (s : String) : String :=
   "\"" ++ s ++ "\""
 
+structure EggMinimization where 
+  objFun : String 
+  constrs : List (List String) -- Tuples are lists of two elements.
+
+def EggMinimization.toJson (e : EggMinimization) : String := 
+  "{" ++ 
+  surroundQuotes "obj_fun" ++ " : " ++ surroundQuotes e.objFun ++ ", " ++
+  surroundQuotes "constrs" ++ " : " ++ 
+    "[" ++
+      (", ".intercalate <| e.constrs.map (fun d => 
+        "[" ++ ",".intercalate (d.map surroundQuotes) ++ "]")) ++
+    "]" ++
+  "}"
+
+def EggMinimization.ofOCTree (oc : OC (String × Tree String String)) : EggMinimization :=
+  { objFun := oc.objFun.2.toString, 
+    constrs := Array.data <| oc.constr.map fun (h, c) => [h, c.toString] }
+
 structure EggRequest where
-  domains : List (List String)
-  target : String
+  domains : List (List String) -- Tuples are lists of two elements.
+  target : EggMinimization
 
 def EggRequest.toJson (e : EggRequest) : String := 
   "{" ++ 
   surroundQuotes "request" ++ " : " ++ surroundQuotes "PerformRewrite" ++ ", " ++ 
   surroundQuotes "domains" ++ " : " ++ 
     "[" ++
-    (", ".intercalate <| e.domains.map (fun d => 
-      "[" ++ ",".intercalate (d.map surroundQuotes) ++ "]")) ++
+      (", ".intercalate <| e.domains.map (fun d => 
+        "[" ++ ",".intercalate (d.map surroundQuotes) ++ "]")) ++
     "]" ++ ", " ++
-  surroundQuotes "target" ++ " : " ++ (surroundQuotes e.target) ++ 
+  surroundQuotes "target" ++ " : " ++ (e.target.toJson) ++ 
   "}"
 
 inductive EggRewriteDirection where
@@ -472,11 +495,11 @@ elab "convexify" : tactic => withMainContext do
     return pr.map (Prod.fst)
   let varsStr := vars.map toString
 
-  let (gStr, nonnegVars) ← DCP.uncheckedTreeString gExpr varsStr
+  let (gStr, nonnegVars) ← uncheckedTreeString gExpr varsStr
 
   let eggRequest := {
     domains := Array.data <| nonnegVars.map (fun v => [v, "NonNeg"]),
-    target := gStr
+    target := EggMinimization.ofOCTree gStr
   }
   let steps ← runEggRequest eggRequest
 
