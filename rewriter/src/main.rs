@@ -40,7 +40,7 @@ type EGraph = egg::EGraph<Optimization, Meta>;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Meta {
-    domains : HashMap<Symbol, Domain>,
+    domains : HashMap<String, Domain>,
 }
 
 #[derive(Debug, Clone)]
@@ -284,8 +284,9 @@ impl Analysis<Optimization> for Meta {
                 // Assume that after var there is always a symbol.
                 match egraph[*a].nodes[0] { 
                     Optimization::Symbol(s) => {
-                        free_vars.insert((*a, s)); 
-                        match domains_map.get(&s) {
+                        free_vars.insert((*a, s));
+                        let s_s = format!("{}", s); 
+                        match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(*d); }
                             _ => ()
                         }
@@ -731,12 +732,16 @@ impl ToString for Minimization {
     }
 }
 
-fn get_steps(prob: Minimization, debug: bool) -> Vec<Step> {
+fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool) -> Vec<Step> {
     let prob_s = prob.to_string();
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
+    
+    let analysis = Meta {
+        domains : domains.into_iter().collect()
+    };
 
-    let runner = 
-        Runner::default()
+    let runner: Runner<Optimization, Meta> = 
+        Runner::new(analysis)
         .with_explanations_enabled()
         .with_expr(&expr)
         .run(&rules());
@@ -823,7 +828,7 @@ fn main_json() -> io::Result<()> {
                     Request::PerformRewrite 
                         { domains, target } => 
                     Response::Success {
-                        steps: get_steps(target, false)
+                        steps: get_steps(target, domains, false)
                     }
                 }
             }
@@ -860,7 +865,8 @@ fn test() {
             ("h4".to_string(), "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))".to_string()),
         ]
     };
-    let steps = get_steps(prob, true);
+    let domains = vec![];
+    let steps = get_steps(prob, domains, true);
     println!("{:?}", steps);
 }
 
