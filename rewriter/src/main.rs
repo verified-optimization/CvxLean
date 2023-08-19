@@ -16,7 +16,8 @@ define_language! {
     pub enum Optimization {
         "prob" = Prob([Id; 2]),
         "objFun" = ObjFun(Id),
-        "constraints" = Constraints(Box<[Id]>),
+        "constr" = Constr([Id; 2]),
+        "constrs" = Constrs(Box<[Id]>),
         "eq" = Eq([Id; 2]),
         "le" = Le([Id; 2]),
         "neg" = Neg(Id),
@@ -104,7 +105,10 @@ impl Analysis<Optimization> for Meta {
             Optimization::ObjFun(a) => {
                 free_vars.extend(get_vars(a));
             }
-            Optimization::Constraints(a) => {
+            Optimization::Constr([h, c]) => {
+                free_vars.extend(get_vars(c));
+            }
+            Optimization::Constrs(a) => {
                 for c in a.iter() {
                     free_vars.extend(get_vars(c));
                 }
@@ -548,7 +552,12 @@ impl<'a> CostFunction<Optimization> for DCPScore<'a> {
                 term_size = 1 + get_term_size!(a);
                 num_vars = get_num_vars!(a);
             }
-            Optimization::Constraints(a) => {
+            Optimization::Constr([h, c]) => {
+                curvature = get_curvature!(c);
+                term_size = 1 + get_term_size!(c);
+                num_vars = get_num_vars!(c);
+            }
+            Optimization::Constrs(a) => {
                 curvature = Curvature::Constant;
                 term_size = 0;
                 num_vars = 0;
@@ -706,8 +715,25 @@ fn get_rewrite_name_and_direction(term: &FlatTerm<Optimization>) -> Option<(Stri
     return None;
 }
 
-fn get_steps(s: String, debug: bool) -> Vec<Step> {
-    let expr: RecExpr<Optimization> = s.parse().unwrap();
+#[derive(Deserialize, Debug)]
+struct Minimization {
+    obj_fun : String,
+    constrs : Vec<(String, String)>,
+}
+
+impl ToString for Minimization {
+    fn to_string(&self) -> String {
+        let obj_fun_s: String = format!("(objFun {})", self.obj_fun);
+        let constrs_s_l : Vec<String> = 
+            self.constrs.iter().map(|(h, c)| format!("(constr {} {})", h, c)).collect();
+        let constr_s = format!("(constrs {})", constrs_s_l.join(" "));
+        return format!("(prob {} {})", obj_fun_s, constr_s);
+    }
+}
+
+fn get_steps(prob: Minimization, debug: bool) -> Vec<Step> {
+    let prob_s = prob.to_string();
+    let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
 
     let runner = 
         Runner::default()
@@ -764,12 +790,12 @@ fn get_steps(s: String, debug: bool) -> Vec<Step> {
 
 // Taken from https://github.com/opencompl/egg-tactic-code
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(tag = "request")]
 enum Request {
     PerformRewrite {
         domains : Vec<(String, Domain)>,
-        target : String,
+        target : Minimization,
     }
 }
 
@@ -825,16 +851,16 @@ fn test() {
     //         (le (add (add (exp (var x)) (mul 2 (exp (var y)))) (mul 3 (exp (var z)))) 1) 
     //         (eq (mul (mul (div 1 2) (exp (var x))) (exp (var y))) 1)
     //     ))".to_string();
-    // let s = "(prob 
-    //     (objFun (div 1 (div (exp (var x)) (exp (var y)))))
-    //     (constraints 
-    //         (le 2 (exp (var x))) 
-    //         (le (exp (var x)) 3) 
-    //         (le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x)))) 
-    //         (eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))
-    //     )
-    // )".to_string();
-    let steps = get_steps(s, true);
+    let prob = Minimization {
+        obj_fun : "(div 1 (div (exp (var x)) (exp (var y))))".to_string(),
+        constrs : vec![
+            ("h1".to_string(), "(le 2 (exp (var x)))".to_string()),
+            ("h2".to_string(), "(le (exp (var x)) 3)".to_string()),
+            ("h3".to_string(), "(le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x))))".to_string()),
+            ("h4".to_string(), "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))".to_string()),
+        ]
+    };
+    let steps = get_steps(prob, true);
     println!("{:?}", steps);
 }
 
