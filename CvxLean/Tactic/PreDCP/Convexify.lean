@@ -485,12 +485,20 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool ×  TSyntax `ta
   | rewriteName, direction => 
     throwError "Unknown rewrite name {rewriteName}({direction})."
 
-def rewriteWrapperLemma (n : Nat) (sz : Nat) : MetaM (Name × Nat) := 
-  if n == sz then 
+/-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for 
+for for constraints), return the rewrite lemma that needs to be applied. Also 
+return the number of arguments of each rewrite lemma to be able to build an 
+expression in `rewriteWrapperApplyExpr`. -/
+def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) := 
+  if rwIdx == 0 then 
+    return (`Minimization.rewrite_objective, 1)
+  else if numConstrs == 1 then 
+    -- Rewriting a single constraint is the same as rewriting all constraints.
+    return (`Minimization.rewrite_constraints, 1)
+  else if rwIdx == numConstrs then 
     return (`Minimization.rewrite_constraint_last, 1)
   else
-    match n with 
-    | 0  => return (`Minimization.rewrite_objective,     1)
+    match rwIdx with 
     | 1  => return (`Minimization.rewrite_constraint_1,  1)
     | 2  => return (`Minimization.rewrite_constraint_2,  2)
     | 3  => return (`Minimization.rewrite_constraint_3,  3)
@@ -553,6 +561,7 @@ elab "convexify" : tactic => withMainContext do
     let tag := step.location
     let tagNum := tagsMap.find! tag
     let (rwWrapper, numIntros) ← rewriteWrapperLemma tagNum numConstrTags
+    dbg_trace s!"Rewriting {step.rewriteName} at {tag} ({tagNum}). {rwWrapper}."
 
     let expectedTermStr := step.expectedTerm
     let mut expectedExpr ← stringToExpr vars expectedTermStr
