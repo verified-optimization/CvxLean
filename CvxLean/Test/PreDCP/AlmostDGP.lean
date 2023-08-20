@@ -69,9 +69,9 @@ def agp3 :=
       h1 : 0 < x
       h2 : 0 < y
       h3 : 0 < z
-      h4 : 2 <= x 
-      h5 : x <= 3
-      h6 : x ^ 2 <= sqrt x - 6 * y / z
+      h4 : 2 ≤ x 
+      h5 : x ≤ 3
+      h6 : x ^ 2 ≤ sqrt x - 6 * y / z
       h7 : x * y = z
 
 reduction red3/dcp3 : agp3 := by

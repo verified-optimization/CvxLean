@@ -296,6 +296,16 @@ def rewrite_constraint_1 {D R} [Preorder R] {c1 c1' : D → Prop} {cs : D → Pr
     (fun {x} hx => by simp only [hrw x hx.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.2] at hx; exact hx)
 
+def rewrite_constraint_1_last {D R} [Preorder R] {c1 c1' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x ↔ c1' x)
+  (sol : Solution { objFun := f, constraints := fun x => c1' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x] at hx; exact hx)
+
 def rewrite_constraint_2 {D R} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → cs x → (c2 x ↔ c2' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2' x ∧ cs x }) :
@@ -305,6 +315,16 @@ def rewrite_constraint_2 {D R} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D →
     (fun {x} _ => le_refl _)
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.2] at hx; exact hx)
+
+def rewrite_constraint_2_last {D R} [Preorder R] {c1 c2 c2' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → (c2 x ↔ c2' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1] at hx; exact hx)
 
 def rewrite_constraint_3 {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x))
@@ -316,6 +336,16 @@ def rewrite_constraint_3 {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D 
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx)
 
+def rewrite_constraint_3_last {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → (c3 x ↔ c3' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1] at hx; exact hx)
+
 def rewrite_constraint_4 {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → cs x → (c4 x ↔ c4' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x ∧ cs x }) :
@@ -325,6 +355,16 @@ def rewrite_constraint_4 {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {cs :
     (fun {x} _ => le_refl _)
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx)
+
+def rewrite_constraint_4_last {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → (c4 x ↔ c4' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1] at hx; exact hx)
 
 def rewrite_constraint_5 {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → cs x → (c5 x ↔ c5' x))
@@ -336,6 +376,16 @@ def rewrite_constraint_5 {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {c
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx)
 
+def rewrite_constraint_5_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → (c5 x ↔ c5' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1] at hx; exact hx)
+
 def rewrite_constraint_6 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → cs x → (c6 x ↔ c6' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x ∧ cs x }) :
@@ -345,6 +395,16 @@ def rewrite_constraint_6 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop}
     (fun {x} _ => le_refl _)
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx)
+
+def rewrite_constraint_6_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → (c6 x ↔ c6' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1] at hx; exact hx)
 
 def rewrite_constraint_7 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → cs x → (c7 x ↔ c7' x))
@@ -356,6 +416,16 @@ def rewrite_constraint_7 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Pr
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx)
 
+def rewrite_constraint_7_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → (c7 x ↔ c7' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx)
+
 def rewrite_constraint_8 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x ∧ cs x }) :
@@ -365,6 +435,16 @@ def rewrite_constraint_8 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D →
     (fun {x} _ => le_refl _)
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx)
+
+def rewrite_constraint_8_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → (c8 x ↔ c8' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1] at hx; exact hx)
 
 def rewrite_constraint_9 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → cs x → (c9 x ↔ c9' x))
@@ -376,6 +456,16 @@ def rewrite_constraint_9 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D 
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx)
 
+def rewrite_constraint_9_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → (c9 x ↔ c9' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x } :=
+  simple_reduction _ _ sol id id
+    (fun {x} _ => le_refl _)
+    (fun {x} _ => le_refl _)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1] at hx; exact hx)
+
 def rewrite_constraint_10 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → cs x → (c10 x ↔ c10' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x ∧ cs x }) :
@@ -386,15 +476,16 @@ def rewrite_constraint_10 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx)
 
-def rewrite_constraint_last {D R} [Preorder R] {cl cl' : D → Prop} {cs : D → Prop} {f : D → R}
-  (hrw : ∀ x, cs x → (cl x ↔ cl' x))
-  (sol : Solution { objFun := f, constraints := fun x => cs x ∧ cl' x }) :
-  Solution { objFun := f, constraints := fun x => cs x ∧ cl x } :=
+def rewrite_constraint_10_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → (c10 x ↔ c10' x))
+  (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x }) :
+  Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10 x } :=
   simple_reduction _ _ sol id id
     (fun {x} _ => le_refl _)
     (fun {x} _ => le_refl _)
-    (fun {x} hx => by simp only [hrw x hx.1] at hx; exact hx)
-    (fun {x} hx => by simp only [←hrw x hx.1] at hx; exact hx)
+    (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx)
+    (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx)
+
 
 end Reductions
 
