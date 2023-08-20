@@ -433,20 +433,20 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool ×  TSyntax `ta
   | "mul-exp", _ => -- exp-add
     return (true, ← `(tactic| simp only [←Real.exp_add]))
   | "le-log", EggRewriteDirection.Forward => -- log-le-log
-    return (true, ← `(tactic| try { conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)] }))
+    return (true, ← `(tactic| conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)]))
   | "le-sub", EggRewriteDirection.Forward =>
     return (true, ← `(tactic| simp only [le_sub_iff_add_le]))
   -- TODO(RFM): This is buggy.
   | "le-mul-rev", _ => 
-    return (true, ← `(tactic| congr <;> try { rw [div_le_iff (by positivity)]}))
+    return (true, ← `(tactic| congr <;> rw [div_le_iff (by positivity)]))
   | "eq-log", EggRewriteDirection.Forward =>
-    return (true, ← `(tactic| try { conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)] }))
+    return (true, ← `(tactic| conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)]))
   | "log-exp", _ =>
     return (true, ← `(tactic| simp only [Real.log_exp]))
-  | "log-div", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| congr <;> try { rw [Real.log_div (by positivity) (by positivity)]}))
+  | "log-div", _ => 
+    return (true, ← `(tactic| congr <;> rw [Real.log_div (by positivity) (by positivity)]))
   | "log-mul", _ => 
-    return (true, ← `(tactic| congr <;> try { rw [Real.log_mul (by positivity) (by positivity)]}))
+    return (true, ← `(tactic| congr <;> rw [Real.log_mul (by positivity) (by positivity)]))
   | "pow-exp", _ =>
     return (true, ← `(tactic| simp only [←Real.exp_mul]))
   | "div-exp", _ =>
@@ -462,7 +462,8 @@ def findTactic : String → EggRewriteDirection →  MetaM (Bool ×  TSyntax `ta
   | "sub-mul-left", _ => 
     return (true, ← `(tactic| simp only [←mul_sub]))
   | "div-pow", _ => 
-    return (true, ← `(tactic| try { conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, ←Real.rpow_neg (by posimptivity)] }))
+    -- TODO(RFM): This shouldn't be conv?
+    return (true, ← `(tactic| conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, ←Real.rpow_neg (by posimptivity)]))
   | "mul-comm", _ => 
     return (true, ← `(tactic| simp only [mul_comm]))
   | "mul-assoc", _ => 
@@ -585,6 +586,7 @@ elab "convexify" : tactic => withMainContext do
 
       let gSol := gs[1]!
       let gSolTag ← gSol.getTag
+      gSol.setTag Name.anonymous
 
       if gToRwTag != `hrw then 
         dbg_trace s!"Unexpected tag name {gToRwTag} when rewriting {step.rewriteName}."
