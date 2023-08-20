@@ -497,7 +497,18 @@ def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :
     -- Rewriting a single constraint is the same as rewriting all constraints.
     return (`Minimization.rewrite_constraints, 1)
   else if rwIdx == numConstrs then 
-    return (`Minimization.rewrite_constraint_last, 1)
+    match rwIdx with 
+    | 1  => return (`Minimization.rewrite_constraint_1_last,  1)
+    | 2  => return (`Minimization.rewrite_constraint_2_last,  2)
+    | 3  => return (`Minimization.rewrite_constraint_3_last,  3)
+    | 4  => return (`Minimization.rewrite_constraint_4_last,  4)
+    | 5  => return (`Minimization.rewrite_constraint_5_last,  5)
+    | 6  => return (`Minimization.rewrite_constraint_6_last,  6)
+    | 7  => return (`Minimization.rewrite_constraint_7_last,  7)
+    | 8  => return (`Minimization.rewrite_constraint_8_last,  8)
+    | 9  => return (`Minimization.rewrite_constraint_9_last,  9)
+    | 10 => return (`Minimization.rewrite_constraint_10_last, 10)
+    | _  => throwError "convexify can only rewrite problems with up to 10 constraints."
   else
     match rwIdx with 
     | 1  => return (`Minimization.rewrite_constraint_1,  1)
