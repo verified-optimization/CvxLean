@@ -306,7 +306,7 @@ def rewrite_constraint_2 {D R} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D →
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.2] at hx; exact hx)
 
-def rewrite_constraint_3 {R D} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D → Prop} {f : D → R}
+def rewrite_constraint_3 {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ cs x } :=
