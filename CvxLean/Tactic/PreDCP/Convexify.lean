@@ -407,8 +407,8 @@ def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
 macro "posimptivity" : tactic => 
   `(tactic| norm_num <;> positivity)
 
--- TODO: Move.
-theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
+-- TODO(RFM): Move.
+lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
   ⟨fun h => by { 
     have hxmem := Set.mem_Ioi.2 hx
     have hymem := Set.mem_Ioi.2 hy
@@ -421,70 +421,96 @@ theorem Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Rea
   }, fun h => by rw [h]⟩
 
 -- TODO(RFM): Move.
-lemma Real.exp_neg_one_div : ∀ x : ℝ, exp (-x) = 1 / exp x := by
-  intro x
+lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) : a / (b ^ c) = a * b ^ (-c) := by
+  rw [div_eq_mul_inv, ←Real.rpow_neg hb]
+
+-- TODO(RFM): Move.
+lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
   rw [Real.exp_neg, inv_eq_one_div]
 
 -- TODO(RFM): Not hard-coded.
 -- NOTE(RFM): The bool indicates whether they need solve an equality.
-def findTactic : String → EggRewriteDirection →  MetaM (Bool ×  TSyntax `tactic)
-  | "inv-exp", _ => -- exp-neg-one-div
-    return (true, ← `(tactic| simp only [Real.exp_neg_one_div]))
-  | "mul-exp", _ => -- exp-add
-    return (true, ← `(tactic| simp only [←Real.exp_add]))
-  | "le-log", EggRewriteDirection.Forward => -- log-le-log
-    return (true, ← `(tactic| conv in (Real.log _ ≤ Real.log _) => rw [Real.log_le_log (by posimptivity) (by posimptivity)]))
-  | "le-sub", EggRewriteDirection.Forward =>
-    return (true, ← `(tactic| simp only [le_sub_iff_add_le]))
-  -- TODO(RFM): This is buggy.
-  | "le-mul-rev", _ => 
-    return (true, ← `(tactic| congr <;> rw [div_le_iff (by positivity)]))
-  | "eq-log", EggRewriteDirection.Forward =>
-    return (true, ← `(tactic| conv in (Real.log _ = Real.log _) => rw [Real.log_eq_log (by posimptivity) (by posimptivity)]))
-  | "log-exp", _ =>
-    return (true, ← `(tactic| simp only [Real.log_exp]))
-  | "log-div", _ => 
-    return (true, ← `(tactic| congr <;> rw [Real.log_div (by positivity) (by positivity)]))
-  | "log-mul", _ => 
-    return (true, ← `(tactic| congr <;> rw [Real.log_mul (by positivity) (by positivity)]))
-  | "pow-exp", _ =>
-    return (true, ← `(tactic| simp only [←Real.exp_mul]))
-  | "div-exp", _ =>
-    return (true, ← `(tactic| simp only [←Real.exp_sub]))
-  | "add-assoc", _ => 
-    return (true, ← `(tactic| simp only [add_assoc]))
-  | "add-mul", _ => 
-    return (true, ← `(tactic| simp only [add_mul]))
-  | "add-sub", _ => 
-    return (true, ← `(tactic| simp only [add_sub]))
-  | "div-add", _ => 
-    return (true, ← `(tactic| simp only [add_div]))
-  | "sub-mul-left", _ => 
-    return (true, ← `(tactic| simp only [←mul_sub]))
-  | "div-pow", _ => 
-    -- TODO(RFM): This shouldn't be conv?
-    return (true, ← `(tactic| conv in (_ / (_ ^  _)) => rw [div_eq_mul_inv, ←Real.rpow_neg (by posimptivity)]))
-  | "mul-comm", _ => 
-    return (true, ← `(tactic| simp only [mul_comm]))
-  | "mul-assoc", _ => 
-    return (true, ← `(tactic| simp only [mul_assoc]))
-  | "mul-add", _ => 
-    return (true, ← `(tactic| simp only [mul_add]))
-  | "add-comm", _ => 
-    return (true, ← `(tactic| simp only [add_comm]))
-  | "mul-div", _ => 
-    return (true, ← `(tactic| simp only [mul_div]))
-  | "div-mul", _ => 
-    return (true, ← `(tactic| simp only [←mul_div]))
-  | "sqrt_eq_rpow", _ => 
-    return (true, ← `(tactic| simp only [Real.sqrt_eq_rpow]))
-  | "le-div-one", EggRewriteDirection.Forward => 
-    return (true, ← `(tactic| congr <;> try { rw [←div_le_one (by posimptivity)]; norm_num }))
+def findTactic : String → EggRewriteDirection → Bool × MetaM (TSyntax `tactic)
+  
+  /- Objective function rules. -/
   -- NOTE(RFM): Only instance of a rewriting without proving equality.
-  | "map-objFun-log", EggRewriteDirection.Forward =>
-    return (false, ← `(tactic| map_objFun_log))
+  | "map_objFun_log", EggRewriteDirection.Forward =>
+    (false, `(tactic| map_objFun_log))
+  
+  /- Equality rules. -/
+  | "log_eq_log", EggRewriteDirection.Forward =>
+    -- NOTE(RFM): This was conv in (Real.log _ = Real.log _).
+    (true, `(tactic| simp only [Real.log_eq_log (by posimptivity) (by posimptivity)]))
+  
+  /- Less than or equal rules. -/
+  | "le_sub_iff_add_le", EggRewriteDirection.Forward =>
+    (true, `(tactic| simp only [le_sub_iff_add_le]))
+  | "div_le_iff", _ => 
+    -- NOTE(RFM): This was rw.
+    (true, `(tactic| simp only [div_le_iff (by positivity)]))
+  | "div_le_one-rev", EggRewriteDirection.Forward => 
+    (true, `(tactic| simp only [←div_le_one (by posimptivity)]))
+  | "log_le_log", EggRewriteDirection.Forward =>
+    -- NOTE(RFM): This was conv in (Real.log _ ≤ Real.log _).
+    (true, `(tactic| simp only [Real.log_le_log (by posimptivity) (by posimptivity)]))
+  
+  /- Field rules. -/
+  | "add_comm", _ => 
+    (true, `(tactic| simp only [add_comm]))
+  | "add_assoc", _ => 
+    (true, `(tactic| simp only [add_assoc]))
+  | "mul_comm", _ => 
+    (true, `(tactic| simp only [mul_comm]))
+  | "mul_assoc", _ => 
+    (true, `(tactic| simp only [mul_assoc]))
+  | "add_sub", _ => 
+    (true, `(tactic| simp only [add_sub]))
+  | "add_mul", _ => 
+    (true, `(tactic| simp only [add_mul]))
+  | "mul_add", _ => 
+    (true, `(tactic| simp only [mul_add]))
+  | "mul_sub-rev", _ => 
+    (true, `(tactic| simp only [←mul_sub]))
+  | "add_div", _ => 
+    (true, `(tactic| simp only [add_div]))
+  | "mul_div", _ => 
+    (true, `(tactic| simp only [mul_div]))
+  | "mul_div-rev", _ => 
+    (true, `(tactic| simp only [←mul_div]))
+
+  /- Power and square root rules. -/
+  | "div_pow_eq_mul_pow_neg", _ => 
+    -- NOTE(RFM): This was conv in (_ / (_ ^  _)).
+    (true, `(tactic| simp only [Real.div_pow_eq_mul_pow_neg (by posimptivity)]))
+  | "sqrt_eq_rpow", _ => 
+    (true, `(tactic| simp only [Real.sqrt_eq_rpow]))
+  
+  /- Exponential and logarithm rules. -/
+  | "exp_add", _ =>
+    (true, `(tactic| simp only [Real.exp_add]))
+  | "exp_add-rev", _ =>
+    (true, `(tactic| simp only [←Real.exp_add]))
+  | "exp_sub", _ =>
+    (true, `(tactic| simp only [Real.exp_sub]))
+  | "exp_sub-rev", _ =>
+    (true, `(tactic| simp only [←Real.exp_sub]))
+  | "exp_mul", _ =>
+    (true, `(tactic| simp only [Real.exp_mul]))
+  | "exp_mul-rev", _ =>
+    (true, `(tactic| simp only [←Real.exp_mul]))
+  | "exp_neg_eq_one_div-rev", _ =>
+    (true, `(tactic| simp only [←Real.exp_neg_eq_one_div]))
+  | "log_mul", _ => 
+    (true, `(tactic| simp only [Real.log_mul (by positivity) (by positivity)]))
+  | "log_div", _ => 
+    (true, `(tactic| simp only [Real.log_div (by positivity) (by positivity)]))
+  | "log_exp", _ =>
+    (true, `(tactic| simp only [Real.log_exp]))
+
+  /- Unknown rule. -/
   | rewriteName, direction => 
-    throwError "Unknown rewrite name {rewriteName}({direction})."
+    (false, throwError "Unknown rewrite name {rewriteName}({direction}).")
+
 
 /-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for 
 for for constraints), return the rewrite lemma that needs to be applied. Also 
@@ -584,7 +610,8 @@ elab "convexify" : tactic => withMainContext do
         let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
         mkLambdaFVars #[p] $ Expr.replaceFVars replacedFVars xs prs
 
-    let (needsEq, tac) ← findTactic step.rewriteName step.direction
+    let (needsEq, tac) := findTactic step.rewriteName step.direction
+    let tacStx ← tac
     if needsEq then
       let gs ← g.apply (← rewriteWrapperApplyExpr rwWrapper numIntros expectedExpr)
 
@@ -603,7 +630,7 @@ elab "convexify" : tactic => withMainContext do
         dbg_trace s!"Unexpected tag name {gToRwTag} when rewriting {step.rewriteName}."
         replaceMainGoal gs; break
 
-      let fullTac : Syntax ← `(tactic| intros; $tac <;> norm_num)
+      let fullTac : Syntax ← `(tactic| intros; $tacStx <;> norm_num)
       let gsAfterRw ← evalTacticAt fullTac gToRw
 
       -- let eq ← mkEq gExpr.toExpr expectedExpr
@@ -616,7 +643,7 @@ elab "convexify" : tactic => withMainContext do
         dbg_trace s!"Failed to rewrite {step.rewriteName}."
         replaceMainGoal (gs ++ gsAfterRw); break
     else
-      let gs ← evalTacticAt tac g
+      let gs ← evalTacticAt tacStx g
       dbg_trace s!"Rewrote {step.rewriteName}."
       replaceMainGoal gs
 
