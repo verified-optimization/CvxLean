@@ -1,19 +1,7 @@
 import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Tactic.Conv.ConvOpt
-
--- TODO(RFM): Move.
-syntax (name := time_cmd) "time_cmd " command : command
-
-@[command_elab «time_cmd»]
-def evalTimeCmd : Lean.Elab.Command.CommandElab := fun stx => match stx with
-| `(time_cmd $cmd) => do
-  let before ← BaseIO.toIO IO.monoMsNow
-  Lean.Elab.Command.elabCommand cmd
-  let after ← BaseIO.toIO IO.monoMsNow
-  let diff := after - before
-  IO.println s!"{diff} ms"
-| _ => Lean.Elab.throwUnsupportedSyntax
+import CvxLean.Test.Util.TimeCmd
 
 noncomputable section Rules
 
