@@ -622,13 +622,18 @@ elab "convexify" : tactic => withMainContext do
       let gToRw := gs[0]!
       let gToRwTag ← gToRw.getTag
 
-      let gSol := gs[1]!
-      let gSolTag ← gSol.getTag
-      gSol.setTag Name.anonymous
-
       if gToRwTag != `hrw then 
         dbg_trace s!"Unexpected tag name {gToRwTag} when rewriting {step.rewriteName}."
         replaceMainGoal gs; break
+      
+      let gSol := gs[1]!
+      let gSolTag ← gSol.getTag
+
+      if gSolTag != `sol then
+        dbg_trace s!"Unexpected tag name {gSolTag} when rewriting {step.rewriteName}."
+        replaceMainGoal gs; break
+
+      gSol.setTag Name.anonymous
 
       let fullTac : Syntax ← `(tactic| intros; $tacStx <;> norm_num)
       let gsAfterRw ← evalTacticAt fullTac gToRw
@@ -650,14 +655,3 @@ elab "convexify" : tactic => withMainContext do
   norm_num_clean_up (useSimp := false)
 
   return ()
-
-lemma x : Minimization.Solution $
-  optimization (x : ℝ) 
-    minimize (0 : ℝ)
-    subject to 
-      hx : 0 <= x
-      h : Real.log (Real.exp x) ≤ 1 := by 
-  -- apply Minimization.rewrite_constraint_1 (c1' := fun x => 1 <= 0) (hc1 := sorry)
-  convexify
-  sorry
-  
