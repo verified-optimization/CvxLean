@@ -5,19 +5,22 @@ import CvxLean.Tactic.PreDCP.UncheckedDCP
 import CvxLean.Tactic.PreDCP.Basic
 import CvxLean.Tactic.PreDCP.Sexp
 import CvxLean.Tactic.PreDCP.RewriteMapExt
+import CvxLean.Tactic.PreDCP.RewriteMapLibrary
+
+
+namespace CvxLean
 
 open Lean Elab Meta Tactic Term IO
-open CvxLean
 
 section MinimizationToEgg
 
-partial def CvxLean.Tree.toString : Tree String String → String
+partial def Tree.toString : Tree String String → String
   | Tree.node n children =>
     let childrenStr := (children.map Tree.toString).data
     "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
   | Tree.leaf n => n
 
-def CvxLean.Tree.ofOCTree (ocTree : OC (String × Tree String String)) :
+def Tree.ofOCTree (ocTree : OC (String × Tree String String)) :
   Tree String String :=
   let objFun := ocTree.objFun.2
   let constrs := ocTree.constr.map 
@@ -26,7 +29,7 @@ def CvxLean.Tree.ofOCTree (ocTree : OC (String × Tree String String)) :
   let constrNode := Tree.node "constrs" constrs
   Tree.node "prob" #[objFunNode, constrNode]
 
-partial def CvxLean.Tree.surroundVars (t : Tree String String) (vars : List String) :=
+partial def Tree.surroundVars (t : Tree String String) (vars : List String) :=
   match t with
   | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
   | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
@@ -56,7 +59,7 @@ def Convexify.opMap : HashMap String (String × Nat × Array String) :=
     ("exp",         ("exp", 1, #[]))
   ]
 
-partial def CvxLean.Tree.adjustOps (t : Tree String String) :
+partial def Tree.adjustOps (t : Tree String String) :
   MetaM (Tree String String) := do
   match t with
   | Tree.node op children =>
@@ -71,7 +74,7 @@ partial def CvxLean.Tree.adjustOps (t : Tree String String) :
   | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
-def CvxLean.uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
+def uncheckedTreeString (m : Meta.SolutionExpr) (vars : List String) :
   MetaM (OC (String × Tree String String) × Array String) := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromSolutionExpr m
   -- Detect domain constraints of the form 0 <= x.
@@ -111,7 +114,7 @@ partial def Sexpr.toTree : Sexp → MetaM (Tree String String)
         return CvxLean.Tree.node op (Array.mk children)
       | .list _ => throwError "Sexp to Tree conversion error: unexpected list as operator."
 
-def CvxLean.stringToTree (s : String) : MetaM (Tree String String) := do
+def stringToTree (s : String) : MetaM (Tree String String) := do
   match parseSingleSexp s with
   | Except.ok sexpr => Sexpr.toTree sexpr
   | Except.error e => throwError s!"{e}"
@@ -119,7 +122,7 @@ def CvxLean.stringToTree (s : String) : MetaM (Tree String String) := do
 noncomputable instance Real.instDivReal : Div ℝ :=
   by infer_instance
 
-partial def CvxLean.treeToExpr (vars : List String) : Tree String String → MetaM Expr
+partial def treeToExpr (vars : List String) : Tree String String → MetaM Expr
   -- Numbers.
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
@@ -224,7 +227,7 @@ where
       #[R, R, R, inst, e1, e2]
 
 -- TODO(RFM): Rename.
-def CvxLean.stringToExpr (vars : List Name) (s : String) : MetaM Expr :=
+def stringToExpr (vars : List Name) (s : String) : MetaM Expr :=
   stringToTree s >>= treeToExpr (vars.map toString)
 
 -- TODO(RFM): Rename.
@@ -269,17 +272,17 @@ end EggToMinimization
 
 -- Taken from https://github.com/opencompl/egg-tactic-code
 
-def Lean.Json.getStr! (j : Json) : String :=
+def _root_.Lean.Json.getStr! (j : Json) : String :=
   match j with
   | Json.str a => a
   | _ => ""
 
-def Lean.Json.getArr! (j : Json) : Array Json :=
+def _root_.Lean.Json.getArr! (j : Json) : Array Json :=
   match j with
   | Json.arr a => a
   | _ => #[]
 
-def MetaM.ofExcept [ToString ε]: Except ε α -> MetaM α :=
+def _root_.MetaM.ofExcept [ToString ε]: Except ε α -> MetaM α :=
   fun e =>
     match e with
     | Except.error msg => throwError (toString msg)
@@ -520,7 +523,7 @@ elab "convexify" : tactic => withMainContext do
     let (needsEq, tac) := findTactic step.rewriteName step.direction
     let tacStx ← tac
     if needsEq then
-      let gs ← g.apply (← rewriteWrapperApplyExpr rwWrapper numIntros expectedExpr)
+      let gs ← g.apply <| ← rewriteWrapperApplyExpr rwWrapper numIntros expectedExpr
 
       if gs.length != 2 then 
         dbg_trace s!"Failed to rewrite {step.rewriteName}."
@@ -542,6 +545,8 @@ elab "convexify" : tactic => withMainContext do
 
       gSol.setTag Name.anonymous
 
+      dbg_trace s!"To rewrite {← Meta.ppGoal gToRw}."
+
       let fullTac : Syntax ← `(tactic| intros; $tacStx <;> norm_num)
       let gsAfterRw ← evalTacticAt fullTac gToRw
 
@@ -562,3 +567,14 @@ elab "convexify" : tactic => withMainContext do
   norm_num_clean_up (useSimp := false)
 
   return ()
+
+-- TODO(RFM): Remove.
+noncomputable example : Minimization.Solution $
+    optimization (x : ℝ)
+      minimize (Real.exp x)
+      subject to
+        h : Real.log (Real.exp x) ≤ 2 := by 
+  convexify 
+  sorry
+
+end CvxLean
