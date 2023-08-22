@@ -44,7 +44,7 @@ register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c)
   simp only [div_le_iff (by positivity)]
 
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
-  simp only [←div_le_one (by posimptivity)]
+  rw [←div_le_one (by posimptivity)]
 
 -- NOTE(RFM): This was conv in (Real.log _ ≤ Real.log _).
 register_rewrite_map "log_le_log" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=

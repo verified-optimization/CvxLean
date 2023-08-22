@@ -568,13 +568,4 @@ elab "convexify" : tactic => withMainContext do
 
   return ()
 
--- TODO(RFM): Remove.
-noncomputable example : Minimization.Solution $
-    optimization (x : ℝ)
-      minimize (Real.exp x)
-      subject to
-        h : Real.log (Real.exp x) ≤ 2 := by 
-  convexify 
-  sorry
-
 end CvxLean
