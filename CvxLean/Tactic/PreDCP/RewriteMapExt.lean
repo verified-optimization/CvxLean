@@ -27,8 +27,12 @@ initialize rewriteMapExt : RewriteMapExt ←
 def addRewriteMapEntry (rwName : String) (tac : TSyntax `tactic) : MetaM Unit := do
   setEnv <| rewriteMapExt.addEntry (← getEnv) (rwName, tac)
 
-/-- Get the atom tree. -/
+/-- Given rewrite name, return associated tactic in the environment. -/
 def getTacticFromRewriteName (rwName : String) : MetaM (Option (TSyntax `tactic)) := do
   return (rewriteMapExt.getState (← getEnv)).find? rwName
+
+/-- Return all the saved rewrite names. -/
+def getRegisteredRewriteNames : MetaM (List String) := do
+  return (rewriteMapExt.getState (← getEnv)).toList.map (·.1)
 
 end CvxLean
