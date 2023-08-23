@@ -74,7 +74,6 @@ def agp3 :=
       h6 : x ^ 2 ≤ sqrt x - 6 * y / z
       h7 : x * y = z
 
-set_option trace.Meta.debug false
 reduction red3/dcp3 : agp3 := by
   map_exp
   convexify;
