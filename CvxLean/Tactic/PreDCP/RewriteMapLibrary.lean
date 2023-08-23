@@ -32,24 +32,23 @@ macro "posimptivity" : tactic =>
 
 -- NOTE(RFM): This was conv in (Real.log _ = Real.log _).
 register_rewrite_map "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
-  simp only [Real.log_eq_log (by posimptivity) (by posimptivity)]
+  rw [Real.log_eq_log (by posimptivity) (by posimptivity)]
 
 
 /- Less than or equal rules. -/
 
 register_rewrite_map "le_sub_iff_add_le" ; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)" := 
-  simp only [le_sub_iff_add_le]
+  rw [le_sub_iff_add_le]
 
 register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" := 
-  simp only [div_le_iff (by positivity)]
+  rw [div_le_iff (by positivity)]
 
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
   rw [←div_le_one (by posimptivity)]
 
 -- NOTE(RFM): This was conv in (Real.log _ ≤ Real.log _).
 register_rewrite_map "log_le_log" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
-  simp only [Real.log_le_log (by posimptivity) (by posimptivity)]
-
+  rw [Real.log_le_log (by posimptivity) (by posimptivity)]
 
 /- Field rules. -/
 
