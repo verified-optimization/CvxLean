@@ -19,12 +19,12 @@ def agp1 :=
 
 reduction red1/dcp1 : agp1 := by
   map_exp
-  convexify
+  convexify;
   exact done
 
 #print dcp1
 -- def dcp1 : Minimization ℝ ℝ :=
--- optimization (x : ℝ) 
+-- optimization (x : ℝ)
 --   minimize x
 --   subject to
 --     _ : exp (x * 2) ≤ -(10123 / 1000)
@@ -46,12 +46,12 @@ def agp2 :=
 
 reduction red2/dcp2 : agp2 := by
   map_exp
-  convexify
+  convexify;
   exact done
 
 #print dcp2
 -- def dcp2 : Minimization (ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) 
+-- optimization (x : ℝ) (y : ℝ)
 --   minimize x
 --   subject to
 --     _ : exp (x + y) ≤ -(2691 / 500)
@@ -62,26 +62,27 @@ end AlmostDGP2
 not DCP either. -/
 section AlmostDGP3
 
-def agp3 := 
-  optimization (x y z : ℝ) 
+def agp3 :=
+  optimization (x y z : ℝ)
     minimize (x / y)
-    subject to 
+    subject to
       h1 : 0 < x
       h2 : 0 < y
       h3 : 0 < z
-      h4 : 2 ≤ x 
+      h4 : 2 ≤ x
       h5 : x ≤ 3
       h6 : x ^ 2 ≤ sqrt x - 6 * y / z
       h7 : x * y = z
 
+set_option trace.Meta.debug false
 reduction red3/dcp3 : agp3 := by
   map_exp
-  convexify
+  convexify;
   exact done
 
 #print dcp3
 -- def dcp3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+-- optimization (x : ℝ) (y : ℝ) (z : ℝ)
 --   minimize exp (x - y)
 --   subject to
 --     _ : log 2 ≤ x

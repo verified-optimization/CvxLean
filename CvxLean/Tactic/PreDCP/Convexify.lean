@@ -77,100 +77,103 @@ def rewriteWrapperApplyExpr (rwName : Name) (numArgs : Nat) (expected : Expr) :
 def norm_num_clean_up (useSimp : Bool) : TacticM Unit :=
   Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (useSimp := useSimp)
 
-elab "convexify" : tactic => withMainContext do
-  norm_num_clean_up (useSimp := false)
+syntax (name := convexify) "convexify" : tactic
 
-  let g ← getMainGoal
-  
-  -- NOTE(RFM): No whnf.              
-  let gTy := (← MVarId.getDecl g).type
-  let gExpr ← Meta.matchSolutionExprFromExpr gTy
+@[tactic convexify]
+def evalConvexify : Tactic := fun stx => match stx with
+  | `(tactic| convexify) => withMainContext do
+    norm_num_clean_up (useSimp := false)
+              
+    let gTarget ← getMainTarget
+    let gExpr ← Meta.matchSolutionExprFromExpr gTarget
 
-  -- Get optimization variables.
-  let vars ← withLambdaBody gExpr.constraints fun p _ => do
-    let pr ← Meta.mkProjections gExpr.domain p
-    return pr.map (Prod.fst)
-  let varsStr := vars.map toString
-  let fvars := Array.mk $ vars.map (fun v => mkFVar (FVarId.mk v))
-  let domain := Meta.composeDomain <| vars.map (fun v => (v, Lean.mkConst ``Real))
+    -- Get optimization variables.
+    let vars ← withLambdaBody gExpr.constraints fun p _ => do
+      let pr ← Meta.mkProjections gExpr.domain p
+      return pr.map (Prod.fst)
+    let varsStr := vars.map toString
+    let fvars := Array.mk $ vars.map (fun v => mkFVar (FVarId.mk v))
+    let domain := Meta.composeDomain <| vars.map (fun v => (v, Lean.mkConst ``Real))
 
-  -- Get goal as tree and tags.
-  let (gStr, nonnegVars) ← ExtendedEggTree.fromMinimization gExpr varsStr
-  let numConstrTags := gStr.constr.size
-  let mut tagsMap := HashMap.empty
-  tagsMap := tagsMap.insert "objFun" 0 
-  let mut idx := 1
-  for (h, _) in gStr.constr do
-    tagsMap := tagsMap.insert h idx 
-    idx := idx + 1
+    -- Get goal as tree and tags.
+    let (gStr, nonnegVars) ← ExtendedEggTree.fromMinimization gExpr varsStr
+    let numConstrTags := gStr.constr.size
+    let mut tagsMap := HashMap.empty
+    tagsMap := tagsMap.insert "objFun" 0 
+    let mut idx := 1
+    for (h, _) in gStr.constr do
+      tagsMap := tagsMap.insert h idx 
+      idx := idx + 1
 
-  -- Call egg.
-  let eggRequest := {
-    domains := Array.data <| nonnegVars.map (fun v => [v, "NonNeg"]),
-    target := EggMinimization.ofOCTree gStr
-  }
-  let steps ← runEggRequest eggRequest
+    -- Call egg.
+    let eggRequest := {
+      domains := Array.data <| nonnegVars.map (fun v => [v, "NonNeg"]),
+      target := EggMinimization.ofOCTree gStr
+    }
+    let steps ← runEggRequest eggRequest
 
-  for step in steps do
-    let g ← getMainGoal
+    for step in steps do
+      dbg_trace s!"{(← getGoals).length}"
+      let g ← getMainGoal
 
-    let tag := step.location
-    let tagNum := tagsMap.find! tag
-    let (rwWrapper, numIntros) ← rewriteWrapperLemma tagNum numConstrTags
-    dbg_trace s!"Rewriting {step.rewriteName} at {tag} ({tagNum}). {rwWrapper}."
+      let tag := step.location
+      let tagNum := tagsMap.find! tag
+      let (rwWrapper, numIntros) ← rewriteWrapperLemma tagNum numConstrTags
 
-    let expectedTermStr := step.expectedTerm
-    let mut expectedExpr ← EggString.toExpr vars expectedTermStr
-    if tagNum > 0 then 
-      expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
-    expectedExpr ← withLocalDeclD `p domain fun p => do
-      Meta.withDomainLocalDecls domain p fun xs prs => do
-        let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
-        mkLambdaFVars #[p] $ Expr.replaceFVars replacedFVars xs prs
+      let expectedTermStr := step.expectedTerm
+      let mut expectedExpr ← EggString.toExpr vars expectedTermStr
+      if tagNum > 0 then 
+        expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
+      expectedExpr ← withLocalDeclD `p domain fun p => do
+        Meta.withDomainLocalDecls domain p fun xs prs => do
+          let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
+          mkLambdaFVars #[p] $ Expr.replaceFVars replacedFVars xs prs
 
-    let (needsEq, tac) := findTactic step.rewriteName step.direction
-    let tacStx ← tac
-    if needsEq then
-      let gs ← g.apply <| ← rewriteWrapperApplyExpr rwWrapper numIntros expectedExpr
+      let (needsEq, tac) := findTactic step.rewriteName step.direction
+      let tacStx ← tac
+      if needsEq then
+        let gs ← g.apply <| ← rewriteWrapperApplyExpr rwWrapper numIntros expectedExpr
 
-      if gs.length != 2 then 
-        dbg_trace s!"Failed to rewrite {step.rewriteName}."
-        replaceMainGoal gs; break
+        if gs.length != 2 then 
+          dbg_trace s!"Failed to rewrite {step.rewriteName}."
+          replaceMainGoal gs; break
 
-      let gToRw := gs[0]!
-      let gToRwTag ← gToRw.getTag
+        let gToRw := gs[0]!
+        let gToRwTag ← gToRw.getTag
 
-      if gToRwTag != `hrw then 
-        dbg_trace s!"Unexpected tag name {gToRwTag} when rewriting {step.rewriteName}."
-        replaceMainGoal gs; break
-      
-      let gSol := gs[1]!
-      let gSolTag ← gSol.getTag
+        if gToRwTag != `hrw then 
+          dbg_trace s!"Unexpected tag name {gToRwTag} when rewriting {step.rewriteName}."
+          replaceMainGoal gs; break
+        
+        let gSol := gs[1]!
+        let gSolTag ← gSol.getTag
 
-      if gSolTag != `sol then
-        dbg_trace s!"Unexpected tag name {gSolTag} when rewriting {step.rewriteName}."
-        replaceMainGoal gs; break
+        if gSolTag != `sol then
+          dbg_trace s!"Unexpected tag name {gSolTag} when rewriting {step.rewriteName}."
+          replaceMainGoal gs; break
 
-      gSol.setTag Name.anonymous
+        gSol.setTag Name.anonymous
 
-      dbg_trace s!"To rewrite {← Meta.ppGoal gToRw}."
-
-      let fullTac : Syntax ← `(tactic| intros; $tacStx <;> norm_num)
-      let gsAfterRw ← evalTacticAt fullTac gToRw
-
-      if gsAfterRw.length == 0 then
-        dbg_trace s!"Rewrote {step.rewriteName}."
-        replaceMainGoal [gSol]
+        let fullTac : Syntax ← `(tactic| intros; $tacStx <;> norm_num)
+        try {
+          let gsAfterRw ← evalTacticAt fullTac gToRw
+          if gsAfterRw.length == 0 then
+            dbg_trace s!"Rewrote {step.rewriteName}."
+            replaceMainGoal [gSol]
+          else
+            dbg_trace s!"Failed to rewrite {step.rewriteName}."
+            for g in gs do  
+              dbg_trace s!"Could not prove: {← Meta.ppGoal g}."
+            replaceMainGoal gs; break
+        } catch _ => {
+          dbg_trace s!"Failed to apply tactic in rewrite {step.rewriteName}.";
+          replaceMainGoal gs; break
+        }
       else
-        dbg_trace s!"Failed to rewrite {step.rewriteName}."
-        replaceMainGoal (gs ++ gsAfterRw); break
-    else
-      let gs ← evalTacticAt tacStx g
-      dbg_trace s!"Rewrote {step.rewriteName}."
-      replaceMainGoal gs
+        evalTactic tacStx
+        dbg_trace s!"Rewrote {step.rewriteName}."
 
-  norm_num_clean_up (useSimp := false)
-
-  return ()
+    norm_num_clean_up (useSimp := false)
+  | _ => throwUnsupportedSyntax
 
 end CvxLean
