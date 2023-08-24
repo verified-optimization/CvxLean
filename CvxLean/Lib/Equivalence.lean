@@ -94,29 +94,29 @@ instance :
   Trans (@MinEquiv R D E _) (@MinEquiv R E F _) (@MinEquiv R D F _) := 
   { trans := fun E₁ E₂ => MinEquiv.trans _ _ _ E₁ E₂ }
 
--- NOTE: B for bundled. 
+-- NOTE(RFM): B for bundled. 
 
-structure MinimizationB := 
+structure MinimizationB (R) [Preorder R] := 
   (D : Type)
-  (prob : Minimization D Real)
+  (prob : Minimization D R)
 
-def MinimizationB.equiv : MinimizationB → MinimizationB → Prop := 
+def MinimizationB.equiv : MinimizationB R → MinimizationB R → Prop := 
   fun p q => Nonempty (MinEquiv p.prob q.prob)
 
-lemma MinimizationB.equiv_refl (p : MinimizationB) : 
+lemma MinimizationB.equiv_refl (p : MinimizationB R) : 
   MinimizationB.equiv p p :=
   ⟨MinEquiv.refl _⟩
 
-lemma MinimizationB.equiv_symm {p q : MinimizationB} : 
+lemma MinimizationB.equiv_symm {p q : MinimizationB R} : 
   MinimizationB.equiv p q → MinimizationB.equiv q p :=
-  fun ⟨E⟩ => ⟨@MinEquiv.symm Real p.D q.D _ p.prob q.prob E⟩ 
+  fun ⟨E⟩ => ⟨@MinEquiv.symm R p.D q.D _ p.prob q.prob E⟩ 
 
-lemma MinimizationB.equiv_trans {p q r : MinimizationB} : 
+lemma MinimizationB.equiv_trans {p q r : MinimizationB R} : 
   MinimizationB.equiv p q → MinimizationB.equiv q r → MinimizationB.equiv p r :=
   fun ⟨E₁⟩ ⟨E₂⟩ => 
-    ⟨@MinEquiv.trans Real p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
+    ⟨@MinEquiv.trans R p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
 
-instance : Setoid MinimizationB := 
+instance : Setoid (MinimizationB R) := 
   { r := MinimizationB.equiv,
     iseqv := 
       { refl := MinimizationB.equiv_refl, 
@@ -125,26 +125,46 @@ instance : Setoid MinimizationB :=
 
 -- NOTE(RFM): Q for quotient.
 
-def MinimizationQ := @Quotient MinimizationB (by infer_instance)
+variable (R)
 
-def MinimizationQ.mk {D : Type} (p : Minimization D Real) : MinimizationQ := 
+def MinimizationQ := @Quotient (MinimizationB R) (by infer_instance)
+
+def MinimizationQ.mk {D : Type} (p : Minimization D R) : MinimizationQ R := 
   Quotient.mk' { D := D, prob := p }
 
-syntax "{|" term "|}" : term
+syntax "{|" term ", " term "|}" : term
 
 macro_rules 
-  | `({| $p:term |}) => do pure (← `(@MinimizationQ.mk _ $p)).raw
+  | `({| $f:term , $cs:term |}) => 
+    `(@MinimizationQ.mk _ _ _ { objFun := $f, constraints := $cs })
 
--- NOTE(RFM): To fit into an `equivalence` command.
+-- NOTE(RFM): To fit into a potential `equivalence` command.
 
 def rewrite_constraint_1' {D} {c1 c1' : D → Prop} {cs : D → Prop} {f : D → ℝ}
   (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) :
-  {| { objFun := f, constraints := fun x => c1' x ∧ cs x } |} =
-  {| { objFun := f, constraints := fun x => c1  x ∧ cs x } |} :=
-  Quotient.sound <|  Nonempty.intro <|
+  {| f, fun x => c1' x ∧ cs x |} = 
+  {| f, fun x => c1  x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [←hrw x hx.2] at hx; exact hx
     phi_optimality := fun {x} _ => le_refl _
     psi_feasibility := fun x hx => by simp only [hrw x hx.2] at hx; exact hx
     psi_optimality := fun {x} _ => le_refl _ }
+
+-- NOTE(RFM): Experiment with Props.
+
+def Solution' : Prop := 
+  ∃ point : D, 
+      p.constraints point 
+    ∧ ∀ y : p.FeasPoint, p.objFun point ≤ p.objFun y.point
+
+def Φ : Solution p → Solution' p := 
+  fun ⟨x, hxf, hxo⟩ => ⟨x, hxf, hxo⟩ 
+
+noncomputable def Ψ : Solution' p → Solution p := 
+  fun s => 
+    let x := Classical.choose s
+    let ⟨hxf, hxo⟩ := Classical.choose_spec s
+    ⟨x, hxf, hxo⟩
+
