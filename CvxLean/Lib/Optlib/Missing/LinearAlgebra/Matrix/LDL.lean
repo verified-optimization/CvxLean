@@ -5,10 +5,13 @@ import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.Spectrum
 import CvxLean.Lib.Optlib.Missing.Analysis.InnerProductSpace.GramSchmidtOrtho
 import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.Triangular
 
-variable {𝕜 : Type _} [IsROrC 𝕜]
+variable {𝕜 : Type _} 
+variable [IsROrC 𝕜]
 variable {n : Type _} [LinearOrder n] [IsWellOrder n (· < · : n → n → Prop)] [LocallyFiniteOrderBot n]
 
 open Matrix
+
+open scoped Matrix ComplexOrder
 
 variable {S : Matrix n n 𝕜} [Fintype n] (hS : S.PosDef)
 

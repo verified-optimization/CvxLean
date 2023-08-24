@@ -3,29 +3,33 @@ import Mathlib.Algebra.Star.Pi
 
 namespace Matrix
 
-variable {𝕜 : Type _} 
-variable [NormedField 𝕜] [PartialOrder 𝕜] [IsROrC 𝕜]
-variable [StarAddMonoid 𝕜] [StarOrderedRing 𝕜]
 variable {m n : Type _} [Fintype m] [Fintype n]
+variable {𝕜 : Type _} 
+variable [NormedField 𝕜] [PartialOrder 𝕜] [StarOrderedRing 𝕜]
+variable [IsROrC 𝕜]
 
+lemma PosSemidef.det_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) [DecidableEq n] : 0 ≤ det M := by
+  rw [hM.1.det_eq_prod_eigenvalues]
+  apply Finset.prod_nonneg
+  intros i _hi
+  apply eigenvalues_nonneg hM
 
-lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) : M.det ≠ 0 := by
+lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) : 
+  M.det ≠ 0 := by
   rw [← Matrix.nondegenerate_iff_det_ne_zero]
   intros v hv
   have hv' := hv (star v)
   rw [← star_eq_zero]
   by_contra h
   have := hM.2 (star v) h
-  simp only [star_star] at this
-  rw [star_star, hv'] at this
-  simp at this
+  simp [star_star, hv'] at this
 
 lemma PosDef.isUnit_det [DecidableEq n]
   {M : Matrix n n ℝ} (hM : M.PosDef) : IsUnit M.det :=
   isUnit_iff_ne_zero.2 hM.det_ne_zero
 
 noncomputable instance PosDef.Invertible 
-  [DecidableEq n] {M : Matrix n n ℝ} (hM : M.PosDef) : Invertible M :=
+  [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) : Invertible M :=
   invertibleOfIsUnitDet M (isUnit_iff_ne_zero.2 hM.det_ne_zero)
 
 lemma PosSemidef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 ≤ f i) :
@@ -59,15 +63,15 @@ lemma PosSemidef.conjTranspose_mul_mul (M N : Matrix n n 𝕜) (hM : M.PosSemide
   (Nᴴ * M * N).PosSemidef := by
   refine' ⟨isHermitian_conjTranspose_mul_mul _ hM.1, _⟩
   intro x
-  convert hM.2 (N.mulVec x) using 2
-  rw [Matrix.mul_assoc, mulVec_mulVec, ←mulVec_mulVec, dotProduct_mulVec, star_mulVec]
+  convert hM.2 (N.mulVec x) using 1
+  rw [mul_assoc, mulVec_mulVec, ←mulVec_mulVec, dotProduct_mulVec, star_mulVec]
 
 lemma PosDef.conjTranspose_mul_mul [DecidableEq n]
     (M N : Matrix n n 𝕜) (hM : M.PosDef) (hN : N.det ≠ 0):
   (Nᴴ * M * N).PosDef := by
   refine' ⟨isHermitian_conjTranspose_mul_mul _ hM.1, _⟩
   intros x hx
-  convert hM.2 (N.mulVec x) (fun h => hx (eq_zero_of_mulVec_eq_zero hN h)) using 2
+  convert hM.2 (N.mulVec x) (fun h => hx (eq_zero_of_mulVec_eq_zero hN h)) using 1
   rw [Matrix.mul_assoc, mulVec_mulVec, ←mulVec_mulVec, dotProduct_mulVec, star_mulVec]
 
 lemma IsHermitian.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜}
@@ -76,20 +80,25 @@ lemma IsHermitian.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜}
   refine' (Matrix.inv_eq_right_inv _).symm
   rw [conjTranspose_nonsing_inv, hM.eq, mul_nonsing_inv _ hMdet]
 
+lemma conj_symm {M : Matrix n n 𝕜} (hM : M.IsHermitian) :
+  star (star x ⬝ᵥ mulVec M x) = star x ⬝ᵥ mulVec M x := by
+  nth_rewrite 1 [star_dotProduct, star_mulVec]
+  rw [star_star, dotProduct_mulVec, hM.eq]
+
 lemma PosDef.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) :
   M⁻¹.PosDef := by
   refine' ⟨IsHermitian.nonsingular_inv hM.1 (isUnit_iff_ne_zero.2 hM.det_ne_zero), _⟩
   intros x hx
   have hMMinv := (mul_nonsing_inv _ (isUnit_iff_ne_zero.2 hM.det_ne_zero))
   have hMinvdet : M⁻¹.det ≠ 0 := det_ne_zero_of_left_inverse hMMinv
-  have := hM.2 (M⁻¹.mulVec x) (λ h => hx (eq_zero_of_mulVec_eq_zero hMinvdet h))
+  have := hM.2 (M⁻¹.mulVec x) (fun h => hx (eq_zero_of_mulVec_eq_zero hMinvdet h))
   rw [mulVec_mulVec, hMMinv, one_mulVec, star_dotProduct] at this
-  rw [← IsROrC.conj_re]
+  rw [conj_symm ((@isHermitian_inv _ _ _ _ _ _ M (PosDef.Invertible hM)).2 hM.1)] at this
   exact this
 
 lemma PosSemidef.mul_mul_of_IsHermitian {M N : Matrix n n 𝕜}
     (hM : M.PosSemidef) (hN : N.IsHermitian) :
-  (N ⬝ M ⬝ N).PosSemidef :=
+  (N * M * N).PosSemidef :=
 by convert hM.conjTranspose_mul_mul M N; exact hN.symm
 
 lemma PosSemidef.add {M N : Matrix n n 𝕜} (hM : M.PosSemidef) (hN : N.PosSemidef) :

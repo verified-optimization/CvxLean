@@ -40,35 +40,36 @@ namespace IsHermitian
 variable {𝕜 : Type _} [DecidableEq 𝕜] [IsROrC 𝕜] {A : Matrix n n 𝕜} (hA : A.IsHermitian)
 
 lemma eigenvectorMatrix_inv_mul :
-  hA.eigenvectorMatrixInv ⬝ hA.eigenvectorMatrix = 1 :=
+  hA.eigenvectorMatrixInv * hA.eigenvectorMatrix = 1 :=
 by apply Basis.toMatrix_mul_toMatrix_flip
 
-theorem spectral_theorem' :
-  hA.eigenvectorMatrix ⬝ diagonal (IsROrC.ofReal ∘ hA.eigenvalues) ⬝ hA.eigenvectorMatrixᴴ = A := by 
+-- NOTE(RFM): There is a spectral_theorem'
+theorem spectral_theorem'' :
+  hA.eigenvectorMatrix * diagonal (IsROrC.ofReal ∘ hA.eigenvalues) * hA.eigenvectorMatrixᴴ = A := by 
   rw [conjTranspose_eigenvectorMatrix, Matrix.mul_assoc, ← spectral_theorem,
     ←Matrix.mul_assoc, eigenvectorMatrix_mul_inv, Matrix.one_mul]
 
 end IsHermitian
 
 noncomputable def IsHermitian.sqrt {A : Matrix n n ℝ} (hA : A.IsHermitian) : Matrix n n ℝ :=
-hA.eigenvectorMatrix ⬝ Matrix.diagonal (fun i => (hA.eigenvalues i).sqrt) ⬝ hA.eigenvectorMatrixᵀ
+hA.eigenvectorMatrix * Matrix.diagonal (fun i => (hA.eigenvalues i).sqrt) * hA.eigenvectorMatrixᵀ
 
 lemma conjTranspose_eq_transpose {m n : Type _} {A : Matrix m n ℝ} : Aᴴ = Aᵀ := rfl
 
 @[simp] 
 lemma PosSemidef.sqrt_mul_sqrt {A : Matrix n n ℝ} (hA : A.PosSemidef) :
-  hA.1.sqrt ⬝ hA.1.sqrt = A :=
+  hA.1.sqrt * hA.1.sqrt = A :=
 calc
-  hA.1.sqrt ⬝ hA.1.sqrt =
-    hA.1.eigenvectorMatrix ⬝ (Matrix.diagonal (fun i => (hA.1.eigenvalues i).sqrt)
-    ⬝ (hA.1.eigenvectorMatrixᵀ ⬝ hA.1.eigenvectorMatrix)
-    ⬝ Matrix.diagonal (fun i => (hA.1.eigenvalues i).sqrt)) ⬝ hA.1.eigenvectorMatrixᵀ := by 
+  hA.1.sqrt * hA.1.sqrt =
+    hA.1.eigenvectorMatrix * (Matrix.diagonal (fun i => (hA.1.eigenvalues i).sqrt)
+    * (hA.1.eigenvectorMatrixᵀ * hA.1.eigenvectorMatrix)
+    * Matrix.diagonal (fun i => (hA.1.eigenvalues i).sqrt)) * hA.1.eigenvectorMatrixᵀ := by 
     simp [IsHermitian.sqrt, Matrix.mul_assoc]
   _ = A := by
     rw [←conjTranspose_eq_transpose, hA.1.conjTranspose_eigenvectorMatrix,
       hA.1.eigenvectorMatrix_inv_mul, Matrix.mul_one, diagonal_mul_diagonal,
       ← hA.1.conjTranspose_eigenvectorMatrix]
-    convert hA.1.spectral_theorem'
+    convert hA.1.spectral_theorem''
     rw [←Real.sqrt_mul (hA.eigenvalues_nonneg _), Real.sqrt_mul_self (hA.eigenvalues_nonneg _)]
     simp
 
@@ -77,8 +78,8 @@ lemma PosSemidef.PosSemidef_sqrt {A : Matrix n n ℝ} (hA : A.PosSemidef) :
 PosSemidef.conjTranspose_mul_mul _ _
   (PosSemidef_diagonal (fun i => Real.sqrt_nonneg (hA.1.eigenvalues i)))
 
-lemma IsHermitian.one_add {A : Matrix n n ℝ} (hA : A.IsHermitian) : (1 + A).IsHermitian :=
-by simp [IsHermitian, hA.eq]
+lemma IsHermitian.one_add {A : Matrix n n ℝ} (hA : A.IsHermitian) : (1 + A).IsHermitian := by 
+  dsimp [IsHermitian]; rw [IsHermitian.add _ hA]; simp
 
 lemma IsHermitian.has_eigenvector_one_add {A : Matrix n n ℝ} (hA : A.IsHermitian) (i : n) :
   Module.End.HasEigenvector (1 + Matrix.toLin' A) (1 + (hA.eigenvalues i)) ((hA.eigenvectorBasis) i) :=
@@ -129,11 +130,11 @@ lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ)
   have IsHermitian_sqrtA : sqrtA⁻¹.IsHermitian
   { apply IsHermitian.nonsingular_inv (hA.posSemidef.PosSemidef_sqrt.1)
     exact isUnit_det_sqrtA }
-  have PosSemidef_ABA : (sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).PosSemidef := 
+  have PosSemidef_ABA : (sqrtA⁻¹ * B * sqrtA⁻¹).PosSemidef := 
     PosSemidef.mul_mul_of_IsHermitian hB IsHermitian_sqrtA
   let μ := PosSemidef_ABA.1.eigenvalues
   calc A.det + B.det 
-    = A.det * (1 + (sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det) := by
+    = A.det * (1 + (sqrtA⁻¹ * B * sqrtA⁻¹).det) := by
         rw [det_mul, det_mul, mul_comm _ B.det, mul_assoc, ←det_mul, ←Matrix.mul_inv_rev,
           hA.posSemidef.sqrt_mul_sqrt, mul_add, mul_one, mul_comm, mul_assoc, ←det_mul,
           nonsing_inv_mul _ (isUnit_iff_ne_zero.2 hA.det_ne_zero), det_one, mul_one]
@@ -143,7 +144,7 @@ lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ)
   _ ≤ A.det * ∏ i, (1 + μ i) := by
         apply (mul_le_mul_left hA.det_pos).2
         apply Finset.one_add_prod_le_prod_one_add μ PosSemidef_ABA.eigenvalues_nonneg
-  _ = A.det * (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹).det := by
+  _ = A.det * (1 + sqrtA⁻¹ * B * sqrtA⁻¹).det := by
         rw [mul_eq_mul_left_iff]; left; symm
         rw [det_eq_prod_eigenvalues PosSemidef_ABA.1.eigenvectorBasis
           (fun i => 1 + (PosSemidef_ABA.1.eigenvalues i)) _]
@@ -156,10 +157,10 @@ lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ)
         rw [← det_mul, ← det_conj this (A + B)]
         apply congr_arg
         rw [←hA.posSemidef.sqrt_mul_sqrt]
-        change sqrtA ⬝ sqrtA ⬝ (1 + sqrtA⁻¹ ⬝ B ⬝ sqrtA⁻¹) = sqrtA ⬝ (sqrtA ⬝ sqrtA + B) ⬝ sqrtA⁻¹
+        change sqrtA * sqrtA * (1 + sqrtA⁻¹ * B * sqrtA⁻¹) = sqrtA * (sqrtA * sqrtA + B) * sqrtA⁻¹
         rw [Matrix.mul_add, Matrix.mul_one, Matrix.mul_add, Matrix.add_mul,
           Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc,
-          ← Matrix.mul_assoc _ _ (B ⬝ _),
+          ← Matrix.mul_assoc _ _ (B * _),
           Matrix.mul_nonsing_inv _ isUnit_det_sqrtA, Matrix.one_mul, Matrix.mul_one,
           hA.posSemidef.sqrt_mul_sqrt, Matrix.mul_assoc]
 
