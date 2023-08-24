@@ -1,5 +1,6 @@
 import CvxLean.Lib.Minimization 
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Lib.Missing.Real
+import CvxLean.Syntax.Minimization
 
 open Minimization
 
