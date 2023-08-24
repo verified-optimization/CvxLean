@@ -123,7 +123,7 @@ instance : Setoid MinimizationB :=
         symm := MinimizationB.equiv_symm, 
         trans := MinimizationB.equiv_trans } }
 
--- NOTE: Q for quotient.
+-- NOTE(RFM): Q for quotient.
 
 def MinimizationQ := @Quotient MinimizationB (by infer_instance)
 
@@ -135,138 +135,16 @@ syntax "{|" term "|}" : term
 macro_rules 
   | `({| $p:term |}) => do pure (← `(@MinimizationQ.mk _ $p)).raw
 
-def MinimizationQ.constraints_comm
-  {D : Type} {f : D → Real} {cs₁ cs₂ : D → Prop} :
-  {| { objFun := f, constraints := fun x => cs₁ x ∧ cs₂ x } |} = 
-  {| { objFun := f, constraints := fun x => cs₂ x ∧ cs₁ x } |} := by
-  apply Quotient.sound; apply Nonempty.intro; exact 
+-- NOTE(RFM): To fit into an `equivalence` command.
+
+def rewrite_constraint_1' {D} {c1 c1' : D → Prop} {cs : D → Prop} {f : D → ℝ}
+  (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) :
+  {| { objFun := f, constraints := fun x => c1' x ∧ cs x } |} =
+  {| { objFun := f, constraints := fun x => c1  x ∧ cs x } |} :=
+  Quotient.sound <|  Nonempty.intro <|
   { phi := id, 
     psi := id,
-    phi_feasibility := fun _ hx => And.comm.mp hx,
-    phi_optimality := fun _ _ => le_refl _,
-    psi_feasibility := fun _ hy => And.comm.mp hy,
-    psi_optimality := fun _ _ => le_refl _ }
-
--- Useful to have this.
-def MinimizationQ.constraints_comm_l
-  {D : Type} {f : D → Real} {cs cs₁ cs₂ : D → Prop} :
-  {| { objFun := f, constraints := fun x => cs x ∧ (cs₁ x ∧ cs₂ x) } |} = 
-  {| { objFun := f, constraints := fun x => cs x ∧ (cs₂ x ∧ cs₁ x) } |} :=
-  Quotient.sound <| Nonempty.intro <|
-  { phi := id, 
-    psi := id,
-    phi_feasibility := fun _ hx => ⟨hx.1, And.comm.mp hx.2⟩,
-    phi_optimality := fun _ _ => le_refl _,
-    psi_feasibility := fun _ hy => ⟨hy.1, And.comm.mp hy.2⟩,
-    psi_optimality := fun _ _ => le_refl _ }
-
-def MinimizationQ.constraints_assoc 
-  {D : Type} {f : D → Real} {cs₁ cs₂ cs₃ : D → Prop} :
-  {| { objFun := f, constraints := fun x => (cs₁ x ∧ cs₂ x) ∧ cs₃ x } |} = 
-  {| { objFun := f, constraints := fun x => cs₁ x ∧ (cs₂ x ∧ cs₃ x) } |} := 
-  Quotient.sound <| Nonempty.intro <|
-  { phi := id, 
-    psi := id,
-    phi_feasibility := fun _ hx => and_assoc.mp hx,
-    phi_optimality := fun _ _ => le_refl _,
-    psi_feasibility := fun _ hy => and_assoc.mpr hy,
-    psi_optimality := fun _ _ => le_refl _ }
-
-
-section QuotientExample 
-
-open CvxLean MinimizationQ
-
-example :
-  {| optimization (x : Real) minimize x subject to h : 0 < x ∧ True ∧ False |} =
-  {| optimization (x : Real) minimize x subject to h : False ∧ True ∧ 0 < x |} := by
-  rw [constraints_comm_l (cs₁ := fun _ => True)]
-  rw [constraints_comm]
-  rw [constraints_assoc]
-
-end QuotientExample
-
-
-section Example
-
-noncomputable def MinEquiv.map_domain_exp
-  {f : Real → Real} {cs : Real → Prop} : 
-  MinEquiv 
-    { objFun := f, constraints := fun x => 0 < x ∧ cs x } 
-    { objFun := f ∘ Real.exp, constraints := fun x => 0 < Real.exp x ∧ cs (Real.exp x) } := 
-  { phi := Real.log,
-    psi := Real.exp,
-    phi_feasibility := fun x hx => by 
-      simp only [constraints, Function.comp] at hx ⊢;
-      rw [Real.exp_log hx.1]
-      exact ⟨hx.1, hx.2⟩,
-    phi_optimality := fun x hx => by
-      simp only [objFun, constraints, Function.comp] at hx ⊢;
-      rw [Real.exp_log hx.1]
-    psi_feasibility := fun x hx => hx
-    psi_optimality := fun x _ => le_refl _
-  }
-
-noncomputable def MinEquiv.log_le_log
-  {f : Real → Real} {cs : Real → Prop} {g h : Real → Real} :
-  MinEquiv 
-    { objFun := f, 
-      constraints := fun x => 0 < g x ∧ 0 < h x ∧ g x ≤ h x ∧ cs x }
-    { objFun := f, 
-      constraints := fun x => 0 < g x ∧ 0 < h x ∧ Real.log (g x) ≤ Real.log (h x) ∧ cs x } :=
-  { phi := id, 
-    psi := id, 
-    phi_feasibility := fun x hx => by
-      simp only [constraints, Function.comp] at hx ⊢;
-      exact ⟨hx.1, hx.2.1, (Real.log_le_log hx.1 hx.2.1).2 hx.2.2.1, hx.2.2.2⟩,
-    phi_optimality := fun x _ => le_refl _,
-    psi_feasibility := fun x hx => by
-      simp only [constraints, Function.comp] at hx ⊢;
-      exact ⟨hx.1, hx.2.1, (Real.log_le_log hx.1 hx.2.1).1 hx.2.2.1, hx.2.2.2⟩,
-    psi_optimality := fun x _ => le_refl _
-  }
-
-noncomputable def MinEquiv.rewrite_constraints 
-  {f : D → R} {cs ds : D → Prop}
-  (hcsds : ∀ x, cs x ↔ ds x) : 
-  MinEquiv 
-    { objFun := f, constraints := cs } 
-    { objFun := f, constraints := ds } :=
-  { phi := id,
-    psi := id, 
-    phi_feasibility := fun x hx => by
-      simp only [constraints, Function.comp] at hx ⊢;
-      exact (hcsds x).1 hx
-    phi_optimality := fun x _ => le_refl _,
-    psi_feasibility := fun x hx => by
-      simp only [constraints, Function.comp] at hx ⊢;
-      exact (hcsds x).2 hx
-    psi_optimality := fun x _ => le_refl _
-  }
-
-noncomputable def MinEquiv.rewrite_objective 
-  {f : D → R}
-  {g : D → R}
-  (hfg : ∀ x, cs x → f x = g x) :
-  MinEquiv 
-    { objFun := f, constraints := cs } 
-    { objFun := g, constraints := cs } :=
-  { phi := id,
-    psi := id,
-    phi_feasibility := fun x hx => hx,
-    phi_optimality := fun x hx => by dsimp; rw [hfg x hx],
-    psi_feasibility := fun x hx => hx,
-    psi_optimality := fun x hx => by dsimp; rw [hfg x hx],
-  }
-
-noncomputable def MinEquiv.log_le_log_no_cs
-  {f : Real → Real} {g h : Real → Real} :
-  MinEquiv 
-    { objFun := f, 
-      constraints := fun x => 0 < g x ∧ 0 < h x ∧ g x ≤ h x }
-    { objFun := f, 
-      constraints := fun x => 0 < g x ∧ 0 < h x ∧ Real.log (g x) ≤ Real.log (h x) } :=
-  MinEquiv.rewrite_constraints (fun x => by 
-    exact ⟨
-      fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).2 h.2.2⟩, 
-      fun h => ⟨h.1, h.2.1, (Real.log_le_log h.1 h.2.1).1 h.2.2⟩⟩)  
+    phi_feasibility := fun x hx => by simp only [←hrw x hx.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [hrw x hx.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
