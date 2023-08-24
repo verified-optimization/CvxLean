@@ -98,7 +98,7 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
 
   -- TODO(RFM): Add this to build instructions. Sometimes it is not needed.
   let mosekBinPath := 
-    "/Users/ramonfernandezmir/Documents/PhD-code/optimisation" ++ 
+    "/Users/ramonfernandezmir/Documents/PhD-code/optimization" ++ 
     "/mosek/10.0/tools/platform/osxaarch64/bin"
   let p := if let some p' := ← IO.getEnv "PATH" then 
     p' ++ ":" ++ mosekBinPath

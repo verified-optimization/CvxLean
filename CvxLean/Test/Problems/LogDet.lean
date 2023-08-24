@@ -5,7 +5,7 @@ section LogDet
 open CvxLean Minimization Real
 
 noncomputable def logDet1 :=
-  optimization (X : Matrix (Finₓ 2) (Finₓ 2) ℝ) 
+  optimization (X : Matrix (Fin 2) (Fin 2) ℝ) 
     minimize (Matrix.trace X)
     subject to 
       h₁ : 10 ≤ log X.det
@@ -23,7 +23,7 @@ solve logDet1
 #eval logDet1.solution 1 1 -- 148.413156
 
 noncomputable def logDet2 :=
-  optimization (X : Matrix (Finₓ 2) (Finₓ 2) ℝ) 
+  optimization (X : Matrix (Fin 2) (Fin 2) ℝ) 
     maximize (log X.det)
     subject to 
       h₁ : X.PosDef

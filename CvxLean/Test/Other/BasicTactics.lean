@@ -55,7 +55,6 @@ noncomputable example : Solution $
   domain_equiv (Equiv.mk 
     (fun (p : {** ℝ ** y **} × {** ℝ ** x **}) => (p.2, p.1)) 
     (fun p => (p.2, p.1)) sorry sorry)
-  case
   sorry
 
 noncomputable example : Solution $

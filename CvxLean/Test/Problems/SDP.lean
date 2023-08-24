@@ -22,9 +22,9 @@ fun i j =>
 
 noncomputable def sdp1 :=
   optimization (X : Matrix (Fin 2) (Fin 2) ℝ)
-    minimize (Matrix.trace (Matrix.mul C1 X))
+    minimize (Matrix.trace (C1 * X))
     subject to 
-      h₁ : Matrix.trace (Matrix.mul A1 X) <= b1
+      h₁ : Matrix.trace (A1 * X) <= b1
       h₂ : Matrix.PosSemidef X
       h' : X 0 1 = X 1 0 -- TODO: Enforce symmetric!
 
@@ -33,7 +33,7 @@ solve sdp1
 #print sdp1.reduced 
 
 #eval sdp1.status       -- "PRIMAL_AND_DUAL_FEASIBLE"
-#eval sdp1.value        -- 22026.464907
+#eval sdp1.value        -- -0.266754
 #eval sdp1.solution 0 0 -- 0.151223
 #eval sdp1.solution 0 1 -- -0.180731
 #eval sdp1.solution 1 0 -- -0.180731
