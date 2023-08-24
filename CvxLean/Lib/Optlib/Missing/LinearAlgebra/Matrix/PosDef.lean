@@ -1,26 +1,13 @@
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.Algebra.Star.Pi
 
 namespace Matrix
 
-variable {𝕜 : Type _} [IsROrC 𝕜] {m n : Type _} [Fintype m] [Fintype n]
+variable {𝕜 : Type _} 
+variable [NormedField 𝕜] [PartialOrder 𝕜] [IsROrC 𝕜]
+variable [StarAddMonoid 𝕜] [StarOrderedRing 𝕜]
+variable {m n : Type _} [Fintype m] [Fintype n]
 
-lemma PosSemidef.eigenvalues_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) [DecidableEq n] (i : n) : 0 ≤ hM.1.eigenvalues i :=
-by rw [hM.1.eigenvalues_eq]; apply hM.2
-
-lemma PosSemidef.det_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) [DecidableEq n] : 0 ≤ det M := by
-  rw [hM.1.det_eq_prod_eigenvalues]
-  apply Finset.prod_nonneg
-  intros i _hi
-  apply eigenvalues_nonneg hM
-
-lemma PosDef.eigenvalues_pos {M : Matrix n n ℝ} (hM : M.PosDef) [DecidableEq n] (i : n) : 0 < hM.1.eigenvalues i := by
-  rw [hM.1.eigenvalues_eq]
-  apply hM.2 _
-  intros h
-  have h_det : (hM.1.eigenvectorMatrix)ᵀ.det = 0 :=  
-    Matrix.det_eq_zero_of_row_eq_zero i (fun j => congr_fun h j)
-  simpa only [h_det, not_isUnit_zero] using
-    isUnit_det_of_invertible hM.1.eigenvectorMatrixᵀ
 
 lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) : M.det ≠ 0 := by
   rw [← Matrix.nondegenerate_iff_det_ne_zero]
@@ -29,6 +16,7 @@ lemma PosDef.det_ne_zero [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.PosDef) :
   rw [← star_eq_zero]
   by_contra h
   have := hM.2 (star v) h
+  simp only [star_star] at this
   rw [star_star, hv'] at this
   simp at this
 
@@ -68,7 +56,7 @@ lemma PosDef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 < f i) :
     rfl }
 
 lemma PosSemidef.conjTranspose_mul_mul (M N : Matrix n n 𝕜) (hM : M.PosSemidef) :
-  (Nᴴ ⬝ M ⬝ N).PosSemidef := by
+  (Nᴴ * M * N).PosSemidef := by
   refine' ⟨isHermitian_conjTranspose_mul_mul _ hM.1, _⟩
   intro x
   convert hM.2 (N.mulVec x) using 2
@@ -76,7 +64,7 @@ lemma PosSemidef.conjTranspose_mul_mul (M N : Matrix n n 𝕜) (hM : M.PosSemide
 
 lemma PosDef.conjTranspose_mul_mul [DecidableEq n]
     (M N : Matrix n n 𝕜) (hM : M.PosDef) (hN : N.det ≠ 0):
-  (Nᴴ ⬝ M ⬝ N).PosDef := by
+  (Nᴴ * M * N).PosDef := by
   refine' ⟨isHermitian_conjTranspose_mul_mul _ hM.1, _⟩
   intros x hx
   convert hM.2 (N.mulVec x) (fun h => hx (eq_zero_of_mulVec_eq_zero hN h)) using 2

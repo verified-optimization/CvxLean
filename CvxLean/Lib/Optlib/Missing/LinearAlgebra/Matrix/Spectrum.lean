@@ -33,8 +33,8 @@ lemma IsHermitian.hasEigenvector_eigenvectorBasis (hA : A.IsHermitian) (i : n) :
 diagonalized by a change of basis using a matrix consisting of eigenvectors. -/
 theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n)) (as : n → ℝ)
     (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
-  xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) ⬝ A =
-    diagonal (IsROrC.ofReal ∘ as) ⬝ xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) := by
+  xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) * A =
+    diagonal (IsROrC.ofReal ∘ as) * xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) := by
   rw [basis_toMatrix_basisFun_mul]
   ext i j
   let xs' := xs.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm 
