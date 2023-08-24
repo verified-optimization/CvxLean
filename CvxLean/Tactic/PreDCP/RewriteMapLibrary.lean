@@ -26,7 +26,7 @@ lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
 namespace CvxLean
 
 macro "posimptivity" : tactic => 
-  `(tactic| norm_num <;> positivity)
+  `(tactic| try { norm_num } <;> try { positivity })
 
 /- Equality rules. -/
 

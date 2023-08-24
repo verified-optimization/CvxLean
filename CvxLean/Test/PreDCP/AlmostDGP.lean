@@ -19,7 +19,7 @@ def agp1 :=
 
 reduction red1/dcp1 : agp1 := by
   map_exp
-  convexify;
+  convexify
   exact done
 
 #print dcp1
@@ -46,7 +46,7 @@ def agp2 :=
 
 reduction red2/dcp2 : agp2 := by
   map_exp
-  convexify;
+  convexify
   exact done
 
 #print dcp2
@@ -76,7 +76,7 @@ def agp3 :=
 
 reduction red3/dcp3 : agp3 := by
   map_exp
-  convexify;
+  convexify
   exact done
 
 #print dcp3
