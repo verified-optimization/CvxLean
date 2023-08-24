@@ -182,6 +182,8 @@ def evalConvexify : Tactic := fun stx => match stx with
     
     norm_num_clean_up (useSimp := false)
 
+    saveTacticInfoForToken stx
+
   | _ => throwUnsupportedSyntax
 
 end CvxLean
