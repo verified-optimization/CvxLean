@@ -418,7 +418,7 @@ optimality by
 
 -- TODO: Notation
 declare_atom Matrix.mul1 [affine] (m : Type)& (hm : Fintype.{0} m)&
-  (A : Matrix.{0,0,0} m m ℝ)& (B : Matrix.{0,0,0} m m ℝ)? : A ⬝ B :=
+  (A : Matrix.{0,0,0} m m ℝ)& (B : Matrix.{0,0,0} m m ℝ)? : A * B :=
 bconditions
 homogenity by
   simp
@@ -428,7 +428,7 @@ optimality le_refl _
 
 -- TODO: Notation
 declare_atom Matrix.mul2 [affine] (m : Type)& (hm : Fintype.{0} m)&
-  (A : Matrix.{0,0,0} m m ℝ)? (B : Matrix.{0,0,0} m m ℝ)& : A ⬝ B :=
+  (A : Matrix.{0,0,0} m m ℝ)? (B : Matrix.{0,0,0} m m ℝ)& : A * B :=
 bconditions
 homogenity by
   simp
@@ -714,7 +714,7 @@ solution
     if h : A.PosDef then Vec.log (LDL.diagEntries h) else 0) 
   (Y :=
     have : Decidable (A.PosDef) := Classical.dec _ 
-    if h : A.PosDef then (LDL.diag h).mul (LDL.lower h).transpose else 0) 
+    if h : A.PosDef then (LDL.diag h) * (LDL.lower h).transpose else 0) 
 solutionEqualsAtom by
   simp only [dif_pos hA, Vec.sum, Vec.log]
   rw [Matrix.LogDetAtom.solution_eq_atom hA]
@@ -724,7 +724,7 @@ feasibility
     simp only [Real.Vec.expCone, dif_pos hA]
     intro i
     show Real.expCone ((Real.log (LDL.diagEntries hA i))) 1
-      (Matrix.diag ((LDL.diag hA).mul (LDL.lower hA).transpose) i)
+      (Matrix.diag ((LDL.diag hA) * (LDL.lower hA).transpose) i)
     rw [← Real.exp_iff_expCone, Real.exp_log]
     exact Matrix.LogDetAtom.feasibility_exp hA i
     exact Matrix.LDL.diagEntries_pos hA i)
