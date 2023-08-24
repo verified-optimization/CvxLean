@@ -248,14 +248,20 @@ addRealToFloat (n : Nat) (i) :
   @Matrix.trace (Fin n) ℝ (Fin.fintype n) i := 
   @Matrix.Computable.tr Float (Zero.mk (0 : Float)) n instAddFloat
 
-addRealToFloat (n : Nat) (i1) (i2) : 
-  @Matrix.mul (Fin n) (Fin n) (Fin n) ℝ (Fin.fintype n) i1 i2 := 
+#check HMul.hMul
+
+addRealToFloat (n : Nat) (i) : 
+  @HMul.hMul 
+    (Matrix (Fin n) (Fin n) ℝ)
+    (Matrix (Fin n) (Fin n) ℝ)
+    (Matrix (Fin n) (Fin n) ℝ)
+    i := 
   @Matrix.Computable.mul Float (Zero.mk (0 : Float)) n n n instMulFloat instAddFloat
 
-addRealToFloat (n : Nat) : @Matrix.PosDef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
+addRealToFloat (n : Nat) (i1 i2 i3 i4) : @Matrix.PosDef (Fin n) ℝ i1 i2 i3 i4 := 
   @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLTFloat
 
-addRealToFloat (n : Nat) : @Matrix.PosSemidef ℝ Real.isROrC (Fin n) (Fin.fintype n) := 
+addRealToFloat (n : Nat) (i1 i2 i3 i4) : @Matrix.PosSemidef (Fin n) ℝ i1 i2 i3 i4 := 
   @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLEFloat
 
 def Matrix.toUpperTri' [LinearOrder m] [Zero α]
