@@ -154,6 +154,8 @@ def rewrite_constraint_1' {D} {c1 c1' : D → Prop} {cs : D → Prop} {f : D →
 
 -- NOTE(RFM): Experiment with Props.
 
+variable {R}
+
 def Solution' : Prop := 
   ∃ point : D, 
       p.constraints point 
