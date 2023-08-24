@@ -64,9 +64,9 @@ elab (name := prove_log_le_log) "prove_log_le_log" : tactic => do
   let mvarId ← mvarId.casesAnd
   let mvarIds ← evalTacticAt (← 
     `(tactic| 
-        simp only [maximizeNeg];
+        try { simp only [maximizeNeg] };
         refine' (log_le_log _ _).1 _ <;>
-        try { assumption } <;> field_simp <;> positivity)) mvarId
+        try { assumption } <;> try { field_simp } <;> try { positivity })) mvarId
   replaceMainGoal mvarIds
 
 macro "map_objFun_log" : tactic => 
