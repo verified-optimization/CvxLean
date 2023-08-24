@@ -47,13 +47,14 @@ lemma log_prod_gaussianPdf {N n : ℕ} (y : Fin N → Fin n → ℝ) (R : Matrix
     exact pow_nonneg (mul_nonneg (by positivity) (le_of_lt pi_pos)) _
     norm_num
     exact sqrt_2_pi_n_R_det_ne_zero
-    simp only [rpow_eq_pow]
     exact div_ne_zero (by norm_num) sqrt_2_pi_n_R_det_ne_zero
-    exact exp_ne_zero _
+    exact exp_ne_zero _ 
+
+#check congrArg
 
 lemma sum_quadForm {n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) {m : ℕ} (y : Fin m → Fin n → ℝ) :
   (∑ i, R.quadForm (y i))
-  = m * (covarianceMatrix y ⬝ Rᵀ).trace := by
+  = m * (covarianceMatrix y * Rᵀ).trace := by
   by_cases h : m = 0
   { subst h; simp }
   simp only [Matrix.quadForm, Matrix.trace, covarianceMatrix, diag, mul_apply, Finset.sum_mul,
@@ -70,10 +71,7 @@ lemma sum_quadForm {n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) {m : ℕ} (y : Fin
   apply congr_arg
   unfold Matrix.mulVec
   unfold dotProduct
-  simp_rw [mul_comm]
-  congr 1
-  ext j
-  rw [mul_comm, Matrix.transpose]
-  simp
+  simp only [mul_comm (R _ _)]
+  congr
 
 lemma Real.inverse_eq_inv (a : ℝ) : Ring.inverse a = a⁻¹ := by simp

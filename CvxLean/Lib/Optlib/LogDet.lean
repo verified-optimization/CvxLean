@@ -23,25 +23,27 @@ noncomputable instance LDL.invertible_diag : Invertible (LDL.diag hA) := by
   rw [LDL.diag_eq_lowerInv_conj]
   refine @invertibleMul _ _ _ _ (@invertibleMul _ _ _ _ _ hA.Invertible) _
 
+open scoped Matrix ComplexOrder
+
 @[simp] 
 lemma PosSemidef_zero : PosSemidef (0 : Matrix n n 𝕜) :=
 by simp [PosSemidef]
 
 lemma LogDetAtom.feasibility_PosDef {D Z : Matrix n n ℝ}
   (hD : D = LDL.diag hA)
-  (hZ : Z = LDL.diag hA ⬝ (LDL.lower hA)ᵀ) :
+  (hZ : Z = LDL.diag hA * (LDL.lower hA)ᵀ) :
   (fromBlocks D Z Zᵀ A).PosSemidef := by
-  have h_D_eq : D = Z ⬝ A⁻¹ ⬝ Zᴴ := 
+  have h_D_eq : D = Z * A⁻¹ * Zᴴ := 
     calc D 
-      = D ⬝ D⁻¹ ⬝ D := by 
+      = D * D⁻¹ * D := by 
           rw [hD, Matrix.mul_inv_of_invertible, Matrix.one_mul]
-    _ = D ⬝ (LDL.lowerInv hA ⬝ A ⬝ (LDL.lowerInv hA)ᵀ)⁻¹ ⬝ Dᵀ := by 
+    _ = D * (LDL.lowerInv hA * A * (LDL.lowerInv hA)ᵀ)⁻¹ * Dᵀ := by 
           erw [hD, LDL.diag, diagonal_transpose, ← LDL.diag, LDL.diag_eq_lowerInv_conj]
           rfl
-    _ = D ⬝ (LDL.lower hA)ᵀ ⬝ A⁻¹ ⬝ (D ⬝ (LDL.lower hA)ᵀ)ᵀ := by 
+    _ = D * (LDL.lower hA)ᵀ * A⁻¹ * (D * (LDL.lower hA)ᵀ)ᵀ := by 
           simp only [hD, LDL.lower, transpose_mul, transpose_transpose, transpose_nonsing_inv,
             Matrix.mul_assoc, Matrix.mul_inv_rev]
-    _ = Z ⬝ A⁻¹ ⬝ Zᴴ := by 
+    _ = Z * A⁻¹ * Zᴴ := by 
           rw [hZ, hD]; rfl
   haveI := hA.Invertible
   erw [PosSemidef.fromBlocks₂₂ _ _ hA]
@@ -80,7 +82,7 @@ lemma upperTriangular.toUpperTri_eq {A : Matrix n n ℝ} (hA : upperTriangular A
   simp [toUpperTri, h, hA (lt_of_not_ge h)]
 
 lemma LogDetAtom.feasibility_PosDef' {D Z Y : Matrix n n ℝ}
-  (hY : Y = LDL.diag hA ⬝ (LDL.lower hA)ᵀ)
+  (hY : Y = LDL.diag hA * (LDL.lower hA)ᵀ)
   (hD : D = diagonal Y.diag)
   (hZ : Z = Y.toUpperTri) :
   (fromBlocks D Z Zᵀ A).PosSemidef := by
@@ -111,7 +113,7 @@ lemma LogDetAtom.solution_eq_atom {A : Matrix n n ℝ} (hA: A.PosDef) :
   simp [LDL.diag, this.symm]
 
 lemma LogDetAtom.feasibility_exp {A : Matrix n n ℝ} (hA: A.PosDef) (i : n) :
-  LDL.diagEntries hA i ≤ ((LDL.diag hA) ⬝ ((LDL.lower hA)ᵀ)).diag i := by 
+  LDL.diagEntries hA i ≤ ((LDL.diag hA) * ((LDL.lower hA)ᵀ)).diag i := by 
   simp [LDL.diag]
 
 lemma IsHermitian₁₁_of_IsHermitian_toBlock
@@ -157,9 +159,9 @@ lemma LogDetAtom.optimality_Ddet_le_Adet {t : n → ℝ} {Y Z D : Matrix n n ℝ
     have h_Zdet : Z.det = D.det
     { rw [hZ, det_of_upperTriangular (upperTriangular_toUpperTri Y), hD, det_diagonal]
       simp [toUpperTri] }
-    have h_ZDZ_semidef : (Zᴴ ⬝ D⁻¹ ⬝ Z).PosSemidef := 
+    have h_ZDZ_semidef : (Zᴴ * D⁻¹ * Z).PosSemidef := 
       PosSemidef.conjTranspose_mul_mul D⁻¹ Z h_D_pd.nonsingular_inv.posSemidef
-    have h_AZDZ_semidef : (A - Zᴴ ⬝ D⁻¹ ⬝ Z).PosSemidef :=
+    have h_AZDZ_semidef : (A - Zᴴ * D⁻¹ * Z).PosSemidef :=
       (PosSemidef.fromBlocks₁₁ Z A h_D_pd).1 h_posdef
     show D.det ≤ A.det
     { apply le_of_add_le_of_nonneg_left _ h_AZDZ_semidef.det_nonneg
