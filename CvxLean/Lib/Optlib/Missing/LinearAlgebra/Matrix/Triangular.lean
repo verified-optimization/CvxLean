@@ -42,12 +42,12 @@ blockTriangular_inv_of_blockTriangular hM
 
 /-- Multiplication of upper triangular matrices is upper triangular -/
 lemma upperTriangular.mul [Fintype m] [LinearOrder m]
-  (hM : upperTriangular M) (hN : upperTriangular N) : upperTriangular (M ⬝ N) :=
+  (hM : upperTriangular M) (hN : upperTriangular N) : upperTriangular (M * N) :=
 BlockTriangular.mul hM hN
 
 /-- Multiplication of lower triangular matrices is lower triangular -/
 lemma lowerTriangular.mul [Fintype m] [LinearOrder m]
-  (hM : lowerTriangular M) (hN : lowerTriangular N) : lowerTriangular (M ⬝ N) :=
+  (hM : lowerTriangular M) (hN : lowerTriangular N) : lowerTriangular (M * N) :=
 BlockTriangular.mul hM hN
 
 /-- Transpose of lower triangular matrix is upper triangular -/
@@ -64,14 +64,16 @@ lemma diag_inv_mul_diag_eq_one_of_upperTriangular [Fintype m] [LinearOrder m] [I
   (hM : upperTriangular M) (k : m) : M⁻¹ k k * M k k = 1 := by
   letI : Unique {a // id a = k} := ⟨⟨⟨k, rfl⟩⟩, fun j => Subtype.ext j.property⟩
   have h := congr_fun (congr_fun (toSquareBlock_inv_mul_toSquareBlock_eq_one hM k) ⟨k, rfl⟩) ⟨k, rfl⟩
-  rw [Matrix.mul, dotProduct, Fintype.sum_unique] at h
-  simp at h; rw [←h]; simp [toSquareBlock, toSquareBlockProp]
+  dsimp [HMul.hMul, dotProduct] at h
+  rw [@Fintype.sum_unique _ _ _ this] at h
+  simp at h; rw [←h]; simp [toSquareBlock, toSquareBlockProp]; rfl
 
 lemma diag_inv_mul_diag_eq_one_of_lowerTriangular [Fintype m] [LinearOrder m] [Invertible M]
   (hM : lowerTriangular M) (k : m) : M⁻¹ k k * M k k = 1 := by
   letI : Unique {a // OrderDual.toDual a = k} := ⟨⟨⟨k, rfl⟩⟩, fun j => Subtype.ext j.property⟩
   have h := congr_fun (congr_fun (toSquareBlock_inv_mul_toSquareBlock_eq_one hM k) ⟨k, rfl⟩) ⟨k, rfl⟩
-  rw [Matrix.mul, dotProduct, Fintype.sum_unique] at h
-  simp at h; rw [←h]; simp [toSquareBlock, toSquareBlockProp]
+  dsimp [HMul.hMul, dotProduct] at h
+  rw [@Fintype.sum_unique _ _ _ this] at h
+  simp at h; rw [←h]; simp [toSquareBlock, toSquareBlockProp]; rfl
 
 end Matrix

@@ -1,4 +1,5 @@
 import Mathlib.Data.Real.Basic
+import Mathlib.Data.Matrix.Basic
 import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Data.Array.Defs
@@ -115,27 +116,27 @@ theorem fromBlocks_smul' {n m l o} (κ : ℝ)
   simp [Matrix.fromBlocks]
 
 theorem mul_zero' {m} [Fintype m] (A : Matrix m m ℝ)
-  : Matrix.mul A (0 : Matrix m m ℝ) = 0 := by
+  : A * (0 : Matrix m m ℝ) = 0 := by
   funext ; exact Matrix.dotProduct_zero'' _
 
 theorem zero_mul' {m} [Fintype m] (A : Matrix m m ℝ)
-  : Matrix.mul (0 : Matrix m m ℝ) A = 0 := by
+  : (0 : Matrix m m ℝ) * A = 0 := by
   funext ; exact Matrix.zero_dotProduct' _
 
 theorem mul_smul' {m} [Fintype m] (κ : ℝ) (A : Matrix m m ℝ) (B : Matrix m m ℝ)
-  : Matrix.mul A (κ • B) = κ • Matrix.mul A B := by
+  : A * (κ • B) = κ • (A * B) := by
   funext ; exact Matrix.dotProduct_smul' _ _ _
 
 theorem smul_mul' {m} [Fintype m] (κ : ℝ) (A : Matrix m m ℝ) (B : Matrix m m ℝ)
-  : Matrix.mul (κ • A) B = κ • Matrix.mul A B := by
+  : (κ • A) * B = κ • (A * B) := by
   funext ; exact Matrix.smul_dotProduct' _ _ _
 
 theorem mul_add' {m} [Fintype m] (A : Matrix m m ℝ) (B C : Matrix m m ℝ)
-  : Matrix.mul A (B + C) = Matrix.mul A B + Matrix.mul A C := by
+  : A * (B + C) = (A * B) + (A * C) := by
   funext ; exact Matrix.dotProduct_add' _ _ _
 
 theorem add_mul' {m} [Fintype m] (A B : Matrix m m ℝ) (C : Matrix m m ℝ)
-  : Matrix.mul (A + B) C = Matrix.mul A C + Matrix.mul B C := by
+  : (A + B) * C = (A * C) + (B * C) := by
   funext ; exact Matrix.add_dotProduct' _ _ _
 
 theorem mulVec_zero' {m n} [Fintype m] [Fintype n] (A : Matrix m n ℝ)
