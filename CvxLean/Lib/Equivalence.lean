@@ -125,11 +125,9 @@ instance : Setoid (MinimizationB R) :=
 
 -- NOTE(RFM): Q for quotient.
 
-variable (R)
-
 def MinimizationQ := @Quotient (MinimizationB R) (by infer_instance)
 
-def MinimizationQ.mk {D : Type} (p : Minimization D R) : MinimizationQ R := 
+def MinimizationQ.mk {D : Type} (p : Minimization D R) : @MinimizationQ R _ := 
   Quotient.mk' { D := D, prob := p }
 
 syntax "{|" term ", " term "|}" : term
@@ -153,8 +151,6 @@ def rewrite_constraint_1' {D} {c1 c1' : D → Prop} {cs : D → Prop} {f : D →
     psi_optimality := fun {x} _ => le_refl _ }
 
 -- NOTE(RFM): Experiment with Props.
-
-variable {R}
 
 def Solution' : Prop := 
   ∃ point : D, 
