@@ -7,27 +7,16 @@ namespace CvxLean
 open Lean Lean.Elab Lean.Meta Lean.Elab.Tactic Lean.Elab.Term Lean.Elab.Command
 open Minimization
 
-syntax (name := equivalence) 
-  "equivalence" ident "/" ident declSig ":=" term : command
-
 partial def runEquivalenceTactic (mvarId : MVarId) (tacticCode : Syntax) : 
   TermElabM Unit := do
   let code := tacticCode[1]
   
-  -- instantiateMVarDeclMVars mvarId
   withInfoHole mvarId do
-    let remainingGoals ← Tactic.run mvarId do
+    let _remainingGoals ← Tactic.run mvarId do
       withTacticInfoContext tacticCode do
         evalTactic code
 
-    match remainingGoals with
-    | [] => pure ()
-    | [g] => do 
-      MVarId.withContext g do
-        reportUnsolvedGoals remainingGoals
-    | _ => reportUnsolvedGoals remainingGoals
-
-    -- synthesizeSyntheticMVars (mayPostpone := false)
+#check @MinimizationQ.mk 
 
 def elabEquivalenceProof (prob : Expr) (stx : Syntax) : TermElabM (Expr × Expr) := do 
   withRef stx do
@@ -48,6 +37,9 @@ def elabEquivalenceProof (prob : Expr) (stx : Syntax) : TermElabM (Expr × Expr)
     else 
       throwError "Expected equality proof, got {eqProof}."
 
+syntax (name := equivalence) 
+  "equivalence" ident "/" ident declSig ":=" term : command
+
 @[command_elab «equivalence»]
 def evalEquivalence : CommandElab := fun stx => match stx with
 | `(equivalence $eqvId / $probId $declSig := $proof) => do
@@ -56,9 +48,13 @@ def evalEquivalence : CommandElab := fun stx => match stx with
     elabBindersEx binders.getArgs fun xs => do
       let D ← Meta.mkFreshTypeMVar
       let R ← Meta.mkFreshTypeMVar
+      let RPreorder ← Meta.mkFreshExprMVar
+        (some <| mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R])
       let prob₁Ty := mkApp2 (Lean.mkConst ``Minimization) D R
-      let prob₁ ← elabTermAndSynthesizeEnsuringType prob (some $ prob₁Ty)
-      let (prob₂, proof) ← elabEquivalenceProof prob₁ proof.raw
+      let prob₁ ← elabTermAndSynthesizeEnsuringType prob (some prob₁Ty)
+      let probQ₁ := mkAppN (Lean.mkConst ``MinimizationQ.mk) #[R, RPreorder, D, prob₁]
+      let (probQ₂, proof) ← elabEquivalenceProof probQ₁ proof.raw
+      let prob₂ := probQ₂.appArg!
       let prob₂ ← instantiateMVars prob₂
       let prob₂ ← mkLambdaFVars (xs.map Prod.snd) prob₂
       Lean.addDecl <| 
@@ -90,7 +86,7 @@ def t1 := @Minimization.mk ℝ ℝ (fun x => x) (fun _ => True)
 
 def tx := @Minimization.mk ℝ ℝ (fun x => x) (fun _ => True)
 
-lemma t1x : t1 = tx := sorry
+lemma t1x : MinimizationQ.mk t1 = MinimizationQ.mk tx := sorry
 
 equivalence eqv / t2 : t1 := by
   unfold t1
@@ -100,4 +96,3 @@ equivalence eqv / t2 : t1 := by
 
 #check eqv
 #print t2
-
