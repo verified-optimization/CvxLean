@@ -130,11 +130,31 @@ def MinimizationQ := @Quotient (MinimizationB R) (by infer_instance)
 def MinimizationQ.mk {D : Type} (p : Minimization D R) : @MinimizationQ R _ := 
   Quotient.mk' { D := D, prob := p }
 
+syntax "{|" term "|}" : term
+
+macro_rules
+  | `({| $p:term |}) => `(@MinimizationQ.mk _ _ _ $p)
+
 syntax "{|" term ", " term "|}" : term
 
 macro_rules 
   | `({| $f:term , $cs:term |}) => 
-    `(@MinimizationQ.mk _ _ _ { objFun := $f, constraints := $cs })
+    `({| { objFun := $f, constraints := $cs } |})
+
+namespace Delab
+
+open Lean Lean.PrettyPrinter.Delaborator SubExpr Meta 
+open CvxLean CvxLean.Delab
+ 
+@[delab app]
+def delabMinimizationQ : Delab := do
+  match ← getExpr with
+  | .app (.app (.app (.app (.const `MinimizationQ.mk _) _) _) _) p => 
+    let pStx ←  withExpr p delab
+    `({| $pStx |})
+  | _ => Alternative.failure
+
+end Delab
 
 -- NOTE(RFM): To fit into a potential `equivalence` command.
 
