@@ -7,6 +7,59 @@ noncomputable section Rules
 
 open CvxLean Minimization Real
 
+
+/- Equality rules. -/
+
+-- log_eq_log
+
+def logEqLogConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      h : exp x = exp x 
+
+#check log_eq_log
+
+reduction logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
+  unfold logEqLogConstr
+  convexify
+
+#print logEqLogConstrAuto
+
+
+/- Less than or equal rules. -/
+
+-- le_sub_iff_add_le
+
+def leSubIffAddLeConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      h : x ≤ 1 - x
+
+reduction leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
+  unfold leSubIffAddLeConstr
+  convexify
+
+#print leSubIffAddLeConstrAuto
+
+-- log_le_log
+def logLeLogConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      hx : 0 < x
+      hy : 0 < y
+      h : log x ≤ log y
+
+#check log_le_log
+
+reduction logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
+  unfold logLeLogConstr
+  convexify
+
+-- TODO(RFM): The rest.
+
 def invExpObj := 
   optimization (x : ℝ)
     minimize (1 / (exp x))
@@ -17,16 +70,6 @@ time_cmd reduction invExpObjRedAuto/invExpObjAuto : invExpObj := by
   unfold invExpObj
   convexify
   exact done
-
--- time_cmd reduction invExpObjRedManual/invExpObjManual : invExpObj := by
---   unfold invExpObj
---   map_objFun_log
---   apply rewrite_objective
---     (f := fun x => log (1 / exp x)) 
---     (g := fun x => (log (exp (-x)))) 
---     (hfg := fun x _ => by simp only [←Real.exp_neg2])
---   -- simp only [←Real.exp_neg2]
---   simp only [Real.log_exp]
 
 def invExpConstr := 
   optimization (x : ℝ)
@@ -49,27 +92,7 @@ def mulExpConstr :=
       hx : 1 ≤ x
       hy : 1 ≤ y
 
-def logLeLogConstr := 
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to 
-      h : log x ≤ log y
-
--- NOTE(RFM): Why does it apply the rewrite?
-#check le_sub_iff_add_le
-def leSubConstr := 
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      h : x ≤ 1 - x
-
-reduction leSubConstrRedAuto/leSubConstrAuto : leSubConstr := by 
-  unfold leSubConstr
-  convexify
-
 def leMulRevConstr := False
-
-def eqLogConstr := False
 
 def logExpObj := False 
 
