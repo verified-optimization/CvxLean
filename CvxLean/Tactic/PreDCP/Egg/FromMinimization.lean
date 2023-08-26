@@ -40,6 +40,7 @@ def EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("param",       ("param", 1, #[])),
     ("eq",          ("eq", 2, #[])),
     ("le",          ("le", 2, #[])),
+    ("lt",          ("lt", 2, #[])),
     ("neg",         ("neg", 1, #[])),
     ("add",         ("add", 2, #[])),
     ("sub",         ("sub", 2, #[])),
@@ -70,19 +71,27 @@ partial def EggTree.adjustOps (t : Tree String String) :
 
 /-- -/
 def ExtendedEggTree.fromMinimization (m : Meta.SolutionExpr) (vars : List String) :
-  MetaM (OC (String × Tree String String) × Array String) := do
+  MetaM (OC (String × Tree String String) × Array (String × String × String)) := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromSolutionExpr m
-  -- Detect domain constraints of the form 0 <= x.
-  -- NOTE(RFM): Assume there are no '<' constraints.
-  let nonnegVars := ocTree.constr.filterMap <| fun (_, c) =>
+  -- Detect domain constraints.
+  let nonnegVars := ocTree.constr.filterMap <| fun (h, c) =>
     match c with
     | Tree.node "le" #[Tree.leaf "0", Tree.leaf v] => 
-        if v ∈ vars then some v else none 
+        if v ∈ vars then some (h, v) else none 
+    | _ => none
+  let posVars := ocTree.constr.filterMap <| fun (h, c) =>
+    match c with
+    | Tree.node "lt" #[Tree.leaf "0", Tree.leaf v] => 
+        if v ∈ vars then some (h, v) else none 
     | _ => none
 
+  let domainConstrs := 
+    (nonnegVars.map (fun (h, v) => (h, v, "NonNeg"))) ++ 
+    (posVars.map (fun (h, v) => (h, v, "Pos")))
+
   -- NOTE(RFM): Some empty constraints here coming from '<' conditions?
-  let ocTree := { ocTree with 
-    constr := ocTree.constr.filter (fun (h, c) => c.size > 1)}
+  -- let ocTree := { ocTree with 
+  --   constr := ocTree.constr.filter (fun (_, c) => c.size > 1)}
 
   -- TODO(RFM): Functions for this.
   let ocTree : OC (String × Tree String String) := { 
@@ -91,6 +100,6 @@ def ExtendedEggTree.fromMinimization (m : Meta.SolutionExpr) (vars : List String
   let ocTree : OC (String × Tree String String) := {
     objFun := (ocTree.objFun.1, ← EggTree.adjustOps ocTree.objFun.2)
     constr := ← ocTree.constr.mapM (fun (h, c) => return (h, ← EggTree.adjustOps c)) }
-  return (ocTree, nonnegVars)
+  return (ocTree, domainConstrs)
 
 end Egg.FromMinimization

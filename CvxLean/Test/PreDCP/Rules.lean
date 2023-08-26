@@ -46,13 +46,16 @@ def logLeLogConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
     subject to 
-      hx : 1 <= x
-      hy : 1 <= y
+      hx : 0 < x
+      hy : 0 < y
       h : log x ≤ log y
 
 reduction logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
   unfold logLeLogConstr
   convexify
+
+#print logLeLogConstrAuto
+
 
 -- TODO(RFM): The rest.
 
@@ -65,7 +68,6 @@ def invExpObj :=
 time_cmd reduction invExpObjRedAuto/invExpObjAuto : invExpObj := by
   unfold invExpObj
   convexify
-  exact done
 
 def invExpConstr := 
   optimization (x : ℝ)

@@ -24,7 +24,7 @@ where
       let mut res := Tree.leaf "unknown"
       let mut hasNeg := false
       if e.getAppFn.constName == `Neg.neg then
-        e := e.getArg! 3
+        e := e.getArg! 2
         hasNeg := true
       if e.getAppFn.constName == `HDiv.hDiv then
         let a ← Lean.PrettyPrinter.ppExpr <| e.getArg! 4
@@ -40,6 +40,12 @@ where
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.leaf (toString n) 
     
+    -- Special support for less-than.
+    if e.getAppFn.constName == `LT.lt then
+      let a ← findUncheckedAtoms (e.getArg! 2) vars
+      let b ← findUncheckedAtoms (e.getArg! 3) vars
+      return Tree.node "lt" #[a, b]
+
     -- No filter after this, we just take any atoms that are registered.
     let potentialAtoms ← DCP.findRegisteredAtoms e
     
