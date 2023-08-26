@@ -56,6 +56,33 @@ fn test_gp4() {
         ]);
 }
 
+#[test]
+fn test_cost_function_number_of_variable_occurences() {
+    print_steps_basic(
+        "0",
+        vec![
+            "(le (var x) (sub 1 (var x)))"
+        ]);
+}
+
+#[test]
+fn test_cost_function_number_of_variable_occurences_2() {
+    print_steps_basic(
+        "0",
+        vec![
+            "(le (add (mul 2 (var x)) (var x)) 0)"
+        ]);
+}
+
+#[test]
+fn test_cost_function_number_of_variable_occurences_3() {
+    print_steps_basic(
+        "0",
+        vec![
+            "(le (add (mul 2 (var x)) (mul 3 (var x))) 0)"
+        ]);
+}
+
 // let s = "(add (var x) (var x))".to_string();
 // let s = "(prob 
 //     (objFun (add (add (mul (mul (div 1 (exp (var x))) (div 1 (sqrt (exp (var y))))) (div 1 (exp (var z)))) (mul (mul (div 23 10) (exp (var x))) (exp (var z)))) (mul (mul (mul 4 (exp (var x))) (exp (var y))) (exp (var z))))) 
