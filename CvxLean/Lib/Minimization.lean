@@ -297,7 +297,7 @@ def rewrite_constraint_1 {D R} [Preorder R] {c1 c1' : D → Prop} {cs : D → Pr
     (fun {x} hx => by simp only [←hrw x hx.2] at hx; exact hx)
 
 def rewrite_constraint_1_last {D R} [Preorder R] {c1 c1' : D → Prop} {f : D → R}
-  (hrw : ∀ x, c1 x ↔ c1' x)
+  (hrw : ∀ x, (c1 x ↔ c1' x))
   (sol : Solution { objFun := f, constraints := fun x => c1' x }) :
   Solution { objFun := f, constraints := fun x => c1 x } :=
   simple_reduction _ _ sol id id

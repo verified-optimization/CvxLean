@@ -67,7 +67,7 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
   | Tree.node "eq" #[t1, t2] => do
     let t1 ← toExpr vars t1
     let t2 ← toExpr vars t2
-    mkEq t1 t2
+    return mkAppN (mkConst ``Eq [levelOne]) #[(mkConst `Real), t1, t2]
   -- Less than or equal to.
   | Tree.node "le" #[t1, t2] => do
     let t1 ← toExpr vars t1

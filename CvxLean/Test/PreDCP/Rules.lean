@@ -16,9 +16,7 @@ def logEqLogConstr :=
   optimization (x : ℝ)
     minimize (0 : ℝ)
     subject to
-      h : exp x = exp x 
-
-#check log_eq_log
+      h : exp x = exp x
 
 reduction logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
   unfold logEqLogConstr
@@ -48,8 +46,8 @@ def logLeLogConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
     subject to 
-      hx : 0 < x
-      hy : 0 < y
+      hx : 1 <= x
+      hy : 1 <= y
       h : log x ≤ log y
 
 #check log_le_log
