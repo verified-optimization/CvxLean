@@ -125,7 +125,7 @@ def evalStep (g : MVarId) (step : EggRewrite)
     else
       dbg_trace s!"Failed to rewrite {step.rewriteName}."
       for g in gs do  
-        dbg_trace s!"Could not prove: {← Meta.ppGoal g}."
+        dbg_trace s!"Could not prove {← Meta.ppGoal g}."
       return gs
   else
     -- No equality case.
@@ -163,8 +163,6 @@ def evalConvexify : Tactic := fun stx => match stx with
     let varDomainConstrs := domainConstrs.map (fun (_, v, d) => [v, d])
     let constrsToIgnore := domainConstrs.map (fun (h, _, _) => h)
 
-    dbg_trace s!"ignore {constrsToIgnore}"
-
     -- Remove less-than's before sending it to egg.
     let gStr := { gStr with 
       constr := gStr.constr.filter (fun (h, _) => !constrsToIgnore.contains h) }
@@ -174,22 +172,26 @@ def evalConvexify : Tactic := fun stx => match stx with
       domains := varDomainConstrs.data,
       target := EggMinimization.ofOCTree gStr
     }
-    let steps ← runEggRequest eggRequest
+    try 
+      let steps ← runEggRequest eggRequest
 
-    -- Apply steps.
-    let mut g ← getMainGoal
-    for step in steps do
-      let gs ← evalStep g step vars fvars domain numConstrTags tagsMap
-      if gs.length != 1 then 
-        throwError "Failed to rewrite {step.rewriteName}."
-      else 
-        dbg_trace s!"Rewrote {step.rewriteName}."
-        g := gs[0]!
-      replaceMainGoal [g]
-    
-    norm_num_clean_up (useSimp := false)
+      -- Apply steps.
+      let mut g ← getMainGoal
+      for step in steps do
+        let gs ← evalStep g step vars fvars domain numConstrTags tagsMap
+        if gs.length != 1 then 
+          throwError "Failed to rewrite {step.rewriteName}."
+        else 
+          dbg_trace s!"Rewrote {step.rewriteName}."
+          g := gs[0]!
+        replaceMainGoal [g]
+      
+      norm_num_clean_up (useSimp := false)
 
-    saveTacticInfoForToken stx
+      saveTacticInfoForToken stx
+    catch e => 
+      let eStr ← e.toMessageData.toString
+      throwError "convexify failed with error: {eStr}"
 
   | _ => throwUnsupportedSyntax
 
