@@ -36,9 +36,6 @@ expression in `rewriteWrapperApplyExpr`. -/
 def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) := 
   if rwIdx == 0 then 
     return (`Minimization.rewrite_objective, 1)
-  else if numConstrs == 1 then 
-    -- Rewriting a single constraint is the same as rewriting all constraints.
-    return (`Minimization.rewrite_constraints, 1)
   else if rwIdx == numConstrs then 
     match rwIdx with 
     | 1  => return (`Minimization.rewrite_constraint_1_last,  1)
