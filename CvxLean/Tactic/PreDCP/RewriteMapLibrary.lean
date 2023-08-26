@@ -58,7 +58,7 @@ register_rewrite_map "one_mul" ; "(mul 1 ?a)" => "?a" :=
   simp only [one_mul]
 
 register_rewrite_map "one_mul-rev" ; "?a" => "(mul 1 ?a)" :=
-  simp only [one_mul]
+  norm_num
 
 register_rewrite_map "add_comm" ; "(add ?a ?b)" => "(add ?b ?a)" :=
   simp only [add_comm]

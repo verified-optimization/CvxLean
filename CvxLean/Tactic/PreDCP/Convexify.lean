@@ -20,6 +20,8 @@ def EggMinimization.ofOCTree (oc : OC (String × Tree String String)) :
 tactic in the environment. It also returns a bool to indicate if the proof needs
 an intermediate equality step. Otherwise, the tactic will be applied directly. -/
 def findTactic : String → EggRewriteDirection → Bool × MetaM (TSyntax `tactic)
+  | "constant_fold", _ => 
+    (true, `(tactic| norm_num))
   -- NOTE(RFM): Only instance of a rewriting without proving equality. It is 
   -- also the only case where only one direction is allowed.
   | "map_objFun_log", EggRewriteDirection.Forward =>
