@@ -45,6 +45,15 @@ fn test_log_le_log() {
 }
 
 #[test]
+fn test_log_le_log_rev() {
+    print_steps_basic(
+        "0", 
+        vec![
+            "(le (exp (var x)) (exp (var y)))"
+        ]);
+}
+
+#[test]
 fn test_gp4() {
     print_steps_basic(
         "(div 1 (div (exp (var x)) (exp (var y))))",
