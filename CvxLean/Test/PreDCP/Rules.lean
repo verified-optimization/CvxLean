@@ -11,35 +11,33 @@ open CvxLean Minimization Real
 /- Equality rules. -/
 
 -- log_eq_log
-
 def logEqLogConstr := 
   optimization (x : ℝ)
     minimize (0 : ℝ)
     subject to
       h : exp x = exp x
 
-reduction logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
+time_cmd reduction logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
   unfold logEqLogConstr
   convexify
-
-#print logEqLogConstrAuto
 
 
 /- Less than or equal rules. -/
 
--- le_sub_iff_add_le
-
+-- le_sub_iff_add_le (TODO)
 def leSubIffAddLeConstr := 
   optimization (x y : ℝ)
     minimize (0 : ℝ)
     subject to
       h : x ≤ 1 - x
 
-reduction leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
+time_cmd reduction leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
   unfold leSubIffAddLeConstr
   convexify
 
-#print leSubIffAddLeConstrAuto
+-- div_le_iff (TODO)
+
+-- div_le_one-rev (TODO)
 
 -- log_le_log
 def logLeLogConstr := 
@@ -50,45 +48,56 @@ def logLeLogConstr :=
       hy : 0 < y
       h : log x ≤ log y
 
-reduction logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
+time_cmd reduction logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
   unfold logLeLogConstr
   convexify
 
-#print logLeLogConstrAuto
+-- log_le_log-rev (TODO)
+def logLeLogRevConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : exp x ≤ exp y
+
+reduction logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRevConstr := by
+  unfold logLeLogRevConstr
+  convexify
+
+/- Field rules -/
 
 
--- TODO(RFM): The rest.
+/- Power and square root rules. -/
 
-def invExpObj := 
+
+
+/- Exponential and logarithm rules. -/
+
+-- exp_add
+def expAddConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : exp (x + y) ≤ exp x
+
+-- exp_add
+
+-- exp_neg_eq_one_div-rev
+def expNegEqOneDivRevObj := 
   optimization (x : ℝ)
     minimize (1 / (exp x))
     subject to 
       h : 1 ≤ x
 
-time_cmd reduction invExpObjRedAuto/invExpObjAuto : invExpObj := by
-  unfold invExpObj
+time_cmd reduction expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
+  unfold expNegEqOneDivRevObj
   convexify
 
-def invExpConstr := 
+-- exp_neg_eq_one_div-rev
+def expNegEqOneDivRevConstr := 
   optimization (x : ℝ)
     minimize (0 : ℝ)
     subject to 
       h : 1 / (exp x) ≤ 1
-
-def mulExpObj := 
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to 
-      h : (exp x) * (exp y) ≤ 1
-      hx : 1 ≤ x
-      hy : 1 ≤ y
-
-def mulExpConstr := 
-  optimization (x y : ℝ)
-    minimize ((exp x) * (exp y))
-    subject to 
-      hx : 1 ≤ x
-      hy : 1 ≤ y
 
 def leMulRevConstr := False
 
@@ -101,8 +110,6 @@ def logDivObj := False
 def logDivConstr := False
 
 def logMulObj := False 
-
-def logMulConstr := False 
 
 def powExpObj := False 
 
