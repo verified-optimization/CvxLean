@@ -309,6 +309,24 @@ impl Analysis<Optimization> for Meta {
 
         Data { free_vars, constant, domain, has_log }
     }
+
+    fn modify(egraph: &mut EGraph, id: Id) {
+        // Constant folding.
+        let data = egraph[id].data.clone();
+        if let Some((c, pat)) = data.constant {
+            if egraph.are_explanations_enabled() {
+                egraph.union_instantiations(
+                    &pat,
+                    &format!("{}", c).parse().unwrap(),
+                    &Default::default(),
+                    "constant_fold".to_string(),
+                );
+            } else {
+                let added = egraph.add(Optimization::Constant(c));
+                egraph.union(id, added);
+            }
+        }
+    }
 }
 
 pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
