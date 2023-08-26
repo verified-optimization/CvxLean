@@ -54,6 +54,12 @@ register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))"
 
 /- Field rules. -/
 
+register_rewrite_map "one_mul" ; "(mul 1 ?a)" => "?a" :=
+  simp only [one_mul]
+
+register_rewrite_map "one_mul-rev" ; "?a" => "(mul 1 ?a)" :=
+  simp only [one_mul]
+
 register_rewrite_map "add_comm" ; "(add ?a ?b)" => "(add ?b ?a)" :=
   simp only [add_comm]
 
@@ -70,6 +76,9 @@ register_rewrite_map "add_sub" ; "(add ?a (sub ?b ?c))" => "(sub (add ?a ?b) ?c)
   simp only [add_sub]
 
 register_rewrite_map "add_mul" ; "(mul (add ?a ?b) ?c)" => "(add (mul ?a ?c) (mul ?b ?c))" :=
+  simp only [add_mul]
+
+register_rewrite_map "add_mul-rev" ; "(add (mul ?a ?c) (mul ?b ?c))" => "(mul (add ?a ?b) ?c)" :=
   simp only [add_mul]
 
 register_rewrite_map "mul_add" ; "(mul ?a (add ?b ?c))" => "(add (mul ?a ?b) (mul ?a ?c))" :=
