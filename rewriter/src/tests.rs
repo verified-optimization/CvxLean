@@ -34,6 +34,17 @@ fn test_simple_example() {
 }
 
 #[test]
+fn test_log_le_log() {
+    print_steps_basic(
+        "0", 
+        vec![
+            "(le 1 (var x))",
+            "(le 1 (var y))",
+            "(le (log (var x)) (log (var y)))"
+        ]);
+}
+
+#[test]
 fn test_gp4() {
     print_steps_basic(
         "(div 1 (div (exp (var x)) (exp (var y))))",

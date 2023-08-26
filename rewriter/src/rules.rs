@@ -65,10 +65,13 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("div_le_one-rev"; "(le ?a ?b)" => "(le (div ?a ?b) 1)" 
         if is_not_zero("?b") if is_not_one("?b")),
 
+    rw!("log_le_log"; "(le (log ?a) (log ?b))" => "(le ?a ?b)" 
+       if is_gt_zero("?a") if is_gt_zero("?b")),  
+
     // NOTE(RFM): Acceptable because it can only be applied once.
-    rw!("log_le_log"; "(le ?a ?b)" => "(le (log ?a) (log ?b))" 
-       if is_gt_zero("?a") if is_gt_zero("?b") 
-       if not_has_log("?a") if not_has_log("?b")),  
+    rw!("log_le_log-rev"; "(le ?a ?b)" => "(le (log ?a) (log ?b))"
+        if is_gt_zero("?a") if is_gt_zero("?b") 
+        if not_has_log("?a") if not_has_log("?b")),
 
 
     /* Field rules. */
