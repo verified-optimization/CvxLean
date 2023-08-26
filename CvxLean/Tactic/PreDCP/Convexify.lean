@@ -150,7 +150,7 @@ def evalConvexify : Tactic := fun stx => match stx with
     let domain := Meta.composeDomain <| vars.map (fun v => (v, Lean.mkConst ``Real))
 
     -- Get goal as tree and create tags map.
-    let (gStr, nonnegVars) ← ExtendedEggTree.fromMinimization gExpr varsStr
+    let (gStr, domainConstrs) ← ExtendedEggTree.fromMinimization gExpr varsStr
     let numConstrTags := gStr.constr.size
     let mut tagsMap := HashMap.empty
     tagsMap := tagsMap.insert "objFun" 0 
@@ -159,9 +159,19 @@ def evalConvexify : Tactic := fun stx => match stx with
       tagsMap := tagsMap.insert h idx 
       idx := idx + 1
 
+    -- Handle domain constraints.
+    let varDomainConstrs := domainConstrs.map (fun (_, v, d) => [v, d])
+    let constrsToIgnore := domainConstrs.map (fun (h, _, _) => h)
+
+    dbg_trace s!"ignore {constrsToIgnore}"
+
+    -- Remove less-than's before sending it to egg.
+    let gStr := { gStr with 
+      constr := gStr.constr.filter (fun (h, _) => !constrsToIgnore.contains h) }
+
     -- Call egg.
     let eggRequest := {
-      domains := Array.data <| nonnegVars.map (fun v => [v, "NonNeg"]),
+      domains := varDomainConstrs.data,
       target := EggMinimization.ofOCTree gStr
     }
     let steps ← runEggRequest eggRequest
