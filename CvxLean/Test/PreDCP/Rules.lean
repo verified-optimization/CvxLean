@@ -50,8 +50,6 @@ def logLeLogConstr :=
       hy : 1 <= y
       h : log x ≤ log y
 
-#check log_le_log
-
 reduction logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
   unfold logLeLogConstr
   convexify

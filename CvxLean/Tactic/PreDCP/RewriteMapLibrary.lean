@@ -46,8 +46,10 @@ register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c)
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
   rw [←div_le_one (by posimptivity)]
 
--- NOTE(RFM): This was conv in (Real.log _ ≤ Real.log _).
-register_rewrite_map "log_le_log" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
+register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" => "(le ?a ?b)" :=
+  rw [Real.log_le_log (by posimptivity) (by posimptivity)]
+
+register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
   rw [Real.log_le_log (by posimptivity) (by posimptivity)]
 
 /- Field rules. -/
