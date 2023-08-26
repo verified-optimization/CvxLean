@@ -76,6 +76,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Field rules. */
 
+    rw!("one_mul"; "(mul 1 ?a)" => "?a"),
+
+    rw!("one_mul-rev"; "?a" => "(mul 1 ?a)"),
+
     rw!("add_comm"; "(add ?a ?b)" => "(add ?b ?a)"), 
 
     rw!("add_assoc"; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))"),
@@ -88,8 +92,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("add_mul"; "(mul (add ?a ?b) ?c)" => "(add (mul ?a ?c) (mul ?b ?c))"),
 
-    rw!("mul_add"; "(mul ?a (add ?b ?c))" => "(add (mul ?a ?b) (mul ?a ?c))"),
+    rw!("add_mul-rev"; "(add (mul ?a ?c) (mul ?b ?c))" => "(mul (add ?a ?b) ?c)"),
 
+    rw!("mul_add"; "(mul ?a (add ?b ?c))" => "(add (mul ?a ?b) (mul ?a ?c))"),
+    
     // rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
 
     // rw!("sub-self"; "(sub ?a ?a)" => "0"),
