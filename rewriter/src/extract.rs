@@ -125,6 +125,7 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
         Runner::new(analysis)
         .with_explanations_enabled()
         .with_node_limit(1000)
+        .with_iter_limit(3)
         .with_expr(&expr)
         .run(&rules());
     
