@@ -19,12 +19,18 @@ structure MinimizationExpr where
 
 namespace MinimizationExpr
 
+/-- Build a `Minimization` type from `MinimizationExpr`. -/
+def toExpr (minExpr : MinimizationExpr) : Expr :=
+  mkApp4 (mkConst `Minimization.mk) 
+    minExpr.domain minExpr.codomain minExpr.objFun minExpr.constraints
+
+/-- Decompose `Minimization` type into its components. -/
 def fromExpr (prob : Expr) : MetaM MinimizationExpr := 
   match prob with
   | .app (.app (.app (.app (.const `Minimization.mk _)
       domain) codomain) objFun) constraints => do
     return MinimizationExpr.mk domain codomain objFun constraints 
-  | _ => throwError "Goal not of the form `Minimization.Solution ...`."
+  | _ => throwError "Expr not of the form `Minimization.mk ...`."
 
 end MinimizationExpr
 
@@ -40,18 +46,20 @@ structure SolutionExpr where
 
 namespace SolutionExpr
 
-/-- Build a `Minimization` type from `SolutionExpr`. -/
-def toMinExpr (solExpr : SolutionExpr) : Expr :=
-  mkApp4 (mkConst `Minimization.mk) 
-    solExpr.domain' solExpr.codomain' solExpr.objFun solExpr.constraints
+/-- Build `MinimizationExpr` from `SolutionExpr`. -/
+def toMinimizationExpr (solExpr : SolutionExpr) : MinimizationExpr :=
+  { domain := solExpr.domain'
+    codomain := solExpr.codomain'
+    objFun := solExpr.objFun
+    constraints := solExpr.constraints }
 
 /-- Build a `Solution` type from `SolutionExpr`. -/
 def toExpr (solExpr : SolutionExpr) : Expr :=
   mkApp4 (mkConst `Minimization.Solution) 
     solExpr.domain solExpr.codomain solExpr.codomainPreorder
-    (solExpr.toMinExpr)
+    (solExpr.toMinimizationExpr.toExpr)
 
-/-- Decompose solution type into its components. -/
+/-- Decompose `Solution` type into its components. -/
 def fromExpr (goalType : Expr) : MetaM SolutionExpr := do 
   match goalType with
   | Expr.app (Expr.app (Expr.app (Expr.app (Expr.const `Minimization.Solution _ )

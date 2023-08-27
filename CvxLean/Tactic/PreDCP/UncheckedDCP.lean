@@ -2,7 +2,7 @@ import CvxLean.Tactic.DCP.Dcp
 
 namespace CvxLean
 
-open Lean Lean.Meta
+open Lean Meta
 
 namespace UncheckedDCP
 
@@ -69,7 +69,7 @@ where
     return Tree.node (toString atom.id) childTrees
 
 
-def uncheckedTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
+def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) : 
   MetaM (OC (String × Tree String String)) := do
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
@@ -96,12 +96,12 @@ def uncheckedTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
 def uncheckedTreeFromExpr (goalExpr : Expr) : 
   MetaM (OC (String × Tree String String)) := do 
-  let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
-  uncheckedTreeFromSolutionExpr goalExprs
+  let goalExprs ← Meta.MinimizationExpr.fromExpr goalExpr
+  uncheckedTreeFromMinimizationExpr goalExprs
 
 def uncheckedTree (goal : MVarId) : MetaM (OC (String × Tree String String)) := do
-  let goalExprs ← Meta.SolutionExpr.fromGoal goal
-  uncheckedTreeFromSolutionExpr goalExprs
+  let goalExprs ← SolutionExpr.fromGoal goal
+  uncheckedTreeFromMinimizationExpr goalExprs.toMinimizationExpr
 
 end UncheckedDCP
 
