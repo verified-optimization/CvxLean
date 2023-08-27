@@ -7,6 +7,7 @@ namespace CvxLean
 open Lean Lean.Elab Lean.Meta Lean.Elab.Tactic Lean.Elab.Term Lean.Elab.Command
 open Minimization
 
+/-- Simply run `tacticCode` in `mvarId`. -/
 partial def runEquivalenceTactic (mvarId : MVarId) (tacticCode : Syntax) : 
   TermElabM Unit := do
   let code := tacticCode[1]
@@ -16,8 +17,8 @@ partial def runEquivalenceTactic (mvarId : MVarId) (tacticCode : Syntax) :
       withTacticInfoContext tacticCode do
         evalTactic code
 
-#check @MinimizationQ.mk 
-
+/-- Run equivalence tactic and return both the right-hand term (`q`) and the 
+equivalence proof, of type `{| p |} = {| q |}`. -/
 def elabEquivalenceProof (prob : Expr) (stx : Syntax) : TermElabM (Expr × Expr) := do 
   withRef stx do
     let eqTy ← mkEq prob (← mkFreshExprMVar none)
@@ -40,6 +41,9 @@ def elabEquivalenceProof (prob : Expr) (stx : Syntax) : TermElabM (Expr × Expr)
 syntax (name := equivalence) 
   "equivalence" ident "/" ident declSig ":=" term : command
 
+/-- Create `equivalence` command. It is similar to the `reduction` command, but
+it is more strict as it requires the target and goal problem to be strongly 
+equivalent, instead of simply building a map from solution spaces. -/
 @[command_elab «equivalence»]
 def evalEquivalence : CommandElab := fun stx => match stx with
 | `(equivalence $eqvId / $probId $declSig := $proof) => do
@@ -81,18 +85,3 @@ def evalEquivalence : CommandElab := fun stx => match stx with
   | _ => throwUnsupportedSyntax
 
 end CvxLean 
-
-def t1 := @Minimization.mk ℝ ℝ (fun x => x) (fun _ => True)
-
-def tx := @Minimization.mk ℝ ℝ (fun x => x) (fun _ => True)
-
-lemma t1x : MinimizationQ.mk t1 = MinimizationQ.mk tx := sorry
-
-equivalence eqv / t2 : t1 := by
-  unfold t1
-  have := t1x
-  unfold t1 at this
-  rw [this]
-
-#check eqv
-#print t2
