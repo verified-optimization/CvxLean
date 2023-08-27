@@ -1,5 +1,6 @@
 use egg::{*};
 use std::fs;
+use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::domain;
@@ -126,6 +127,7 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
         .with_explanations_enabled()
         .with_node_limit(1000)
         .with_iter_limit(3)
+        .with_time_limit(Duration::from_secs(30))
         .with_expr(&expr)
         .run(&rules());
     
