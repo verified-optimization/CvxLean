@@ -70,9 +70,9 @@ partial def EggTree.adjustOps (t : Tree String String) :
   | l => return l
 
 /-- -/
-def ExtendedEggTree.fromMinimization (m : Meta.SolutionExpr) (vars : List String) :
+def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
   MetaM (OC (String × Tree String String) × Array (String × String × String)) := do
-  let ocTree ← UncheckedDCP.uncheckedTreeFromSolutionExpr m
+  let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
   -- Detect domain constraints.
   let nonnegVars := ocTree.constr.filterMap <| fun (h, c) =>
     match c with

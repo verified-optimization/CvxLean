@@ -116,7 +116,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
         getReducedProblemAndReduction probTerm
 
       -- Expression of type Minimization.
-      let probReducedOpt := probReducedExpr.toMinExpr
+      let probReducedOpt := probReducedExpr.toMinimizationExpr.toExpr
 
       let probName ← getProblemName probInstance.raw
       

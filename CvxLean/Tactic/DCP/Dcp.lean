@@ -726,9 +726,9 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
       let (objFunForward, constrForward) ← 
         withExistingLocalDecls pat.originalConstrVars.toList do
 
-          let objFunForward ← makeObjFunForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinExpr
+          let objFunForward ← makeObjFunForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
             (pat.constraints.toArray.map Prod.snd) pat.solEqAtom.objFun.val
-          let constrForward ← makeConstrForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinExpr
+          let constrForward ← makeConstrForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
             (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constr.map Tree.val) pat.feasibility
           
           return (objFunForward, constrForward)
@@ -762,15 +762,15 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
         let (objFunBackward, constrBackward) ← 
           withExistingLocalDecls pat.newConstrVarsArray.toList do
-            let objFunBackward ← makeObjFunBackward newDomain newProblem.toMinExpr xs ys pat.optimality.objFun.val
+            let objFunBackward ← makeObjFunBackward newDomain newProblem.toMinimizationExpr.toExpr xs ys pat.optimality.objFun.val
               reducedConstrs pat.newConstrs pat.newConstrVarsArray
             
-            let constrBackward ← makeConstrBackward pat.vcondElimMap newDomain newProblem.toMinExpr xs ys (pat.optimality.constr.map (·.val))
+            let constrBackward ← makeConstrBackward pat.vcondElimMap newDomain newProblem.toMinimizationExpr.toExpr xs ys (pat.optimality.constr.map (·.val))
               reducedConstrs pat.newConstrs pat.newConstrVarsArray
 
             return (objFunBackward, constrBackward)
 
-        let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinExpr, newProblem.toMinExpr]
+        let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinimizationExpr.toExpr, newProblem.toMinimizationExpr.toExpr]
         check res
         
         let res := mkApp res (mkBVar 0) -- Insert new goal here later.
