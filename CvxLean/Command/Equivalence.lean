@@ -57,6 +57,13 @@ def evalEquivalence : CommandElab := fun stx => match stx with
       let prob₁Ty := mkApp2 (Lean.mkConst ``Minimization) D R
       let prob₁ ← elabTermAndSynthesizeEnsuringType prob (some prob₁Ty)
       let probQ₁ := mkAppN (Lean.mkConst ``MinimizationQ.mk) #[R, RPreorder, D, prob₁]
+      -- NOTE(RFM): `instantiateMVars` does not infer the preorder instance.
+      for mvarId in ← getMVars probQ₁ do 
+        try {
+          let mvarVal ← synthInstance (← mvarId.getDecl).type
+          mvarId.assign mvarVal }
+        catch _ => pure ()
+      
       let (probQ₂, proof) ← elabEquivalenceProof probQ₁ proof.raw
       let prob₂ := probQ₂.appArg!
       let prob₂ ← instantiateMVars prob₂
@@ -70,6 +77,7 @@ def evalEquivalence : CommandElab := fun stx => match stx with
         (Lean.ReducibilityHints.regular 0) 
         (DefinitionSafety.safe) 
         [probId.getId])
+      
       let proofTy ← inferType proof
       let proofTy ← mkForallFVars (xs.map Prod.snd) proofTy
       let proof ← mkLambdaFVars (xs.map Prod.snd) proof

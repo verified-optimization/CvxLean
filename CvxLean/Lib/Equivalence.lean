@@ -150,25 +150,271 @@ open CvxLean CvxLean.Delab
 def delabMinimizationQ : Delab := do
   match ← getExpr with
   | .app (.app (.app (.app (.const `MinimizationQ.mk _) _) _) _) p => 
-    let pStx ←  withExpr p delab
+    let pStx ← withExpr p delab
     `({| $pStx |})
   | _ => Alternative.failure
 
 end Delab
 
--- NOTE(RFM): To fit into a potential `equivalence` command.
+/- Rewrites used in `convexify` under the `equivalence` command. -/
+namespace MinimizationQ
 
-def rewrite_constraint_1' {D} {c1 c1' : D → Prop} {cs : D → Prop} {f : D → ℝ}
-  (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) :
-  {| f, fun x => c1' x ∧ cs x |} = 
-  {| f, fun x => c1  x ∧ cs x |} :=
+section Rewrites
+
+def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop} 
+  (hrw : ∀ x, cs x → f x = g x) :
+  {| f, cs |} = {| g, cs |} :=
   Quotient.sound <| Nonempty.intro <|
   { phi := id, 
     psi := id,
-    phi_feasibility := fun x hx => by simp only [←hrw x hx.2] at hx; exact hx
+    phi_feasibility := fun _ hx => hx
+    phi_optimality := fun {x} hx => le_of_eq (hrw x hx).symm
+    psi_feasibility := fun _ hx => hx
+    psi_optimality := fun {x} hx => le_of_eq (hrw x hx) }
+
+def rewrite_constraint_1 {D R} [Preorder R] {c1 c1' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) :
+  {| f, fun x => c1  x ∧ cs x |} = 
+  {| f, fun x => c1' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.2] at hx; exact hx
     phi_optimality := fun {x} _ => le_refl _
-    psi_feasibility := fun x hx => by simp only [hrw x hx.2] at hx; exact hx
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.2] at hx; exact hx
     psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_1_last {D R} [Preorder R] {c1 c1' : D → Prop} {f : D → R}
+  (hrw : ∀ x, (c1 x ↔ c1' x)) :
+  {| f, fun x => c1  x |} =
+  {| f, fun x => c1' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_2 {D R} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → cs x → (c2 x ↔ c2' x)) :
+  {| f, fun x => c1 x ∧ c2  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_2_last {D R} [Preorder R] {c1 c2 c2' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → (c2 x ↔ c2' x)) :
+  {| f, fun x => c1 x ∧ c2  x |} = 
+  {| f, fun x => c1 x ∧ c2' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_3 {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_3_last {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → (c3 x ↔ c3' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_4 {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → cs x → (c4 x ↔ c4' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_4_last {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → (c4 x ↔ c4' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_5 {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → cs x → (c5 x ↔ c5' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_5_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → (c5 x ↔ c5' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_6 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → cs x → (c6 x ↔ c6' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_6_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → (c6 x ↔ c6' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_7 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → cs x → (c7 x ↔ c7' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_7_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → (c7 x ↔ c7' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_8 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_8_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → (c8 x ↔ c8' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_9 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → cs x → (c9 x ↔ c9' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_9_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → (c9 x ↔ c9' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_10 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {cs : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → cs x → (c10 x ↔ c10' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10  x ∧ cs x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x ∧ cs x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+def rewrite_constraint_10_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {f : D → R}
+  (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → (c10 x ↔ c10' x)) :
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10  x |} = 
+  {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x |} :=
+  Quotient.sound <| Nonempty.intro <|
+  { phi := id, 
+    psi := id,
+    phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx
+    phi_optimality := fun {x} _ => le_refl _
+    psi_feasibility := fun x hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx
+    psi_optimality := fun {x} _ => le_refl _ }
+
+end Rewrites
+
+end MinimizationQ
 
 -- NOTE(RFM): Experiment with Props.
 
