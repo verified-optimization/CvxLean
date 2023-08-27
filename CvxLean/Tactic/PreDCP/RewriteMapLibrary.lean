@@ -30,7 +30,6 @@ macro "posimptivity" : tactic =>
 
 /- Equality rules. -/
 
--- NOTE(RFM): This was conv in (Real.log _ = Real.log _).
 register_rewrite_map "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
   rw [Real.log_eq_log (by posimptivity) (by posimptivity)]
 
@@ -46,18 +45,13 @@ register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c)
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
   rw [←div_le_one (by posimptivity)]
 
-register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" => "(le ?a ?b)" :=
+register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" <=> "(le ?a ?b)" :=
   rw [Real.log_le_log (by posimptivity) (by posimptivity)]
 
-register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
-  rw [Real.log_le_log (by posimptivity) (by posimptivity)]
 
 /- Field rules. -/
 
-register_rewrite_map "one_mul" ; "(mul 1 ?a)" => "?a" :=
-  simp only [one_mul]
-
-register_rewrite_map "one_mul-rev" ; "?a" => "(mul 1 ?a)" :=
+register_rewrite_map "one_mul" ; "(mul 1 ?a)" <=> "?a" :=
   norm_num
 
 register_rewrite_map "add_comm" ; "(add ?a ?b)" => "(add ?b ?a)" :=

@@ -59,9 +59,11 @@ def logLeLogRevConstr :=
     subject to 
       h : exp x ≤ exp y
 
-reduction logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRevConstr := by
+time_cmd reduction logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRevConstr := by
   unfold logLeLogRevConstr
   convexify
+
+
 
 /- Field rules -/
 
