@@ -1,10 +1,12 @@
 import Lean
 import CvxLean.Lib.Minimization
+import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Tactic.DCP.AtomLibrary
 
 namespace CvxLean
 
+/-- Domains with exponentials. -/
 class ExpMap (α : Type u) :=
   (exp : α → α)
 
@@ -17,6 +19,7 @@ noncomputable instance : ExpMap (Fin n → ℝ) :=
 instance [ExpMap α] [ExpMap β] : ExpMap (α × β) := 
   ⟨fun x => ⟨ExpMap.exp x.1, ExpMap.exp x.2⟩⟩
 
+/-- Domains with fine-grained exponentials. -/
 class ExpMapAt (α : Type u) := 
   (exp : ℕ → α → α)
 
@@ -28,6 +31,7 @@ instance [ExpMapAt α] [ExpMapAt β] : ExpMapAt (α × β) where
     | 0, x => ⟨ExpMapAt.exp 0 x.1, x.2⟩
     | n + 1, x => ⟨x.1, ExpMapAt.exp n x.2⟩
 
+/-- Domains with logarithms. -/
 class LogMap (α : Type u) :=
   (log : α → α)
 
@@ -40,6 +44,7 @@ noncomputable instance : LogMap (Fin n → ℝ) :=
 instance [LogMap α] [LogMap β] : LogMap (α × β) :=
   ⟨fun x => ⟨LogMap.log x.1, LogMap.log x.2⟩⟩
 
+/-- Domains with fine-grained logarithms. -/
 class LogMapAt (α : Type u) :=
   (log : ℕ → α → α)
 
@@ -50,6 +55,37 @@ instance [LogMapAt α] [LogMapAt β] : LogMapAt (α × β) where
   log
     | 0, x => ⟨LogMapAt.log 0 x.1, x.2⟩
     | n + 1, x => ⟨x.1, LogMapAt.log n x.2⟩
+
+/-- Domains with exponentials and logarithms with properties. -/
+class LogExp (α : Type u) :=
+  (log : α → α)
+  (exp : α → α)
+  (log_exp : ∀ x, log (exp x) = x)
+  (exp_log_cond : α → Prop)
+  (exp_log : ∀ {x}, exp_log_cond x → exp (log x) = x)
+
+noncomputable instance : LogExp ℝ where
+  log := Real.log
+  exp := Real.exp
+  log_exp := Real.log_exp
+  exp_log_cond := fun x => 0 < x
+  exp_log := Real.exp_log
+
+noncomputable instance : LogExp (Fin n → ℝ) where
+  log := fun x i => Real.log (x i)
+  exp := fun x i => Real.exp (x i)
+  log_exp := fun x => funext <| fun i => Real.log_exp (x i)
+  exp_log_cond := fun x => ∀ i, 0 < x i
+  exp_log := fun x => funext <| fun i => Real.exp_log (x i)
+
+noncomputable instance [LogExp α] [LogExp β] : LogExp (α × β) where 
+  log := fun x => ⟨LogExp.log x.1, LogExp.log x.2⟩
+  exp := fun x => ⟨LogExp.exp x.1, LogExp.exp x.2⟩
+  log_exp := fun x => by simp [LogExp.log_exp]
+  exp_log_cond := fun x => LogExp.exp_log_cond x.1 ∧ LogExp.exp_log_cond x.2
+  exp_log := fun x => by
+    simp [LogExp.exp_log]
+    rw [LogExp.exp_log x.1, LogExp.exp_log x.2]
 
 namespace Tactic
 
