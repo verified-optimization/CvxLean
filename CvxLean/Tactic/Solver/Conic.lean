@@ -200,7 +200,7 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
 -- TODO: Make the tactic work again.
 unsafe def conicSolver (goal : MVarId) 
   : MetaM (List MVarId) := do 
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let data ← determineCoeffs goal 
 
   let solPointExpr ← conicSolverFromValues goalExprs data
