@@ -20,7 +20,7 @@ def cleanUpCompAux (e : Expr) (name : String) : MetaM Expr := do
 
 /-- -/
 def cleanUpComp (goal : MVarId) : MetaM MVarId := do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let newObjFun ← cleanUpCompAux goalExprs.objFun "objFun"
   let newConstraints ← cleanUpCompAux goalExprs.constraints "constr"
   let newGoalType := {goalExprs with objFun := newObjFun, constraints := newConstraints}.toExpr

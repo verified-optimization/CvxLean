@@ -12,7 +12,7 @@ open Lean.Meta
 
 /-- -/
 partial def renameOptVar (goal : MVarId) (names : Array Lean.Name) : MetaM MVarId := do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let vars ← decomposeDomain (← instantiateMVars goalExprs.domain')
   let vars ← manipulateVars vars names.data
   let newDomain := composeDomain vars

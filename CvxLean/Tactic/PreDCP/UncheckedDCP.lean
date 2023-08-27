@@ -96,11 +96,11 @@ def uncheckedTreeFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
 def uncheckedTreeFromExpr (goalExpr : Expr) : 
   MetaM (OC (String × Tree String String)) := do 
-  let goalExprs ← Meta.matchSolutionExprFromExpr goalExpr
+  let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
   uncheckedTreeFromSolutionExpr goalExprs
 
 def uncheckedTree (goal : MVarId) : MetaM (OC (String × Tree String String)) := do
-  let goalExprs ← Meta.matchSolutionExpr goal
+  let goalExprs ← Meta.SolutionExpr.fromGoal goal
   uncheckedTreeFromSolutionExpr goalExprs
 
 end UncheckedDCP

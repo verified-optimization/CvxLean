@@ -29,7 +29,7 @@ def reorderConstrsExpr (ids : Array Lean.Name) (e : Expr) : MetaM Expr := do
 
 /-- -/
 def reorderConstrs (goal : MVarId) (ids : Array Lean.Name) : MetaM MVarId := do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let (newConstrMVar, eqGoal, newGoal) ← replaceConstr goal
   let newConstr ← 
     withLambdaBody goalExprs.constraints fun p constrBody => do

@@ -29,7 +29,7 @@ def removeConstr (goal : MVarId) (id : Syntax) : MetaM (MVarId × MVarId) := do
 
   -- Assign `newConstrMVar`.
   let target := (← goal.getDecl).type
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let oldConstr := goalExprs.constraints
   let (i, total, erasedConstr) ← 
     withLambdaBody goalExprs.constraints fun p oldConstrBody => do

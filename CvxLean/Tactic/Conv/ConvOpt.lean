@@ -19,7 +19,7 @@ syntax (name := convConstr)
 def convertOpt (goal : MVarId) (changeObjFun : Bool) (conv : TacticM Unit) : 
   TacticM MVarId := do
   -- Check if goal is actually an optimization problem.
-  let _ ← matchSolutionExpr goal 
+  let _ ← SolutionExpr.fromGoal goal 
   let target ← MVarId.getType goal
   let (targetNew, proof) ← convert target do
     -- Use `congr` to get rid of `Solution`.

@@ -9,7 +9,26 @@ open Lean Lean.Meta
 
 variable [MonadControlT MetaM m] [Monad m]
 
-/-- Structure holding all the components in an optimization problem. -/
+
+/-- Structure holding all the components in the `Minimization` type. -/
+structure MinimizationExpr where
+  domain : Expr
+  codomain : Expr
+  objFun : Expr
+  constraints : Expr
+
+namespace MinimizationExpr
+
+def fromExpr (prob : Expr) : MetaM MinimizationExpr := 
+  match prob with
+  | .app (.app (.app (.app (.const `Minimization.mk _)
+      domain) codomain) objFun) constraints => do
+    return MinimizationExpr.mk domain codomain objFun constraints 
+  | _ => throwError "Goal not of the form `Minimization.Solution ...`."
+
+end MinimizationExpr
+
+/-- Structure holding all the components in the `Solution` type. -/
 structure SolutionExpr where
   domain : Expr
   codomain : Expr
@@ -32,10 +51,8 @@ def toExpr (solExpr : SolutionExpr) : Expr :=
     solExpr.domain solExpr.codomain solExpr.codomainPreorder
     (solExpr.toMinExpr)
 
-end SolutionExpr
-
 /-- Decompose solution type into its components. -/
-def matchSolutionExprFromExpr (goalType : Expr) : MetaM SolutionExpr := do 
+def fromExpr (goalType : Expr) : MetaM SolutionExpr := do 
   match goalType with
   | Expr.app (Expr.app (Expr.app (Expr.app (Expr.const `Minimization.Solution _ )
         domain) codomain) codomainPreorder)
@@ -45,10 +62,13 @@ def matchSolutionExprFromExpr (goalType : Expr) : MetaM SolutionExpr := do
       domain' codomain' objFun constraints 
   | _ => throwError "Goal not of the form `Minimization.Solution ...`."
 
-/-- Applies `matchSolutionExprFromExpr` to goal. -/
-def matchSolutionExpr (goal : MVarId) : MetaM SolutionExpr := do
+/-- Applies `SolutionExpr.fromExpr` to goal. -/
+def fromGoal (goal : MVarId) : MetaM SolutionExpr := do
   let goalType ← whnf (← MVarId.getDecl goal).type
-  matchSolutionExprFromExpr goalType
+  fromExpr goalType
+
+end SolutionExpr
+
 
 /-- Replaces projections of an FVar `p` in an expression `e` by the expressions `rs`.
   For example, `p.2.2.1` will be replaced by `rs[2]`. If `p` is not fully projected,

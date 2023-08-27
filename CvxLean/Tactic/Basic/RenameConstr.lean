@@ -17,7 +17,7 @@ def replaceConstrName (name : Lean.Name) (e : Expr) : MetaM Expr := do
 /-- Rename the constraints using `names`. The `names` Array can be shorter then
   the number of constraints; then only the first few constraints are renamed. -/
 def renameConstrs (goal : MVarId) (names : Array Lean.Name) : MetaM Unit := do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let constraints ← instantiateMVars goalExprs.constraints
   let newConstr ←
     withLambdaBody constraints fun p constraints => do

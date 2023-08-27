@@ -300,9 +300,9 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
   
   return constraintsData.setObjectiveOnlyVector objectiveData.1 objectiveData.2
 
-/- Generate problem data from goal.  -/
+/-- Generate problem data from goal. -/
 unsafe def determineCoeffs (goal : Lean.MVarId) : MetaM ProblemData := do
-  let goalExprs ← Meta.matchSolutionExpr goal
+  let goalExprs ← Meta.SolutionExpr.fromGoal goal
   
   determineCoeffsFromExpr goalExprs
 

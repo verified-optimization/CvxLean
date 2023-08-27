@@ -9,7 +9,7 @@ open Lean Lean.Meta
 
 /-- -/
 def replaceConstr (goal : MVarId) : MetaM (MVarId × MVarId × MVarId) := MVarId.withContext goal do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
     
   -- New Constraints.
   let newConstr ← mkFreshExprMVar (some $ ← mkArrow goalExprs.domain' (mkSort levelZero))

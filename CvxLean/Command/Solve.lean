@@ -66,7 +66,7 @@ def getReducedProblemAndReduction (prob : Expr)
     (mkConst ``Minimization.Solution) 
     #[domain, codomain, codomainPreorderInst, prob]
 
-  let probOpt ← Meta.matchSolutionExprFromExpr probSol
+  let probOpt ← Meta.SolutionExpr.fromExpr probSol
   trace[Meta.debug] "probOpt: {probOpt.objFun}"
   -- NOTE(RFM): We should get the value from this applied to the float sol point.
 
@@ -76,7 +76,7 @@ def getReducedProblemAndReduction (prob : Expr)
   | Expr.forallE _ r _ _ => r 
   | _ => default
 
-  return (← Meta.matchSolutionExprFromExpr probReducedSol, probReduction, backwardMap)
+  return (← Meta.SolutionExpr.fromExpr probReducedSol, probReduction, backwardMap)
 
 /-- Add problem declaration inferring type. -/
 def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool) 

@@ -793,13 +793,13 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
 /-- -/
 def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × (Expr × Expr × Expr)) := do 
-  let goalExprs ← Meta.matchSolutionExprFromExpr goalExpr
+  let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
   canonizeGoalFromSolutionExpr goalExprs
 
 /-- -/
 def canonizeGoal (goal : MVarId) : MetaM MVarId := do
-  let goalExprs ← Meta.matchSolutionExpr goal
-  let (newGoal, (forwardMap, backwardMap, reduction)) ← canonizeGoalFromSolutionExpr goalExprs
+  let goalExprs ← Meta.SolutionExpr.fromGoal goal
+  let (newGoal, (_forwardMap, _backwardMap, reduction)) ← canonizeGoalFromSolutionExpr goalExprs
   let assignment := mkApp reduction newGoal
   check assignment
   goal.assign assignment
