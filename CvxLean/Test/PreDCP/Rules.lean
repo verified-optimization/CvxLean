@@ -1,4 +1,5 @@
 import CvxLean.Command.Solve
+import CvxLean.Command.Equivalence
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Test.Util.TimeCmd
@@ -17,23 +18,26 @@ def logEqLogConstr :=
     subject to
       h : exp x = exp x
 
-time_cmd reduction logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
+time_cmd equivalence logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
   unfold logEqLogConstr
   convexify
 
+#print logEqLogConstrAuto
 
 /- Less than or equal rules. -/
 
 -- le_sub_iff_add_le (TODO)
 def leSubIffAddLeConstr := 
   optimization (x y : ℝ)
-    minimize (0 : ℝ)
+    minimize (0 + 1 + 0 : ℝ)
     subject to
       h : x ≤ 1 - x
 
-time_cmd reduction leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
+time_cmd equivalence leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
   unfold leSubIffAddLeConstr
   convexify
+
+#check leSubIffAddLeConstrRedAuto
 
 -- div_le_iff (TODO)
 
@@ -48,7 +52,7 @@ def logLeLogConstr :=
       hy : 0 < y
       h : log x ≤ log y
 
-time_cmd reduction logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
+time_cmd equivalence logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
   unfold logLeLogConstr
   convexify
 
@@ -59,7 +63,7 @@ def logLeLogRevConstr :=
     subject to 
       h : exp x ≤ exp y
 
-time_cmd reduction logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRevConstr := by
+time_cmd equivalence logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRevConstr := by
   unfold logLeLogRevConstr
   convexify
 
@@ -90,7 +94,7 @@ def expNegEqOneDivRevObj :=
     subject to 
       h : 1 ≤ x
 
-time_cmd reduction expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
+time_cmd equivalence expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
   unfold expNegEqOneDivRevObj
   convexify
 

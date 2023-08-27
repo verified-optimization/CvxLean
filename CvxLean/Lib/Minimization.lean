@@ -267,7 +267,9 @@ simple_reduction _ _ sol f g
   (fun {x} hx => by simp [hfg x hx, hx]; exact hx)
   (fun {x} hx => hx)
 
-/-- -/
+/- Rewrites used in `convexify` under the `reduction` command. -/
+section Rewrites
+
 def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop} 
   (hrw : ∀ x, cs x → f x = g x)
   (sol : Solution { objFun := g, constraints := cs }) :
@@ -278,7 +280,6 @@ def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop}
     (fun {_} hx => hx)
     (fun {_} hx => hx)
 
-/-- -/
 def rewrite_constraints {D R} [Preorder R] {cs ds : D → Prop} {f : D → R}
   (hrw : ∀ x, cs x ↔ ds x)
   (sol : Solution { objFun := f, constraints := ds }) :
@@ -486,6 +487,7 @@ def rewrite_constraint_10_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c1
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx)
 
+end Rewrites
 
 end Reductions
 
