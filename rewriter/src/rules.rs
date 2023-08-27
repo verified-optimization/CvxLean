@@ -160,6 +160,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     // NOTE(RFM): exp_neg_eq_one_div_div?
     rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
 
+    rw!("exp_log"; "(exp (log ?a))" => "?a" if is_gt_zero("?a")),
+
     rw!("log_mul"; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))" 
         if is_gt_zero("?a") if is_gt_zero("?b")),
 
