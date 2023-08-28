@@ -1,4 +1,5 @@
 import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Positivity
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Missing.Meta
@@ -84,7 +85,7 @@ where
       | some fvarId => 
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- TODO: HACK! Trick to prove simple conditions.
+        -- TODO(RFM): This is a hack. Trick to prove simple bconditions.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
           let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
@@ -167,7 +168,7 @@ partial def mkNewConstrs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Un
   | Tree.node atom childAtoms, Tree.node newVars childNewVars, Tree.node reducedExprs childReducedExprs => do
     let mut childNewConstrs := #[]
     for i in [:childAtoms.size] do
-      childNewConstrs := childNewConstrs.push $ ← mkNewConstrs childAtoms[i]! childNewVars[i]! childReducedExprs[i]!
+      childNewConstrs := childNewConstrs.push <| ← mkNewConstrs childAtoms[i]! childNewVars[i]! childReducedExprs[i]!
     let newConstrs := atom.impConstrs
     let newConstrs := newConstrs.map (mkAppNBeta · (childReducedExprs.map Tree.val))
     let newConstrs := newConstrs.map (mkAppNBeta · (newVars.map (mkFVar ·.fvarId)))
@@ -176,20 +177,42 @@ partial def mkNewConstrs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Un
   | _, _, _ => throwError "Tree mismatch"
 
 /-- -/
-partial def findVConditions (constraints : Array Expr) : Tree GraphAtomData Expr → Tree (Array Expr) Unit → MetaM (Tree (Array Nat) Unit)
+partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints : Array Expr) : 
+  Tree GraphAtomData Expr → Tree (Array Expr) Unit → MetaM (Tree (Array ℕ) Unit)
   | Tree.node atom childAtoms, Tree.node args childArgs => do
     let mut childVCondIdx := #[]
     for i in [:childAtoms.size] do
-      childVCondIdx := childVCondIdx.push $ ← findVConditions constraints childAtoms[i]! childArgs[i]!
+      childVCondIdx := childVCondIdx.push <| ← findVConditions originalConstrVars constraints childAtoms[i]! childArgs[i]!
     let mut vcondIdx := #[]
     for (n, vcond) in atom.vconds do
       let vcond := mkAppNBeta vcond args
+      
+      -- First, try to see if it matches exactly with any of the constraints.
       match ← constraints.findIdxM? (isDefEq vcond) with
       | some i => do vcondIdx := vcondIdx.push i
-      | none => throwError "Variable Condition {n} not found: \n {vcond} {constraints}"
+      | none => 
+        -- TODO(RFM): Same issue with background conditions. Find a less hacky way?
+        -- Infer vconditions from constraints.
+        let vcondProofTyBody ← liftM <| constraints.foldrM mkArrow vcond 
+        let vcondProofTy ← mkForallFVars args vcondProofTyBody
+        
+        let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
+            let tac ← `(by intros; try { norm_num } <;> try { positivity })
+            let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
+            Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
+            let v ← instantiateMVars v
+            return v
+
+        if let some _ := e then 
+          -- TODO(RFM): This requires a bigger refactoring. Condition elimination works 
+          -- with indices of constraints, which is not ideal.
+          throwError "Condition on vconditions not implemented"
+        else 
+          throwError "Variable condition {n} not found: \n {vcond} {constraints}."
+
     return Tree.node vcondIdx childVCondIdx
   | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())
-  | _, _ => throwError "Tree mismatch"
+  | _, _ => throwError "Tree mismatch."
 
 /-- Returns the reduced expression and an array of forward images of new vars -/
 partial def mkReducedWithSolution : Tree GraphAtomData Expr → MetaM (Tree (Expr × Array Expr) (Expr × Array Expr))
@@ -551,7 +574,7 @@ def mkVConditions (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
   (failedAtom : OC Bool) (failedAtomMsgs : OC (Array MessageData)) (originalConstrVars : Array LocalDecl) :
   MetaM (OC (Tree (Array ℕ) Unit) × Array Bool × OC (Tree (Array Expr) Unit)) := do
 withExistingLocalDecls originalVarsDecls.toList do
-  let vcondIdx ← OC.map2M (findVConditions oc.constr) atoms args
+  let vcondIdx ← OC.map2M (findVConditions originalVarsDecls oc.constr) atoms args
   trace[Meta.debug] "vcondIdx {vcondIdx}"
   let isVCond := vcondIdx.fold (oc.constr.map (fun _ => false)) 
     fun acc vcondIdxTree =>
