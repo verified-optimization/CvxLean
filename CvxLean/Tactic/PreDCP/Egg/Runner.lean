@@ -113,7 +113,7 @@ def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
 
   let responseType := (outJson.getObjValD "response").getStr!
 
-  if responseType == "error" then
+  if responseType == "Error" then
     throwError "Error calling egg."
   else
     let steps ← liftExcept <| outJson.getObjVal? "steps"
