@@ -24,8 +24,10 @@ def so2 :=
   optimization (x : ℝ)
     minimize (x)
     subject to 
-      hx : 1 / 1000 ≤ x
+      hx : 0 < x
       h : exp (-x) ≤ sqrt x
+
+set_option trace.Meta.debug true
 
 solve so2
 
