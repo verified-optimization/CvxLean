@@ -29,6 +29,8 @@ def so2 :=
 
 set_option trace.Meta.debug true
 
+#check Eq.mpr
+
 solve so2
 
 #print so2.reduced
