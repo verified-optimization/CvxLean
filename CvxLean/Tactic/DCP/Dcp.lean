@@ -176,13 +176,27 @@ partial def mkNewConstrs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Un
   | Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
   | _, _, _ => throwError "Tree mismatch"
 
+#check collectFVars
+
 /-- -/
-partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints : Array Expr) : 
-  Tree GraphAtomData Expr → Tree (Array Expr) Unit → MetaM (Tree (Array ℕ) Unit)
+-- NOTE(RFM): Also return new constraints inferred.
+partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints : Array Expr) 
+  (newConstraints : Array Expr) (newConstraintsDecl : Array LocalDecl) : 
+  Tree GraphAtomData Expr → 
+  Tree (Array Expr) Unit → 
+  MetaM (Array Expr × Array LocalDecl × Tree (Array ℕ) Unit)
   | Tree.node atom childAtoms, Tree.node args childArgs => do
-    let mut childVCondIdx := #[]
+    let mut childVCondIdxs := #[]
+    let mut newConstraintsDecl := newConstraintsDecl
+    let mut newConstraints := newConstraints
     for i in [:childAtoms.size] do
-      childVCondIdx := childVCondIdx.push <| ← findVConditions originalConstrVars constraints childAtoms[i]! childArgs[i]!
+      let (childNewConstrs, childNewConstrsDecl, childVCondIdx) ← 
+        findVConditions originalConstrVars constraints #[] #[] childAtoms[i]! childArgs[i]!
+      childVCondIdxs := childVCondIdxs.push childVCondIdx
+      newConstraintsDecl := newConstraintsDecl ++ childNewConstrsDecl
+      newConstraints := newConstraints ++ childNewConstrs
+    
+    -- let constraints := constraints ++ newConstraints
     let mut vcondIdx := #[]
     for (n, vcond) in atom.vconds do
       let vcond := mkAppNBeta vcond args
@@ -200,18 +214,33 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
             let tac ← `(by intros; try { norm_num } <;> try { positivity })
             let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
             Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
-            let v ← instantiateMVars v
-            return v
+            instantiateMVars v
 
-        if let some _ := e then 
-          -- TODO(RFM): This requires a bigger refactoring. Condition elimination works 
-          -- with indices of constraints, which is not ideal.
-          throwError "Condition on vconditions not implemented"
+        if let some e' := e then 
+          -- The inferred variable condition is added to the context, and it will then 
+          -- be removed in the condition elimination phase.
+          let newCondition := mkAppNBeta e' args
+          let newCondition := mkAppNBeta newCondition (originalConstrVars.map (mkFVar ·.fvarId))
+
+          trace[Meta.debug] "NEW CONDITION {newCondition}"
+          let fs := (collectFVars default newCondition).fvarIds
+          for f in fs do 
+            if let some idx := (originalConstrVars.map (·.fvarId)).getIdx? f then
+              trace[Meta.debug] "found {idx}"
+              vcondIdx := vcondIdx.push idx
+
+          let newConditionTy ← inferType newCondition
+          -- vcondIdx := vcondIdx.push (constraints.size + newConstraintsDecl.size)
+          let localDecl := 
+            LocalDecl.cdecl 0 (← mkFreshFVarId) `h newConditionTy Lean.BinderInfo.default LocalDeclKind.default
+          newConstraints := newConstraints.push newCondition
+          newConstraintsDecl := newConstraintsDecl.push localDecl
+          -- throwError "Condition inference on vconditions not implemented"
         else 
-          throwError "Variable condition {n} not found: \n {vcond} {constraints}."
+          throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
 
-    return Tree.node vcondIdx childVCondIdx
-  | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())
+    return (newConstraints, newConstraintsDecl, Tree.node vcondIdx childVCondIdxs)
+  | Tree.leaf _, Tree.leaf _ => pure (#[], #[], Tree.leaf ())
   | _, _ => throwError "Tree mismatch."
 
 /-- Returns the reduced expression and an array of forward images of new vars -/
@@ -239,15 +268,22 @@ def mkForwardImagesNewVars (reducedWithSolution : OC (Tree (Expr × Array Expr) 
 /-- -/
 partial def mkSolEqAtom : Tree GraphAtomData Expr → Tree (Expr × Array Expr) (Expr × Array Expr) → Tree (Array Expr) Unit → MetaM (Tree Expr Expr)
   | Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution, Tree.node vcondVars childVCondVars => do
+    dbg_trace "HERE 1"
     -- Recursive calls for arguments.
     let mut childSolEqAtom := #[]
     for i in [:childAtoms.size] do
       childSolEqAtom := childSolEqAtom.push $
         ← mkSolEqAtom childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]!
+    dbg_trace "HER 2"
     -- Rewrite arguments in atom expr.
     let mut solEqAtomR ← mkEqRefl atom.expr
     for c in childSolEqAtom do
       solEqAtomR ← mkCongr solEqAtomR c.val
+    dbg_trace "HER 3"
+    dbg_trace "{atom.vconds.size}"
+    dbg_trace "{atom.vconds}"
+    dbg_trace "{vcondVars.size}"
+    dbg_trace "{vcondVars}"
     -- Use solEqAtom of children to rewrite the arguments in the vconditions.
     let mut vconds := #[]
     for i in [:vcondVars.size] do
@@ -255,6 +291,7 @@ partial def mkSolEqAtom : Tree GraphAtomData Expr → Tree (Expr × Array Expr) 
       for c in childSolEqAtom do
         vcondEqReducedVCond ← mkCongr vcondEqReducedVCond c.val
       vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVars[i]!
+    dbg_trace "HER 4"
     -- Apply solEqAtom property of the atom.
     let solEqAtomL := atom.solEqAtom
     let solEqAtomL := mkAppN solEqAtomL (childReducedWithSolution.map (·.val.1))
@@ -436,8 +473,8 @@ def foldAndIntro (exprs : Array Expr) : MetaM Expr := do
   return res
 
 /-- -/
-def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars : Array LocalDecl)
-  (oldProblem : Expr) (constraints : Array Expr) (isVCond : Array Bool) (constraintsEq : Array Expr)
+def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars vcondConstrVars : Array LocalDecl)
+  (oldProblem : Expr) (constraints vcondNewConstraints : Array Expr) (isVCond : Array Bool) (constraintsEq : Array Expr)
   (feasibility : OC (Tree (Array Expr) Unit)) : MetaM Expr := do
   -- ∀ {x : D}, Minimization.constraints p x → Minimization.constraints q (f x)
 
@@ -448,10 +485,22 @@ def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars :
       let (_, cprs) := Meta.composeAndWithProj constraints.toList
       let hProj := (cprs h).toArray
 
+      -- let mut vcondNewConstraintsReplaced := #[] 
+      -- for c in vcondNewConstraints do 
+      --   let cReplaced := c.replaceFVars ((originalConstrVars).map (mkFVar ·.fvarId)) hProj
+      --   vcondNewConstraintsReplaced := vcondNewConstraintsReplaced.push (← inferType cReplaced)
+      -- let (_, cprs') := Meta.composeAndWithProj vcondNewConstraintsReplaced.toList
+      -- let hProj' := (cprs' h).toArray
+
+      -- trace[Meta.debug] "replaced: {vcondNewConstraintsReplaced}"
+      -- trace[Meta.debug] "og varfs: {originalConstrVars.map (mkFVar ·.fvarId)}"
+
       -- Old constraint proofs.
       let mut oldConstrProofs := #[]
       for i in [:originalConstrVars.size] do
         if not isVCond[i]! then
+          dbg_trace "constraintsEq : {constraintsEq[i]!}"
+          -- NOTE(RFM): Is this right?
           oldConstrProofs := oldConstrProofs.push $
             ← mkAppM ``Eq.mpr #[constraintsEq[i]!, mkFVar originalConstrVars[i]!.fvarId]
 
@@ -461,13 +510,19 @@ def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars :
       
       let constrForwardBody ← foldAndIntro $ (oldConstrProofs ++ newConstrProofs)
       let constrForwardBody := constrForwardBody.replaceFVars
+        ((vcondConstrVars).map (mkFVar ·.fvarId)) vcondNewConstraints
+      let constrForwardBody := constrForwardBody.replaceFVars
         ((originalConstrVars).map (mkFVar ·.fvarId)) hProj
       let constrForwardBody ← mkLambdaFVars #[h] constrForwardBody
+      trace[Meta.debug] "constrForwardBody: {constrForwardBody}"
+
       let constrForwardBody := constrForwardBody.replaceFVars xs prs.toArray
+      trace[Meta.debug] "constrForwardBody 2: {constrForwardBody}"
       let constrForward ← mkLambdaFVars #[p] constrForwardBody
       trace[Meta.debug] "constrForward: {constrForward}"
       trace[Meta.debug] "constrForwardType: {← inferType constrForward}"
       check constrForward
+      trace[Meta.debug] "HERE"
       return constrForward
 
 /-- -/
@@ -572,19 +627,27 @@ vconditions. -/
 def mkVConditions (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
   (constraints : List (Lean.Name × Expr)) (atoms : OC (Tree GraphAtomData Expr)) (args : OC (Tree (Array Expr) Unit)) 
   (failedAtom : OC Bool) (failedAtomMsgs : OC (Array MessageData)) (originalConstrVars : Array LocalDecl) :
-  MetaM (OC (Tree (Array ℕ) Unit) × Array Bool × OC (Tree (Array Expr) Unit)) := do
+  MetaM ((Array Expr) × (Array LocalDecl) × OC (Tree (Array ℕ) Unit) × Array Bool × OC (Tree (Array Expr) Unit)) := do
 withExistingLocalDecls originalVarsDecls.toList do
-  let vcondIdx ← OC.map2M (findVConditions originalVarsDecls oc.constr) atoms args
+  let vcondResult ← OC.map2M (findVConditions originalConstrVars oc.constr #[] #[]) atoms args
+  let vcondNewConstrs := (vcondResult.map (·.1)).fold #[] fun acc cs => acc ++ cs
+  let vcondNewConstrsDecl := (vcondResult.map (·.2.1)).fold #[] fun acc cs => acc ++ cs
+  let vcondIdx := vcondResult.map (·.2.2)
+
   trace[Meta.debug] "vcondIdx {vcondIdx}"
-  let isVCond := vcondIdx.fold (oc.constr.map (fun _ => false)) 
+  let isVCond := vcondIdx.fold ((originalConstrVars ++ vcondNewConstrsDecl).map (fun _ => false)) 
     fun acc vcondIdxTree =>
       vcondIdxTree.fold acc fun acc is => 
         is.foldl (fun acc i => acc.set! i true) acc
-  let vcondVars := vcondIdx.map $ mkVCondVars (originalConstrVars.map LocalDecl.fvarId)
-  -- for i in [:isVCond.size] do
-  --   if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
-  --     throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
-  return (vcondIdx, isVCond, vcondVars)
+  let vcondVars := vcondResult.map <| fun (_, newDecls, idx) => 
+    mkVCondVars ((originalConstrVars ++ newDecls).map LocalDecl.fvarId) idx
+  
+  trace[Meta.debug] "isVCond: {isVCond}"
+  for i in [:isVCond.size] do
+    trace[Meta.debug] "{constraints.toArray[i]!.1} is vcond? {isVCond[i]!}"
+    if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
+      trace[Meta.debug] "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
+  return (vcondNewConstrs, vcondNewConstrsDecl, vcondIdx, isVCond, vcondVars)
 
 /-- -/
 def mkSolEqAtomOC (originalVarsDecls : Array LocalDecl) 
@@ -665,6 +728,8 @@ structure ProcessedAtomTree where
   (newConstrVarsArray : Array LocalDecl) 
   (forwardImagesNewVars : Array Expr) 
   (constraints : List (Lean.Name × Expr))
+  (vcondNewConstrs : Array Expr)
+  (vcondNewConstrsVars : Array LocalDecl)
   (isVCond : Array Bool) 
   (vcondElimMap : Std.HashMap ℕ Expr)
   (solEqAtom : OC (Tree Expr Expr)) 
@@ -678,8 +743,11 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
   let oc ← mkOC objFun constraints originalVarsDecls
   let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree originalVarsDecls oc
   let originalConstrVars ← mkOriginalConstrVars originalVarsDecls constraints.toArray
-  let (vcondIdx, isVCond, vcondVars) ← mkVConditions originalVarsDecls oc constraints atoms args failedAtom
+  dbg_trace "initial list: {originalConstrVars.size}"
+  let (vcondNewConstrs, vcondNewConstrsVars, vcondIdx, isVCond, vcondVars) ← mkVConditions originalVarsDecls oc constraints atoms args failedAtom
     failedAtomMsgs originalConstrVars
+  trace[Meta.debug] "vcondNewConstrs {vcondNewConstrs}"
+
   let newVars ← withExistingLocalDecls originalVarsDecls.toList do
     OC.map2MwithCounter mkNewVars atoms args
   let newVarDecls ← mkNewVarDeclList newVars
@@ -687,14 +755,16 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     OC.mapM mkReducedWithSolution atoms
   let forwardImagesNewVars ← withExistingLocalDecls originalVarsDecls.toList do
     mkForwardImagesNewVars reducedWithSolution
+  
+
   let solEqAtom ← mkSolEqAtomOC originalVarsDecls atoms reducedWithSolution vcondVars originalConstrVars
   let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution vcondVars 
-    originalConstrVars solEqAtom
+    (originalConstrVars ++ vcondNewConstrsVars) solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
   let (newConstrs, newConstrVars, newConstrVarsArray)
     ← mkNewConstrsOC originalVarsDecls newVarDecls atoms newVars reducedExprs
   let (optimality, vcondElimMap) ← mkOptimalityAndVCondElimOC originalVarsDecls newVarDecls
-    newConstrVarsArray atoms args reducedExprs newVars newConstrVars curvature bconds vcondIdx
+    (newConstrVarsArray ++ vcondNewConstrsVars) atoms args reducedExprs newVars newConstrVars curvature bconds vcondIdx
   
   return ProcessedAtomTree.mk
     (originalVarsDecls := originalVarsDecls) 
@@ -704,6 +774,8 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     (newConstrVarsArray := newConstrVarsArray) 
     (forwardImagesNewVars := forwardImagesNewVars) 
     (constraints := constraints)
+    (vcondNewConstrs := vcondNewConstrs)
+    (vcondNewConstrsVars := vcondNewConstrsVars)
     (isVCond := isVCond) 
     (vcondElimMap := vcondElimMap)
     (solEqAtom := solEqAtom) 
@@ -746,13 +818,23 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
     
       let forwardMap ← makeForwardMap goalExprs.domain xs pat.forwardImagesNewVars
       
+      let activeConstrVars := pat.originalConstrVars ++ pat.vcondNewConstrsVars
       let (objFunForward, constrForward) ← 
-        withExistingLocalDecls pat.originalConstrVars.toList do
+        withExistingLocalDecls activeConstrVars.toList do
 
-          let objFunForward ← makeObjFunForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
-            (pat.constraints.toArray.map Prod.snd) pat.solEqAtom.objFun.val
-          let constrForward ← makeConstrForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
-            (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constr.map Tree.val) pat.feasibility
+          let activeConstrs := (pat.constraints.toArray.map Prod.snd) ++ pat.vcondNewConstrs.toList
+          dbg_trace "activeConstrs {activeConstrs.size}"
+          dbg_trace "activeConstrVars {activeConstrVars.size}"
+
+          let objFunForward ← makeObjFunForward goalExprs.domain xs activeConstrVars goalExprs.toMinimizationExpr.toExpr
+            activeConstrs pat.solEqAtom.objFun.val
+          let constrForward ← makeConstrForward goalExprs.domain xs 
+            pat.originalConstrVars pat.vcondNewConstrsVars -- decls 
+            goalExprs.toMinimizationExpr.toExpr 
+            (pat.constraints.toArray.map Prod.snd) pat.vcondNewConstrs -- constraints 
+            pat.isVCond 
+            (pat.solEqAtom.constr.map Tree.val) 
+            pat.feasibility
           
           return (objFunForward, constrForward)
 
