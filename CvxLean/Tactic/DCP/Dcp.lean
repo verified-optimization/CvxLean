@@ -230,9 +230,9 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
               vcondIdx := vcondIdx.push idx
 
           let newConditionTy ← inferType newCondition
-          -- vcondIdx := vcondIdx.push (constraints.size + newConstraintsDecl.size)
+          vcondIdx := vcondIdx.push (constraints.size + newConstraintsDecl.size)
           let localDecl := 
-            LocalDecl.cdecl 0 (← mkFreshFVarId) `h newConditionTy Lean.BinderInfo.default LocalDeclKind.default
+            LocalDecl.cdecl 0 (← mkFreshFVarId) `_ newConditionTy Lean.BinderInfo.default LocalDeclKind.default
           newConstraints := newConstraints.push newCondition
           newConstraintsDecl := newConstraintsDecl.push localDecl
           -- throwError "Condition inference on vconditions not implemented"
@@ -268,30 +268,42 @@ def mkForwardImagesNewVars (reducedWithSolution : OC (Tree (Expr × Array Expr) 
 /-- -/
 partial def mkSolEqAtom : Tree GraphAtomData Expr → Tree (Expr × Array Expr) (Expr × Array Expr) → Tree (Array Expr) Unit → MetaM (Tree Expr Expr)
   | Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution, Tree.node vcondVars childVCondVars => do
-    dbg_trace "HERE 1"
+    trace[Meta.debug] "HERE 1"
     -- Recursive calls for arguments.
     let mut childSolEqAtom := #[]
     for i in [:childAtoms.size] do
       childSolEqAtom := childSolEqAtom.push $
         ← mkSolEqAtom childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]!
-    dbg_trace "HER 2"
+    trace[Meta.debug] "HERE 2"
     -- Rewrite arguments in atom expr.
     let mut solEqAtomR ← mkEqRefl atom.expr
     for c in childSolEqAtom do
       solEqAtomR ← mkCongr solEqAtomR c.val
-    dbg_trace "HER 3"
-    dbg_trace "{atom.vconds.size}"
-    dbg_trace "{atom.vconds}"
-    dbg_trace "{vcondVars.size}"
-    dbg_trace "{vcondVars}"
+    trace[Meta.debug] "HERE 3"
+    trace[Meta.debug] "{atom.vconds.size}"
+    trace[Meta.debug] "{atom.vconds}"
+    trace[Meta.debug] "{vcondVars.size}"
+    trace[Meta.debug] "{vcondVars}"
     -- Use solEqAtom of children to rewrite the arguments in the vconditions.
     let mut vconds := #[]
-    for i in [:vcondVars.size] do
+    for i in [:atom.vconds.size] do
+      trace[Meta.debug] "i: {i}"
       let mut vcondEqReducedVCond ← mkEqRefl atom.vconds[i]!.2
+      trace[Meta.debug] "{vcondEqReducedVCond}"
       for c in childSolEqAtom do
+        trace[Meta.debug] "c.val: {c.val}"
         vcondEqReducedVCond ← mkCongr vcondEqReducedVCond c.val
-      vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVars[i]!
-    dbg_trace "HER 4"
+      trace[Meta.debug] "THE ISSUE IS HERE"
+      trace[Meta.debug] "{vcondEqReducedVCond}"
+      trace[Meta.debug] "{vcondVars[i]!}"
+      for vcondVar in vcondVars do 
+        try 
+          vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVar
+        catch e =>
+          trace[Meta.debug] "vcondVar error: {e.toMessageData}"
+        
+
+    trace[Meta.debug] "HERE 4"
     -- Apply solEqAtom property of the atom.
     let solEqAtomL := atom.solEqAtom
     let solEqAtomL := mkAppN solEqAtomL (childReducedWithSolution.map (·.val.1))
@@ -499,7 +511,7 @@ def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars v
       let mut oldConstrProofs := #[]
       for i in [:originalConstrVars.size] do
         if not isVCond[i]! then
-          dbg_trace "constraintsEq : {constraintsEq[i]!}"
+          trace[Meta.debug] "constraintsEq : {constraintsEq[i]!}"
           -- NOTE(RFM): Is this right?
           oldConstrProofs := oldConstrProofs.push $
             ← mkAppM ``Eq.mpr #[constraintsEq[i]!, mkFVar originalConstrVars[i]!.fvarId]
@@ -641,7 +653,9 @@ withExistingLocalDecls originalVarsDecls.toList do
         is.foldl (fun acc i => acc.set! i true) acc
   let vcondVars := vcondResult.map <| fun (_, newDecls, idx) => 
     mkVCondVars ((originalConstrVars ++ newDecls).map LocalDecl.fvarId) idx
-  
+  -- let vcondVars := vcondIdx.map (fun t => 
+  --   mkVCondVars (originalConstrVars.map LocalDecl.fvarId) t)
+
   trace[Meta.debug] "isVCond: {isVCond}"
   for i in [:isVCond.size] do
     trace[Meta.debug] "{constraints.toArray[i]!.1} is vcond? {isVCond[i]!}"
@@ -743,7 +757,7 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
   let oc ← mkOC objFun constraints originalVarsDecls
   let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree originalVarsDecls oc
   let originalConstrVars ← mkOriginalConstrVars originalVarsDecls constraints.toArray
-  dbg_trace "initial list: {originalConstrVars.size}"
+  trace[Meta.debug] "initial list: {originalConstrVars.size}"
   let (vcondNewConstrs, vcondNewConstrsVars, vcondIdx, isVCond, vcondVars) ← mkVConditions originalVarsDecls oc constraints atoms args failedAtom
     failedAtomMsgs originalConstrVars
   trace[Meta.debug] "vcondNewConstrs {vcondNewConstrs}"
@@ -757,7 +771,7 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     mkForwardImagesNewVars reducedWithSolution
   
 
-  let solEqAtom ← mkSolEqAtomOC originalVarsDecls atoms reducedWithSolution vcondVars originalConstrVars
+  let solEqAtom ← mkSolEqAtomOC originalVarsDecls atoms reducedWithSolution vcondVars (originalConstrVars ++ vcondNewConstrsVars)
   let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution vcondVars 
     (originalConstrVars ++ vcondNewConstrsVars) solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
@@ -823,8 +837,8 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
         withExistingLocalDecls activeConstrVars.toList do
 
           let activeConstrs := (pat.constraints.toArray.map Prod.snd) ++ pat.vcondNewConstrs.toList
-          dbg_trace "activeConstrs {activeConstrs.size}"
-          dbg_trace "activeConstrVars {activeConstrVars.size}"
+          trace[Meta.debug] "activeConstrs {activeConstrs.size}"
+          trace[Meta.debug] "activeConstrVars {activeConstrVars.size}"
 
           let objFunForward ← makeObjFunForward goalExprs.domain xs activeConstrVars goalExprs.toMinimizationExpr.toExpr
             activeConstrs pat.solEqAtom.objFun.val
