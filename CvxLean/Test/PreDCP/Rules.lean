@@ -83,7 +83,13 @@ def expAddConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
     subject to 
-      h : exp (x + y) ≤ exp x
+      hx : 0 < x
+      hy : 0 < y
+      h : exp ((log x) + 2) ≤ 10
+
+time_cmd reduction expAddConstrRedAuto/expAddConstrAuto : expAddConstr := by
+  unfold expAddConstr
+  convexify
 
 -- exp_add
 
@@ -94,7 +100,7 @@ def expNegEqOneDivRevObj :=
     subject to 
       h : 1 ≤ x
 
-time_cmd equivalence expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
+time_cmd reduction expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
   unfold expNegEqOneDivRevObj
   convexify
 
