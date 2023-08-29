@@ -190,24 +190,7 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
       -- First, try to see if it matches exactly with any of the constraints.
       match ← constraints.findIdxM? (isDefEq vcond) with
       | some i => do vcondIdx := vcondIdx.push i
-      | none => 
-        -- TODO(RFM): Same issue with background conditions. Find a less hacky way?
-        -- Infer vconditions from constraints.
-        let vcondProofTyBody ← liftM <| constraints.foldrM mkArrow vcond 
-        let vcondProofTy ← mkForallFVars args vcondProofTyBody
-        
-        let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { norm_num } <;> try { positivity })
-            let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
-            Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
-            let v ← instantiateMVars v
-            return v
-
-        if let some _ := e then 
-          -- TODO(RFM): This requires a bigger refactoring. 
-          throwError "Condition inference on vconditions not implemented"
-        else 
-          throwError "Variable condition {n} not found: \n {vcond} {constraints}."
+      | none => throwError "Variable condition {n} not found: \n {vcond} {constraints}."
 
     return Tree.node vcondIdx childVCondIdx
   | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())
