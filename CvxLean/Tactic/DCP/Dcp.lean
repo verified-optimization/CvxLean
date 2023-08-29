@@ -204,9 +204,8 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
             return v
 
         if let some _ := e then 
-          -- TODO(RFM): This requires a bigger refactoring. Condition elimination works 
-          -- with indices of constraints, which is not ideal.
-          throwError "Condition on vconditions not implemented"
+          -- TODO(RFM): This requires a bigger refactoring. 
+          throwError "Condition inference on vconditions not implemented"
         else 
           throwError "Variable condition {n} not found: \n {vcond} {constraints}."
 
