@@ -23,7 +23,15 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
             ($i:expr) => { costs(*$i).0 }
         }
         macro_rules! get_term_size {
-            ($i:expr) => { costs(*$i).1 }
+            ($i:expr) => { 
+                // No constant folding, but this ensures that constant 
+                // expressions are picked first.
+                if (get_curvature!($i) == Curvature::Constant) {
+                    0
+                } else {
+                    costs(*$i).1
+                }
+            }
         }
         macro_rules! get_num_vars {
             ($i:expr) => { costs(*$i).2 }
