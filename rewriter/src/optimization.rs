@@ -40,7 +40,6 @@ pub struct Meta {
 
 #[derive(Debug, Clone)]
 pub struct Data {
-    pub free_vars: HashSet<(Id, Symbol)>,
     pub domain: Option<Domain>,
     pub constant: Option<(Constant, PatternAst<Optimization>)>,
     pub has_log: bool,
@@ -66,20 +65,13 @@ impl Analysis<Optimization> for Meta {
         let to_domain_diff = before_domain != to.domain;
         let from_domain_diff = to.domain != from.domain;
 
-        let before_free_vars = to.free_vars.len();
-        to.free_vars.retain(|i| from.free_vars.contains(i));
-        let to_free_vars_diff = before_free_vars != to.free_vars.len();
-        let from_free_vars_diff = to.free_vars.len() != from.free_vars.len();
-
         DidMerge(
-            to_has_log_diff || to_domain_diff || to_free_vars_diff,
-            from_has_log_diff || from_domain_diff || from_free_vars_diff,
+            to_has_log_diff || to_domain_diff,
+            from_has_log_diff || from_domain_diff,
         )
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
-        let get_vars = 
-            |i: &Id| egraph[*i].data.free_vars.iter().cloned();
         let get_constant = 
             |i: &Id| egraph[*i].data.constant.clone();
         let get_domain = 
@@ -87,37 +79,12 @@ impl Analysis<Optimization> for Meta {
         let domains_map = 
             egraph.analysis.domains.clone();
 
-        let mut free_vars = HashSet::default();
         let mut constant = None;
         let mut domain = None;
         let mut has_log = false;
 
         match enode {
-            Optimization::Prob([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-            }
-            Optimization::ObjFun(a) => {
-                free_vars.extend(get_vars(a));
-            }
-            Optimization::Constr([_, c]) => {
-                free_vars.extend(get_vars(c));
-            }
-            Optimization::Constrs(a) => {
-                for c in a.iter() {
-                    free_vars.extend(get_vars(c));
-                }
-            }
-            Optimization::Eq([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-            }
-            Optimization::Le([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-            }
             Optimization::Neg(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -129,7 +96,6 @@ impl Analysis<Optimization> for Meta {
                 domain = domain::option_flip(get_domain(a));
             }
             Optimization::Sqrt(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -153,8 +119,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Add([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -168,8 +132,6 @@ impl Analysis<Optimization> for Meta {
                     get_domain(a), get_domain(b));
             }
             Optimization::Sub([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -183,8 +145,6 @@ impl Analysis<Optimization> for Meta {
                     domain::option_flip(get_domain(b)));
             }
             Optimization::Mul([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -197,8 +157,6 @@ impl Analysis<Optimization> for Meta {
                     get_domain(a), get_domain(b))
             }
             Optimization::Div([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -220,9 +178,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Pow([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-
                 let d_o_a = get_domain(a);
                 let d_o_b = get_domain(b);
                 match (d_o_a, d_o_b) {
@@ -239,7 +194,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Log(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -263,7 +217,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Exp(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -279,7 +232,6 @@ impl Analysis<Optimization> for Meta {
                 // Assume that after var there is always a symbol.
                 match egraph[*a].nodes[0] { 
                     Optimization::Symbol(s) => {
-                        free_vars.insert((*a, s));
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(*d); }
@@ -305,9 +257,10 @@ impl Analysis<Optimization> for Meta {
                     }
                 }
             }
+            _ => {}
         }
 
-        Data { free_vars, constant, domain, has_log }
+        Data { constant, domain, has_log }
     }
 }
 
