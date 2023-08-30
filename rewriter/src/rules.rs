@@ -3,8 +3,6 @@ use egg::{rewrite as rw, *};
 use crate::optimization;
 use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
-use optimization::is_not_zero as is_not_zero;
-use optimization::is_not_one as is_not_one;
 use optimization::is_gt_zero as is_gt_zero;
 use optimization::not_has_log as not_has_log;
 
@@ -50,10 +48,11 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     // rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
     //     if is_not_zero("?c")),
 
-    // NOTE(RFM): The b != 1 condition is to avoid infinite chains in 
-    // combination with div_le_one-rev.
     rw!("div_le_iff"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
-        if is_not_zero("?c") if is_not_one("?b")),
+        if is_gt_zero("?c")),
+    
+    rw!("div_le_iff-rev"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
 
     // rw!("le-div"; "(le ?a (div ?b ?c))" => "(le (mul ?a ?c) ?b)" 
     //     if is_not_zero("?c")),
@@ -62,8 +61,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     //     if is_not_zero("?b")),
 
     // NOTE(RFM): div-le-one? 
-    rw!("div_le_one-rev"; "(le ?a ?b)" => "(le (div ?a ?b) 1)" 
-        if is_not_zero("?b") if is_not_one("?b")),
+    // rw!("div_le_one-rev"; "(le ?a ?b)" => "(le (div ?a ?b) 1)" 
+    //     if is_not_zero("?b") if is_not_one("?b")),
 
     rw!("log_le_log"; "(le (log ?a) (log ?b))" => "(le ?a ?b)" 
        if is_gt_zero("?a") if is_gt_zero("?b")),  
@@ -110,16 +109,14 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     // rw!("sub-mul-same-left"; "(sub (mul ?a ?b) ?a)" => "(mul ?a (sub ?b 1))"),
 
-    rw!("add_div"; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))" 
-        if is_not_zero("?c")),
+    rw!("add_div"; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))"),
 
     // rw!("add-div"; "(add (div ?a ?b) (div ?c ?b))" => "(div (add ?a ?c) ?b)"),
 
     // rw!("div-sub"; "(div (sub ?a ?b) ?c)" => "(sub (div ?a ?c) (div ?b ?c))" 
     //     if is_not_zero("?c")),
 
-    rw!("mul_div"; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)" 
-        if is_not_zero("?c")),
+    rw!("mul_div"; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)"),
 
     rw!("mul_div-rev"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
 
@@ -176,10 +173,10 @@ pub fn simple_example_rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
 
     rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-        if is_not_zero("?c")),
+        if is_gt_zero("?c")),
     
     rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
-        if is_not_zero("?c")),
+        if is_gt_zero("?c")),
     
     rw!("inv-exp"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
 ] }
