@@ -264,35 +264,16 @@ impl Analysis<Optimization> for Meta {
     }
 }
 
-pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
-    let var = var.parse().unwrap();
-    move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            *(n) != 0.0
-        } else {
-            true
-        }
-    }
-}
-
-pub fn is_not_one(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
-    let var = var.parse().unwrap();
-    move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            *(n) != 1.0
-        } else {
-            true
-        }
-    }
-}
-
 pub fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
         if let Some((n, _)) = &egraph[subst[var]].data.constant {
             (*n).into_inner() > 0.0
         } else {
-            true
+            if let Some(d) = &egraph[subst[var]].data.domain {
+                return domain::is_pos(*d);
+            }
+            return false;
         }
     }
 }
