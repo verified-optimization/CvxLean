@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
 
+use crate::domain; 
+use domain::Domain as Domain;
+
 use crate::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
@@ -17,16 +20,22 @@ fn make_basic(obj: &str, constrs: Vec<&str>) -> Minimization {
     };
 }
 
-fn print_steps_basic(obj: &str, constrs: Vec<&str>) {
+fn print_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: Vec<&str>) {
     let prob = make_basic(obj, constrs);
-    let domains = vec![];
+    let domains = 
+        domains.iter().map(|(s, d)| ((*s).to_string(), *d)).collect();
     let steps = get_steps(prob, domains, true);
     println!("{:?}", steps);
 }
 
+fn print_steps_basic(obj: &str, constrs: Vec<&str>) {
+    print_steps_with_domain(vec![], obj, constrs);
+}
+
 #[test]
 fn test_simple_example() {
-    print_steps_basic(
+    print_steps_with_domain(
+        vec![("x", Domain::Pos)],
         "0", 
         vec![
             "(le (div 1 (sqrt (var x))) (exp (var x)))"
