@@ -1,5 +1,5 @@
 use egg::{*};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use ordered_float::NotNan;
 
 use crate::domain;
