@@ -36,6 +36,9 @@ register_rewrite_map "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
 register_rewrite_map "le_sub_iff_add_le" ; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)" := 
   rw [le_sub_iff_add_le]
 
+register_rewrite_map "le_sub_iff_add_le-rev" ; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))" := 
+  rw [←le_sub_iff_add_le]
+
 register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" := 
   rw [div_le_iff (by positivity)]
 
@@ -51,14 +54,22 @@ register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" <=> "(le ?a ?b)" :=
 
 /- Field rules. -/
 
-register_rewrite_map "one_mul" ; "(mul 1 ?a)" <=> "?a" :=
-  norm_num
-
 register_rewrite_map "add_comm" ; "(add ?a ?b)" => "(add ?b ?a)" :=
   simp only [add_comm]
 
 register_rewrite_map "add_assoc" ; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))" :=
   simp only [add_assoc]
+
+#check sub_cancel
+
+register_rewrite_map "sub_self" ; "(sub ?a ?a)" => "0" :=
+  simp only [sub_self]
+
+register_rewrite_map "one_mul" ; "(mul 1 ?a)" <=> "?a" :=
+  norm_num
+
+register_rewrite_map "mul_zero" ; "(mul ?a 0)" => "0" :=
+  norm_num
 
 register_rewrite_map "mul_comm" ; "(mul ?a ?b)" => "(mul ?b ?a)" :=
   simp only [mul_comm]
@@ -91,7 +102,7 @@ register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b 
   simp only [←mul_div]
 
 register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
-  simp only [@div_self ℝ _ _ (by positivity)]
+  rw [@div_self ℝ _ _ (by positivity)]
 
 
 /- Power and square root rules. -/
