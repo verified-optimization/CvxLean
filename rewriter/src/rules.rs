@@ -4,6 +4,7 @@ use crate::optimization;
 use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
 use optimization::is_gt_zero as is_gt_zero;
+use optimization::is_not_zero as is_not_zero;
 use optimization::not_has_log as not_has_log;
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
@@ -119,6 +120,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul_div"; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)"),
 
     rw!("mul_div-rev"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
+
+    rw!("div_self"; "(div ?a ?a)" => "1" if is_not_zero("?a")),
 
 
     /* Power and square root rules. */
