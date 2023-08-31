@@ -18,7 +18,7 @@ def logEqLogConstr :=
     subject to
       h : exp x = exp x
 
-time_cmd equivalence logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr := by
+time_cmd equivalence logEqLogConstrRed/logEqLogConstrAuto : logEqLogConstr := by
   unfold logEqLogConstr
   convexify
 
@@ -35,7 +35,7 @@ def leSubIffAddLeConstr :=
     subject to
       h : x ≤ 1 - x
 
-time_cmd equivalence leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
+time_cmd equivalence leSubIffAddLeConstrRed/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
   unfold leSubIffAddLeConstr
   convexify
 
@@ -48,7 +48,7 @@ def leSubIffAddLeConstrRev :=
     subject to
       h : y + x ≤ x
 
-time_cmd equivalence leSubIffAddLeConstrRevRedAuto/leSubIffAddLeConstrRevAuto : leSubIffAddLeConstrRev := by
+time_cmd equivalence leSubIffAddLeConstrRevRed/leSubIffAddLeConstrRevAuto : leSubIffAddLeConstrRev := by
   unfold leSubIffAddLeConstrRev
   convexify
 
@@ -62,7 +62,7 @@ def divLeIffConstr :=
       hy : 0 < y
       h : x / y ≤ 1
   
-time_cmd equivalence divLeIffConstrRedAuto/divLeIffConstrAuto : divLeIffConstr := by
+time_cmd equivalence divLeIffConstrRed/divLeIffConstrAuto : divLeIffConstr := by
   unfold divLeIffConstr
   convexify
 
@@ -76,7 +76,7 @@ def divLeIffRevConstr :=
       hy : 0 < x
       h : x ≤ x * y
 
-time_cmd equivalence divLeIffRevConstrRedAuto/divLeIffRevConstrAuto : divLeIffRevConstr := by
+time_cmd equivalence divLeIffRevConstrRed/divLeIffRevConstrAuto : divLeIffRevConstr := by
   unfold divLeIffRevConstr
   convexify
 
@@ -91,7 +91,7 @@ def logLeLogConstr :=
       hy : 0 < y
       h : log x ≤ log y
 
-time_cmd equivalence logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr := by
+time_cmd equivalence logLeLogConstrRed/logLeLogConstrAuto : logLeLogConstr := by
   unfold logLeLogConstr
   convexify
 
@@ -104,7 +104,7 @@ def logLeLogRevConstr :=
     subject to 
       h : exp x ≤ exp y
 
-time_cmd equivalence logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRevConstr := by
+time_cmd equivalence logLeLogRevConstrRed/logLeLogRevConstrAuto : logLeLogRevConstr := by
   unfold logLeLogRevConstr
   convexify
 
@@ -121,7 +121,7 @@ def addCommObj :=
     subject to 
       h : 0 ≤ x
 
-time_cmd equivalence addCommObjRedAuto/addCommObjAuto : addCommObj := by
+time_cmd equivalence addCommObjRed/addCommObjAuto : addCommObj := by
   unfold addCommObj
   convexify
 
@@ -136,7 +136,7 @@ def addCommConstr :=
       h : 0 < x
       hx : x + (1 + x) ≤ 1
 
-time_cmd equivalence addCommConstrRedAuto/addCommConstrAuto : addCommConstr := by
+time_cmd equivalence addCommConstrRed/addCommConstrAuto : addCommConstr := by
   unfold addCommConstr
   convexify
 
@@ -150,7 +150,7 @@ def addAssocObj :=
     subject to 
       h : 0 ≤ x
 
-time_cmd equivalence addAssocObjRedAuto/addAssocObjAuto : addAssocObj := by
+time_cmd equivalence addAssocObjRed/addAssocObjAuto : addAssocObj := by
   unfold addAssocObj
   convexify
 
@@ -164,7 +164,7 @@ def addAssocConstr :=
     subject to 
       h : x + (x + 1) ≤ 1
 
-time_cmd equivalence addAssocConstrRedAuto/addAssocConstrAuto : addAssocConstr := by
+time_cmd equivalence addAssocConstrRed/addAssocConstrAuto : addAssocConstr := by
   unfold addAssocConstr
   convexify
 
@@ -177,7 +177,7 @@ def subSelfObj :=
     subject to 
       h : 0 ≤ x
 
-time_cmd equivalence subSelfObjRedAuto/subSelfObjAuto : subSelfObj := by
+time_cmd equivalence subSelfObjRed/subSelfObjAuto : subSelfObj := by
   unfold subSelfObj
   convexify
 
@@ -190,7 +190,7 @@ def subSelfConstr :=
     subject to 
       h : y ≤ x - x
 
-time_cmd equivalence subSelfConstrRedAuto/subSelfConstrAuto : subSelfConstr := by
+time_cmd equivalence subSelfConstrRed/subSelfConstrAuto : subSelfConstr := by
   unfold subSelfConstr
   convexify
 
@@ -203,7 +203,7 @@ def mulZeroObj :=
     subject to 
       h : 0 ≤ x
 
-time_cmd equivalence mulZeroObjRedAuto/mulZeroObjAuto : mulZeroObj := by
+time_cmd equivalence mulZeroObjRed/mulZeroObjAuto : mulZeroObj := by
   unfold mulZeroObj
   convexify
 
@@ -216,7 +216,7 @@ def mulZeroConstr :=
     subject to 
       h : y ≤ x * 0
 
-time_cmd equivalence mulZeroConstrRedAuto/mulZeroConstrAuto : mulZeroConstr := by
+time_cmd equivalence mulZeroConstrRed/mulZeroConstrAuto : mulZeroConstr := by
   unfold mulZeroConstr
   convexify
 
@@ -229,7 +229,7 @@ def oneMulObj :=
     subject to 
       h : 0 ≤ x
 
-time_cmd equivalence oneMulObjRedAuto/oneMulObjAuto : oneMulObj := by
+time_cmd equivalence oneMulObjRed/oneMulObjAuto : oneMulObj := by
   unfold oneMulObj
   convexify
 
@@ -242,7 +242,7 @@ def oneMulConstr :=
     subject to 
       h : 0 ≤ 1 * x
 
-time_cmd equivalence oneMulConstrRedAuto/oneMulConstrAuto : oneMulConstr := by
+time_cmd equivalence oneMulConstrRed/oneMulConstrAuto : oneMulConstr := by
   unfold oneMulConstr
   convexify
 
@@ -256,7 +256,7 @@ def oneMulRevObj :=
     subject to 
       h : 0 ≤ x
 
-time_cmd equivalence oneMulRevObjRedAuto/oneMulRevObjAuto : oneMulRevObj := by
+time_cmd equivalence oneMulRevObjRed/oneMulRevObjAuto : oneMulRevObj := by
   unfold oneMulRevObj
   convexify
 
@@ -270,15 +270,78 @@ def oneMulRevConstr :=
     subject to 
       h : 0 ≤ x + x
 
-time_cmd equivalence oneMulRevConstrRedAuto/oneMulRevConstrAuto : oneMulRevConstr := by
+time_cmd equivalence oneMulRevConstrRed/oneMulRevConstrAuto : oneMulRevConstr := by
   unfold oneMulRevConstr
   convexify
 
 #print oneMulRevConstrAuto
 
--- mul_comm
+-- mul_comm (obj)
 
--- mul_assoc
+def mulCommObj := 
+  optimization (x y : ℝ)
+    minimize (x * (y * (1 / x)) : ℝ)
+    subject to 
+      hx : 0 < x
+
+time_cmd equivalence mulCommObjRed/mulCommObjAuto : mulCommObj := by
+  unfold mulCommObj
+  convexify
+
+#print mulCommObjAuto
+
+-- mul_comm (constr)
+def mulCommConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      hx : 0 < x
+      h : x * (y * (1 / x)) ≤ 1
+
+time_cmd equivalence mulCommConstrRed/mulCommConstrAuto : mulCommConstr := by
+  unfold mulCommConstr
+  convexify
+
+#print mulCommConstrAuto
+
+-- mul_assoc (obj)
+def mulAssocObj := 
+  optimization (x : ℝ)
+    minimize (exp x * (exp x * 2) : ℝ)
+    subject to 
+      hx : 0 < x
+
+time_cmd reduction mulAssocObjRed/mulAssocObjAuto : mulAssocObj := by
+  unfold mulAssocObj
+  convexify
+
+#print mulAssocObjAuto
+
+-- mul_assoc (constr)
+def mulAssocConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      hx : 0 < x
+      h : exp x * (exp x * 2) ≤ 1
+
+time_cmd equivalence mulAssocConstrRed/mulAssocConstrAuto : mulAssocConstr := by
+  unfold mulAssocConstr
+  -- convexify
+  rfl
+
+-- The issue here is that log_mul is applied backwards but it applies in more than
+-- one place in the expression. Maybe it suffices to add log_mul-rev.
+-- example : ∀ (x : ℝ),
+--     0 < x →
+--       (log (OfScientific.ofScientific 2 true 0) ≤
+--           OfScientific.ofScientific 0 true 0 - (log (OfScientific.ofScientific 1 true 0) + log (exp x * exp x)) ↔
+--         log (OfScientific.ofScientific 2 true 0) ≤
+--           OfScientific.ofScientific 0 true 0 - log (OfScientific.ofScientific 1 true 0 * (exp x * exp x))) := by 
+--     intros;
+--     rw [←log_mul (by positivity) (by positivity)]
+
+-- #print mulAssocConstrAuto
 
 -- add_sub 
 
@@ -315,7 +378,7 @@ def expAddObj :=
     subject to 
       hx : 0 < x
 
-time_cmd reduction expAddObjRedAuto/expAddObjAuto : expAddObj := by
+time_cmd reduction expAddObjRed/expAddObjAuto : expAddObj := by
   unfold expAddObj
   convexify
 
@@ -328,7 +391,7 @@ def expAddConstr :=
       hy : 0 < y
       h : exp ((log x) + 2) ≤ 10
 
-time_cmd reduction expAddConstrRedAuto/expAddConstrAuto : expAddConstr := by
+time_cmd reduction expAddConstrRed/expAddConstrAuto : expAddConstr := by
   unfold expAddConstr
   convexify
 
@@ -347,7 +410,7 @@ def expNegEqOneDivRevObj :=
     subject to 
       h : 1 ≤ x
 
-time_cmd reduction expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
+time_cmd reduction expNegEqOneDivRevObjRed/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
   unfold expNegEqOneDivRevObj
   convexify
 

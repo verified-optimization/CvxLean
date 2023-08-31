@@ -60,8 +60,6 @@ register_rewrite_map "add_comm" ; "(add ?a ?b)" => "(add ?b ?a)" :=
 register_rewrite_map "add_assoc" ; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))" :=
   simp only [add_assoc]
 
-#check sub_cancel
-
 register_rewrite_map "sub_self" ; "(sub ?a ?a)" => "0" :=
   simp only [sub_self]
 
@@ -142,7 +140,7 @@ register_rewrite_map "log_mul" ; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))
   rw [Real.log_mul (by positivity) (by positivity)]
 
 register_rewrite_map "log_div" ; "(log (div ?a ?b))" => "(sub (log ?a) (log ?b))" :=
-  simp only [Real.log_div (by positivity) (by positivity)]
+  rw [Real.log_div (by positivity) (by positivity)]
 
 register_rewrite_map "log_exp" ; "(log (exp ?a))" => "?a" :=
   simp only [Real.log_exp]
