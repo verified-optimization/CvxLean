@@ -2,7 +2,6 @@ import CvxLean.Lib.Minimization
 import CvxLean.Lib.Missing.Real
 import CvxLean.Syntax.Minimization
 
-open Minimization
 
 variable {R D E F : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
@@ -12,7 +11,9 @@ variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
   r := min { h(x) | c_r(x) }
 -/
 
-structure MinEquiv where 
+namespace Minimization
+
+structure StrongEquivalence where 
   phi : D → E
   psi : E → D
   phi_feasibility : ∀ x, p.constraints x → q.constraints (phi x)
@@ -20,7 +21,7 @@ structure MinEquiv where
   psi_feasibility : ∀ y, q.constraints y → p.constraints (psi y)
   psi_optimality : ∀ y, q.constraints y → p.objFun (psi y) ≤ q.objFun y
 
-def MinEquiv.toFwd (E : MinEquiv p q) : Solution p → Solution q := 
+def StrongEquivalence.toFwd (E : StrongEquivalence p q) : Solution p → Solution q := 
   fun sol => {
     point := E.phi sol.point, 
     feasibility := E.phi_feasibility sol.point sol.feasibility, 
@@ -36,7 +37,7 @@ def MinEquiv.toFwd (E : MinEquiv p q) : Solution p → Solution q :=
       exact le_trans (le_trans h₁ h₂) h₃
   }
 
-def MinEquiv.toBwd (E : MinEquiv p q) : Solution q → Solution p := 
+def StrongEquivalence.toBwd (E : StrongEquivalence p q) : Solution q → Solution p := 
   fun sol => {
     point := E.psi sol.point,
     feasibility := E.psi_feasibility sol.point sol.feasibility,
@@ -52,7 +53,7 @@ def MinEquiv.toBwd (E : MinEquiv p q) : Solution q → Solution p :=
       exact le_trans (le_trans h₁ h₂) h₃
   }
 
-def MinEquiv.refl : MinEquiv p p := 
+def StrongEquivalence.refl : StrongEquivalence p p := 
   { phi := id, 
     psi := id,
     phi_feasibility := fun _ hx => hx,
@@ -60,7 +61,7 @@ def MinEquiv.refl : MinEquiv p p :=
     psi_feasibility := fun _ hy => hy,
     psi_optimality := fun _ _ => le_refl _ }
 
-def MinEquiv.symm (E : MinEquiv p q) : MinEquiv q p := 
+def StrongEquivalence.symm (E : StrongEquivalence p q) : StrongEquivalence q p := 
   { phi := E.psi, 
     psi := E.phi,
     phi_feasibility := E.psi_feasibility,
@@ -68,8 +69,8 @@ def MinEquiv.symm (E : MinEquiv p q) : MinEquiv q p :=
     psi_feasibility := E.phi_feasibility,
     psi_optimality := E.phi_optimality }
 
-def MinEquiv.trans (E₁ : MinEquiv p q) (E₂ : MinEquiv q r) : 
-  MinEquiv p r := 
+def StrongEquivalence.trans (E₁ : StrongEquivalence p q) (E₂ : StrongEquivalence q r) : 
+  StrongEquivalence p r := 
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
     phi_feasibility := fun x hx =>
@@ -91,8 +92,12 @@ def MinEquiv.trans (E₁ : MinEquiv p q) (E₂ : MinEquiv q r) :
   }
 
 instance : 
-  Trans (@MinEquiv R D E _) (@MinEquiv R E F _) (@MinEquiv R D F _) := 
-  { trans := fun E₁ E₂ => MinEquiv.trans _ _ _ E₁ E₂ }
+  Trans (@StrongEquivalence R D E _) (@StrongEquivalence R E F _) (@StrongEquivalence R D F _) := 
+  { trans := fun E₁ E₂ => StrongEquivalence.trans _ _ _ E₁ E₂ }
+
+end Minimization
+
+open Minimization
 
 -- NOTE(RFM): B for bundled. 
 
@@ -101,20 +106,20 @@ structure MinimizationB (R) [Preorder R] :=
   (prob : Minimization D R)
 
 def MinimizationB.equiv : MinimizationB R → MinimizationB R → Prop := 
-  fun p q => Nonempty (MinEquiv p.prob q.prob)
+  fun p q => Nonempty (StrongEquivalence p.prob q.prob)
 
 lemma MinimizationB.equiv_refl (p : MinimizationB R) : 
   MinimizationB.equiv p p :=
-  ⟨MinEquiv.refl _⟩
+  ⟨StrongEquivalence.refl _⟩
 
 lemma MinimizationB.equiv_symm {p q : MinimizationB R} : 
   MinimizationB.equiv p q → MinimizationB.equiv q p :=
-  fun ⟨E⟩ => ⟨@MinEquiv.symm R p.D q.D _ p.prob q.prob E⟩ 
+  fun ⟨E⟩ => ⟨@StrongEquivalence.symm R p.D q.D _ p.prob q.prob E⟩ 
 
 lemma MinimizationB.equiv_trans {p q r : MinimizationB R} : 
   MinimizationB.equiv p q → MinimizationB.equiv q r → MinimizationB.equiv p r :=
   fun ⟨E₁⟩ ⟨E₂⟩ => 
-    ⟨@MinEquiv.trans R p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
+    ⟨@StrongEquivalence.trans R p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
 
 instance : Setoid (MinimizationB R) := 
   { r := MinimizationB.equiv,
@@ -155,6 +160,7 @@ def delabMinimizationQ : Delab := do
   | _ => Alternative.failure
 
 end Delab
+
 
 /- Rewrites used in `convexify` under the `equivalence` command. -/
 namespace MinimizationQ
@@ -431,4 +437,3 @@ noncomputable def Ψ : Solution' p → Solution p :=
     let x := Classical.choose s
     let ⟨hxf, hxo⟩ := Classical.choose_spec s
     ⟨x, hxf, hxo⟩
-
