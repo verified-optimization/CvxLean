@@ -90,6 +90,9 @@ register_rewrite_map "mul_div" ; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)
 register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))" :=
   simp only [←mul_div]
 
+register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
+  simp only [@div_self ℝ _ _ (by positivity)]
+
 
 /- Power and square root rules. -/
 
@@ -125,7 +128,7 @@ register_rewrite_map "exp_neg_eq_one_div-rev" ; "(div 1 (exp ?a))" => "(exp (neg
   simp only [←Real.exp_neg_eq_one_div]
 
 register_rewrite_map "log_mul" ; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))" :=
-  simp only [Real.log_mul (by positivity) (by positivity)]
+  rw [Real.log_mul (by positivity) (by positivity)]
 
 register_rewrite_map "log_div" ; "(log (div ?a ?b))" => "(sub (log ?a) (log ?b))" :=
   simp only [Real.log_div (by positivity) (by positivity)]
