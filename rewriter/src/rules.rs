@@ -34,15 +34,15 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     // rw!("eq-div-one"; "(eq ?a ?b)" => "(eq (div ?a ?b) 1)" 
     //     if is_not_zero("?b") if is_not_one("?b")),
     
-    // NOTE(RFM): Acceptable because it can only be applied once.
     rw!("log_eq_log"; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" 
-        if is_gt_zero("?a") if is_gt_zero("?b") 
-        if not_has_log("?a") if not_has_log("?b")),
+        if is_gt_zero("?a") if is_gt_zero("?b")),
 
 
     /* Less than or equal rules. */
 
     rw!("le_sub_iff_add_le"; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)"),
+    
+    rw!("le_sub_iff_add_le-rev"; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))"),
 
     // rw!("le-add"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
 
@@ -76,14 +76,18 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Field rules. */
 
-    rw!("one_mul"; "(mul 1 ?a)" => "?a"),
-
-    rw!("one_mul-rev"; "?a" => "(mul 1 ?a)"),
-
     rw!("add_comm"; "(add ?a ?b)" => "(add ?b ?a)"), 
 
     rw!("add_assoc"; "(add (add ?a ?b) ?c)" => "(add ?a (add ?b ?c))"),
     
+    rw!("sub_self"; "(sub ?a ?a)" => "0"),
+
+    rw!("one_mul"; "(mul 1 ?a)" => "?a"),
+
+    rw!("one_mul-rev"; "?a" => "(mul 1 ?a)"),
+
+    rw!("mul_zero"; "(mul 0 ?a)" => "0"),
+
     rw!("mul_comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
 
     rw!("mul_assoc"; "(mul (mul ?a ?b) ?c)" => "(mul ?a (mul ?b ?c))"),
@@ -97,8 +101,6 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul_add"; "(mul ?a (add ?b ?c))" => "(add (mul ?a ?b) (mul ?a ?c))"),
     
     // rw!("mul-sub"; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mul ?a ?c))"),
-
-    // rw!("sub-self"; "(sub ?a ?a)" => "0"),
 
     rw!("mul_sub-rev"; "(sub (mul ?a ?b) (mul ?a ?c))" => 
         "(mul ?a (sub ?b ?c))"),

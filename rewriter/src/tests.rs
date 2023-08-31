@@ -32,6 +32,8 @@ fn print_steps_basic(obj: &str, constrs: Vec<&str>) {
     print_steps_with_domain(vec![], obj, constrs);
 }
 
+// Examples.
+
 #[test]
 fn test_simple_example() {
     print_steps_with_domain(
@@ -39,26 +41,6 @@ fn test_simple_example() {
         "0", 
         vec![
             "(le (div 1 (sqrt (var x))) (exp (var x)))"
-        ]);
-}
-
-#[test]
-fn test_log_le_log() {
-    print_steps_basic(
-        "0", 
-        vec![
-            "(le 1 (var x))",
-            "(le 1 (var y))",
-            "(le (log (var x)) (log (var y)))"
-        ]);
-}
-
-#[test]
-fn test_log_le_log_rev() {
-    print_steps_basic(
-        "0", 
-        vec![
-            "(le (exp (var x)) (exp (var y)))"
         ]);
 }
 
@@ -74,15 +56,7 @@ fn test_gp4() {
         ]);
 }
 
-#[test]
-fn test_exp_add() {
-    print_steps_with_domain(
-        vec![("x", Domain::Pos)],
-        "0",
-        vec![
-            "(le (exp (add (log (var x)) 2)) 1)"
-        ]);
-}
+// Cost function.
 
 #[test]
 fn test_cost_function_number_of_variable_occurences() {
@@ -110,6 +84,48 @@ fn test_cost_function_number_of_variable_occurences_3() {
             "(le (add (mul 2 (var x)) (mul 3 (var x))) 0)"
         ]);
 }
+
+// Rule-based tests.
+
+#[test]
+fn test_log_le_log() {
+    print_steps_basic(
+        "0", 
+        vec![
+            "(le 1 (var x))",
+            "(le 1 (var y))",
+            "(le (log (var x)) (log (var y)))"
+        ]);
+}
+
+#[test]
+fn test_sub_iff_add_le() {
+    print_steps_basic(
+        "0", 
+        vec![
+            "(le (add 1 (var x)) (var x))",
+        ])
+}
+
+#[test]
+fn test_log_le_log_rev() {
+    print_steps_basic(
+        "0", 
+        vec![
+            "(le (exp (var x)) (exp (var y)))"
+        ]);
+}
+
+#[test]
+fn test_exp_add() {
+    print_steps_with_domain(
+        vec![("x", Domain::Pos)],
+        "0",
+        vec![
+            "(le (exp (add (log (var x)) 2)) 1)"
+        ]);
+}
+
 
 // let s = "(add (var x) (var x))".to_string();
 // let s = "(prob 

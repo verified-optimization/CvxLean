@@ -28,9 +28,10 @@ time_cmd equivalence logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr :
 /- Less than or equal rules. -/
 
 -- le_sub_iff_add_le
+-- NOTE(RFM): This uses le_sub_iff_add_le because 2 * x is preferred over x + x.
 def leSubIffAddLeConstr := 
   optimization (x y : ℝ)
-    minimize (0 + 1 + 0 : ℝ)
+    minimize (0 : ℝ)
     subject to
       h : x ≤ 1 - x
 
@@ -38,7 +39,20 @@ time_cmd equivalence leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubI
   unfold leSubIffAddLeConstr
   convexify
 
-#check leSubIffAddLeConstrRedAuto
+#print leSubIffAddLeConstrAuto
+
+-- le_sub_iff_add_le-rev
+def leSubIffAddLeConstrRev := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      h : y + x ≤ x
+
+time_cmd equivalence leSubIffAddLeConstrRevRedAuto/leSubIffAddLeConstrRevAuto : leSubIffAddLeConstrRev := by
+  unfold leSubIffAddLeConstrRev
+  convexify
+
+#print leSubIffAddLeConstrRevAuto
 
 -- div_le_iff
 def divLeIffConstr := 
@@ -52,6 +66,8 @@ time_cmd equivalence divLeIffConstrRedAuto/divLeIffConstrAuto : divLeIffConstr :
   unfold divLeIffConstr
   convexify
 
+#print divLeIffConstrAuto
+
 -- div_le_iff-rev 
 def divLeIffRevConstr := 
   optimization (x y : ℝ)
@@ -63,6 +79,8 @@ def divLeIffRevConstr :=
 time_cmd equivalence divLeIffRevConstrRedAuto/divLeIffRevConstrAuto : divLeIffRevConstr := by
   unfold divLeIffRevConstr
   convexify
+
+#print divLeIffRevConstrAuto
 
 -- log_le_log
 def logLeLogConstr := 
@@ -77,6 +95,8 @@ time_cmd equivalence logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr :
   unfold logLeLogConstr
   convexify
 
+#print logLeLogConstrAuto
+
 -- log_le_log-rev
 def logLeLogRevConstr := 
   optimization (x y : ℝ)
@@ -88,17 +108,173 @@ time_cmd equivalence logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRe
   unfold logLeLogRevConstr
   convexify
 
+#print logLeLogRevConstrAuto
 
 
 /- Field rules -/
 
--- one_mul 
+-- add_comm (obj)
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+def addCommObj := 
+  optimization (x : ℝ)
+    minimize (x + (1 + x) : ℝ)
+    subject to 
+      h : 0 ≤ x
 
--- one_mul-rev 
+time_cmd equivalence addCommObjRedAuto/addCommObjAuto : addCommObj := by
+  unfold addCommObj
+  convexify
 
--- add_comm
+#print addCommObjAuto
 
--- add_assoc
+-- add_comm (constr)
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+def addCommConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : 0 < x
+      hx : x + (1 + x) ≤ 1
+
+time_cmd equivalence addCommConstrRedAuto/addCommConstrAuto : addCommConstr := by
+  unfold addCommConstr
+  convexify
+
+#print addCommConstrAuto
+
+-- add_assoc (obj)
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+def addAssocObj := 
+  optimization (x : ℝ)
+    minimize (x + (x + 1) : ℝ)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence addAssocObjRedAuto/addAssocObjAuto : addAssocObj := by
+  unfold addAssocObj
+  convexify
+
+#print addAssocObjAuto
+
+-- add_assoc (constr)
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+def addAssocConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : x + (x + 1) ≤ 1
+
+time_cmd equivalence addAssocConstrRedAuto/addAssocConstrAuto : addAssocConstr := by
+  unfold addAssocConstr
+  convexify
+
+#print addAssocConstrAuto
+
+-- sub_self (obj)
+def subSelfObj := 
+  optimization (x : ℝ)
+    minimize (x - x : ℝ)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence subSelfObjRedAuto/subSelfObjAuto : subSelfObj := by
+  unfold subSelfObj
+  convexify
+
+#print subSelfObjAuto
+
+-- sub_self (constr)
+def subSelfConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : y ≤ x - x
+
+time_cmd equivalence subSelfConstrRedAuto/subSelfConstrAuto : subSelfConstr := by
+  unfold subSelfConstr
+  convexify
+
+#print subSelfConstrAuto
+
+-- mul_zero (obj)
+def mulZeroObj := 
+  optimization (x : ℝ)
+    minimize (x * 0 : ℝ)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence mulZeroObjRedAuto/mulZeroObjAuto : mulZeroObj := by
+  unfold mulZeroObj
+  convexify
+
+#print mulZeroObjAuto
+
+-- mul_zero (constr)
+def mulZeroConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : y ≤ x * 0
+
+time_cmd equivalence mulZeroConstrRedAuto/mulZeroConstrAuto : mulZeroConstr := by
+  unfold mulZeroConstr
+  convexify
+
+#print mulZeroConstrAuto
+
+-- one_mul (obj)
+def oneMulObj := 
+  optimization (x : ℝ)
+    minimize (1 * x : ℝ)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence oneMulObjRedAuto/oneMulObjAuto : oneMulObj := by
+  unfold oneMulObj
+  convexify
+
+#print oneMulObjAuto
+
+-- one_mul (constr)
+def oneMulConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : 0 ≤ 1 * x
+
+time_cmd equivalence oneMulConstrRedAuto/oneMulConstrAuto : oneMulConstr := by
+  unfold oneMulConstr
+  convexify
+
+#print oneMulConstrAuto
+
+-- one_mul-rev (obj)
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+def oneMulRevObj := 
+  optimization (x : ℝ)
+    minimize (x + x : ℝ)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence oneMulRevObjRedAuto/oneMulRevObjAuto : oneMulRevObj := by
+  unfold oneMulRevObj
+  convexify
+
+#print oneMulRevObjAuto
+
+-- one_mul-rev (constr)
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+def oneMulRevConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : 0 ≤ x + x
+
+time_cmd equivalence oneMulRevConstrRedAuto/oneMulRevConstrAuto : oneMulRevConstr := by
+  unfold oneMulRevConstr
+  convexify
+
+#print oneMulRevConstrAuto
 
 -- mul_comm
 
