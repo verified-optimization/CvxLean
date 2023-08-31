@@ -95,6 +95,35 @@ instance :
   Trans (@StrongEquivalence R D E _) (@StrongEquivalence R E F _) (@StrongEquivalence R D F _) := 
   { trans := fun E₁ E₂ => StrongEquivalence.trans _ _ _ E₁ E₂ }
 
+
+def optimal {D R} [Preorder R] (p : Minimization D R) (x : FeasPoint p) : Prop :=
+∀ y : p.FeasPoint, p.objFun x.point ≤ p.objFun y.point
+
+structure Equivalence where 
+  phi : FeasPoint p → FeasPoint q
+  psi : FeasPoint q → FeasPoint p 
+  phi_optimality : ∀ x, optimal p x → optimal q (phi x)
+  psi_optimality : ∀ x, optimal q x → optimal p (psi x)
+
+def StrongEquivalence.toEquivalence (E : StrongEquivalence p q) : Equivalence p q := 
+  { phi := fun x => ⟨E.phi x.point, E.phi_feasibility x.point x.feasibility⟩,
+    psi := fun x => ⟨E.psi x.point, E.psi_feasibility x.point x.feasibility⟩,
+    phi_optimality := fun x hx y => by {
+      have h₁ := E.phi_optimality x.point x.feasibility
+      let psi_y : p.FeasPoint := ⟨E.psi y.point, E.psi_feasibility y.point y.feasibility⟩
+      have h₂ := hx psi_y
+      have h₃ := E.psi_optimality y.point y.feasibility
+      exact le_trans (le_trans h₁ h₂) h₃
+    },
+    psi_optimality := fun x hx y => by {
+      have h₁ := E.psi_optimality x.point x.feasibility
+      let phi_y : q.FeasPoint := ⟨E.phi y.point, E.phi_feasibility y.point y.feasibility⟩
+      have h₂ := hx phi_y
+      have h₃ := E.phi_optimality y.point y.feasibility;
+      exact le_trans (le_trans h₁ h₂) h₃
+    }
+  }
+
 end Minimization
 
 open Minimization
@@ -164,6 +193,27 @@ end Delab
 
 /- Rewrites used in `convexify` under the `equivalence` command. -/
 namespace MinimizationQ
+
+#check Real.log_le_log
+
+def map_log_objective {f : D → ℝ} {cs : D → Prop} 
+  (h : ∀ x, cs x → f x > 0) : 
+  Equivalence { objFun := f, constraints := cs } { objFun := log ∘ f, constraints := cs } := {
+    phi := fun ⟨x, f⟩ => ⟨x, f⟩,
+    psi := fun ⟨x, f⟩ => ⟨x, f⟩,
+    phi_optimality := by {
+      intros h hx y
+      have hle := hx ⟨y.point, y.feasibility⟩
+      simp [optimal] at hx hle ⊢ 
+      sorry
+    }
+    psi_optimality := by {
+      intros h hx y
+      have hle := hx ⟨y.point, y.feasibility⟩
+      simp [optimal] at hx hle ⊢ 
+      sorry
+    }
+  }
 
 section Rewrites
 
