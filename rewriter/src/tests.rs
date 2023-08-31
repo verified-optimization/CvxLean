@@ -76,7 +76,8 @@ fn test_gp4() {
 
 #[test]
 fn test_exp_add() {
-    print_steps_basic(
+    print_steps_with_domain(
+        vec![("x", Domain::Pos)],
         "0",
         vec![
             "(le (exp (add (log (var x)) 2)) 1)"
