@@ -24,9 +24,10 @@ time_cmd equivalence logEqLogConstrRedAuto/logEqLogConstrAuto : logEqLogConstr :
 
 #print logEqLogConstrAuto
 
+
 /- Less than or equal rules. -/
 
--- le_sub_iff_add_le (TODO)
+-- le_sub_iff_add_le
 def leSubIffAddLeConstr := 
   optimization (x y : ℝ)
     minimize (0 + 1 + 0 : ℝ)
@@ -39,9 +40,29 @@ time_cmd equivalence leSubIffAddLeConstrRedAuto/leSubIffAddLeConstrAuto : leSubI
 
 #check leSubIffAddLeConstrRedAuto
 
--- div_le_iff (TODO)
+-- div_le_iff
+def divLeIffConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hy : 0 < y
+      h : x / y ≤ 1
+  
+time_cmd equivalence divLeIffConstrRedAuto/divLeIffConstrAuto : divLeIffConstr := by
+  unfold divLeIffConstr
+  convexify
 
--- div_le_one-rev (TODO)
+-- div_le_iff-rev 
+def divLeIffRevConstr := 
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hy : 0 < x
+      h : x ≤ x * y
+
+time_cmd equivalence divLeIffRevConstrRedAuto/divLeIffRevConstrAuto : divLeIffRevConstr := by
+  unfold divLeIffRevConstr
+  convexify
 
 -- log_le_log
 def logLeLogConstr := 
@@ -56,7 +77,7 @@ time_cmd equivalence logLeLogConstrRedAuto/logLeLogConstrAuto : logLeLogConstr :
   unfold logLeLogConstr
   convexify
 
--- log_le_log-rev (TODO)
+-- log_le_log-rev
 def logLeLogRevConstr := 
   optimization (x y : ℝ)
     minimize (0 : ℝ)
@@ -71,14 +92,58 @@ time_cmd equivalence logLeLogRevConstrRedAuto/logLeLogRevConstrAuto : logLeLogRe
 
 /- Field rules -/
 
+-- one_mul 
+
+-- one_mul-rev 
+
+-- add_comm
+
+-- add_assoc
+
+-- mul_comm
+
+-- mul_assoc
+
+-- add_sub 
+
+-- add_mul
+
+-- add_mul-rev
+
+-- mul_add
+
+-- mul_sub-rev
+
+-- add_div 
+
+-- mul_div 
+
+-- mul_div-rev
+
+-- div_self
+
 
 /- Power and square root rules. -/
 
+-- div_pow_eq_mul_pow_neg
+
+-- sqrt_eq_rpow
 
 
 /- Exponential and logarithm rules. -/
 
--- exp_add
+-- exp_add (obj)
+def expAddObj := 
+  optimization (x y : ℝ)
+    minimize (exp ((log x) + 2) : ℝ)
+    subject to 
+      hx : 0 < x
+
+time_cmd reduction expAddObjRedAuto/expAddObjAuto : expAddObj := by
+  unfold expAddObj
+  convexify
+
+-- exp_add (constr)
 def expAddConstr := 
   optimization (x y : ℝ)
     minimize (0 : ℝ)
@@ -91,9 +156,15 @@ time_cmd reduction expAddConstrRedAuto/expAddConstrAuto : expAddConstr := by
   unfold expAddConstr
   convexify
 
--- exp_add
+-- exp_sub 
 
--- exp_neg_eq_one_div-rev
+-- exp_sub-rev
+
+-- exp_mul
+
+-- exp_mul-rev
+
+-- exp_neg_eq_one_div-rev (obj)
 def expNegEqOneDivRevObj := 
   optimization (x : ℝ)
     minimize (1 / (exp x))
@@ -104,87 +175,21 @@ time_cmd reduction expNegEqOneDivRevObjRedAuto/expNegEqOneDivRevObjAuto : expNeg
   unfold expNegEqOneDivRevObj
   convexify
 
--- exp_neg_eq_one_div-rev
+#print expNegEqOneDivRevObjAuto
+
+-- exp_neg_eq_one_div-rev (constr)
 def expNegEqOneDivRevConstr := 
   optimization (x : ℝ)
     minimize (0 : ℝ)
     subject to 
       h : 1 / (exp x) ≤ 1
 
-def leMulRevConstr := False
+-- exp_log 
 
-def logExpObj := False 
+-- log_mul 
 
-def logExpConstr := False
+-- log_div
 
-def logDivObj := False 
-
-def logDivConstr := False
-
-def logMulObj := False 
-
-def powExpObj := False 
-
-def powExpConstr := False 
-
-def divExpObj := False 
-
-def divExpConstr := False 
-
-def addAssocObj := False 
-
-def addAssocConstr := False 
-
-def addMulObj := False
-
-def addMulConstr := False
-
-def addSubObj := False 
-
-def addSubConstr := False 
-
-def divAddObj := False 
-
-def divAddConstr := False 
-
-def subMulLeftObj := False 
-
-def subMulLeftConstr := False
-
-def divPowObj := False
-
-def divPowConstr := False
-
-def mulCommObj := False 
-
-def mulCommConstr := False 
-
-def mulAssocObj := False 
-
-def mulAssocConstr := False
-
-def mulAddObj := False
-
-def mulAddConstr := False
-
-def addCommObj := False
-
-def addCommConstr := False
-
-def mulDivObj := False 
-
-def mulDivConstr := False
-
-def divMulObj := False
-
-def divMulConstr := False
-
-def sqrtEqRPowObj := False
-
-def sqrtEqRPowConstr := False
-
-def leDivOneConstr := False 
-
-def mapObjfunLogObj := False
+-- log_exp
 
 end Rules 
