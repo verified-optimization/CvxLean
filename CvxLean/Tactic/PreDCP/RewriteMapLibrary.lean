@@ -25,13 +25,10 @@ lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
 
 namespace CvxLean
 
-macro "posimptivity" : tactic => 
-  `(tactic| try { norm_num } <;> try { positivity })
-
 /- Equality rules. -/
 
 register_rewrite_map "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
-  rw [Real.log_eq_log (by posimptivity) (by posimptivity)]
+  rw [Real.log_eq_log (by positivity) (by positivity)]
 
 
 /- Less than or equal rules. -/
@@ -46,10 +43,10 @@ register_rewrite_map "div_le_iff-rev" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b
   rw [←div_le_iff (by positivity)]
 
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
-  rw [←div_le_one (by posimptivity)]
+  rw [←div_le_one (by positivity)]
 
 register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" <=> "(le ?a ?b)" :=
-  rw [Real.log_le_log (by posimptivity) (by posimptivity)]
+  rw [Real.log_le_log (by positivity) (by positivity)]
 
 
 /- Field rules. -/
@@ -98,7 +95,7 @@ register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b 
 
 -- NOTE(RFM): This was conv in (_ / (_ ^  _)).
 register_rewrite_map "div_pow_eq_mul_pow_neg" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
-  simp only [Real.div_pow_eq_mul_pow_neg (by posimptivity)]
+  simp only [Real.div_pow_eq_mul_pow_neg (by positivity)]
 
 register_rewrite_map "sqrt_eq_rpow" ; "(sqrt ?a)" => "(pow ?a 0.5)" :=
   simp only [Real.sqrt_eq_rpow]
@@ -128,12 +125,15 @@ register_rewrite_map "exp_neg_eq_one_div-rev" ; "(div 1 (exp ?a))" => "(exp (neg
   simp only [←Real.exp_neg_eq_one_div]
 
 register_rewrite_map "log_mul" ; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))" :=
-  simp only [Real.log_mul (by posimptivity) (by posimptivity)]
+  simp only [Real.log_mul (by positivity) (by positivity)]
 
 register_rewrite_map "log_div" ; "(log (div ?a ?b))" => "(sub (log ?a) (log ?b))" :=
-  simp only [Real.log_div (by posimptivity) (by posimptivity)]
+  simp only [Real.log_div (by positivity) (by positivity)]
 
 register_rewrite_map "log_exp" ; "(log (exp ?a))" => "?a" :=
   simp only [Real.log_exp]
+
+register_rewrite_map "exp_log" ; "(exp (log ?a))" => "?a" :=
+  simp only [Real.exp_log (by positivity)]
 
 end CvxLean
