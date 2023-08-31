@@ -74,6 +74,10 @@ pub fn option_is_nonneg(d:Option<Domain>) -> bool {
     return d.map_or(false, is_nonneg);
 }
 
+pub fn is_nonzero(d:Domain) -> bool {
+    return d <= Domain::Pos || d <= Domain::Neg;
+}
+
 pub fn is_nonpos(d:Domain) -> bool {
     return d == Domain::NonPos || d == Domain::Zero || is_neg(d);
 }
