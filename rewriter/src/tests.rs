@@ -85,6 +85,17 @@ fn test_cost_function_number_of_variable_occurences_3() {
         ]);
 }
 
+// Position. 
+
+#[test]
+fn test_position() {
+    print_steps_basic(
+        "0",
+        vec![
+            "(le (mul (mul 1 1) (mul 1 (mul 1 1))) 1)"
+        ]);
+}
+
 // Rule-based tests.
 
 #[test]

@@ -1,6 +1,7 @@
 use egg::{*};
 use std::fs;
 use std::time::Duration;
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::domain;
@@ -19,44 +20,65 @@ use rules::rules as rules;
 use crate::cost;
 use cost::DCPCost as DCPCost;
 
-#[derive(Serialize, Debug)]
-enum Direction {
-    Forward, 
-    Backward
-}
+use crate::explain_utils;
+use explain_utils::Direction as Direction;
+use explain_utils::make_rule_table as make_rule_table;
+use explain_utils::get_rewrite_name_and_direction as get_rewrite_name_and_direction;
+use explain_utils::flat_term_check_rewrite_no_failure as flat_term_check_rewrite_no_failure;
+
+pub type Rewrite = egg::Rewrite<Optimization, Meta>;
 
 #[derive(Serialize, Debug)]
 pub struct Step {
     rewrite_name : String,
     direction : Direction,
     location : String,
+    position : u32,
     expected_term : String,
 }
 
-fn get_step_aux(term: &FlatTerm<Optimization>, location: &mut Option<String>, expected_term: &mut Option<String>) -> Option<Step> {
-    match term.node {
+fn get_step_aux(
+    rewrite: &Rewrite,
+    direction: Direction, 
+    current: &FlatTerm<Optimization>, 
+    next: &FlatTerm<Optimization>, 
+    location: &mut Option<String>, 
+    position : &mut u32, 
+    expected_term: &mut Option<String>) -> 
+    Option<Step> {
+    match next.node {
         Optimization::ObjFun(_) => {
             *location = Some("objFun".to_string());
 
-            let o_s = term.children[0].get_recexpr().to_string();
+            let o_s = next.children[0].get_recexpr().to_string();
             *expected_term = Some(o_s);
         },
         Optimization::Constr([_, _]) => {
-            let h_s = term.children[0].get_recexpr().to_string();
+            let h_s = next.children[0].get_recexpr().to_string();
             *location = Some(h_s);
 
-            let c_s = term.children[1].get_recexpr().to_string();
+            let c_s = next.children[1].get_recexpr().to_string();
             *expected_term = Some(c_s);
         }
         _ => ()
     }
 
-    if let Some(rule_name) = &term.backward_rule {
+    // Check if it matches to update the position.
+    let matches = match direction {
+        Direction::Forward => flat_term_check_rewrite_no_failure(current, next, rewrite),
+        Direction::Backward => flat_term_check_rewrite_no_failure(next, current, rewrite),
+    };
+    if matches {
+        *position += 1;
+    }
+
+    if let Some(rule_name) = &next.backward_rule {
         if location.is_some() && expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 
                 direction: Direction::Backward,
                 location: location.clone().unwrap(),
+                position: position.clone(),
                 expected_term: expected_term.clone().unwrap(),
             });
         } else {
@@ -64,12 +86,13 @@ fn get_step_aux(term: &FlatTerm<Optimization>, location: &mut Option<String>, ex
         }
     }
 
-    if let Some(rule_name) = &term.forward_rule {
+    if let Some(rule_name) = &next.forward_rule {
         if location.is_some() && expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 
                 direction: Direction::Forward,
                 location: location.clone().unwrap(),
+                position: position.clone(),
                 expected_term: expected_term.clone().unwrap(),
             });
         } else {
@@ -77,12 +100,13 @@ fn get_step_aux(term: &FlatTerm<Optimization>, location: &mut Option<String>, ex
         }
     }
 
-    if term.node.is_leaf() {
+    if next.node.is_leaf() {
         return None
     } else {
-        for child in &term.children {
+        let children = current.children.iter().zip(next.children.iter());
+        for (left, right) in children {
             let child_res = 
-                get_step_aux(child, location, expected_term);
+                get_step_aux(rewrite, direction, left, right, location, position, expected_term);
             if child_res.is_some() {
                 return child_res;
             }
@@ -92,8 +116,16 @@ fn get_step_aux(term: &FlatTerm<Optimization>, location: &mut Option<String>, ex
     return None;
 }
 
-fn get_step(term: &FlatTerm<Optimization>) -> Option<Step> {
-    return get_step_aux(term, &mut None, &mut None);
+fn get_step(rule_table: &HashMap<Symbol, &Rewrite>, current: &FlatTerm<Optimization>, next: &FlatTerm<Optimization>) -> Option<Step> {
+    if let Some((rewrite_name, direction)) = get_rewrite_name_and_direction(next) {
+        if let Some(rewrite) = rule_table.get(&rewrite_name) {
+            let location = &mut None;
+            let position = &mut 0;
+            let expected_term = &mut None;
+            return get_step_aux(rewrite, direction, current, next, location, position, expected_term);
+        }
+    }
+    return None;
 }
 
 #[derive(Deserialize, Debug)]
@@ -161,13 +193,17 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
     let flat_explanation : &FlatExplanation<Optimization> =
         explanation.make_flat_explanation();
     
+    let rules_copy = rules().clone();
+    let rule_table = make_rule_table(&rules_copy);
+
     let mut res = Vec::new();
     if best_cost.0 <= Curvature::Convex {
-        for i in 0..flat_explanation.len() {
-            let expl = &flat_explanation[i];
-            match get_step(expl) {
+        for i in 0..flat_explanation.len() - 1 {
+            let current = &flat_explanation[i];
+            let next = &flat_explanation[i + 1];
+            match get_step(&rule_table, current, next) {
                 Some(step) => { res.push(step); }
-                None => {}
+                None => { println!("Nothing {}.", i); }
             }
         }
     } else {

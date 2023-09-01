@@ -12,6 +12,8 @@ mod rules;
 
 mod cost;
 
+mod explain_utils;
+
 mod extract;
 use extract::Minimization as Minimization;
 use extract::Step as Step;
