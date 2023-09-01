@@ -13,6 +13,9 @@ variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 
 namespace Minimization
 
+section StrongEquivalence 
+
+/-- Notion of equivalence used by the DCP procedure. -/
 structure StrongEquivalence where 
   phi : D → E
   psi : E → D
@@ -95,34 +98,61 @@ instance :
   Trans (@StrongEquivalence R D E _) (@StrongEquivalence R E F _) (@StrongEquivalence R D F _) := 
   { trans := fun E₁ E₂ => StrongEquivalence.trans _ _ _ E₁ E₂ }
 
+end StrongEquivalence
+
+
+section Equivalence
 
 def optimal {D R} [Preorder R] (p : Minimization D R) (x : FeasPoint p) : Prop :=
-∀ y : p.FeasPoint, p.objFun x.point ≤ p.objFun y.point
+  ∀ y : p.FeasPoint, p.objFun x.point ≤ p.objFun y.point
 
+/-- Regular notion of equivalence between optimization problems. -/
 structure Equivalence where 
   phi : FeasPoint p → FeasPoint q
   psi : FeasPoint q → FeasPoint p 
   phi_optimality : ∀ x, optimal p x → optimal q (phi x)
   psi_optimality : ∀ x, optimal q x → optimal p (psi x)
 
+def Equivalence.refl : Equivalence p p := 
+  { phi := id, 
+    psi := id,
+    phi_optimality := fun _ hx => hx,
+    psi_optimality := fun _ hx => hx }
+
+def Equivalence.symm (E : Equivalence p q) : Equivalence q p :=
+  { phi := E.psi, 
+    psi := E.phi,
+    phi_optimality := E.psi_optimality,
+    psi_optimality := E.phi_optimality }
+
+def Equivalence.trans  (E₁ : Equivalence p q) (E₂ : Equivalence q r) : Equivalence p r := 
+  { phi := E₂.phi ∘ E₁.phi,
+    psi := E₁.psi ∘ E₂.psi,
+    phi_optimality := fun x hx => E₂.phi_optimality (E₁.phi x) (E₁.phi_optimality x hx),
+    psi_optimality := fun y hy => E₁.psi_optimality (E₂.psi y) (E₂.psi_optimality y hy) }
+
+instance : 
+  Trans (@Equivalence R D E _) (@Equivalence R E F _) (@Equivalence R D F _) := 
+  { trans := fun E₁ E₂ => Equivalence.trans _ _ _ E₁ E₂ }
+
+end Equivalence
+
+variable {p q}
+
+/-- As expected, an equivalence can be built from a strong equivalence. -/
 def StrongEquivalence.toEquivalence (E : StrongEquivalence p q) : Equivalence p q := 
   { phi := fun x => ⟨E.phi x.point, E.phi_feasibility x.point x.feasibility⟩,
     psi := fun x => ⟨E.psi x.point, E.psi_feasibility x.point x.feasibility⟩,
-    phi_optimality := fun x hx y => by {
+    phi_optimality := fun x hx y =>
       have h₁ := E.phi_optimality x.point x.feasibility
-      let psi_y : p.FeasPoint := ⟨E.psi y.point, E.psi_feasibility y.point y.feasibility⟩
-      have h₂ := hx psi_y
+      have h₂ := hx ⟨E.psi y.point, E.psi_feasibility y.point y.feasibility⟩
       have h₃ := E.psi_optimality y.point y.feasibility
-      exact le_trans (le_trans h₁ h₂) h₃
-    },
-    psi_optimality := fun x hx y => by {
+      le_trans (le_trans h₁ h₂) h₃,
+    psi_optimality := fun x hx y =>
       have h₁ := E.psi_optimality x.point x.feasibility
-      let phi_y : q.FeasPoint := ⟨E.phi y.point, E.phi_feasibility y.point y.feasibility⟩
-      have h₂ := hx phi_y
+      have h₂ := hx ⟨E.phi y.point, E.phi_feasibility y.point y.feasibility⟩
       have h₃ := E.phi_optimality y.point y.feasibility;
-      exact le_trans (le_trans h₁ h₂) h₃
-    }
-  }
+      le_trans (le_trans h₁ h₂) h₃ }
 
 end Minimization
 
@@ -135,20 +165,20 @@ structure MinimizationB (R) [Preorder R] :=
   (prob : Minimization D R)
 
 def MinimizationB.equiv : MinimizationB R → MinimizationB R → Prop := 
-  fun p q => Nonempty (StrongEquivalence p.prob q.prob)
+  fun p q => Nonempty (Minimization.Equivalence p.prob q.prob)
 
 lemma MinimizationB.equiv_refl (p : MinimizationB R) : 
   MinimizationB.equiv p p :=
-  ⟨StrongEquivalence.refl _⟩
+  ⟨Minimization.Equivalence.refl _⟩
 
 lemma MinimizationB.equiv_symm {p q : MinimizationB R} : 
   MinimizationB.equiv p q → MinimizationB.equiv q p :=
-  fun ⟨E⟩ => ⟨@StrongEquivalence.symm R p.D q.D _ p.prob q.prob E⟩ 
+  fun ⟨E⟩ => ⟨@Minimization.Equivalence.symm R p.D q.D _ p.prob q.prob E⟩ 
 
 lemma MinimizationB.equiv_trans {p q r : MinimizationB R} : 
   MinimizationB.equiv p q → MinimizationB.equiv q r → MinimizationB.equiv p r :=
   fun ⟨E₁⟩ ⟨E₂⟩ => 
-    ⟨@StrongEquivalence.trans R p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
+    ⟨@Minimization.Equivalence.trans R p.D q.D r.D _ p.prob q.prob r.prob E₁ E₂⟩   
 
 instance : Setoid (MinimizationB R) := 
   { r := MinimizationB.equiv,
@@ -194,33 +224,33 @@ end Delab
 /- Rewrites used in `convexify` under the `equivalence` command. -/
 namespace MinimizationQ
 
-#check Real.log_le_log
+section Maps
 
-def map_log_objective {f : D → ℝ} {cs : D → Prop} 
+noncomputable def map_log_objective {f : D → ℝ} {cs : D → Prop} 
   (h : ∀ x, cs x → f x > 0) : 
-  Equivalence { objFun := f, constraints := cs } { objFun := log ∘ f, constraints := cs } := {
-    phi := fun ⟨x, f⟩ => ⟨x, f⟩,
+  {| f, cs |} = {| fun x => (Real.log (f x)), cs |} := 
+  Quotient.sound <| Nonempty.intro <| 
+  { phi := fun ⟨x, f⟩ => ⟨x, f⟩,
     psi := fun ⟨x, f⟩ => ⟨x, f⟩,
-    phi_optimality := by {
-      intros h hx y
-      have hle := hx ⟨y.point, y.feasibility⟩
-      simp [optimal] at hx hle ⊢ 
-      sorry
-    }
-    psi_optimality := by {
-      intros h hx y
-      have hle := hx ⟨y.point, y.feasibility⟩
-      simp [optimal] at hx hle ⊢ 
-      sorry
-    }
-  }
+    phi_optimality := fun x hx y =>
+      have hfxlefy := hx ⟨y.point, y.feasibility⟩
+      have hfxpos := h x.point x.feasibility
+      have hfypos := h y.point y.feasibility
+      (Real.log_le_log hfxpos hfypos).mpr hfxlefy
+    psi_optimality := fun x hx y =>
+      have hlogfxlelogfy := hx ⟨y.point, y.feasibility⟩
+      have hfxpos := h x.point x.feasibility
+      have hfypos := h y.point y.feasibility
+      (Real.log_le_log hfxpos hfypos).mp hlogfxlelogfy  }
+
+end Maps
 
 section Rewrites
 
 def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop} 
   (hrw : ∀ x, cs x → f x = g x) :
   {| f, cs |} = {| g, cs |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun _ hx => hx
@@ -232,7 +262,7 @@ def rewrite_constraint_1 {D R} [Preorder R] {c1 c1' : D → Prop} {cs : D → Pr
   (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) :
   {| f, fun x => c1  x ∧ cs x |} = 
   {| f, fun x => c1' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.2] at hx; exact hx
@@ -244,7 +274,7 @@ def rewrite_constraint_1_last {D R} [Preorder R] {c1 c1' : D → Prop} {f : D �
   (hrw : ∀ x, (c1 x ↔ c1' x)) :
   {| f, fun x => c1  x |} =
   {| f, fun x => c1' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x] at hx; exact hx
@@ -256,7 +286,7 @@ def rewrite_constraint_2 {D R} [Preorder R] {c1 c2 c2' : D → Prop} {cs : D →
   (hrw : ∀ x, c1 x → cs x → (c2 x ↔ c2' x)) :
   {| f, fun x => c1 x ∧ c2  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.2] at hx; exact hx
@@ -268,7 +298,7 @@ def rewrite_constraint_2_last {D R} [Preorder R] {c1 c2 c2' : D → Prop} {f : D
   (hrw : ∀ x, c1 x → (c2 x ↔ c2' x)) :
   {| f, fun x => c1 x ∧ c2  x |} = 
   {| f, fun x => c1 x ∧ c2' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1] at hx; exact hx
@@ -280,7 +310,7 @@ def rewrite_constraint_3 {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {cs : D 
   (hrw : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.2] at hx; exact hx
@@ -292,7 +322,7 @@ def rewrite_constraint_3_last {D R} [Preorder R] {c1 c2 c3 c3' : D → Prop} {f 
   (hrw : ∀ x, c1 x → c2 x → (c3 x ↔ c3' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1] at hx; exact hx
@@ -304,7 +334,7 @@ def rewrite_constraint_4 {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} {cs :
   (hrw : ∀ x, c1 x → c2 x → c3 x → cs x → (c4 x ↔ c4' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.2] at hx; exact hx
@@ -316,7 +346,7 @@ def rewrite_constraint_4_last {D R} [Preorder R] {c1 c2 c3 c4 c4' : D → Prop} 
   (hrw : ∀ x, c1 x → c2 x → c3 x → (c4 x ↔ c4' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1] at hx; exact hx
@@ -328,7 +358,7 @@ def rewrite_constraint_5 {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Prop} {c
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → cs x → (c5 x ↔ c5' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.2] at hx; exact hx
@@ -340,7 +370,7 @@ def rewrite_constraint_5_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c5' : D → Pro
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → (c5 x ↔ c5' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1] at hx; exact hx
@@ -352,7 +382,7 @@ def rewrite_constraint_6 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → Prop}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → cs x → (c6 x ↔ c6' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.2] at hx; exact hx
@@ -364,7 +394,7 @@ def rewrite_constraint_6_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c6' : D → 
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → (c6 x ↔ c6' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1] at hx; exact hx
@@ -376,7 +406,7 @@ def rewrite_constraint_7 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D → Pr
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → cs x → (c7 x ↔ c7' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.2] at hx; exact hx
@@ -388,7 +418,7 @@ def rewrite_constraint_7_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D �
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → (c7 x ↔ c7' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx
@@ -400,7 +430,7 @@ def rewrite_constraint_8 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D →
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx
@@ -412,7 +442,7 @@ def rewrite_constraint_8_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : 
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → (c8 x ↔ c8' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1] at hx; exact hx
@@ -424,7 +454,7 @@ def rewrite_constraint_9 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D 
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → cs x → (c9 x ↔ c9' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx
@@ -436,7 +466,7 @@ def rewrite_constraint_9_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9'
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → (c9 x ↔ c9' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1] at hx; exact hx
@@ -448,7 +478,7 @@ def rewrite_constraint_10 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → cs x → (c10 x ↔ c10' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10  x ∧ cs x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x ∧ cs x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx
@@ -460,7 +490,7 @@ def rewrite_constraint_10_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c1
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → (c10 x ↔ c10' x)) :
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10  x |} = 
   {| f, fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x |} :=
-  Quotient.sound <| Nonempty.intro <|
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
   { phi := id, 
     psi := id,
     phi_feasibility := fun x hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1] at hx; exact hx
