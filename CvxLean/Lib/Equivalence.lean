@@ -125,7 +125,7 @@ def Equivalence.symm (E : Equivalence p q) : Equivalence q p :=
     phi_optimality := E.psi_optimality,
     psi_optimality := E.phi_optimality }
 
-def Equivalence.trans  (E₁ : Equivalence p q) (E₂ : Equivalence q r) : Equivalence p r := 
+def Equivalence.trans (E₁ : Equivalence p q) (E₂ : Equivalence q r) : Equivalence p r := 
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
     phi_optimality := fun x hx => E₂.phi_optimality (E₁.phi x) (E₁.phi_optimality x hx),
@@ -501,19 +501,3 @@ def rewrite_constraint_10_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c1
 end Rewrites
 
 end MinimizationQ
-
--- NOTE(RFM): Experiment with Props.
-
-def Solution' : Prop := 
-  ∃ point : D, 
-      p.constraints point 
-    ∧ ∀ y : p.FeasPoint, p.objFun point ≤ p.objFun y.point
-
-def Φ : Solution p → Solution' p := 
-  fun ⟨x, hxf, hxo⟩ => ⟨x, hxf, hxo⟩ 
-
-noncomputable def Ψ : Solution' p → Solution p := 
-  fun s => 
-    let x := Classical.choose s
-    let ⟨hxf, hxo⟩ := Classical.choose_spec s
-    ⟨x, hxf, hxo⟩
