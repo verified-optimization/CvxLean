@@ -327,21 +327,9 @@ def mulAssocConstr :=
 
 time_cmd equivalence mulAssocConstrRed/mulAssocConstrAuto : mulAssocConstr := by
   unfold mulAssocConstr
-  -- convexify
-  rfl
+  convexify
 
--- The issue here is that log_mul is applied backwards but it applies in more than
--- one place in the expression. Maybe it suffices to add log_mul-rev.
--- example : ∀ (x : ℝ),
---     0 < x →
---       (log (OfScientific.ofScientific 2 true 0) ≤
---           OfScientific.ofScientific 0 true 0 - (log (OfScientific.ofScientific 1 true 0) + log (exp x * exp x)) ↔
---         log (OfScientific.ofScientific 2 true 0) ≤
---           OfScientific.ofScientific 0 true 0 - log (OfScientific.ofScientific 1 true 0 * (exp x * exp x))) := by 
---     intros;
---     rw [←log_mul (by positivity) (by positivity)]
-
--- #print mulAssocConstrAuto
+#print mulAssocConstrAuto
 
 -- add_sub 
 

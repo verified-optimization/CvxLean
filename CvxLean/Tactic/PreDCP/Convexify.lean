@@ -27,7 +27,12 @@ def findTactic : String → EggRewriteDirection → Bool × MetaM (TSyntax `tact
     (false, `(tactic| map_objFun_log))
   | rewriteName, direction => (true, do
     match ← getTacticFromRewriteName rewriteName with 
-    | some tac => return tac
+    | some tac => 
+      match direction with 
+      | EggRewriteDirection.Forward => return tac
+      | EggRewriteDirection.Backward => 
+          -- Simply flip the goal so that the rewrite is applied to the target.
+          `(tactic| ((first | apply Eq.symm | apply Iff.symm); $tac))
     | _ => throwError "Unknown rewrite name {rewriteName}({direction}).")
 
 /-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for 
