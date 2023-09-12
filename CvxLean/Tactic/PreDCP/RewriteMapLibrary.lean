@@ -134,7 +134,7 @@ register_rewrite_map "exp_mul-rev" ; "(pow (exp ?a) ?b)" => "(exp (mul ?a ?b))" 
   simp only [←Real.exp_mul]
 
 register_rewrite_map "exp_neg_eq_one_div-rev" ; "(div 1 (exp ?a))" => "(exp (neg ?a))" :=
-  simp only [←Real.exp_neg_eq_one_div]
+  simp only [Real.exp_neg_eq_one_div]
 
 register_rewrite_map "log_mul" ; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))" :=
   rw [Real.log_mul (by positivity) (by positivity)]
