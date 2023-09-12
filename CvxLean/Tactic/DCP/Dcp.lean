@@ -540,8 +540,8 @@ withExistingLocalDecls originalVarsDecls.toList do
     ⟨Curvature.Convex, oc.constr.map (fun _ => Curvature.Concave)⟩
   let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
   let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
-  -- if failedAtom.objFun then
-  --   throwError "Failure in objective: {failedAtomMsgs.objFun}"
+  if failedAtom.objFun then
+    throwError "Failure in objective: {failedAtomMsgs.objFun}"
   
   let atoms := atomsAndArgs.map (·.snd.snd.fst)
   let args := atomsAndArgs.map (·.snd.snd.snd.fst)
@@ -563,9 +563,9 @@ withExistingLocalDecls originalVarsDecls.toList do
       vcondIdxTree.fold acc fun acc is => 
         is.foldl (fun acc i => acc.set! i true) acc
   let vcondVars := vcondIdx.map $ mkVCondVars (originalConstrVars.map LocalDecl.fvarId)
-  -- for i in [:isVCond.size] do
-  --   if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
-  --     throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
+  for i in [:isVCond.size] do
+    if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
+      throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
   return (vcondIdx, isVCond, vcondVars)
 
 /-- -/
