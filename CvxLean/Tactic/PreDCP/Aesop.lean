@@ -11,12 +11,9 @@ open Lean Meta Elab Tactic Aesop
 def isDCP (goal : MVarId) : MetaM Bool := do
   let state ← saveState
   try 
-    dbg_trace "DCP?"
     let _ ← DCP.canonizeGoal goal
-    dbg_trace "DCP!"
     return true
   catch _ => 
-    dbg_trace "not DCP!"
     return false
   finally 
     restoreState state
