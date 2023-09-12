@@ -181,6 +181,8 @@ def evalStep (g : MVarId) (step : EggRewrite)
 
 syntax (name := convexify) "convexify" : tactic
 
+#check  Meta.unfoldTarget
+
 @[tactic convexify]
 def evalConvexify : Tactic := fun stx => match stx with
   | `(tactic| convexify) => withMainContext do
@@ -190,19 +192,31 @@ def evalConvexify : Tactic := fun stx => match stx with
 
     -- Generate `MinimizationExpr`, handling the equivalence case.
     let isEquivalence := gTarget.isEq
-    let gExpr ← liftM <| do
+    let mut gExprRaw ← liftM <| do
       if isEquivalence then 
         if let some (_, lhs, _) ← matchEq? gTarget then 
           if lhs.isAppOf ``MinimizationQ.mk then 
-            let probExpr := lhs.getArg! 3
-            MinimizationExpr.fromExpr probExpr
+            return lhs.getArg! 3            
           else 
             throwError "convexify expected an an Expr fo the form `MinimizationQ.mk ...`."
         else 
           throwError "convexify expected an equivalence, got {gTarget}."
       else 
-        let gExpr ← SolutionExpr.fromExpr gTarget
-        return gExpr.toMinimizationExpr
+        if gTarget.isAppOf ``Minimization.Solution then 
+          -- Get `p` From `Solution p`.
+          return gTarget.getArg! 3
+        else 
+          throwError "convexify expected an Expr fo the form `Solution ...`."
+    
+    dbg_trace s!"Goal: {gExprRaw}"
+
+    -- Unfold if necessary.
+    if let Expr.const n _ := gExprRaw then 
+      unfoldTarget n
+      gExprRaw := (← unfold gExprRaw n).expr
+
+    -- Get `MinmizationExpr`.
+    let gExpr ← MinimizationExpr.fromExpr gExprRaw
 
     -- Get optimization variables.
     let vars ← withLambdaBody gExpr.constraints fun p _ => do
