@@ -76,19 +76,6 @@ def rewriteWrapperApplyExpr (rwName : Name) (numArgs : Nat) (expected : Expr) :
   let args ← Array.range numArgs |>.mapM fun _ => mkFreshExprMVar none
   return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
 
--- /-- -/
--- def rewriteWrapperApplyExprEquivalence (rwName : Name) (numArgs : Nat) 
---   (expected : Expr) (typeExpr rhsExpr : Expr) (atObjFun : Bool) : MetaM Expr := do
---   let signature := #[← mkFreshExprMVar none, Lean.mkConst `Real, ← mkFreshExprMVar none]
---   let rwArgs ← Array.range numArgs |>.mapM fun _ => mkFreshExprMVar none
---   let rwTrailingArgs ← 
---     Array.range (if atObjFun then 1 else 2) |>.mapM fun _ => mkFreshExprMVar none
---   let toApply :=  
---     mkAppN (mkConst rwName) (signature ++ rwArgs ++ #[expected] ++ rwTrailingArgs)
---   let transArgs := #[
---     typeExpr, ← mkFreshExprMVar none, ← mkFreshExprMVar none, rhsExpr]
---   return mkAppN (mkConst `Eq.trans [levelOne]) (transArgs ++ #[toApply])
-
 /-- Version of `norm_num` used to get rid of the `OfScientific`s. -/
 def norm_num_clean_up (useSimp : Bool) : TacticM Unit :=
   Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (useSimp := useSimp)
