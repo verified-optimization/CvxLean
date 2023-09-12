@@ -3,13 +3,12 @@ import CvxLean.Tactic.PreDCP.Convexify
 
 open CvxLean Minimization Real
 
-def mainExample := 
+def p := 
   optimization (x : ℝ)
     minimize (x)
     subject to   
       h1 : 0 < x
       h2 : 1 / (sqrt x) ≤ (exp x)
 
-equivalence eq/mainExample' : mainExample := by
-  unfold mainExample
+equivalence eq/q : p := by
   convexify
