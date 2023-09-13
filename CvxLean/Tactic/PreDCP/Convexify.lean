@@ -77,8 +77,17 @@ def rewriteWrapperApplyExpr (rwName : Name) (numArgs : Nat) (expected : Expr) :
   return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
 
 /-- Version of `norm_num` used to get rid of the `OfScientific`s. -/
-def norm_num_clean_up (useSimp : Bool) : TacticM Unit :=
+def normNumCleanUp (useSimp : Bool) : TacticM Unit :=
   Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (useSimp := useSimp)
+
+syntax (name := norm_num_clean_up) "norm_num_clean_up" : tactic
+
+@[tactic norm_num_clean_up]
+def evalNormNumCleanUp : Tactic := fun stx => match stx with
+  | `(tactic| norm_num_clean_up) => do
+    normNumCleanUp (useSimp := false)
+    saveTacticInfoForToken stx
+  | _ => throwUnsupportedSyntax
 
 /-- -/
 def evalStep (g : MVarId) (step : EggRewrite) 
@@ -152,7 +161,10 @@ def evalStep (g : MVarId) (step : EggRewrite)
 
     gSol.setTag Name.anonymous
 
-    let fullTac : Syntax ← `(tactic| intros; $tacStx <;> norm_num)
+    let fullTac : Syntax ← `(tactic| intros; 
+      try { norm_num_clean_up; $tacStx <;> norm_num } <;>
+      try { $tacStx <;> norm_num } <;>
+      try { norm_num })
     let gsAfterRw ← evalTacticAt fullTac gToRw
     
     if gsAfterRw.length == 0 then
@@ -171,7 +183,7 @@ syntax (name := convexify) "convexify" : tactic
 @[tactic convexify]
 def evalConvexify : Tactic := fun stx => match stx with
   | `(tactic| convexify) => withMainContext do
-    norm_num_clean_up (useSimp := false)
+    normNumCleanUp (useSimp := false)
 
     let gTarget ← getMainTarget
 
@@ -249,7 +261,7 @@ def evalConvexify : Tactic := fun stx => match stx with
           g := gs[0]!
         replaceMainGoal [g]
 
-      norm_num_clean_up (useSimp := false)
+      normNumCleanUp (useSimp := false)
 
       saveTacticInfoForToken stx
 
