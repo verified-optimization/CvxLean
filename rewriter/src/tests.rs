@@ -96,6 +96,15 @@ fn test_position() {
         ]);
 }
 
+#[test]
+fn test_position_2() {
+    print_steps_basic(
+        "0",
+        vec![
+            "(le (add (var x) (add 1 (var x))) 1)"
+        ]);
+}
+
 // Rule-based tests.
 
 #[test]
@@ -137,13 +146,4 @@ fn test_exp_add() {
         ]);
 }
 
-
-// let s = "(add (var x) (var x))".to_string();
-// let s = "(prob 
-//     (objFun (add (add (mul (mul (div 1 (exp (var x))) (div 1 (sqrt (exp (var y))))) (div 1 (exp (var z)))) (mul (mul (div 23 10) (exp (var x))) (exp (var z)))) (mul (mul (mul 4 (exp (var x))) (exp (var y))) (exp (var z))))) 
-//     (constraints 
-//         (le (add (mul (mul (div 1 3) (div 1 (pow (exp (var x)) 2))) (div 1 (pow (exp (var y)) 2))) (mul (mul (div 4 3) (sqrt (exp (var y)))) (div 1 (exp (var z))))) 1) 
-//         (le (add (add (exp (var x)) (mul 2 (exp (var y)))) (mul 3 (exp (var z)))) 1) 
-//         (eq (mul (mul (div 1 2) (exp (var x))) (exp (var y))) 1)
-//     ))".to_string();
 }
