@@ -168,8 +168,6 @@ def evalStep (g : MVarId) (step : EggRewrite)
 
 syntax (name := convexify) "convexify" : tactic
 
-#check  Meta.unfoldTarget
-
 @[tactic convexify]
 def evalConvexify : Tactic := fun stx => match stx with
   | `(tactic| convexify) => withMainContext do
