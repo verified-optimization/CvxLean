@@ -12,3 +12,12 @@ def p :=
 
 equivalence eq/q : p := by
   convexify
+
+#print q
+-- def q : Minimization ℝ ℝ :=
+-- optimization (x : ℝ) 
+--   minimize x
+--   subject to
+--     h1 : 0 < x
+--     h2 : -x ≤ log (sqrt x)
+  
