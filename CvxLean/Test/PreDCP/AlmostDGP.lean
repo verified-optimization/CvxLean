@@ -6,8 +6,7 @@ noncomputable section GP
 open CvxLean Minimization Real
 
 /- This problem is not DGP because the number on the right-hand side of the
-constraint is negative. In fact, this problem is DCP because we can expand the
-power atom. -/
+constraint is negative. Infeasible. -/
 section AlmostDGP1
 
 def agp1 :=
@@ -27,13 +26,12 @@ reduction red1/dcp1 : agp1 := by
 -- optimization (x : ℝ)
 --   minimize x
 --   subject to
---     _ : exp (x * 2) ≤ -(10123 / 1000)
+--     h2 : exp (x * 2) ≤ -(10123 / 1000)
 
 end AlmostDGP1
 
 /- This problem is not DGP because the number on the right-hand side of the
-constraint is negative. It is also not DCP because it does not follow the
-product-free rules. -/
+constraint is negative. Infeasible. -/
 section AlmostDGP2
 
 def agp2 :=
@@ -54,7 +52,7 @@ reduction red2/dcp2 : agp2 := by
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize x
 --   subject to
---     _ : exp (x + y) ≤ -(2691 / 500)
+--     h3 : exp (x + y) ≤ -(2691 / 500)
 
 end AlmostDGP2
 
