@@ -241,8 +241,17 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
             }
-            Optimization::Param(_) => {
-                // TODO(RFM): Add domain to parameters?
+            Optimization::Param(a) => {
+                match egraph[*a].nodes[0] { 
+                    Optimization::Symbol(s) => {
+                        let s_s = format!("{}", s); 
+                        match domains_map.get(&s_s) {
+                            Some(d) => { domain = Some(*d); }
+                            _ => ()
+                        }
+                    }
+                    _ => {}
+                }
             } 
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
