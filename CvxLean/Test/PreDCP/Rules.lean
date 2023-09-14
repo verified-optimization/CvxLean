@@ -311,8 +311,7 @@ def mulAssocObj :=
     subject to 
       hx : 0 < x
 
-time_cmd reduction mulAssocObjRed/mulAssocObjAuto : mulAssocObj := by
-  unfold mulAssocObj
+time_cmd equivalence mulAssocObjRed/mulAssocObjAuto : mulAssocObj := by
   convexify
 
 #print mulAssocObjAuto
@@ -366,7 +365,7 @@ def expAddObj :=
     subject to 
       hx : 0 < x
 
-time_cmd reduction expAddObjRed/expAddObjAuto : expAddObj := by
+time_cmd equivalence expAddObjRed/expAddObjAuto : expAddObj := by
   unfold expAddObj
   convexify
 
@@ -379,7 +378,7 @@ def expAddConstr :=
       hy : 0 < y
       h : exp ((log x) + 2) ≤ 10
 
-time_cmd reduction expAddConstrRed/expAddConstrAuto : expAddConstr := by
+time_cmd equivalence expAddConstrRed/expAddConstrAuto : expAddConstr := by
   unfold expAddConstr
   convexify
 
@@ -392,24 +391,24 @@ time_cmd reduction expAddConstrRed/expAddConstrAuto : expAddConstr := by
 -- exp_mul-rev
 
 -- exp_neg_eq_one_div-rev (obj)
-def expNegEqOneDivRevObj := 
-  optimization (x : ℝ)
-    minimize (1 / (exp x))
-    subject to 
-      h : 1 ≤ x
+-- def expNegEqOneDivRevObj := 
+--   optimization (x : ℝ)
+--     minimize (1 / (exp x))
+--     subject to 
+--       h : 1 ≤ x
 
-time_cmd reduction expNegEqOneDivRevObjRed/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
-  unfold expNegEqOneDivRevObj
-  convexify
+-- time_cmd equivalence expNegEqOneDivRevObjRed/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
+--   unfold expNegEqOneDivRevObj
+--   convexify
 
-#print expNegEqOneDivRevObjAuto
+-- #print expNegEqOneDivRevObjAuto
 
--- exp_neg_eq_one_div-rev (constr)
-def expNegEqOneDivRevConstr := 
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to 
-      h : 1 / (exp x) ≤ 1
+-- -- exp_neg_eq_one_div-rev (constr)
+-- def expNegEqOneDivRevConstr := 
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to 
+--       h : 1 / (exp x) ≤ 1
 
 -- exp_log 
 
