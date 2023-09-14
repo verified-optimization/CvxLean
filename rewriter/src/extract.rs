@@ -157,8 +157,8 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
     let runner: Runner<Optimization, Meta> = 
         Runner::new(analysis)
         .with_explanations_enabled()
-        .with_node_limit(1000)
-        .with_iter_limit(10)
+        .with_node_limit(5000)
+        .with_iter_limit(50)
         .with_time_limit(Duration::from_secs(30))
         .with_expr(&expr)
         .run(&rules());
