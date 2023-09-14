@@ -22,6 +22,16 @@ lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) : a / (b ^ c) = a
 lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
   rw [exp_neg, inv_eq_one_div]
 
+-- TODO(RFM): Move.
+lemma Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
+  rw [rpow_two, rpow_two, sq_le_sq, abs_of_nonneg hx, abs_of_nonneg hy]
+
+-- TODO(RFM): Move.
+lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
+  show Real.rpow (Real.rpow _ _) _ = _
+  rw [rpow_eq_pow, rpow_eq_pow, ← rpow_mul hx]
+  norm_num
+
 syntax "simp_or_rw" "[" Lean.Parser.Tactic.rwRule "]" : tactic
 
 macro_rules 
@@ -64,6 +74,9 @@ register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" => "(le ?a ?b)" :=
 
 register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
   rewrite [←Real.log_le_log (by positivity) (by positivity)];
+
+register_rewrite_map "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" := 
+  rewrite [←Real.pow_two_le_pow_two (by positivity) (by positivity)];
 
 
 /- Field rules. -/
@@ -128,6 +141,9 @@ register_rewrite_map "div_pow_eq_mul_pow_neg" ; "(div ?a (pow ?b ?c))" => "(mul 
 
 register_rewrite_map "sqrt_eq_rpow" ; "(sqrt ?a)" => "(pow ?a 0.5)" :=
   simp_or_rw [Real.sqrt_eq_rpow];
+
+register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
+  simp_or_rw [Real.pow_half_two (by positivity)];
 
 
 /- Exponential and logarithm rules. -/
