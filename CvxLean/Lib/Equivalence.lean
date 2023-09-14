@@ -226,7 +226,7 @@ namespace MinimizationQ
 
 section Maps
 
-noncomputable def map_log_objective {f : D → ℝ} {cs : D → Prop} 
+noncomputable def map_objFun_log {cs : D → Prop} {f : D → ℝ}
   (h : ∀ x, cs x → f x > 0) : 
   {| f, cs |} = {| fun x => (Real.log (f x)), cs |} := 
   Quotient.sound <| Nonempty.intro <| 

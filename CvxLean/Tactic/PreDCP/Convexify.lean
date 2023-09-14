@@ -20,11 +20,14 @@ def EggMinimization.ofOCTree (oc : OC (String × Tree String String)) :
 /-- Given the rewrite name and direction from egg's output, find the appropriate
 tactic in the environment. It also returns a bool to indicate if the proof needs
 an intermediate equality step. Otherwise, the tactic will be applied directly. -/
-def findTactic : String → EggRewriteDirection → Bool × MetaM (TSyntax `tactic)
+def findTactic (isEquiv : Bool) : String → EggRewriteDirection → Bool × MetaM (TSyntax `tactic)
   -- NOTE(RFM): Only instance of a rewriting without proving equality. It is 
   -- also the only case where only one direction is allowed.
   | "map_objFun_log", EggRewriteDirection.Forward =>
-    (false, `(tactic| map_objFun_log))
+    if isEquiv then 
+      (true, `(tactic| positivity))
+    else 
+      (false, `(tactic| map_objFun_log))
   | rewriteName, direction => (true, do
     match ← getTacticFromRewriteName rewriteName with 
     | some tac => 
@@ -70,9 +73,15 @@ def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :
     | _  => throwError "convexify can only rewrite problems with up to 10 constraints."
 
 /-- -/
-def rewriteWrapperApplyExpr (rwName : Name) (numArgs : Nat) (expected : Expr) : 
+def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) (expected : Expr) : 
   MetaM Expr := do
-  let signature := #[← mkFreshExprMVar none, Lean.mkConst `Real, ← mkFreshExprMVar none]
+  -- Distinguish between lemmas that have `{D R} [Preorder R]` and those that 
+  -- only have `{D}` because `R` is fixed.
+  let signature := 
+    if givenRange then 
+      #[← mkFreshExprMVar none]
+    else 
+      #[← mkFreshExprMVar none, Lean.mkConst `Real, ← mkFreshExprMVar none]
   let args ← Array.range numArgs |>.mapM fun _ => mkFreshExprMVar none
   return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
 
@@ -90,19 +99,31 @@ def evalNormNumCleanUp : Tactic := fun stx => match stx with
   | _ => throwUnsupportedSyntax
 
 /-- -/
-def evalStep (g : MVarId) (step : EggRewrite) 
+def evalStep (g : MVarId) (step : EggRewrite)
   (vars : List Name) (fvars : Array Expr) (domain : Expr) 
-  (numConstrTags : ℕ) (tagsMap : HashMap String ℕ) (isEquivalence : Bool) : 
+  (numConstrTags : ℕ) (tagsMap : HashMap String ℕ) (isEquiv : Bool) : 
   TacticM (List MVarId) := do
   let tag := step.location
   let tagNum := tagsMap.find! tag
   let atObjFun := tagNum == 0
-  let (rwWrapperRaw, numIntros) ← rewriteWrapperLemma tagNum numConstrTags
+
+  -- Special case when mapping the logarithm to the objective function in 
+  -- equivalence mode. It is the only case where the range is forced to be ℝ.
+  let mapLogInEquiv := isEquiv && step.rewriteName == "map_objFun_log"
+  let givenRange := mapLogInEquiv
+
+  let (rwWrapperRaw, numArgs) := 
+    if mapLogInEquiv then 
+      (`map_objFun_log, 1)
+    else 
+      ← rewriteWrapperLemma tagNum numConstrTags
   
   -- Different rewrite wrappers for equivalence and non-equivalence cases.
   let rwWrapper := 
-    (if isEquivalence then `MinimizationQ else `Minimization) ++ rwWrapperRaw
+    (if isEquiv then `MinimizationQ else `Minimization) ++ rwWrapperRaw
 
+  -- Build expexcted expression to generate the right rewrite condition. Again,
+  -- mapping the logarithm is an exception.
   let expectedTermStr := step.expectedTerm
   let mut expectedExpr ← EggString.toExpr vars expectedTermStr
   if !atObjFun then 
@@ -111,16 +132,18 @@ def evalStep (g : MVarId) (step : EggRewrite)
     Meta.withDomainLocalDecls domain p fun xs prs => do
       let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
       mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
+  if mapLogInEquiv then 
+    expectedExpr ← mkFreshExprMVar none
 
-  let (needsEq, tac) := findTactic step.rewriteName step.direction
+  let (needsEq, tac) := findTactic isEquiv step.rewriteName step.direction
   let tacStx ← tac
   if needsEq then
-    let toApply ← rewriteWrapperApplyExpr rwWrapper numIntros expectedExpr
+    let toApply ← rewriteWrapperApplyExpr givenRange rwWrapper numArgs expectedExpr
     -- Goals after initial application of rewrite wrapper (the objective function or 
     -- constraint codnition has not been solved yet).
     let mut gs := []
 
-    if !isEquivalence then
+    if !isEquiv then
       gs ← g.apply toApply
     else 
       let transGs ← evalTacticAt (← `(tactic| apply Eq.trans)) g;
@@ -170,7 +193,7 @@ def evalStep (g : MVarId) (step : EggRewrite)
     if gsAfterRw.length == 0 then
       return [gSol]
     else
-      dbg_trace s!"Failed to rewrite {step.rewriteName} after rewriting constraint / objective function."
+      dbg_trace s!"Failed to rewrite {step.rewriteName} after rewriting constraint / objective function (equiv {isEquiv})."
       for g in gs do  
         dbg_trace s!"Could not prove {← Meta.ppGoal g}."
       return gs
@@ -188,9 +211,9 @@ def evalConvexify : Tactic := fun stx => match stx with
     let gTarget ← getMainTarget
 
     -- Generate `MinimizationExpr`, handling the equivalence case.
-    let isEquivalence := gTarget.isEq
+    let isEquiv := gTarget.isEq
     let mut gExprRaw ← liftM <| do
-      if isEquivalence then 
+      if isEquiv then 
         if let some (_, lhs, _) ← matchEq? gTarget then 
           if lhs.isAppOf ``MinimizationQ.mk then 
             return lhs.getArg! 3            
@@ -205,8 +228,6 @@ def evalConvexify : Tactic := fun stx => match stx with
         else 
           throwError "convexify expected an Expr fo the form `Solution ...`."
     
-    dbg_trace s!"Goal: {gExprRaw}"
-
     -- Unfold if necessary.
     if let Expr.const n _ := gExprRaw then 
       unfoldTarget n
@@ -253,7 +274,7 @@ def evalConvexify : Tactic := fun stx => match stx with
       -- Apply steps.
       let mut g ← getMainGoal
       for step in steps do
-        let gs ← evalStep g step vars fvars domain numConstrTags tagsMap isEquivalence
+        let gs ← evalStep g step vars fvars domain numConstrTags tagsMap isEquiv
         if gs.length != 1 then 
           dbg_trace s!"Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
         else 
@@ -265,7 +286,7 @@ def evalConvexify : Tactic := fun stx => match stx with
 
       saveTacticInfoForToken stx
 
-      if isEquivalence then 
+      if isEquiv then 
         evalTactic (← `(tactic| rfl))
     catch e => 
       let eStr ← e.toMessageData.toString
