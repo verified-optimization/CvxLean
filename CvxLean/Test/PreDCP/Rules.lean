@@ -391,24 +391,24 @@ time_cmd equivalence expAddConstrRed/expAddConstrAuto : expAddConstr := by
 -- exp_mul-rev
 
 -- exp_neg_eq_one_div-rev (obj)
--- def expNegEqOneDivRevObj := 
---   optimization (x : ℝ)
---     minimize (1 / (exp x))
---     subject to 
---       h : 1 ≤ x
+def expNegEqOneDivRevObj := 
+  optimization (x : ℝ)
+    minimize (1 / (exp x))
+    subject to 
+      h : 1 ≤ x
 
--- time_cmd equivalence expNegEqOneDivRevObjRed/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
---   unfold expNegEqOneDivRevObj
---   convexify
+time_cmd equivalence expNegEqOneDivRevObjRed/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
+  unfold expNegEqOneDivRevObj
+  convexify
 
--- #print expNegEqOneDivRevObjAuto
+#print expNegEqOneDivRevObjAuto
 
--- -- exp_neg_eq_one_div-rev (constr)
--- def expNegEqOneDivRevConstr := 
---   optimization (x : ℝ)
---     minimize (0 : ℝ)
---     subject to 
---       h : 1 / (exp x) ≤ 1
+-- exp_neg_eq_one_div-rev (constr)
+def expNegEqOneDivRevConstr := 
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to 
+      h : 1 / (exp x) ≤ 1
 
 -- exp_log 
 
