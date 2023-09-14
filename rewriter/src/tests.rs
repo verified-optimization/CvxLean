@@ -58,13 +58,28 @@ fn test_agp2() {
 
 #[test]
 fn test_gp4() {
-    assert_steps(
+    assert_steps_with_domain(
+        vec![("α", Domain::Pos), ("β", Domain::Pos), ("γ", Domain::Pos), ("δ", Domain::Pos)],
         "(div 1 (div (exp (var x)) (exp (var y))))",
         vec![
             "(le 2 (exp (var x)))",
             "(le (exp (var x)) 3)",
             "(le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x))))",
             "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))"
+        ]);
+}
+
+#[test]
+fn test_gp6() {
+    assert_steps(
+        "(div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))", 
+        vec![
+            "(le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall))",
+            "(le (mul (exp (var w)) (exp (var d))) (param Aflr))",
+            "(le (param α) (div (exp (var h)) (exp (var w))))",
+            "(le (div (exp (var h)) (exp (var w))) (param β))",
+            "(le (param γ) (div (exp (var d)) (exp (var w))))",
+            "(le (div (exp (var d)) (exp (var w))) (param δ))"
         ]);
 }
 
