@@ -20,7 +20,7 @@ def EggMinimization.ofOCTree (oc : OC (String × Tree String String)) :
 /-- Given the rewrite name and direction from egg's output, find the appropriate
 tactic in the environment. It also returns a bool to indicate if the proof needs
 an intermediate equality step. Otherwise, the tactic will be applied directly. -/
-def findTactic (isEquiv : Bool) : String → EggRewriteDirection → Bool × MetaM (TSyntax `tactic)
+def findTactic (isEquiv atObjFun : Bool) : String → EggRewriteDirection → Bool × MetaM (TSyntax `tactic)
   -- NOTE(RFM): Only instance of a rewriting without proving equality. It is 
   -- also the only case where only one direction is allowed.
   | "map_objFun_log", EggRewriteDirection.Forward =>
@@ -35,7 +35,10 @@ def findTactic (isEquiv : Bool) : String → EggRewriteDirection → Bool × Met
       | EggRewriteDirection.Forward => return tac
       | EggRewriteDirection.Backward => 
           -- Simply flip the goal so that the rewrite is applied to the target.
-          `(tactic| ((first | apply Eq.symm | apply Iff.symm); $tac))
+          if atObjFun then 
+            `(tactic| (rw [eq_comm]; $tac))
+          else
+            `(tactic| (rw [Iff.comm]; $tac))
     | _ => throwError "Unknown rewrite name {rewriteName}({direction}).")
 
 /-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for 
@@ -135,7 +138,7 @@ def evalStep (g : MVarId) (step : EggRewrite)
   if mapLogInEquiv then 
     expectedExpr ← mkFreshExprMVar none
 
-  let (needsEq, tac) := findTactic isEquiv step.rewriteName step.direction
+  let (needsEq, tac) := findTactic isEquiv atObjFun step.rewriteName step.direction
   let tacStx ← tac
   if needsEq then
     let toApply ← rewriteWrapperApplyExpr givenRange rwWrapper numArgs expectedExpr
@@ -165,7 +168,7 @@ def evalStep (g : MVarId) (step : EggRewrite)
       gs := [gToRw, nextG]
 
     if gs.length != 2 then 
-      dbg_trace s!"Failed to rewrite {step.rewriteName} after applying the wrapper lemam."
+      dbg_trace s!"Failed to rewrite {step.rewriteName} after applying the wrapper lemma."
       return gs
 
     let gToRw := gs[0]!
@@ -194,6 +197,7 @@ def evalStep (g : MVarId) (step : EggRewrite)
       return [gSol]
     else
       dbg_trace s!"Failed to rewrite {step.rewriteName} after rewriting constraint / objective function (equiv {isEquiv})."
+      dbg_trace s!"Tactic was: {fullTac}."
       for g in gs do  
         dbg_trace s!"Could not prove {← Meta.ppGoal g}."
       return gs

@@ -30,9 +30,9 @@ macro_rules
   match rule.raw[1] with 
   | `(term| $e:term) => 
     if symm then
-      `(tactic| (first | simp only [←$e:term] | rw [←$e:term]))
+      `(tactic| (first | simp only [←$e:term] | repeat' { rw [←$e:term] }))
     else 
-      `(tactic| (first | simp only [$e:term] | rw [$e:term]))
+      `(tactic| (first | simp only [$e:term] | repeat' { rw [$e:term] }))
 
 namespace CvxLean
 
@@ -153,9 +153,8 @@ register_rewrite_map "exp_mul-rev" ; "(pow (exp ?a) ?b)" => "(exp (mul ?a ?b))" 
 register_rewrite_map "exp_neg_eq_one_div-rev" ; "(div 1 (exp ?a))" => "(exp (neg ?a))" :=
   simp_or_rw [←Real.exp_neg_eq_one_div];
 
--- Exception, simp make sno progress here.
 register_rewrite_map "log_mul" ; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))" :=
-  rw [Real.log_mul (by positivity) (by positivity)];
+  simp_or_rw [Real.log_mul (by positivity) (by positivity)];
 
 register_rewrite_map "log_div" ; "(log (div ?a ?b))" => "(sub (log ?a) (log ?b))" :=
   simp_or_rw [Real.log_div (by positivity) (by positivity)];
