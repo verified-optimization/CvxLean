@@ -287,6 +287,20 @@ pub fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     }
 }
 
+pub fn is_ge_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var = var.parse().unwrap();
+    move |egraph, _, subst| {
+        if let Some((n, _)) = &egraph[subst[var]].data.constant {
+            (*n).into_inner() >= 0.0
+        } else {
+            if let Some(d) = &egraph[subst[var]].data.domain {
+                return domain::is_nonneg(*d);
+            }
+            return false;
+        }
+    }
+}
+
 pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
