@@ -57,6 +57,15 @@ fn test_agp2() {
 }
 
 #[test]
+fn test_gp3() {
+    assert_steps(
+        "(exp (var x))",
+        vec![
+            "(le (sqrt (add (mul (exp (var x)) (exp (var x))) (exp (var y)))) 1)"
+        ]);
+}
+
+#[test]
 fn test_gp4() {
     assert_steps(
         "(div 1 (div (exp (var x)) (exp (var y))))",
