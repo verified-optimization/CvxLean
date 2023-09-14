@@ -20,33 +20,35 @@ fn make_basic(obj: &str, constrs: Vec<&str>) -> Minimization {
     };
 }
 
-fn print_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: Vec<&str>) {
+fn assert_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: Vec<&str>) {
     let prob = make_basic(obj, constrs);
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), *d)).collect();
     let steps = get_steps(prob, domains, true);
     println!("{:?}", steps);
+    assert!(steps.is_some());
 }
 
-fn print_steps_basic(obj: &str, constrs: Vec<&str>) {
-    print_steps_with_domain(vec![], obj, constrs);
+fn assert_steps_basic(obj: &str, constrs: Vec<&str>) {
+    assert_steps_with_domain(vec![], obj, constrs);
 }
 
 // Examples.
 
 #[test]
 fn test_simple_example() {
-    print_steps_with_domain(
+    assert_steps_with_domain(
         vec![("x", Domain::Pos)],
         "0", 
         vec![
             "(le (div 1 (sqrt (var x))) (exp (var x)))"
         ]);
+    
 }
 
 #[test]
 fn test_gp4() {
-    print_steps_basic(
+    assert_steps_basic(
         "(div 1 (div (exp (var x)) (exp (var y))))",
         vec![
             "(le 2 (exp (var x)))",
@@ -60,7 +62,7 @@ fn test_gp4() {
 
 #[test]
 fn test_cost_function_number_of_variable_occurences() {
-    print_steps_basic(
+    assert_steps_basic(
         "0",
         vec![
             "(le (var x) (sub 1 (var x)))"
@@ -69,7 +71,7 @@ fn test_cost_function_number_of_variable_occurences() {
 
 #[test]
 fn test_cost_function_number_of_variable_occurences_2() {
-    print_steps_basic(
+    assert_steps_basic(
         "0",
         vec![
             "(le (add (mul 2 (var x)) (var x)) 0)"
@@ -78,7 +80,7 @@ fn test_cost_function_number_of_variable_occurences_2() {
 
 #[test]
 fn test_cost_function_number_of_variable_occurences_3() {
-    print_steps_basic(
+    assert_steps_basic(
         "0",
         vec![
             "(le (add (mul 2 (var x)) (mul 3 (var x))) 0)"
@@ -89,7 +91,7 @@ fn test_cost_function_number_of_variable_occurences_3() {
 
 #[test]
 fn test_position() {
-    print_steps_basic(
+    assert_steps_basic(
         "0",
         vec![
             "(le (mul (mul 1 1) (mul 1 (mul 1 1))) 1)"
@@ -98,7 +100,7 @@ fn test_position() {
 
 #[test]
 fn test_position_2() {
-    print_steps_basic(
+    assert_steps_basic(
         "0",
         vec![
             "(le (add (var x) (add 1 (var x))) 1)"
@@ -109,18 +111,17 @@ fn test_position_2() {
 
 #[test]
 fn test_log_le_log() {
-    print_steps_basic(
+    assert_steps_with_domain(
+        vec![("x", Domain::Pos), ("y", Domain::Pos)],
         "0", 
         vec![
-            "(le 1 (var x))",
-            "(le 1 (var y))",
             "(le (log (var x)) (log (var y)))"
         ]);
 }
 
 #[test]
 fn test_sub_iff_add_le() {
-    print_steps_basic(
+    assert_steps_basic(
         "0", 
         vec![
             "(le (add 1 (var x)) (var x))",
@@ -129,7 +130,7 @@ fn test_sub_iff_add_le() {
 
 #[test]
 fn test_log_le_log_rev() {
-    print_steps_basic(
+    assert_steps_basic(
         "0", 
         vec![
             "(le (exp (var x)) (exp (var y)))"
@@ -138,7 +139,7 @@ fn test_log_le_log_rev() {
 
 #[test]
 fn test_exp_add() {
-    print_steps_with_domain(
+    assert_steps_with_domain(
         vec![("x", Domain::Pos)],
         "0",
         vec![
