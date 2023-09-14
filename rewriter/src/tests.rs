@@ -8,7 +8,7 @@ use crate::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
 
-fn make_basic(obj: &str, constrs: Vec<&str>) -> Minimization {
+fn make(obj: &str, constrs: Vec<&str>) -> Minimization {
     let mut constrs_s = Vec::new();
     for i in 0..constrs.len() {
         let tag = format!("h{}", i);
@@ -21,7 +21,7 @@ fn make_basic(obj: &str, constrs: Vec<&str>) -> Minimization {
 }
 
 fn assert_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: Vec<&str>) {
-    let prob = make_basic(obj, constrs);
+    let prob = make(obj, constrs);
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), *d)).collect();
     let steps = get_steps(prob, domains, true);
@@ -29,14 +29,14 @@ fn assert_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: V
     assert!(steps.is_some());
 }
 
-fn assert_steps_basic(obj: &str, constrs: Vec<&str>) {
+fn assert_steps(obj: &str, constrs: Vec<&str>) {
     assert_steps_with_domain(vec![], obj, constrs);
 }
 
 // Examples.
 
 #[test]
-fn test_simple_example() {
+fn test_main_example() {
     assert_steps_with_domain(
         vec![("x", Domain::Pos)],
         "0", 
@@ -47,8 +47,18 @@ fn test_simple_example() {
 }
 
 #[test]
+fn test_agp2() {
+    assert_steps(
+        "(exp (var x))", 
+        vec![
+            "(le (mul (exp (var x)) (exp (var y))) (neg (div 2691 500)))"
+        ]);
+    
+}
+
+#[test]
 fn test_gp4() {
-    assert_steps_basic(
+    assert_steps(
         "(div 1 (div (exp (var x)) (exp (var y))))",
         vec![
             "(le 2 (exp (var x)))",
@@ -62,7 +72,7 @@ fn test_gp4() {
 
 #[test]
 fn test_cost_function_number_of_variable_occurences() {
-    assert_steps_basic(
+    assert_steps(
         "0",
         vec![
             "(le (var x) (sub 1 (var x)))"
@@ -71,7 +81,7 @@ fn test_cost_function_number_of_variable_occurences() {
 
 #[test]
 fn test_cost_function_number_of_variable_occurences_2() {
-    assert_steps_basic(
+    assert_steps(
         "0",
         vec![
             "(le (add (mul 2 (var x)) (var x)) 0)"
@@ -80,7 +90,7 @@ fn test_cost_function_number_of_variable_occurences_2() {
 
 #[test]
 fn test_cost_function_number_of_variable_occurences_3() {
-    assert_steps_basic(
+    assert_steps(
         "0",
         vec![
             "(le (add (mul 2 (var x)) (mul 3 (var x))) 0)"
@@ -91,7 +101,7 @@ fn test_cost_function_number_of_variable_occurences_3() {
 
 #[test]
 fn test_position() {
-    assert_steps_basic(
+    assert_steps(
         "0",
         vec![
             "(le (mul (mul 1 1) (mul 1 (mul 1 1))) 1)"
@@ -100,7 +110,7 @@ fn test_position() {
 
 #[test]
 fn test_position_2() {
-    assert_steps_basic(
+    assert_steps(
         "0",
         vec![
             "(le (add (var x) (add 1 (var x))) 1)"
@@ -121,7 +131,7 @@ fn test_log_le_log() {
 
 #[test]
 fn test_sub_iff_add_le() {
-    assert_steps_basic(
+    assert_steps(
         "0", 
         vec![
             "(le (add 1 (var x)) (var x))",
@@ -130,7 +140,7 @@ fn test_sub_iff_add_le() {
 
 #[test]
 fn test_log_le_log_rev() {
-    assert_steps_basic(
+    assert_steps(
         "0", 
         vec![
             "(le (exp (var x)) (exp (var y)))"
@@ -144,6 +154,15 @@ fn test_exp_add() {
         "0",
         vec![
             "(le (exp (add (log (var x)) 2)) 1)"
+        ]);
+}
+
+#[test]
+fn test_exp_neg_eq_one_div_rev() {
+    assert_steps(
+        "(div 1 (exp (var x)))",
+        vec![
+            "(le 1 (var x))"
         ]);
 }
 
