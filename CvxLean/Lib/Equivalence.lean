@@ -224,9 +224,9 @@ end Delab
 /- Rewrites used in `convexify` under the `equivalence` command. -/
 namespace MinimizationQ
 
-section Maps
+noncomputable section Maps
 
-noncomputable def map_objFun_log {cs : D → Prop} {f : D → ℝ}
+def map_objFun_log {cs : D → Prop} {f : D → ℝ}
   (h : ∀ x, cs x → f x > 0) : 
   {| f, cs |} = {| fun x => (Real.log (f x)), cs |} := 
   Quotient.sound <| Nonempty.intro <| 
@@ -242,6 +242,18 @@ noncomputable def map_objFun_log {cs : D → Prop} {f : D → ℝ}
       have hfxpos := h x.point x.feasibility
       have hfypos := h y.point y.feasibility
       (Real.log_le_log hfxpos hfypos).mp hlogfxlelogfy  }
+
+def map_domain {f : D → R} {cs : D → Prop}
+  {fwd : D → E} {bwd : E → D}
+  (h : ∀ x, cs x → bwd (fwd x) = x) :
+  {| f, cs |} = {| fun x => f (bwd x), fun x => cs (bwd x) |} :=
+  Quotient.sound <| Nonempty.intro <| StrongEquivalence.toEquivalence <|
+  { phi := fwd, 
+    psi := bwd,
+    phi_feasibility := fun {x} hx => by simp [h x hx]; exact hx
+    phi_optimality := fun {x} hx => by simp [h x hx]
+    psi_feasibility := fun _ hx => hx
+    psi_optimality := fun {x} _ => by simp }
 
 end Maps
 
