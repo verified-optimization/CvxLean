@@ -4,6 +4,7 @@ use crate::optimization;
 use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
 use optimization::is_gt_zero as is_gt_zero;
+use optimization::is_ge_zero as is_ge_zero;
 use optimization::is_not_zero as is_not_zero;
 use optimization::not_has_log as not_has_log;
 
@@ -72,6 +73,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("log_le_log-rev"; "(le ?a ?b)" => "(le (log ?a) (log ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b") 
         if not_has_log("?a") if not_has_log("?b")),
+    
+    rw!("pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" 
+        if is_ge_zero("?a") if is_ge_zero("?b")),
 
 
     /* Field rules. */
@@ -143,6 +147,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     // rw!("div-pow-same-left"; "(div (pow ?a ?b) ?a)" => "(pow ?a (sub ?b 1))"),
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
+
+    // NOTE(RFM): Needed since constant folding is disabled.
+    // TODO(RFM): Activate constant folding but only for rationals?
+    rw!("pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" if is_ge_zero("?a")),
 
 
     /* Exponential and logarithm rules. */
