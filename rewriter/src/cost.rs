@@ -12,7 +12,7 @@ pub struct DCPCost<'a> {
 }
 
 impl<'a> CostFunction<Optimization> for DCPCost<'a> {
-    // Curvature + term size + number of variables (with repetition).
+    // Curvature + number of variables (with repetition) + term size.
     // In lexicographic order.
     type Cost = (Curvature, u32, u32);
     fn cost<C>(&mut self, enode: &Optimization, mut costs: C) -> Self::Cost
@@ -41,23 +41,37 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
         match enode {
             Optimization::Prob([a, b]) => {
                 curvature = 
-                    if get_curvature!(b) <= get_curvature!(a) { 
+                    if get_curvature!(a) >= get_curvature!(b) {
                         get_curvature!(a)
-                    } else if get_curvature!(a) <= get_curvature!(b) {
+                    } else if get_curvature!(b) >= get_curvature!(a) {
                         get_curvature!(b)
                     } else {
+                        // Should not get here.
                         Curvature::Unknown
                     };
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::ObjFun(a) => {
-                curvature = get_curvature!(a);
+                // It cannot be concave, because of mapping functions.
+                curvature = 
+                    if get_curvature!(a) <= Curvature::Convex {
+                        get_curvature!(a)
+                    } else {
+                        Curvature::Unknown
+                    };
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Constr([_, c]) => {
-                curvature = get_curvature!(c);
+                // It cannot be concave, because the notion of concavity at the
+                // prop (or set) level is not well-defined.
+                curvature = 
+                    if get_curvature!(c) <= Curvature::Convex {
+                        get_curvature!(c)
+                    } else {
+                        Curvature::Unknown
+                    };
                 num_vars = get_num_vars!(c);
                 term_size = 1 + get_term_size!(c);
             }

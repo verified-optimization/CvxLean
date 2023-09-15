@@ -6,15 +6,16 @@ use optimization::Meta as Meta;
 use optimization::is_gt_zero as is_gt_zero;
 use optimization::is_ge_zero as is_ge_zero;
 use optimization::is_not_zero as is_not_zero;
-use optimization::not_has_log as not_has_log;
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Objective function rules. */
 
-    // NOTE(RFM): Acceptable because it can only be applied once.
-    rw!("map_objFun_log"; "(objFun ?a)" => "(objFun (log ?a))" 
-        if is_gt_zero("?a") if not_has_log("?a")),
+    rw!("map_objFun_log"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (log ?a)) ?cs)" 
+        if is_gt_zero("?a")),
+
+    rw!("map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (pow ?a 2)) ?cs)"
+        if is_ge_zero("?a")),
 
 
     /* Equality rules. */
@@ -69,10 +70,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("log_le_log"; "(le (log ?a) (log ?b))" => "(le ?a ?b)" 
        if is_gt_zero("?a") if is_gt_zero("?b")),  
 
-    // NOTE(RFM): Acceptable because it can only be applied once.
     rw!("log_le_log-rev"; "(le ?a ?b)" => "(le (log ?a) (log ?b))"
-        if is_gt_zero("?a") if is_gt_zero("?b") 
-        if not_has_log("?a") if not_has_log("?b")),
+        if is_gt_zero("?a") if is_gt_zero("?b")),
     
     rw!("pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" 
         if is_ge_zero("?a") if is_ge_zero("?b")),
