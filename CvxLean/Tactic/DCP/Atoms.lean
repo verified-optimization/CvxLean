@@ -189,6 +189,9 @@ def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) :
       vconds := vconds.push (stx[1].getId, vcond)
     return (vconds, vcondMap)
 
+/-- Assumtions can be elaborated exactly like vconditions. -/
+def elabBConds := elabVConditions
+
 /-- -/
 def elabImpVars (argDecls : Array LocalDecl) (impVarsStx : Array Syntax) : 
   TermElabM (Array (Lean.Name × Expr) × Std.HashMap Lean.Name Expr) := do
@@ -432,6 +435,61 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     addAtom $ AtomData.graph atomData
 | _ => throwUnsupportedSyntax
 
+
+/-- -/
+@[command_elab atomWithBCondsCommand] unsafe def elabAtomWithBCondsCommand : CommandElab
+| `(declare_atom $id [ $curv ] $args* : $expr :=
+    bconditions $bconds*
+    vconditions $vconds*
+    implementationVars $impVars*
+    implementationObjective $impObj
+    implementationConstraints $impConstrs*
+    solution $sols*
+    solutionEqualsAtom $solEqAtom
+    feasibility $feas*
+    optimality $opt
+    vconditionElimination $vcondElim*) => do
+  let atomData ← liftTermElabM do 
+    let curv ← elabCurvature curv.raw
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
+    let (expr, bodyTy) ← elabExpr expr.raw argDecls
+    let (bconds, _) ← elabBConds argDecls bconds.rawImpl
+    let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
+    let (impVars, impVarMap) ← elabImpVars argDecls impVars.rawImpl
+    let impObj ← elabImpObj argDecls impVars impObj.raw bodyTy
+    let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
+    let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
+    let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
+    let feas ← elabFeas argDecls vconds impConstrs sols feas.rawImpl
+    let opt ← elabOpt curv argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
+    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
+
+    let atomData := {
+      id := id.getId
+      curvature := curv
+      expr := expr
+      argKinds := argKinds
+      bconds := bconds
+      vconds := vconds
+      impVars := impVars
+      impObjFun := impObj
+      impConstrs := impConstrs.map (·.snd)
+      solution := sols
+      solEqAtom := solEqAtom
+      feasibility := feas
+      optimality := opt
+      vcondElim := vcondElim
+    }
+    return atomData
+  
+  let atomData ← reduceAtomData atomData
+  let atomData ← addAtomDataDecls id.getId atomData
+
+  liftTermElabM do 
+    trace[Meta.debug] "Add atom: {atomData}"
+    addAtom $ AtomData.graph atomData
+| _ => throwUnsupportedSyntax
+
 /-- -/
 def mapNonConstant (xs : Array Expr) (argKinds : Array ArgKind) (f : Expr → TermElabM Expr) : 
   TermElabM (Array Expr) :=
@@ -475,9 +533,6 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
       let ty ← mkEq lhs rhs
       let add ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars newYs add
-
-/-- Assumtions can be elaborated exactly like vconditions. -/
-def elabBConds := elabVConditions
 
 /-- -/
 @[command_elab affineAtomCommand] unsafe def elabAffineAtomCommand : CommandElab
