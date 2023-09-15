@@ -51,6 +51,7 @@ def EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("mul2",        ("mul", 2, #[])),
     ("sq",          ("pow", 1, #["2"])),
     ("sqrt",        ("sqrt", 1, #[])),
+    ("sqrt'",       ("sqrt", 1, #[])),
     ("div",         ("div", 2, #[])),
     ("log",         ("log", 1, #[])),
     ("exp",         ("exp", 1, #[]))
