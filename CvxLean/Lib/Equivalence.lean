@@ -243,6 +243,27 @@ def map_objFun_log {cs : D → Prop} {f : D → ℝ}
       have hfypos := h y.point y.feasibility
       (Real.log_le_log hfxpos hfypos).mp hlogfxlelogfy  }
 
+def map_objFun_sq {cs : D → Prop} {f : D → ℝ}
+  (h : ∀ x, cs x → f x ≥ 0) : 
+  {| f, cs |} = {| fun x => ((f x) ^ 2), cs |} := 
+  Quotient.sound <| Nonempty.intro <| 
+  { phi := fun ⟨x, f⟩ => ⟨x, f⟩,
+    psi := fun ⟨x, f⟩ => ⟨x, f⟩,
+    phi_optimality := fun x hx y => by
+      have hfxlefy := hx ⟨y.point, y.feasibility⟩
+      have hfxpos := h x.point x.feasibility
+      have hfypos := h y.point y.feasibility
+      simp [sq_le_sq]
+      rw [abs_of_nonneg hfxpos, abs_of_nonneg hfypos]
+      exact hfxlefy
+    psi_optimality := fun x hx y => by
+      have hsqfxlesqfy := hx ⟨y.point, y.feasibility⟩
+      have hfxpos := h x.point x.feasibility
+      have hfypos := h y.point y.feasibility
+      simp [sq_le_sq] at hsqfxlesqfy
+      rw [abs_of_nonneg hfxpos, abs_of_nonneg hfypos] at hsqfxlesqfy
+      exact hsqfxlesqfy }
+
 def map_domain {f : D → R} {cs : D → Prop}
   {fwd : D → E} {bwd : E → D}
   (h : ∀ x, cs x → bwd (fwd x) = x) :
