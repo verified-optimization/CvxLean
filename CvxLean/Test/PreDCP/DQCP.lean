@@ -11,7 +11,7 @@ def dqcp1 :=
     minimize (x)
     subject to 
       h1 : 0 < x
-      h3 : sqrt (x / (x + 1)) <= 1
+      h3 : sqrt (x / (x + 1)) ≤ 1
 
 reduction red1/dcp1 : dqcp1 := by
   convexify
