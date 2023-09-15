@@ -18,14 +18,14 @@ reduction red1/dcp1 : gp1 := by
   map_exp
   convexify
 
-solve dcp1
-
 #print dcp1
 -- def dcp1 : Minimization ℝ ℝ :=
 -- optimization (x : ℝ) 
 --   minimize x
 --   subject to
 --     h2 : x * 2 ≤ log (10123 / 1000)
+
+solve dcp1
 
 end GP1
 
@@ -204,7 +204,7 @@ def gp7 :=
 set_option maxHeartbeats 1000000
 reduction red7/dcp7 : gp7 := by
   map_exp
-  convexify;
+  convexify
 
 #print dcp7
 -- def dcp7 : Minimization (ℝ × ℝ × ℝ) ℝ :=
