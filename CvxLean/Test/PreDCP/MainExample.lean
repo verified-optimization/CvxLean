@@ -19,5 +19,5 @@ equivalence eq/q : p := by
 --   minimize x
 --   subject to
 --     h1 : 0 < x
---     h2 : -x ≤ log (sqrt x)
+--     h2 : exp (-x) ≤ sqrt x
   
