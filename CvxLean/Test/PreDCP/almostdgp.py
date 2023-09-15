@@ -39,10 +39,10 @@ def almostdgp3():
     z3 = cp.Variable(pos=True)
 
     agp3 = cp.Problem(
-        cp.Minimize(x3 / y3), [
+        cp.Minimize(x3 + y3 + z3), [
             2 <= x3, 
             x3 <= 3,
-            x3 ** 2 <= cp.sqrt(x3) - 6 * y3 / z3,
+            cp.sqrt(x3) <= x3 ** 2 - 6 * y3 / z3,
             x3 * y3 == z3,
         ])
 
