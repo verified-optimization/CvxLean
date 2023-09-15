@@ -18,6 +18,8 @@ reduction red1/dcp1 : gp1 := by
   map_exp
   convexify
 
+solve dcp1
+
 #print dcp1
 -- def dcp1 : Minimization ℝ ℝ :=
 -- optimization (x : ℝ) 
@@ -48,6 +50,8 @@ reduction red2/dcp2 : gp2 := by
 --   subject to
 --     h3 : x ≤ log (2691 / 500) - y
 
+solve dcp2
+
 end GP2
 
 section GP3 
@@ -71,6 +75,8 @@ reduction red3/dcp3 : gp3 := by
 --   subject to
 --     h3 : exp (x * 2) + exp y ≤ 1
 
+solve dcp3
+
 end GP3
 
 section GP4 
@@ -90,6 +96,8 @@ def gp4 :=
 reduction red4/dcp4 : gp4 := by
   map_exp
   convexify
+
+solve dcp4
 
 #print dcp4
 -- def dcp4 : Minimization (ℝ × ℝ × ℝ) ℝ :=
@@ -133,6 +141,8 @@ reduction red5/dcp5 : gp5 := by
 --     h6 : exp (x * (3 / 2)) + 3 * exp (y - z - x * (1 / 2)) ≤ 1
 --     h7 : x - y = 2 * z
 
+solve dcp5
+
 end GP5
 
 /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (5) and in
@@ -170,6 +180,8 @@ reduction red6/dcp6 : gp6 := by
 --     h8 : log 5 ≤ d - w
 --     h9 : d - w ≤ log 6
 
+solve dcp6
+
 end GP6
 
 /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 2.2. -/
@@ -192,7 +204,7 @@ def gp7 :=
 set_option maxHeartbeats 1000000
 reduction red7/dcp7 : gp7 := by
   map_exp
-  convexify
+  convexify;
 
 #print dcp7
 -- def dcp7 : Minimization (ℝ × ℝ × ℝ) ℝ :=
@@ -202,5 +214,7 @@ reduction red7/dcp7 : gp7 := by
 --     h4 : exp (-2 * (x + y)) / 3 ≤ 1 - 4 / 3 * exp (y * (1 / 2) - z)
 --     h5 : exp z * 3 ≤ 1 - exp x - exp y * 2
 --     h6 : x + (y - log 2) = 0
+
+solve dcp7
 
 end GP7
