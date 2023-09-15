@@ -46,6 +46,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     
     rw!("le_sub_iff_add_le-rev"; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))"),
 
+    rw!("sub_le_iff_le_add"; "(le (sub ?a ?b) ?c)" => "(le ?a (add ?b ?c))"),
+
+    rw!("sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?b) ?c)"),
+
     // rw!("le-add"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
 
     // rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
@@ -78,6 +82,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
 
     /* Field rules. */
+
+    rw!("add_zero"; "(add ?a 0)" => "?a"),
 
     rw!("add_comm"; "(add ?a ?b)" => "(add ?b ?a)"), 
 
@@ -131,9 +137,22 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Power and square root rules. */
 
+    rw!("one_div_eq_pow_neg_one"; "(div 1 ?a)" => "(pow ?a (neg 1))" 
+        if is_gt_zero("?a")),
+
     // rw!("pow-add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"),
 
-    // rw!("mul-pow"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"),
+    rw!("mul_pow"; "(mul (pow ?a ?n) (pow ?b ?n))" => "(pow (mul ?a ?b) ?n)"),
+
+    rw!("mul_pow-rev"; "(pow (mul ?a ?b) ?n)" => "(mul (pow ?a ?n) (pow ?b ?n))"),
+
+    rw!("pow_mul"; "(pow ?a (mul ?n ?m))" => "(pow (pow ?a ?n) ?m)"),
+
+    rw!("pow_mul-rev"; "(pow (pow ?a ?n) ?m)" => "(pow ?a (mul ?n ?m))"),
+
+    rw!("div_pow"; "(div (pow ?a ?n) (pow ?b ?n))" => "(pow (div ?a ?b) ?n)"),
+
+    rw!("div_pow-rev"; "(pow (div ?a ?b) ?n)" => "(div (pow ?a ?n) (pow ?b ?n))"),
 
     // rw!("pow-sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow ?a ?c))" 
     //     if is_not_zero("?a")),
