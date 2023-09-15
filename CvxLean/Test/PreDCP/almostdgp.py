@@ -12,6 +12,10 @@ def almostdgp1():
     print(agp1.is_dgp())
     # False
 
+    print("agp1.is_dqcp():")
+    print(agp1.is_dqcp())
+    # True
+
     print("agp1.is_dcp():")
     print(agp1.is_dcp())
     # True
@@ -27,6 +31,10 @@ def almostdgp2():
 
     print("agp2.is_dgp():")
     print(agp2.is_dgp())
+    # False
+
+    print("agp2.is_dqcp():")
+    print(agp2.is_dqcp())
     # False
 
     print("agp2.is_dcp():")
@@ -50,6 +58,10 @@ def almostdgp3():
     print(agp3.is_dgp())
     # False
 
+    print("agp3.is_dqcp():")
+    print(agp3.is_dqcp())
+    # False
+
     print("agp3.is_dcp():")
     print(agp3.is_dcp())    
     # False
@@ -65,6 +77,10 @@ def almostdgp4():
 
     print("agp4.is_dgp():")
     print(agp4.is_dgp())
+    # False
+
+    print("agp4.is_dqcp():")
+    print(agp4.is_dqcp())
     # False
 
     print("agp4.is_dcp():")
@@ -84,6 +100,10 @@ def almostdgp5():
     print(agp5.is_dgp())
     # False
 
+    print("agp5.is_dqcp():")
+    print(agp5.is_dqcp())
+    # False
+
     print("agp5.is_dcp():")
     print(agp5.is_dcp())
     # False
@@ -99,6 +119,10 @@ def almostdgp6():
 
     print("agp6.is_dgp():")
     print(agp6.is_dgp())
+    # False
+
+    print("agp6.is_dqcp():")
+    print(agp6.is_dqcp())
     # False
 
     print("agp6.is_dcp():")
