@@ -91,8 +91,10 @@ namespace Tactic
 
 open Minimization Real
 
-open Lean Meta Elab Tactic
-open Lean.Elab.Term
+open Lean Meta Elab Tactic Term
+
+/-- Tactic `map_objFun_log` used to map the logarithm to the objective function
+attempting to prove all the side conditions with simple tactics. -/
 
 elab (name := prove_log_le_log) "prove_log_le_log" : tactic => do
   let mvarId ← getMainGoal
@@ -109,6 +111,8 @@ macro "map_objFun_log" : tactic =>
   `(tactic| 
       apply map_objective (g := Real.log) (hg := by prove_log_le_log) <;> 
       dsimp only [Function.comp])
+
+/-- Machinery to perform the change of variables x ↦ e^u. -/
 
 elab "prove_exp_log" : tactic => do
   let g ← getMainGoal 
@@ -142,6 +146,8 @@ macro "map_exp" : tactic =>
       dsimp only [Function.comp, ExpMap.exp, LogMap.log] <;>
       remove_positive_constraints)
 
+/-- Same as `map_exp` but at a particular position in the domain product. -/
+
 elab "prove_exp_log_at" : tactic => do
   let g ← getMainGoal 
   let (_, g) ← g.intros
@@ -160,6 +166,28 @@ macro "map_exp_at " i:num : tactic =>
         (hfg := by prove_exp_log_at) <;>
       dsimp only [Function.comp, ExpMapAt.exp, LogMapAt.log] <;>
       remove_positive_constraints)
+
+/-- Tactic `map_objFun_sq` used to square the objective function attempting to 
+prove all the side conditions with simple tactics. -/
+
+-- TODO: Move.
+lemma Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
+  rw [rpow_two, rpow_two, sq_le_sq, abs_of_nonneg hx, abs_of_nonneg hy]
+
+elab (name := prove_pow_two_le_pow_two) "prove_pow_two_le_pow_two" : tactic => do
+  let mvarId ← getMainGoal
+  let (_, mvarId) ← mvarId.intros
+  let mvarId ← mvarId.casesAnd
+  let mvarIds ← evalTacticAt (← 
+    `(tactic| 
+        rw [← Real.pow_two_le_pow_two (by positivity) (by positivity)] <;> 
+        try { assumption } <;> try { field_simp } <;> try { positivity })) mvarId
+  replaceMainGoal mvarIds
+
+macro "map_objFun_sq" : tactic => 
+  `(tactic| 
+      apply map_objective (g := fun x => x ^ (2 : ℝ)) (hg := by prove_pow_two_le_pow_two) <;> 
+      dsimp only [Function.comp])
 
 end Tactic
 
