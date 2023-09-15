@@ -92,6 +92,17 @@ fn test_gp6() {
         ]);
 }
 
+
+#[test]
+fn test_dqcp() {
+    assert_steps_with_domain(
+        vec![("x", Domain::Pos)], 
+        "(var x)", 
+        vec![
+            "(le (sqrt (div (var x) (add (var x) 1))) 1)"
+        ]);
+}
+
 // Cost function.
 
 #[test]
