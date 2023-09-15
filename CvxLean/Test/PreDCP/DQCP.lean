@@ -1,15 +1,26 @@
--- section QuasiConvex
+import CvxLean.Command.Solve
+import CvxLean.Tactic.PreDCP.Basic
+import CvxLean.Tactic.PreDCP.Convexify
 
--- def qp1 := 
---   optimization (x y : ℝ) 
---     minimize - (sqrt x) / y
---     subject to 
---       h1 : 0 < y
---       h2 : (exp x) ≤ y
+noncomputable section DQCP
 
--- reduction redq1/dcpq1 : qp1 := by
---   unfold qp1
---   -- convexify
---   exact done
+open CvxLean Minimization Real
 
--- end QuasiConvex
+def dqcp1 :=
+  optimization (x : ℝ) 
+    minimize (x)
+    subject to 
+      h1 : 0 < x
+      h3 : sqrt (x / (x + 1)) <= 1
+
+reduction red1/dcp1 : dqcp1 := by
+  convexify
+
+#print dcp1
+
+solve dcp1
+
+#eval dcp1.value
+#eval dcp1.solution
+
+end DQCP
