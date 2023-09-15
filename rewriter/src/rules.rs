@@ -147,8 +147,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
 
-    // NOTE(RFM): Needed since constant folding is disabled.
-    // TODO(RFM): Activate constant folding but only for rationals?
+    // NOTE: Needed since constant folding is disabled.
+    // TODO: Activate constant folding but only for rationals?
     rw!("pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" if is_ge_zero("?a")),
 
 
@@ -166,7 +166,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("exp_mul-rev"; "(pow (exp ?a) ?b)" => "(exp (mul ?a ?b))"),
 
-    // NOTE(RFM): exp_neg_eq_one_div_div?
+    // NOTE: exp_neg_eq_one_div_div?
     rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
 
     rw!("exp_log"; "(exp (log ?a))" => "?a" if is_gt_zero("?a")),
