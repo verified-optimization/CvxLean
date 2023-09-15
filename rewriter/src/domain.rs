@@ -31,12 +31,16 @@ impl PartialOrd for Domain {
             (_,                Domain::Free    ) => { return Some(Ordering::Less);    }
             (Domain::NonNeg,   Domain::Pos     ) => { return Some(Ordering::Greater); }
             (Domain::Pos,      Domain::NonNeg  ) => { return Some(Ordering::Less);    }
+            (Domain::NonNeg,   Domain::PosConst) => { return Some(Ordering::Greater); }
+            (Domain::PosConst, Domain::NonNeg  ) => { return Some(Ordering::Less);    }
             (Domain::NonNeg,   Domain::Zero    ) => { return Some(Ordering::Greater); }
             (Domain::Zero,     Domain::NonNeg  ) => { return Some(Ordering::Less);    }
             (Domain::Pos,      Domain::PosConst) => { return Some(Ordering::Greater); }
             (Domain::PosConst, Domain::Pos     ) => { return Some(Ordering::Less);    }
             (Domain::NonPos,   Domain::Neg     ) => { return Some(Ordering::Greater); }
             (Domain::Neg,      Domain::NonPos  ) => { return Some(Ordering::Less);    }
+            (Domain::NonPos,   Domain::NegConst) => { return Some(Ordering::Greater); }
+            (Domain::NegConst, Domain::NonPos  ) => { return Some(Ordering::Less);    }
             (Domain::NonPos,   Domain::Zero    ) => { return Some(Ordering::Greater); }
             (Domain::Zero,     Domain::NonPos  ) => { return Some(Ordering::Less);    }
             (Domain::Neg,      Domain::NegConst) => { return Some(Ordering::Greater); }
@@ -116,7 +120,7 @@ pub fn union(d_a:Domain, d_b:Domain) -> Domain {
     }
 }
 
-// TODO(RFM): Move.
+// TODO: Move.
 pub fn option_map2<T1, T2, U, F>(x1: Option<T1>, x2: Option<T2>, f: F) -> Option<U>
     where
         F: FnOnce(T1, T2) -> U,
