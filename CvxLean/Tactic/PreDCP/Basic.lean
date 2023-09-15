@@ -171,7 +171,7 @@ macro "map_exp_at " i:num : tactic =>
 prove all the side conditions with simple tactics. -/
 
 -- TODO: Move.
-lemma Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
+lemma _root_.Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
   rw [rpow_two, rpow_two, sq_le_sq, abs_of_nonneg hx, abs_of_nonneg hy]
 
 elab (name := prove_pow_two_le_pow_two) "prove_pow_two_le_pow_two" : tactic => do
