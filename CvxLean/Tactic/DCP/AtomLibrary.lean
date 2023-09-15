@@ -701,7 +701,7 @@ vconditionElimination
 
 end Vec
 
--- Non-affine atoms on real variables.
+-- Non-affine atoms on matrices.
 namespace Matrix
 
 declare_atom Matrix.PosSemidef [concave] 
