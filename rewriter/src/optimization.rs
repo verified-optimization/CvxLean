@@ -42,18 +42,12 @@ pub struct Meta {
 pub struct Data {
     pub domain: Option<Domain>,
     pub constant: Option<(Constant, PatternAst<Optimization>)>,
-    pub has_log: bool,
 }
 
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
-        let has_log_before = to.has_log;
-        to.has_log = to.has_log || from.has_log;
-        let to_has_log_diff = has_log_before != to.has_log;
-        let from_has_log_diff = to.has_log != from.has_log;
-
         let before_domain = to.domain.clone();
         match (to.domain, from.domain) {
             (None, Some(_)) => { to.domain = from.domain; }
@@ -65,10 +59,7 @@ impl Analysis<Optimization> for Meta {
         let to_domain_diff = before_domain != to.domain;
         let from_domain_diff = to.domain != from.domain;
 
-        DidMerge(
-            to_has_log_diff || to_domain_diff,
-            from_has_log_diff || from_domain_diff,
-        )
+        DidMerge(to_domain_diff, from_domain_diff)
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
@@ -81,7 +72,6 @@ impl Analysis<Optimization> for Meta {
 
         let mut constant = None;
         let mut domain = None;
-        let mut has_log = false;
 
         match enode {
             Optimization::Neg(a) => {
@@ -202,7 +192,6 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                has_log = true;
                 
                 let d_o_a = get_domain(a);
                 match d_o_a {
@@ -269,7 +258,7 @@ impl Analysis<Optimization> for Meta {
             _ => {}
         }
 
-        Data { constant, domain, has_log }
+        Data { constant, domain }
     }
 }
 
@@ -312,12 +301,5 @@ pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
             }
             return false;
         }
-    }
-}
-
-pub fn not_has_log(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
-    let var = var.parse().unwrap();
-    move |egraph, _, subst| {
-        !egraph[subst[var]].data.has_log
     }
 }
