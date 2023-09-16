@@ -100,6 +100,9 @@ register_rewrite_map "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (
 
 /- Field rules. -/
 
+register_rewrite_map "neg_neg" ; "(neg (neg ?a))" => "?a" :=
+  simp_or_rw [neg_neg (G := ℝ)];
+
 register_rewrite_map "add_zero" ; "(add ?a 0)" => "?a" :=
   simp_or_rw [add_zero];
 
