@@ -15,17 +15,26 @@ def p :=
 reduction eq/q : p := by
   convexify
 
-solve q
-
-#print q.reduced
-
 #print q
 -- def q : Minimization ℝ ℝ :=
 -- optimization (x : ℝ) 
 --   minimize x
 --   subject to
---     h1 : 0 < x
+--     h1 : 1 / 1000 ≤ x
 --     h2 : exp (-x) ≤ sqrt x
 
+solve q
+
+#print q.reduced
+-- def q.reduced : Minimization (ℝ × ℝ × ℝ) ℝ :=
+-- optimization (x : ℝ) (t.0 : ℝ) (t.1 : ℝ) 
+--   minimize x
+--   subject to
+--     _ : posOrthCone (t.1 - t.0)
+--     _ : expCone (-x) 1 t.0
+--     _ : posOrthCone (x - 1 / 1000)
+--     _ : rotatedSoCone x (1 / 2) ![t.1]
+
+#eval q.value -- 0.426303
 
 end MainExample 
