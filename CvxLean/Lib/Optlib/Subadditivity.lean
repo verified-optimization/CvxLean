@@ -43,7 +43,7 @@ lemma eigenvectorMatrix_inv_mul :
   hA.eigenvectorMatrixInv * hA.eigenvectorMatrix = 1 :=
 by apply Basis.toMatrix_mul_toMatrix_flip
 
--- NOTE(RFM): There is a spectral_theorem'
+-- NOTE: There is a spectral_theorem'
 theorem spectral_theorem'' :
   hA.eigenvectorMatrix * diagonal (IsROrC.ofReal ∘ hA.eigenvalues) * hA.eigenvectorMatrixᴴ = A := by 
   rw [conjTranspose_eigenvectorMatrix, Matrix.mul_assoc, ← spectral_theorem,

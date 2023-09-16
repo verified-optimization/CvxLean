@@ -12,7 +12,7 @@ open Matrix
 
 open BigOperators
 
--- NOTE(RFM): I need to change the instance of normed add comm group for n → 𝕜
+-- NOTE: I need to change the instance of normed add comm group for n → 𝕜
 -- so that it picks the correct inner product space instance.
 @[local instance]
 noncomputable def frobeniusNormedAddCommGroup' [NormedAddCommGroup 𝕜] : NormedAddCommGroup (n → 𝕜) :=

@@ -158,7 +158,7 @@ end Minimization
 
 open Minimization
 
--- NOTE(RFM): B for bundled. 
+-- NOTE: B for bundled. 
 
 structure MinimizationB (R) [Preorder R] := 
   (D : Type)
@@ -187,7 +187,7 @@ instance : Setoid (MinimizationB R) :=
         symm := MinimizationB.equiv_symm, 
         trans := MinimizationB.equiv_trans } }
 
--- NOTE(RFM): Q for quotient.
+-- NOTE: Q for quotient.
 
 def MinimizationQ := @Quotient (MinimizationB R) (by infer_instance)
 

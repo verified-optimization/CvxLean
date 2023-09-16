@@ -96,7 +96,7 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
 
   -- Run solver.
 
-  -- TODO(RFM): Add this to build instructions. Sometimes it is not needed.
+  -- TODO: Add this to build instructions. Sometimes it is not needed.
   let mosekBinPath := 
     "/Users/ramonfernandezmir/Documents/PhD-code/optimization" ++ 
     "/mosek/10.0/tools/platform/osxaarch64/bin"

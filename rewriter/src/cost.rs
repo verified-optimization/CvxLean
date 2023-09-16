@@ -177,7 +177,7 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1;
             }
             Optimization::Param(_a) => {
-                // NOTE(RFM): The story for DPP is a bit more complicated, but 
+                // NOTE: The story for DPP is a bit more complicated, but 
                 // let's treat them as numerical constants as in DCP.
                 curvature = Curvature::Constant;
                 num_vars = 0;

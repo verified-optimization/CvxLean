@@ -115,7 +115,7 @@ end GP4
 /- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (4). -/
 section GP5
 
--- NOTE(RFM): `maximize` does not work because it is set to `Neg.neg`.
+-- NOTE: `maximize` does not work because it is set to `Neg.neg`.
 def gp5 :=
   optimization (x y z : ℝ) 
     minimize 1 / (x / y)
@@ -189,7 +189,7 @@ end GP5
 /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 2.2. -/
 section GP7
 
--- NOTE(RFM): We don't have the power atom yet.
+-- NOTE: We don't have the power atom yet.
 -- objFun : (x ^ (-1)) * y ^ (-1 / 2) * z ^ (-1) + 2.3 * x * z + 4 * x * y * z
 -- h4 : (1 / 3) * x ^ (-2) * y ^ (-2) + (4 / 3) * y ^ (1 / 2) * z ^ (-1) ≤ 1
 def gp7 := 

@@ -36,7 +36,7 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
     | Parsec.ParseResult.success _ res => do
-      -- NOTE(RFM): This is not ideal, but it works if we use norm_num all the
+      -- NOTE: This is not ideal, but it works if we use norm_num all the
       -- time.
       let divisionRingToOfScientific :=
         mkApp2 (mkConst ``DivisionRing.toOfScientific [levelZero])

@@ -787,7 +787,7 @@ optimality by
     intro i
     rw [Real.exp_iff_expCone]
     apply c_exp
-  -- TODO(RFM): Why does exact fail here?
+  -- TODO: Why does exact fail here?
   have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
     (Matrix.diagonal Y.diag) ht (by convert rfl) (by convert rfl) c_posdef
   refine' Eq.mp _ h

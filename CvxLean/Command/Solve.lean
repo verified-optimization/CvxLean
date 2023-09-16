@@ -49,7 +49,7 @@ def getProblemName (term : Syntax) : MetaM Lean.Name := do
 
 /-- Get solution expression and reduction expression from optimization problem. 
 -/
--- NOTE(RFM): Also send backwardMap.
+-- NOTE: Also send backwardMap.
 def getReducedProblemAndReduction (prob : Expr) 
 : MetaM (Meta.SolutionExpr × Expr × Expr) := do
   let probTy ← inferType prob
@@ -68,7 +68,7 @@ def getReducedProblemAndReduction (prob : Expr)
 
   let probOpt ← Meta.SolutionExpr.fromExpr probSol
   trace[Meta.debug] "probOpt: {probOpt.objFun}"
-  -- NOTE(RFM): We should get the value from this applied to the float sol point.
+  -- NOTE: We should get the value from this applied to the float sol point.
 
   let (_, (forwardMap, backwardMap, probReduction)) ← DCP.canonizeGoalFromExpr probSol
   
@@ -104,7 +104,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
       let probTerm ← whnf probTerm
       let probTerm ← instantiateMVars probTerm
 
-      -- NOTE(RFM): Needed to solve the "OfNat" mvar bug.
+      -- NOTE: Needed to solve the "OfNat" mvar bug.
       for mvarId in ← getMVars probTerm do 
         try {
           let mvarVal ← synthInstance (← mvarId.getDecl).type
