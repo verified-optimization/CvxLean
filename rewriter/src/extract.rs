@@ -149,66 +149,72 @@ impl ToString for Minimization {
 pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
     let prob_s = prob.to_string();
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
-    
-    let analysis = Meta {
-        domains : domains.into_iter().collect()
-    };
 
-    let runner: Runner<Optimization, Meta> = 
-        Runner::new(analysis)
-        .with_explanations_enabled()
-        .with_node_limit(2500)
-        .with_iter_limit(10)
-        .with_time_limit(Duration::from_secs(5))
-        .with_expr(&expr)
-        .run(&rules());
-    
-    if debug {
-        println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
-        let dot_str =  runner.egraph.dot().to_string();
-        fs::write("test.dot", dot_str).expect("");
-    }
-
-    let root = runner.roots[0];
-
-    let best_cost;
-    let best;
-    {
-        let cost_func = DCPCost { egraph: &runner.egraph };
-        let extractor = 
-            Extractor::new(&runner.egraph, cost_func);
-        let (best_cost_found, best_found) = 
-            extractor.find_best(root);
-        best = best_found;
-        best_cost = best_cost_found;
-    }
-    if debug {
-        println!("Best cost: {:?}", best_cost);
-        println!("Best: {:?}", best.to_string());
-    }
-
-    let mut egraph = runner.egraph;
-    let mut explanation : Explanation<Optimization> = 
-        egraph.explain_equivalence(&expr, &best);
-    let flat_explanation : &FlatExplanation<Optimization> =
-        explanation.make_flat_explanation();
-    
-    let rules_copy = rules().clone();
-    let rule_table = make_rule_table(&rules_copy);
-
-    let mut res = Vec::new();
-    if best_cost.0 <= Curvature::Convex {
-        for i in 0..flat_explanation.len() - 1 {
-            let current = &flat_explanation[i];
-            let next = &flat_explanation[i + 1];
-            match get_step(&rule_table, current, next) {
-                Some(step) => { res.push(step); }
-                None => { println!("Nothing {}.", i); }
-            }
+    for node_limit in [2500, 5000, 7500, 10000] {
+        let analysis = Meta {
+            domains : domains.clone().into_iter().collect()
+        };
+        
+        let iter_limit = node_limit / 250;
+        let runner: Runner<Optimization, Meta> = 
+            Runner::new(analysis)
+            .with_explanations_enabled()
+            .with_node_limit(node_limit)
+            .with_iter_limit(iter_limit)
+            .with_time_limit(Duration::from_secs(5))
+            .with_expr(&expr)
+            .run(&rules());
+        
+        if debug {
+            println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
+            let dot_str =  runner.egraph.dot().to_string();
+            fs::write("test.dot", dot_str).expect("");
         }
-    } else {
-        return None;
+
+        let root = runner.roots[0];
+
+        let best_cost;
+        let best;
+        {
+            let cost_func = DCPCost { egraph: &runner.egraph };
+            let extractor = 
+                Extractor::new(&runner.egraph, cost_func);
+            let (best_cost_found, best_found) = 
+                extractor.find_best(root);
+            best = best_found;
+            best_cost = best_cost_found;
+        }
+        if debug {
+            println!("Best cost: {:?}", best_cost);
+            println!("Best: {:?}", best.to_string());
+        }
+
+        let mut egraph = runner.egraph;
+        let mut explanation : Explanation<Optimization> = 
+            egraph.explain_equivalence(&expr, &best);
+        let flat_explanation : &FlatExplanation<Optimization> =
+            explanation.make_flat_explanation();
+        
+        let rules_copy = rules().clone();
+        let rule_table = make_rule_table(&rules_copy);
+
+        let mut res = Vec::new();
+        if best_cost.0 <= Curvature::Convex {
+            for i in 0..flat_explanation.len() - 1 {
+                let current = &flat_explanation[i];
+                let next = &flat_explanation[i + 1];
+                match get_step(&rule_table, current, next) {
+                    Some(step) => { res.push(step); }
+                    None => { println!("Nothing {}.", i); }
+                }
+            }
+        } else {
+            continue;
+        }
+
+        return Some(res);
     }
 
-    return Some(res);
+    // It failed for all node limits.
+    return None;
 }
