@@ -8,6 +8,33 @@ noncomputable section Rules
 
 open CvxLean Minimization Real
 
+/- Objective function rules. -/
+
+-- map_objFun_log (obj)
+-- NOTE: This works because an affine objective is prefered.
+def mapObjFunLogObj := 
+  optimization (x : ℝ)
+    minimize (exp x)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence mapObjFunLogObjRed/mapObjFunLogObjAuto : mapObjFunLogObj := by
+  convexify
+
+#print mapObjFunLogObjAuto
+
+-- map_objFun_sq (obj)
+def mapObjFunSqObj := 
+  optimization (x : ℝ)
+    minimize (sqrt x)
+    subject to 
+      h : 0 ≤ x
+
+time_cmd equivalence mapObjFunSqObjRed/mapObjFunSqObjAuto : mapObjFunSqObj := by 
+  convexify
+
+#print mapObjFunSqObjAuto
+
 
 /- Equality rules. -/
 
@@ -19,7 +46,6 @@ def logEqLogConstr :=
       h : exp x = exp x
 
 time_cmd equivalence logEqLogConstrRed/logEqLogConstrAuto : logEqLogConstr := by
-  unfold logEqLogConstr
   convexify
 
 #print logEqLogConstrAuto
@@ -28,7 +54,7 @@ time_cmd equivalence logEqLogConstrRed/logEqLogConstrAuto : logEqLogConstr := by
 /- Less than or equal rules. -/
 
 -- le_sub_iff_add_le
--- NOTE(RFM): This uses le_sub_iff_add_le because 2 * x is preferred over x + x.
+-- NOTE: This uses le_sub_iff_add_le because 2 * x is preferred over x + x.
 def leSubIffAddLeConstr := 
   optimization (x y : ℝ)
     minimize (0 : ℝ)
@@ -36,7 +62,6 @@ def leSubIffAddLeConstr :=
       h : x ≤ 1 - x
 
 time_cmd equivalence leSubIffAddLeConstrRed/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by 
-  unfold leSubIffAddLeConstr
   convexify
 
 #print leSubIffAddLeConstrAuto
@@ -114,7 +139,7 @@ time_cmd equivalence logLeLogRevConstrRed/logLeLogRevConstrAuto : logLeLogRevCon
 /- Field rules -/
 
 -- add_comm (obj)
--- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
 def addCommObj := 
   optimization (x : ℝ)
     minimize (x + (1 + x) : ℝ)
@@ -128,7 +153,7 @@ time_cmd equivalence addCommObjRed/addCommObjAuto : addCommObj := by
 #print addCommObjAuto
 
 -- add_comm (constr)
--- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
 def addCommConstr := 
   optimization (x : ℝ)
     minimize (0 : ℝ)
@@ -143,7 +168,7 @@ time_cmd equivalence addCommConstrRed/addCommConstrAuto : addCommConstr := by
 #print addCommConstrAuto
 
 -- add_assoc (obj)
--- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
 def addAssocObj := 
   optimization (x : ℝ)
     minimize (x + (x + 1) : ℝ)
@@ -157,7 +182,7 @@ time_cmd equivalence addAssocObjRed/addAssocObjAuto : addAssocObj := by
 #print addAssocObjAuto
 
 -- add_assoc (constr)
--- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
 def addAssocConstr := 
   optimization (x : ℝ)
     minimize (0 : ℝ)
@@ -249,7 +274,7 @@ time_cmd equivalence oneMulConstrRed/oneMulConstrAuto : oneMulConstr := by
 #print oneMulConstrAuto
 
 -- one_mul-rev (obj)
--- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
 def oneMulRevObj := 
   optimization (x : ℝ)
     minimize (x + x : ℝ)
@@ -263,7 +288,7 @@ time_cmd equivalence oneMulRevObjRed/oneMulRevObjAuto : oneMulRevObj := by
 #print oneMulRevObjAuto
 
 -- one_mul-rev (constr)
--- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
 def oneMulRevConstr := 
   optimization (x : ℝ)
     minimize (0 : ℝ)
