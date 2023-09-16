@@ -9,7 +9,7 @@ noncomputable section
 
 open CvxLean Minimization Real
 
-def dqcp1 :=
+def qcp :=
   optimization (x y : ℝ) 
     minimize (-y)
     subject to 
@@ -18,11 +18,11 @@ def dqcp1 :=
       h3 : 0 ≤ y
       h4 : sqrt ((2 * y) / (x + y)) ≤ 1
 
-time_cmd reduction red1/dcp1 : dqcp1 := by
+time_cmd reduction redqcp/dcpq : qcp := by
   convexify
 
-#print dcp1
--- def dcp1 : Minimization (ℝ × ℝ) ℝ :=
+#print dcpq
+-- def dcpq : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) 
 --   minimize y
 --   subject to
@@ -31,9 +31,9 @@ time_cmd reduction red1/dcp1 : dqcp1 := by
 --     h3 : 0 ≤ y
 --     h4 : y * 2 ≤ y + x
 
-solve dcp1
+solve dcpq
 
-#eval dcp1.value -- -2.000000
+#eval dcpq.value -- -2.000000
 
 end
 
