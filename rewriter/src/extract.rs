@@ -205,7 +205,7 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
                 let next = &flat_explanation[i + 1];
                 match get_step(&rule_table, current, next) {
                     Some(step) => { res.push(step); }
-                    None => { println!("Nothing {}.", i); }
+                    None => { }
                 }
             }
         } else {
