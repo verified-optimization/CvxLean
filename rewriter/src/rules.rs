@@ -58,6 +58,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Field rules. */
 
+    rw!("neg_neg"; "(neg (neg ?a))" => "?a"),
+
     rw!("add_zero"; "(add ?a 0)" => "?a"),
 
     rw!("add_comm"; "(add ?a ?b)" => "(add ?b ?a)"), 
