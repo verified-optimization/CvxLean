@@ -28,10 +28,12 @@ lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
   rw [rpow_eq_pow, rpow_eq_pow, ← rpow_mul hx]
   norm_num
 
--- TODO(RFM): Move.
+-- TODO: Move.
 lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
   rw [exp_neg, inv_eq_one_div]
 
+/-- Attempt to close the goal using the lemma specified with a combination of
+`simp` and `rw`. -/
 syntax "simp_or_rw" "[" Lean.Parser.Tactic.rwRule "]" : tactic
 
 macro_rules 
