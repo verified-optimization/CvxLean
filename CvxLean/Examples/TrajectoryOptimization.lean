@@ -79,7 +79,7 @@ structure Relaxation {R D E : Type} [Preorder R]
 
 notation p " ⊇ᵣ " q => Relaxation p q
 
--- NOTE(RFM): problem2 is a relaxation of problem1.
+-- NOTE: problem2 is a relaxation of problem1.
 def relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :
   (relaxed K V A k v a) ⊇ᵣ (original K V A k v a) := 
   { f := ⟨
@@ -88,16 +88,16 @@ def relaxation (K V A : Matrix (Fin n) (Fin m) ℝ) (k v a : (Fin n) → ℝ) :
     feasibility := fun _ ⟨hT, hk, hv, ha⟩ => ⟨hT, hk, hv, ha, le_refl _⟩ 
   }
 
--- TODO(RFM): Move.
+-- TODO: Move.
 lemma smul_le_of_le_of_nonneg 
   {a b : ℝ} (hab : a ≤ b) {v : Fin n → ℝ} (hv : ∀ i, 0 ≤ v i) :
   a • v ≤ b • v := fun i =>
   mul_le_mul_of_nonneg_right hab (hv i)
 
--- NOTE(RFM): problem2 is a tight relaxation of problem1 if v is nonnegative. 
+-- NOTE: problem2 is a tight relaxation of problem1 if v is nonnegative. 
 -- Note that this only makes sense together with the map that induces the solution 
 -- map, in this case (x, T) ↦ (x, T, T ^ 2).
--- TODO(RFM): Package it as definition.
+-- TODO: Package it as definition.
 def relaxationTight (K V A : Matrix (Fin n) (Fin m) ℝ) 
   (k v a : (Fin n) → ℝ) (hvnn : ∀ i, 0 ≤ v i) : 
   Solution (original K V A k v a) → Solution (relaxed K V A k v a) := 
@@ -147,7 +147,7 @@ def relaxationTight (K V A : Matrix (Fin n) (Fin m) ℝ)
         exact le_trans hTopt2subToptleT2subT hT2subTleysubT } 
       } 
 
--- NOTE(RFM): In fact, we can show that every solution of problem2 satisfies the 
+-- NOTE: In fact, we can show that every solution of problem2 satisfies the 
 -- condition y = T ^ 2 provided that the vector v is nonnegative.
 def relaxation_tight' (K V A : Matrix (Fin n) (Fin m) ℝ) 
   (k v a : (Fin n) → ℝ) (hvnn : ∀ i, 0 ≤ v i) : 
@@ -156,7 +156,7 @@ def relaxation_tight' (K V A : Matrix (Fin n) (Fin m) ℝ)
   simp at hT hk hv ha hy
   simp only [relaxed, objFun, constraints] at hoptimality ⊢;
   suffices y ≤ T ^ 2 by exact le_antisymm this (rpow_two _ ▸ hy)
-  -- NOTE(RFM): Up to line 167 is taken from the previous proof.
+  -- NOTE: Up to line 167 is taken from the previous proof.
   have hTnn := le_trans zero_le_one hT
   have hT2nn := pow_nonneg hTnn 2
   have h1leT2 := pow_le_pow_of_le_left zero_le_one hT 2

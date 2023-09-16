@@ -85,7 +85,7 @@ where
       | some fvarId => 
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- TODO(RFM): This is a hack. Trick to prove simple bconditions.
+        -- TODO: This is a hack. Trick to prove simple bconditions.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
           let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
@@ -694,9 +694,9 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     (optimality := optimality)
 
 /-- -/
--- NOTE(RFM): Temporarily changing this to not only return the map from 
+-- NOTE: Temporarily changing this to not only return the map from 
 -- solution to solution but also the forward and backward maps. 
--- TODO(RFM): Better types for return type.
+-- TODO: Better types for return type.
 def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
   MetaM (Expr × (Expr × Expr × Expr)) := do
   -- Extract objective and constraints from `goalExprs`.

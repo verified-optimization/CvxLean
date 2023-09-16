@@ -101,7 +101,7 @@ impl Analysis<Optimization> for Meta {
                         if domain::is_nonneg(d_a) {
                             domain = d_o_a;
                         } 
-                        // NOTE(RFM): If argument is negative, sqrt in Lean 
+                        // NOTE: If argument is negative, sqrt in Lean 
                         // returns zero, but we treat as if it didn't have a 
                         // domain.
                     }
@@ -173,12 +173,12 @@ impl Analysis<Optimization> for Meta {
                 match (d_o_a, d_o_b) {
                     (Some(d_a), Some(d_b)) => { 
                         if !domain::is_zero(d_a) && domain::is_zero(d_b) {
-                            // NOTE(RFM): This is technically 1.
+                            // NOTE: This is technically 1.
                             domain = Some(Domain::PosConst);
                         } else if domain::is_pos(d_a) {
                             domain = d_o_a;
                         }
-                        // NOTE(RFM): There could be more cases here.
+                        // NOTE: There could be more cases here.
                     }
                     _ => ()
                 }
@@ -197,7 +197,7 @@ impl Analysis<Optimization> for Meta {
                 match d_o_a {
                     Some(d_a) => {
                         if domain::is_pos(d_a) {
-                            // NOTE(RFM): We do not know if the argument is less 
+                            // NOTE: We do not know if the argument is less 
                             // than 1 or not, so that's all we can say.
                             domain = Some(Domain::Free);
                         }
