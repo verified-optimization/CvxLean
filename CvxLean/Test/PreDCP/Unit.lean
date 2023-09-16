@@ -185,29 +185,29 @@ open CvxLean Minimization Real
 
 -- /- Field rules -/
 
--- neg_neg (obj)
-def negNegObj :=
-  optimization (x : ℝ)
-    minimize (-(-x) : ℝ)
-    subject to
-      h : 0 ≤ x
+-- -- neg_neg (obj)
+-- def negNegObj :=
+--   optimization (x : ℝ)
+--     minimize (-(-x) : ℝ)
+--     subject to
+--       h : 0 ≤ x
 
-time_cmd equivalence negNegObjRed/negNegObjAuto : negNegObj := by
-  convexify
+-- time_cmd equivalence negNegObjRed/negNegObjAuto : negNegObj := by
+--   convexify
 
-#print negNegObjAuto
+-- #print negNegObjAuto
 
--- neg_neg (constr)
-def negNegConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      h : y ≤ -(-x)
+-- -- neg_neg (constr)
+-- def negNegConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       h : y ≤ -(-x)
 
-time_cmd equivalence negNegConstrRed/negNegConstrAuto : negNegConstr := by
-  convexify
+-- time_cmd equivalence negNegConstrRed/negNegConstrAuto : negNegConstr := by
+--   convexify
 
-#print negNegConstrAuto
+-- #print negNegConstrAuto
 
 -- -- add_zero (obj)
 -- def addZeroObj :=
@@ -435,30 +435,50 @@ time_cmd equivalence negNegConstrRed/negNegConstrAuto : negNegConstr := by
 
 -- #print mulAssocConstrAuto
 
--- sub_eq_add_neg (obj)
-def subEqAddNegObj :=
-  optimization (x y : ℝ)
-    minimize (x - (-y) : ℝ)
-    subject to
-      h : 0 ≤ x
+-- -- sub_eq_add_neg (obj)
+-- def subEqAddNegObj :=
+--   optimization (x y : ℝ)
+--     minimize (x - (-y) : ℝ)
+--     subject to
+--       h : 0 ≤ x
 
-#check neg_neg
+-- #check neg_neg
 
-time_cmd equivalence subEqAddNegObjRed/subEqAddNegObjAuto : subEqAddNegObj := by
-  convexify
+-- time_cmd equivalence subEqAddNegObjRed/subEqAddNegObjAuto : subEqAddNegObj := by
+--   convexify
 
-#print subEqAddNegObjAuto
+-- #print subEqAddNegObjAuto
 
--- sub_eq_add_neg (constr)
-def subEqAddNegConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      h : y ≤ x + (-x)
+-- -- sub_eq_add_neg (constr)
+-- def subEqAddNegConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       h : y ≤ x + (-x)
 
--- sub_eq_add_neg-rev (obj)
+-- -- sub_eq_add_neg-rev (obj)
+-- def subEqAddNegRevObj :=
+--   optimization (x y : ℝ)
+--     minimize (x + (-y) : ℝ)
+--     subject to
+--       h : 0 ≤ x
 
--- sub_eq_add_neg-rev (constr)
+-- time_cmd equivalence subEqAddNegRevObjRed/subEqAddNegRevObjAuto : subEqAddNegRevObj := by
+--   convexify
+
+-- #print subEqAddNegRevObjAuto
+
+-- -- sub_eq_add_neg-rev (constr)
+-- def subEqAddNegRevConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       h : y ≤ x + (-x)
+
+-- time_cmd equivalence subEqAddNegRevConstrRed/subEqAddNegRevConstrAuto : subEqAddNegRevConstr := by
+--   convexify
+
+-- #print subEqAddNegRevConstrAuto
 
 -- -- add_sub (obj)
 -- def addSubObj :=
@@ -472,374 +492,609 @@ def subEqAddNegConstr :=
 
 -- #print addSubObjAuto
 
--- add_sub (constr)
-def addSubConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      h1 : 0 ≤ x
-      h2 : x + (x - y) ≤ 1
+-- -- add_sub (constr)
+-- def addSubConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       h1 : 0 ≤ x
+--       h2 : x + (x - y) ≤ 1
 
-time_cmd equivalence addSubConstrRed/addSubConstrAuto : addSubConstr := by
-  convexify
+-- time_cmd equivalence addSubConstrRed/addSubConstrAuto : addSubConstr := by
+--   convexify
 
-#print addSubConstrAuto
+-- #print addSubConstrAuto
 
--- add_sub-rev (obj)
-def addSubRevObj :=
-  optimization (x : ℝ)
-    minimize ((1 + x) - x : ℝ)
-    subject to
-      h : 0 ≤ x
+-- -- add_sub-rev (obj)
+-- def addSubRevObj :=
+--   optimization (x : ℝ)
+--     minimize ((1 + x) - x : ℝ)
+--     subject to
+--       h : 0 ≤ x
 
-time_cmd equivalence addSubRevObjRed/addSubRevObjAuto : addSubRevObj := by
-  convexify
+-- time_cmd equivalence addSubRevObjRed/addSubRevObjAuto : addSubRevObj := by
+--   convexify
 
-#print addSubRevObjAuto
+-- #print addSubRevObjAuto
 
--- add_sub-rev (constr)
-def addSubRevConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      h1 : 0 ≤ x
-      h2 : (1 + x) - x ≤ 1
+-- -- add_sub-rev (constr)
+-- def addSubRevConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       h1 : 0 ≤ x
+--       h2 : (1 + x) - x ≤ 1
 
-time_cmd equivalence addSubRevConstrRed/addSubRevConstrAuto : addSubRevConstr := by
-  convexify
+-- time_cmd equivalence addSubRevConstrRed/addSubRevConstrAuto : addSubRevConstr := by
+--   convexify
 
-#print addSubRevConstrAuto
+-- #print addSubRevConstrAuto
 
--- add_mul (obj)
-def addMulObj :=
-  optimization (x y : ℝ)
-    minimize ((-1 + sqrt x) * sqrt x : ℝ)
-    subject to
-      hx : 0 < x
+-- -- add_mul (obj)
+-- def addMulObj :=
+--   optimization (x y : ℝ)
+--     minimize ((-1 + sqrt x) * sqrt x : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence addMulObjRed/addMulObjAuto : addMulObj := by
-  convexify
+-- time_cmd equivalence addMulObjRed/addMulObjAuto : addMulObj := by
+--   convexify
 
--- add_mul (constr)
-def addMulConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 < x
-      h : (-1 + sqrt x) * sqrt x ≤ 1
+-- -- add_mul (constr)
+-- def addMulConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 < x
+--       h : (-1 + sqrt x) * sqrt x ≤ 1
 
-time_cmd equivalence addMulConstrRed/addMulConstrAuto : addMulConstr := by
-  convexify
+-- time_cmd equivalence addMulConstrRed/addMulConstrAuto : addMulConstr := by
+--   convexify
 
-#print addMulConstrAuto
+-- #print addMulConstrAuto
 
--- add_mul-rev (obj)
-def addMulRevObj :=
-  optimization (x : ℝ)
-    minimize (2 * x + 3 * x : ℝ)
-    subject to
-      hx : 0 ≤ x
+-- -- add_mul-rev (obj)
+-- def addMulRevObj :=
+--   optimization (x : ℝ)
+--     minimize (2 * x + 3 * x : ℝ)
+--     subject to
+--       hx : 0 ≤ x
 
-time_cmd equivalence addMulRevObjRed/addMulRevObjAuto : addMulRevObj := by
-  convexify
+-- time_cmd equivalence addMulRevObjRed/addMulRevObjAuto : addMulRevObj := by
+--   convexify
 
-#print addMulRevObjAuto
+-- #print addMulRevObjAuto
 
--- add_mul-rev (constr)
-def addMulRevConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 ≤ x
-      h : 2 * x + 3 * x ≤ 1
+-- -- add_mul-rev (constr)
+-- def addMulRevConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 ≤ x
+--       h : 2 * x + 3 * x ≤ 1
 
-time_cmd equivalence addMulRevConstrRed/addMulRevConstrAuto : addMulRevConstr := by
-  convexify
+-- time_cmd equivalence addMulRevConstrRed/addMulRevConstrAuto : addMulRevConstr := by
+--   convexify
 
-#print addMulRevConstrAuto
+-- #print addMulRevConstrAuto
 
--- mul_add (obj)
-def mulAddObj :=
-  optimization (x : ℝ)
-    minimize (sqrt x * (-1 + sqrt x) : ℝ)
-    subject to
-      hx : 0 < x
+-- -- mul_add (obj)
+-- def mulAddObj :=
+--   optimization (x : ℝ)
+--     minimize (sqrt x * (-1 + sqrt x) : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence mulAddObjRed/mulAddObjAuto : mulAddObj := by
-  convexify
+-- time_cmd equivalence mulAddObjRed/mulAddObjAuto : mulAddObj := by
+--   convexify
 
-#print mulAddObjAuto
+-- #print mulAddObjAuto
 
--- mul_add (constr)
-def mulAddConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 < x
-      h : sqrt x * (-1 + sqrt x) ≤ 1
+-- -- mul_add (constr)
+-- def mulAddConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 < x
+--       h : sqrt x * (-1 + sqrt x) ≤ 1
 
-time_cmd equivalence mulAddConstrRed/mulAddConstrAuto : mulAddConstr := by
-  convexify
+-- time_cmd equivalence mulAddConstrRed/mulAddConstrAuto : mulAddConstr := by
+--   convexify
 
-#print mulAddConstrAuto
+-- #print mulAddConstrAuto
 
--- mul_add-rev (obj)
-def mulAddRevObj :=
-    optimization (x : ℝ)
-    minimize (x * 2 + x * 3 : ℝ)
-    subject to
-      hx : 0 ≤ x
+-- -- mul_add-rev (obj)
+-- def mulAddRevObj :=
+--     optimization (x : ℝ)
+--     minimize (x * 2 + x * 3 : ℝ)
+--     subject to
+--       hx : 0 ≤ x
   
-time_cmd equivalence mulAddRevObjRed/mulAddRevObjAuto : mulAddRevObj := by
-  convexify
+-- time_cmd equivalence mulAddRevObjRed/mulAddRevObjAuto : mulAddRevObj := by
+--   convexify
 
-#print mulAddRevObjAuto
+-- #print mulAddRevObjAuto
 
--- mul_add-rev (constr)
-def mulAddRevConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 ≤ x
-      h : x * 2 + x * 3 ≤ 1
+-- -- mul_add-rev (constr)
+-- def mulAddRevConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 ≤ x
+--       h : x * 2 + x * 3 ≤ 1
 
-time_cmd equivalence mulAddRevConstrRed/mulAddRevConstrAuto : mulAddRevConstr := by
-  convexify
+-- time_cmd equivalence mulAddRevConstrRed/mulAddRevConstrAuto : mulAddRevConstr := by
+--   convexify
 
-#print mulAddRevConstrAuto
+-- #print mulAddRevConstrAuto
 
--- mul_sub (obj)
-def mulSubObj :=
-  optimization (x : ℝ)
-    minimize (sqrt x * (sqrt x - 1) : ℝ)
-    subject to
-      hx : 0 < x
+-- -- mul_sub (obj)
+-- def mulSubObj :=
+--   optimization (x : ℝ)
+--     minimize (sqrt x * (sqrt x - 1) : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence mulSubObjRed/mulSubObjAuto : mulSubObj := by
-  convexify
+-- time_cmd equivalence mulSubObjRed/mulSubObjAuto : mulSubObj := by
+--   convexify
 
-#print mulSubObjAuto
+-- #print mulSubObjAuto
 
--- mul_sub (constr)
-def mulSubConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 < x
-      h : sqrt x * (sqrt x - 1) ≤ 1
+-- -- mul_sub (constr)
+-- def mulSubConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 < x
+--       h : sqrt x * (sqrt x - 1) ≤ 1
 
--- mul_sub-rev (obj)
-def mulSubRevObj :=
-  optimization (x : ℝ)
-    minimize (x * 2 - x * 3 : ℝ)
-    subject to
-      hx : 0 ≤ x
+-- -- mul_sub-rev (obj)
+-- def mulSubRevObj :=
+--   optimization (x : ℝ)
+--     minimize (x * 2 - x * 3 : ℝ)
+--     subject to
+--       hx : 0 ≤ x
 
-time_cmd equivalence mulSubRevObjRed/mulSubRevObjAuto : mulSubRevObj := by
-  convexify
+-- time_cmd equivalence mulSubRevObjRed/mulSubRevObjAuto : mulSubRevObj := by
+--   convexify
 
-#print mulSubRevObjAuto
+-- #print mulSubRevObjAuto
 
--- mul_sub-rev (constr)
-def mulSubRevConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 ≤ x
-      h : x * 2 - x * 3 ≤ 1
+-- -- mul_sub-rev (constr)
+-- def mulSubRevConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 ≤ x
+--       h : x * 2 - x * 3 ≤ 1
 
-time_cmd equivalence mulSubRevConstrRed/mulSubRevConstrAuto : mulSubRevConstr := by
-  convexify
+-- time_cmd equivalence mulSubRevConstrRed/mulSubRevConstrAuto : mulSubRevConstr := by
+--   convexify
 
-#print mulSubRevConstrAuto
+-- #print mulSubRevConstrAuto
 
--- add_div (obj)
-def addDivObj :=
-  optimization (x y : ℝ)
-    minimize ((exp x + 1) / (exp y) : ℝ)
-    subject to
-      hx : 0 ≤ x
+-- -- add_div (obj)
+-- def addDivObj :=
+--   optimization (x y : ℝ)
+--     minimize ((exp x + 1) / (exp y) : ℝ)
+--     subject to
+--       hx : 0 ≤ x
 
-time_cmd equivalence addDivObjRed/addDivObjAuto : addDivObj := by
-  convexify
+-- time_cmd equivalence addDivObjRed/addDivObjAuto : addDivObj := by
+--   convexify
 
-#print addDivObjAuto
+-- #print addDivObjAuto
 
--- add_div (constr)
-def addDivConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 ≤ x
-      hy : 0 < y
-      h : (exp x + 1) / (exp y) ≤ 1
+-- -- add_div (constr)
+-- def addDivConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 ≤ x
+--       hy : 0 < y
+--       h : (exp x + 1) / (exp y) ≤ 1
 
-time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
-  convexify
+-- time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
+--   convexify
 
-#print addDivConstrAuto
+-- #print addDivConstrAuto
 
--- add_div-rev (obj)
-def addDivRevObj :=
-  optimization (x : ℝ)
-    minimize ((x / 2) + ((-x) / 2) : ℝ)
-    subject to
-      hx : 0 < x
+-- -- add_div-rev (obj)
+-- def addDivRevObj :=
+--   optimization (x : ℝ)
+--     minimize ((x / 2) + ((-x) / 2) : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence addDivRevObjRed/addDivRevObjAuto : addDivRevObj := by
-  convexify
+-- time_cmd equivalence addDivRevObjRed/addDivRevObjAuto : addDivRevObj := by
+--   convexify
 
--- add_div-rev (constr)
-def addDivRevConstr :=
-  optimization (x : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      h : (x / 2) + ((-x) / 2) ≤ x
+-- -- add_div-rev (constr)
+-- def addDivRevConstr :=
+--   optimization (x : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       h : (x / 2) + ((-x) / 2) ≤ x
 
-time_cmd equivalence addDivRevConstrRed/addDivRevConstrAuto : addDivRevConstr := by
-  convexify
+-- time_cmd equivalence addDivRevConstrRed/addDivRevConstrAuto : addDivRevConstr := by
+--   convexify
 
-#print addDivRevConstrAuto
+-- #print addDivRevConstrAuto
 
--- mul_div (obj)
-def mulDivObj :=
-  optimization (x y : ℝ)
-    minimize ((sqrt x) * (sqrt x / 2) : ℝ)
-    subject to
-      hx : 0 < x
+-- -- mul_div (obj)
+-- def mulDivObj :=
+--   optimization (x y : ℝ)
+--     minimize ((sqrt x) * (sqrt x / 2) : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence mulDivObjRed/mulDivObjAuto : mulDivObj := by
-  convexify
+-- time_cmd equivalence mulDivObjRed/mulDivObjAuto : mulDivObj := by
+--   convexify
 
-#print mulDivObjAuto
+-- #print mulDivObjAuto
 
--- mul_div (constr)
-def mulDivConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 < x
-      h : (sqrt x) * (sqrt x / 2) ≤ 1
+-- -- mul_div (constr)
+-- def mulDivConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 < x
+--       h : (sqrt x) * (sqrt x / 2) ≤ 1
 
-time_cmd equivalence mulDivConstrRed/mulDivConstrAuto : mulDivConstr := by
-  convexify
+-- time_cmd equivalence mulDivConstrRed/mulDivConstrAuto : mulDivConstr := by
+--   convexify
 
-#print mulDivConstrAuto
+-- #print mulDivConstrAuto
 
--- mul_div-rev (obj)
-def mulDivRevObj :=
-  optimization (x y : ℝ)
-    minimize ((x * y) / x : ℝ)
-    subject to
-      hx : 0 < x
+-- -- mul_div-rev (obj)
+-- def mulDivRevObj :=
+--   optimization (x y : ℝ)
+--     minimize ((x * y) / x : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence mulDivRevObjRed/mulDivRevObjAuto : mulDivRevObj := by
-  convexify
+-- time_cmd equivalence mulDivRevObjRed/mulDivRevObjAuto : mulDivRevObj := by
+--   convexify
 
-#print mulDivRevObjAuto
+-- #print mulDivRevObjAuto
 
--- mul_div-rev (constr)
-def mulDivRevConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 < x
-      h : (x * y) / x ≤ 1
+-- -- mul_div-rev (constr)
+-- def mulDivRevConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 < x
+--       h : (x * y) / x ≤ 1
 
-time_cmd equivalence mulDivRevConstrRed/mulDivRevConstrAuto : mulDivRevConstr := by
-  convexify
+-- time_cmd equivalence mulDivRevConstrRed/mulDivRevConstrAuto : mulDivRevConstr := by
+--   convexify
 
-#print mulDivRevConstrAuto
+-- #print mulDivRevConstrAuto
 
-#check div_self
+-- #check div_self
 
--- div_self (obj)
-def divSelfObj :=
-  optimization (x y : ℝ)
-    minimize ((x / x) * y : ℝ)
-    subject to
-      hx : 0 < x
+-- -- div_self (obj)
+-- def divSelfObj :=
+--   optimization (x y : ℝ)
+--     minimize ((x / x) * y : ℝ)
+--     subject to
+--       hx : 0 < x
 
-time_cmd equivalence divSelfObjRed/divSelfObjAuto : divSelfObj := by
-  convexify
+-- time_cmd equivalence divSelfObjRed/divSelfObjAuto : divSelfObj := by
+--   convexify
 
-#print divSelfObjAuto
+-- #print divSelfObjAuto
 
--- div_self (constr)
-def divSelfConstr :=
-  optimization (x y : ℝ)
-    minimize (0 : ℝ)
-    subject to
-      hx : 0 < x
-      h : (x / x) * y ≤ 1
+-- -- div_self (constr)
+-- def divSelfConstr :=
+--   optimization (x y : ℝ)
+--     minimize (0 : ℝ)
+--     subject to
+--       hx : 0 < x
+--       h : (x / x) * y ≤ 1
 
-time_cmd equivalence divSelfConstrRed/divSelfConstrAuto : divSelfConstr := by
-  convexify
+-- time_cmd equivalence divSelfConstrRed/divSelfConstrAuto : divSelfConstr := by
+--   convexify
   
-#print divSelfConstrAuto
+-- #print divSelfConstrAuto
 
 
 /- Power and square root rules. -/
 
 -- pow_add (obj)
+-- TODO: Implement power atom.
 
 -- pow_add (constr)
+-- TODO: Implement power atom.
 
 -- pow_add-rev (obj)
+def powAddRevObj :=
+  optimization (x : ℝ)
+    minimize ((sqrt x) * (sqrt x) : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence powAddRevObjRed/powAddRevObjAuto : powAddRevObj := by
+  convexify
+
+#print powAddRevObjAuto
 
 -- pow_add-rev (constr)
+def powAddRevConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : (sqrt x) * (sqrt x) ≤ 1
+
+time_cmd equivalence powAddRevConstrRed/powAddRevConstrAuto : powAddRevConstr := by
+  convexify
+
+#print powAddRevConstrAuto
 
 -- mul_pow (obj)
+def mulPowObj :=
+  optimization (x : ℝ)
+    minimize ((x * (sqrt x)) ^ 2 / x : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence mulPowObjRed/mulPowObjAuto : mulPowObj := by
+  convexify
+
+#print mulPowObjAuto
 
 -- mul_pow (constr)
+def mulPowConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : ((x * (sqrt x)) ^ 2 / x) ≤ 1
+
+time_cmd equivalence mulPowConstrRed/mulPowConstrAuto : mulPowConstr := by
+  convexify
+
+#print mulPowConstrAuto
 
 -- mul_pow-rev (obj)
+def mulPowRevObj :=
+  optimization (x : ℝ)
+    minimize (((sqrt x) ^ 2) * ((sqrt (x + 1)) ^ 2) : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence mulPowRevObjRed/mulPowRevObjAuto : mulPowRevObj := by
+  convexify
 
 -- mul_pow-rev (constr)
+def mulPowRevConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : (((sqrt x) ^ 2) * ((sqrt (x + 1)) ^ 2)) ≤ 1
+
+time_cmd equivalence mulPowRevConstrRed/mulPowRevConstrAuto : mulPowRevConstr := by
+  convexify
+
+#print mulPowRevConstrAuto
 
 -- pow_mul (obj)
+-- TODO: Implement power atom.
 
 -- pow_mul (constr)
+-- TODO: Implement power atom.
 
 -- pow_mul-rev (obj)
+def powMulRevObj :=
+  optimization (x : ℝ)
+    minimize ((x ^ 2) ^ 2 : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence powMulRevObjRed/powMulRevObjAuto : powMulRevObj := by
+  convexify
+
+#print powMulRevObjAuto
 
 -- pow_mul-rev (constr)
+def powMulRevConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : ((x ^ 2) ^ 2) ≤ 1
+
+time_cmd equivalence powMulRevConstrRed/powMulRevConstrAuto : powMulRevConstr := by
+  convexify
+
+#print powMulRevConstrAuto
 
 -- div_pow (obj)
+def divPowObj :=
+  optimization (x : ℝ)
+    minimize ((x ^ 2) * (1 / x) ^ 2 : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence divPowObjRed/divPowObjAuto : divPowObj := by
+  convexify
+
+#print divPowObjAuto
 
 -- div_pow (constr)
+def divPowConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : (1 / x) ^ 2 ≤ 1
+
+time_cmd equivalence divPowConstrRed/divPowConstrAuto : divPowConstr := by
+  convexify
+
+#print divPowConstrAuto
 
 -- div_pow-rev (obj)
+def divPowRevObj :=
+  optimization (x : ℝ)
+    minimize ((x + x) ^ 2 / x ^ 2 : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence divPowRevObjRed/divPowRevObjAuto : divPowRevObj := by
+  convexify
 
 -- div_pow-rev (constr)
+def divPowRevConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : ((x + x) ^ 2 / x ^ 2) ≤ x
+
+time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
+  convexify
+
+#print divPowRevConstrAuto
 
 -- pow_sub (obj)
+-- TODO: Implement power atom.
 
 -- pow_sub (constr)
+-- TODO: Implement power atom.
 
 -- pow_sub-rev (obj)
+def powSubRevObj :=
+  optimization (x : ℝ)
+    minimize ((x ^ 2) / (sqrt x) : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence powSubRevObjRed/powSubRevObjAuto : powSubRevObj := by
+  convexify
+
+#print powSubRevObjAuto
 
 -- pow_sub-rev (constr)
+def powSubRevConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : ((x ^ 2) / (sqrt x)) ≤ 1
+
+time_cmd equivalence powSubRevConstrRed/powSubRevConstrAuto : powSubRevConstr := by
+  convexify
+
+#print powSubRevConstrAuto
 
 -- div_pow_eq_mul_pow_neg (obj)
+def divPowEqMulPowNegObj :=
+  optimization (x : ℝ)
+    minimize (1 / (x ^ 2) : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence divPowEqMulPowNegObjRed/divPowEqMulPowNegObjAuto : divPowEqMulPowNegObj := by
+  convexify
+
+#print divPowEqMulPowNegObjAuto
 
 -- div_pow_eq_mul_pow_neg (constr)
+def divPowEqMulPowNegConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : 1 / (x ^ 2) ≤ 1
+
+time_cmd equivalence divPowEqMulPowNegConstrRed/divPowEqMulPowNegConstrAuto : divPowEqMulPowNegConstr := by
+  convexify
+
+#print divPowEqMulPowNegConstrAuto
 
 -- div_pow_eq_mul_pow_neg-rev (obj)
+-- TODO: Implement power atom.
 
 -- div_pow_eq_mul_pow_neg-rev (constr)
+-- TODO: Implement power atom.
 
 -- one_div_eq_pow_neg_one (obj)
+def oneDivEqPowNegOneObj :=
+  optimization (x : ℝ)
+    minimize (1 / (sqrt x) : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence oneDivEqPowNegOneObjRed/oneDivEqPowNegOneObjAuto : oneDivEqPowNegOneObj := by
+  convexify
+
+#print oneDivEqPowNegOneObjAuto
 
 -- one_div_eq_pow_neg_one (constr)
+def oneDivEqPowNegOneConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : 1 / (sqrt x) ≤ 1
+
+time_cmd equivalence oneDivEqPowNegOneConstrRed/oneDivEqPowNegOneConstrAuto : oneDivEqPowNegOneConstr := by
+  convexify
+
+#print oneDivEqPowNegOneConstrAuto
 
 -- sqrt_eq_rpow (obj)
+def sqrtEqRpowObj :=
+  optimization (x : ℝ)
+    minimize ((sqrt x) * (sqrt x) : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence sqrtEqRpowObjRed/sqrtEqRpowObjAuto : sqrtEqRpowObj := by
+  convexify
+
+#print sqrtEqRpowObjAuto
 
 -- sqrt_eq_rpow (constr)
+def sqrtEqRpowConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : (sqrt x) * (sqrt x) ≤ 1
 
+time_cmd equivalence sqrtEqRpowConstrRed/sqrtEqRpowConstrAuto : sqrtEqRpowConstr := by
+  convexify
+
+#print sqrtEqRpowConstrAuto
+  
 -- pow_half_two (obj)
+def powHalfTwoObj :=
+  optimization (x : ℝ)
+    minimize ((sqrt x) ^ 2 : ℝ)
+    subject to
+      hx : 0 < x
+
+time_cmd equivalence powHalfTwoObjRed/powHalfTwoObjAuto : powHalfTwoObj := by
+  convexify
+
+#print powHalfTwoObjAuto
 
 -- pow_half_two (constr)
+def powHalfTwoConstr :=
+  optimization (x : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      hx : 0 < x
+      h : (sqrt x) ^ 2 ≤ 1
+
+time_cmd equivalence powHalfTwoConstrRed/powHalfTwoConstrAuto : powHalfTwoConstr := by
+  convexify
+
+#print powHalfTwoConstrAuto
 
 
 /- Exponential and logarithm rules. -/
