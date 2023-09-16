@@ -18,18 +18,18 @@ def agp1 :=
         h1 : 0 < x
         h2 : x ^ 2 - 10.123 ≤ 0
 
-time_cmd reduction red1/dcp1 : agp1 := by
+time_cmd reduction reda1/dcpa1 : agp1 := by
   map_exp
   convexify
 
-#print dcp1
--- def dcp1 : Minimization ℝ ℝ :=
+#print dcpa1
+-- def dcpa1 : Minimization ℝ ℝ :=
 -- optimization (x : ℝ) 
 --   minimize x
 --   subject to
 --     h2 : exp (x * 2) - 10123 / 1000 ≤ 0
 
-solve dcp1
+solve dcpa1
 
 end AlmostDGP1
 
@@ -44,18 +44,18 @@ def agp2 :=
         h2 : 0 < y
         h3 : x * y - 5.382 ≤ 0 
 
-time_cmd reduction red2/dcp2 : agp2 := by
+time_cmd reduction reda2/dcpa2 : agp2 := by
   map_exp
   convexify
 
-#print dcp2
--- def dcp2 : Minimization (ℝ × ℝ) ℝ :=
+#print dcpa2
+-- def dcpa2 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) 
 --   minimize x
 --   subject to
 --     h3 : exp (x + y) - 2691 / 500 ≤ 0
 
-solve dcp2
+solve dcpa2
 
 end AlmostDGP2
 
@@ -74,12 +74,12 @@ def agp3 :=
       h6 : sqrt x ≤ x ^ 2 - 6 * y / z
       h7 : x * y = z
 
-time_cmd reduction red3/dcp3 : agp3 := by
+time_cmd reduction reda3/dcpa3 : agp3 := by
   map_exp
   convexify
 
-#print dcp3
--- def dcp3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+#print dcpa3
+-- def dcpa3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
 --   minimize exp y + (exp x + exp z)
 --   subject to
@@ -88,7 +88,7 @@ time_cmd reduction red3/dcp3 : agp3 := by
 --     h6 : 6 * exp (y - z - x * 2) ≤ 1 - exp (x * -(3 / 2))
 --     h7 : x + y = z
   
-solve dcp3
+solve dcpa3
 
 end AlmostDGP3
 
@@ -103,18 +103,18 @@ def agp4 :=
       h2 : 0 < y
       h3 : x * y ≤ 2 - x - y
 
-time_cmd reduction red4/dcp4 : agp4 := by
+time_cmd reduction reda4/dcpa4 : agp4 := by
   map_exp
   convexify
 
-#print dcp4
--- def dcp4 : Minimization (ℝ × ℝ) ℝ :=
+#print dcpa4
+-- def dcpa4 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) 
 --   minimize -(x + y)
 --   subject to
 --     h3 : exp x ≤ 2 - exp (x + y) - exp y
 
-solve dcp4
+solve dcpa4
 
 end AlmostDGP4 
 
@@ -129,7 +129,7 @@ end AlmostDGP4
 --       h2 : 0 < y
 --       h3 : x * y ≤ 2 + x - y
 
--- reduction red5/dcp5 : agp5 := by
+-- reduction reda5/dcpa5 : agp5 := by
 --   map_exp
 --   try { convexify } -- Should fail.
 
@@ -146,7 +146,7 @@ end AlmostDGP4
 --       h2 : 0 < y
 --       h3 : sqrt (x * y - y) ≤ 1
 
--- reduction red6/dcp6 : agp6 := by
+-- reduction reda6/dcpa6 : agp6 := by
 --   map_exp
 --   try { convexify } -- Should fail.
 
