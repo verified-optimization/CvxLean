@@ -49,7 +49,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("log_le_log-rev"; "(le ?a ?b)" => "(le (log ?a) (log ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b")),
     
-    rw!("pow_two_le_pow_two"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" 
+    rw!("pow_two_le_pow_two"; "(le (pow ?a 2) (pow ?b 2))" => "(le ?a ?b)"
         if is_ge_zero("?a") if is_ge_zero("?b")),
 
     rw!("pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" 

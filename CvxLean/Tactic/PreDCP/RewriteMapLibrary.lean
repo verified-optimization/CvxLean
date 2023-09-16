@@ -91,7 +91,7 @@ register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" => "(le ?a ?b)" :=
 register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
   rewrite [←Real.log_le_log (by positivity) (by positivity)];
 
-register_rewrite_map "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" := 
+register_rewrite_map "pow_two_le_pow_two"; "(le (pow ?a 2) (pow ?b 2))" => "(le ?a ?b)":= 
   rewrite [Real.pow_two_le_pow_two (by positivity) (by positivity)];
 
 register_rewrite_map "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" := 
