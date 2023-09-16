@@ -120,7 +120,8 @@ def evalStep (g : MVarId) (step : EggRewrite)
   -- could be other types.
   let mapLogInEquiv := isEquiv && step.rewriteName == "map_objFun_log"
   let mapSqInEquiv := isEquiv && step.rewriteName == "map_objFun_sq"
-  let givenRange := mapLogInEquiv || mapSqInEquiv
+  let mapObjFunInEquiv := mapLogInEquiv || mapSqInEquiv
+  let givenRange := mapObjFunInEquiv
 
   -- TODO: Do not handle them as exceptions, get the names of the wrapper lemmas 
   -- directly.
@@ -137,7 +138,8 @@ def evalStep (g : MVarId) (step : EggRewrite)
     (if isEquiv then `MinimizationQ else `Minimization) ++ rwWrapperRaw
 
   -- Build expexcted expression to generate the right rewrite condition. Again,
-  -- mapping the logarithm is an exception.
+  -- mapping the objective function is an exception where the expected term is
+  -- not used.
   let expectedTermStr := step.expectedTerm
   let mut expectedExpr ← EggString.toExpr vars expectedTermStr
   if !atObjFun then 
@@ -146,7 +148,7 @@ def evalStep (g : MVarId) (step : EggRewrite)
     Meta.withDomainLocalDecls domain p fun xs prs => do
       let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
       mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
-  if mapLogInEquiv then 
+  if mapObjFunInEquiv then 
     expectedExpr ← mkFreshExprMVar none
 
   let (needsEq, tacStx) ← findTactic isEquiv atObjFun step.rewriteName step.direction
