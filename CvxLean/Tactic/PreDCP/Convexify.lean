@@ -216,7 +216,6 @@ def evalStep (g : MVarId) (step : EggRewrite)
       return [gSol]
     else
       dbg_trace s!"Failed to rewrite {step.rewriteName} after rewriting constraint / objective function (equiv {isEquiv})."
-      dbg_trace s!"Tactic was: {fullTac}."
       for g in gs do  
         dbg_trace s!"Could not prove {← Meta.ppGoal g}."
       return gs
