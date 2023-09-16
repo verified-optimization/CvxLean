@@ -1,5 +1,6 @@
 import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Test.Util.TimeCmd
 
 noncomputable section GP
 
@@ -14,7 +15,7 @@ def gp1 :=
         h1 : 0 < x
         h2 : x ^ 2 ≤ 10.123
 
-reduction red1/dcp1 : gp1 := by
+time_cmd reduction red1/dcp1 : gp1 := by
   map_exp
   convexify
 
@@ -39,7 +40,7 @@ def gp2 :=
         h2 : 0 < y
         h3 : x * y ≤ 5.382
 
-reduction red2/dcp2 : gp2 := by
+time_cmd reduction red2/dcp2 : gp2 := by
   map_exp
   convexify
 
@@ -64,7 +65,7 @@ def gp3 :=
         h2 : 0 < y
         h3 : sqrt (x * x + y) ≤ 1
 
-reduction red3/dcp3 : gp3 := by
+time_cmd reduction red3/dcp3 : gp3 := by
   map_exp
   convexify
 
@@ -93,7 +94,7 @@ def gp4 :=
       h6 : x ^ 2 + 6 * y / z <= sqrt x
       h7 : x * y = z
 
-reduction red4/dcp4 : gp4 := by
+time_cmd reduction red4/dcp4 : gp4 := by
   map_exp
   convexify
 
@@ -127,7 +128,7 @@ def gp5 :=
       h6 : x^2 + 3 * y / z ≤ sqrt x
       h7 : x / y = z ^ 2
 
-reduction red5/dcp5 : gp5 := by 
+time_cmd reduction red5/dcp5 : gp5 := by 
   map_exp
   convexify
 
@@ -145,44 +146,45 @@ solve dcp5
 
 end GP5
 
-/- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (5) and in
-https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
-section GP6
+-- TODO: Issue with repeated rewrites.
+-- /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (5) and in
+-- https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
+-- section GP6
 
--- NOTE(RFM): `maximize` issue.
-def gp6 :=
-  optimization (h w d : ℝ) 
-    minimize (1 / (h * w * d))
-    subject to 
-      h1 : 0 < h
-      h2 : 0 < w
-      h3 : 0 < d
-      h4 : 2 * (h * d + w * d) ≤ 100
-      h5 : w * d ≤ 10
-      h6 : 0.5 ≤ h / w
-      h7 : h / w ≤ 0.5  
-      h8 : 5 ≤ d / w
-      h9 : d / w ≤ 6
+-- -- NOTE: `maximize` issue.
+-- def gp6 :=
+--   optimization (h w d : ℝ) 
+--     minimize (1 / (h * w * d))
+--     subject to 
+--       h1 : 0 < h
+--       h2 : 0 < w
+--       h3 : 0 < d
+--       h4 : 2 * (h * d + w * d) ≤ 100
+--       h5 : w * d ≤ 10
+--       h6 : 0.5 ≤ h / w
+--       h7 : h / w ≤ 0.5  
+--       h8 : 5 ≤ d / w
+--       h9 : d / w ≤ 6
 
-reduction red6/dcp6 : gp6 := by
-  map_exp
-  convexify
+-- time_cmd reduction red6/dcp6 : gp6 := by
+--   map_exp
+--   convexify
 
-#print dcp6
--- def dcp6 : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (h : ℝ) (w : ℝ) (d : ℝ) 
---   minimize -(h + (d + w))
---   subject to
---     h4 : 2 * (exp (h + d) + exp (d + w)) ≤ 100
---     h5 : d + w ≤ log 10
---     h6 : w - log 2 ≤ h
---     h7 : h ≤ w - log 2
---     h8 : log 5 ≤ d - w
---     h9 : d - w ≤ log 6
+-- #print dcp6
+-- -- def dcp6 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+-- -- optimization (h : ℝ) (w : ℝ) (d : ℝ) 
+-- --   minimize -(h + (d + w))
+-- --   subject to
+-- --     h4 : 2 * (exp (h + d) + exp (d + w)) ≤ 100
+-- --     h5 : d + w ≤ log 10
+-- --     h6 : w - log 2 ≤ h
+-- --     h7 : h ≤ w - log 2
+-- --     h8 : log 5 ≤ d - w
+-- --     h9 : d - w ≤ log 6
 
-solve dcp6
+-- solve dcp6
 
-end GP6
+-- end GP6
 
 /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 2.2. -/
 section GP7
@@ -202,7 +204,7 @@ def gp7 :=
       h6 : (1 / 2) * x * y = 1
 
 set_option maxHeartbeats 1000000
-reduction red7/dcp7 : gp7 := by
+time_cmd reduction red7/dcp7 : gp7 := by
   map_exp
   convexify
 

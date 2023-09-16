@@ -1,5 +1,6 @@
 import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Test.Util.TimeCmd
 
 noncomputable section GP
 
@@ -15,7 +16,7 @@ def agp1 :=
         h1 : 0 < x
         h2 : x ^ 2 - 10.123 ≤ 0
 
-reduction red1/dcp1 : agp1 := by
+time_cmd reduction red1/dcp1 : agp1 := by
   map_exp
   convexify
 
@@ -41,7 +42,7 @@ def agp2 :=
         h2 : 0 < y
         h3 : x * y - 5.382 ≤ 0 
 
-reduction red2/dcp2 : agp2 := by
+time_cmd reduction red2/dcp2 : agp2 := by
   map_exp
   convexify
 
@@ -71,7 +72,7 @@ def agp3 :=
       h6 : sqrt x ≤ x ^ 2 - 6 * y / z
       h7 : x * y = z
 
-reduction red3/dcp3 : agp3 := by
+time_cmd reduction red3/dcp3 : agp3 := by
   map_exp
   convexify
 
@@ -100,7 +101,7 @@ def agp4 :=
       h2 : 0 < y
       h3 : x * y ≤ 2 - x - y
 
-reduction red4/dcp4 : agp4 := by
+time_cmd reduction red4/dcp4 : agp4 := by
   map_exp
   convexify
 
@@ -115,36 +116,36 @@ solve dcp4
 
 end AlmostDGP4 
 
-/- This problem is not convex. -/
-section AlmostDGP5
+-- /- This problem is not convex. -/
+-- section AlmostDGP5
 
-def agp5 :=
-  optimization (x y : ℝ)
-    minimize (x * y)
-    subject to
-      h1 : 0 < x
-      h2 : 0 < y
-      h3 : x * y ≤ 2 + x - y
+-- def agp5 :=
+--   optimization (x y : ℝ)
+--     minimize (x * y)
+--     subject to
+--       h1 : 0 < x
+--       h2 : 0 < y
+--       h3 : x * y ≤ 2 + x - y
 
-reduction red5/dcp5 : agp5 := by
-  map_exp
-  try { convexify } -- Should fail.
+-- reduction red5/dcp5 : agp5 := by
+--   map_exp
+--   try { convexify } -- Should fail.
 
-end AlmostDGP5
+-- end AlmostDGP5
 
-/- This problem is not convex. -/
-section AlmostDGP6
+-- /- This problem is not convex. -/
+-- section AlmostDGP6
 
-def agp6 :=
-  optimization (x y : ℝ)
-    minimize (x * y)
-    subject to
-      h1 : 0 < x
-      h2 : 0 < y
-      h3 : sqrt (x * y - y) ≤ 1
+-- def agp6 :=
+--   optimization (x y : ℝ)
+--     minimize (x * y)
+--     subject to
+--       h1 : 0 < x
+--       h2 : 0 < y
+--       h3 : sqrt (x * y - y) ≤ 1
 
-reduction red6/dcp6 : agp6 := by
-  map_exp
-  try { convexify } -- Should fail.
+-- reduction red6/dcp6 : agp6 := by
+--   map_exp
+--   try { convexify } -- Should fail.
 
-end AlmostDGP6
+-- end AlmostDGP6

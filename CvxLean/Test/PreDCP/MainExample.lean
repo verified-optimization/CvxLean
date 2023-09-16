@@ -1,5 +1,6 @@
 import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Test.Util.TimeCmd
 
 noncomputable section MainExample
 
@@ -12,7 +13,7 @@ def p :=
       h1 : 0.001 ≤ x
       h2 : 1 / (sqrt x) ≤ (exp x)
 
-reduction eq/q : p := by
+time_cmd reduction eq/q : p := by
   convexify
 
 #print q
