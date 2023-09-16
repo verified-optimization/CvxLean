@@ -296,14 +296,20 @@ def evalConvexify : Tactic := fun stx => match stx with
     let gStr := { gStr with 
       constr := gStr.constr.filter (fun (h, _) => !constrsToIgnore.contains h) }
 
-    -- Call egg.
+    -- Prepare egg request.
     let eggRequest : EggRequest := {
       domains := varDomainConstrs.data,
       target := EggMinimization.ofOCTree gStr
     }
     
     try 
+      -- Call egg (time it for evaluation).
+      let before ← BaseIO.toIO IO.monoMsNow
       let steps ← runEggRequest eggRequest
+      let after ← BaseIO.toIO IO.monoMsNow
+      let diff := after - before
+      dbg_trace s!"Egg time: {diff} ms."
+      dbg_trace s!"Number of steps: {steps.size}."
 
       -- Apply steps.
       let mut g ← getMainGoal
