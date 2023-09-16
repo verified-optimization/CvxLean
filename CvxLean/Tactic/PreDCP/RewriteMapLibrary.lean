@@ -70,6 +70,12 @@ register_rewrite_map "le_sub_iff_add_le" ; "(le ?a (sub ?b ?c))" => "(le (add ?a
 register_rewrite_map "le_sub_iff_add_le-rev" ; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))" := 
   rewrite [←le_sub_iff_add_le];
 
+register_rewrite_map "sub_le_iff_le_add"; "(le (sub ?a ?b) ?c)" => "(le ?a (add ?b ?c))" := 
+  rewrite [sub_le_iff_le_add];
+
+register_rewrite_map "sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?b) ?c)" := 
+  rewrite [←sub_le_iff_le_add];
+
 register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" := 
   rewrite [div_le_iff (by positivity)];
 
