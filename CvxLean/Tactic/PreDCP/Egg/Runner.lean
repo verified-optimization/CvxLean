@@ -108,13 +108,17 @@ def runEggRequestRaw (requestJson : String) : MetaM String := do
 def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
   dbg_trace s!"Egg response: {responseString}"
   let outJson : Json ← match Json.parse responseString with
-    | Except.error e => throwError "JSON parsing error: {e} at {responseString}."
+    | Except.error e => throwError (s!"Error calling egg. JSON parsing error ({e})."
+        ++ "It might be an issue with parsing inequalities.")
     | Except.ok j => pure j
 
   let responseType := (outJson.getObjValD "response").getStr!
 
   if responseType == "Error" then
-    throwError "Error calling egg."
+    match (outJson.getObjValD "error").getStr? with 
+    | Except.error _ => throwError "Error calling egg."
+    | Except.ok errorMessage => throwError "Error calling egg. Error: {errorMessage}"
+    
   else
     let steps ← liftExcept <| outJson.getObjVal? "steps"
     let steps ← liftExcept <| Json.getArr? steps
