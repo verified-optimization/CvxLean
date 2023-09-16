@@ -40,9 +40,9 @@ macro_rules
   match rule.raw[1] with 
   | `(term| $e:term) => 
     if symm then
-      `(tactic| (first | simp only [←$e:term] | repeat' { rw [←$e:term] }))
+      `(tactic| (first | simp only [←$e:term] | repeat { rw [←$e:term] }))
     else 
-      `(tactic| (first | simp only [$e:term] | repeat' { rw [$e:term] }))
+      `(tactic| (first | simp only [$e:term] | repeat { rw [$e:term] }))
 
 
 namespace CvxLean
@@ -70,10 +70,10 @@ register_rewrite_map "le_sub_iff_add_le" ; "(le ?a (sub ?b ?c))" => "(le (add ?a
 register_rewrite_map "le_sub_iff_add_le-rev" ; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))" := 
   rewrite [←le_sub_iff_add_le];
 
-register_rewrite_map "sub_le_iff_le_add"; "(le (sub ?a ?b) ?c)" => "(le ?a (add ?b ?c))" := 
+register_rewrite_map "sub_le_iff_le_add"; "(le (sub ?a ?c) ?b)" => "(le ?a (add ?b ?c))" := 
   rewrite [sub_le_iff_le_add];
 
-register_rewrite_map "sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?b) ?c)" := 
+register_rewrite_map "sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)" := 
   rewrite [←sub_le_iff_le_add];
 
 register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" := 
@@ -120,13 +120,19 @@ register_rewrite_map "one_mul-rev" ; "?a" => "(mul 1 ?a)" :=
   norm_num;
 
 register_rewrite_map "mul_zero" ; "(mul ?a 0)" => "0" :=
-  simp_or_rw [mul_zero];
+  simp_or_rw [mul_zero (M₀ := ℝ)];
 
 register_rewrite_map "mul_comm" ; "(mul ?a ?b)" => "(mul ?b ?a)" :=
   simp_or_rw [mul_comm];
 
 register_rewrite_map "mul_assoc" ; "(mul (mul ?a ?b) ?c)" => "(mul ?a (mul ?b ?c))" :=
   simp_or_rw [mul_assoc];
+
+register_rewrite_map "sub_eq_add_neg"; "(sub ?a ?b)" => "(add ?a (neg ?b))" :=
+  simp_or_rw [sub_eq_add_neg (G := ℝ)];
+
+register_rewrite_map "sub_eq_add_neg-rev"; "(add ?a (neg ?b))" => "(sub ?a ?b)" :=
+  simp_or_rw [←sub_eq_add_neg (G := ℝ)];
 
 register_rewrite_map "add_sub" ; "(add ?a (sub ?b ?c))" => "(sub (add ?a ?b) ?c)" := 
   simp_or_rw [add_sub];
@@ -159,13 +165,13 @@ register_rewrite_map "add_div-rev" ; "(add (div ?a ?c) (div ?b ?c))" => "(div (a
   simp_or_rw [←add_div];
 
 register_rewrite_map "mul_div" ; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)"  :=
-  simp_or_rw [mul_div];
+  simp_or_rw [mul_div (G := ℝ)];
 
 register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))" :=
-  simp_or_rw [←mul_div];
+  simp_or_rw [←mul_div (G := ℝ)];
 
 register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
-  simp_or_rw [@div_self ℝ _ _ (by positivity)];
+  simp_or_rw [div_self (G₀ := ℝ) (by positivity)];
 
 
 /- Power and square root rules. -/
