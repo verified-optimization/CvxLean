@@ -3,7 +3,9 @@ import CvxLean.Command.Equivalence
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Test.Util.TimeCmd
 
-noncomputable section Rules
+namespace Unit
+
+noncomputable section
 
 open CvxLean Minimization Real
 
@@ -1460,4 +1462,6 @@ time_cmd equivalence logExpConstrRed/logExpConstrAuto : logExpConstr := by
 
 #print logExpConstrAuto
 
-end Rules
+end
+
+end Unit

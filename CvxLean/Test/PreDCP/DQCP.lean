@@ -3,7 +3,9 @@ import CvxLean.Tactic.PreDCP.Basic
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Test.Util.TimeCmd
 
-noncomputable section DQCP
+namespace DQCP
+
+noncomputable section
 
 open CvxLean Minimization Real
 
@@ -32,5 +34,7 @@ time_cmd reduction red1/dcp1 : dqcp1 := by
 solve dcp1
 
 #eval dcp1.value -- -2.000000
+
+end
 
 end DQCP

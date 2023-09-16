@@ -2,7 +2,9 @@ import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Test.Util.TimeCmd
 
-noncomputable section GP
+namespace GP
+
+noncomputable section
 
 open CvxLean Minimization Real
 
@@ -220,3 +222,7 @@ time_cmd reduction red7/dcp7 : gp7 := by
 solve dcp7
 
 end GP7
+
+end 
+
+end GP

@@ -2,7 +2,9 @@ import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Test.Util.TimeCmd
 
-noncomputable section MainExample
+namespace MainExample
+
+noncomputable section
 
 open CvxLean Minimization Real
 
@@ -37,5 +39,7 @@ solve q
 --     _ : rotatedSoCone x (1 / 2) ![t.1]
 
 #eval q.value -- 0.426303
+
+end
 
 end MainExample 
