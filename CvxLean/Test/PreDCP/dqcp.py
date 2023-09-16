@@ -1,10 +1,13 @@
 import cvxpy as cp
 
 x = cp.Variable(pos=True)
+y = cp.Variable(nonneg=True)
 
 p = cp.Problem(
-    cp.Minimize(x), [
-        cp.sqrt(x / (x + 1)) <= 1
+    cp.Minimize(-y), [
+        1 <= x,
+        x <= 2,
+        cp.sqrt((2 * y) / (x + y)) <= 1
     ])
 
 assert(p.is_dqcp())
