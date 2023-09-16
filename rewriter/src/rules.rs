@@ -33,9 +33,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     
     rw!("le_sub_iff_add_le-rev"; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))"),
 
-    rw!("sub_le_iff_le_add"; "(le (sub ?a ?b) ?c)" => "(le ?a (add ?b ?c))"),
+    rw!("sub_le_iff_le_add"; "(le (sub ?a ?c) ?b)" => "(le ?a (add ?b ?c))"),
 
-    rw!("sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?b) ?c)"),
+    rw!("sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)"),
 
     rw!("div_le_iff"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
         if is_gt_zero("?c")),
@@ -75,6 +75,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul_comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
 
     rw!("mul_assoc"; "(mul (mul ?a ?b) ?c)" => "(mul ?a (mul ?b ?c))"),
+
+    rw!("sub_eq_add_neg"; "(sub ?a ?b)" => "(add ?a (neg ?b))"),
+
+    rw!("sub_eq_add_neg-rev"; "(add ?a (neg ?b))" => "(sub ?a ?b)"),
 
     rw!("add_sub"; "(add ?a (sub ?b ?c))" => "(sub (add ?a ?b) ?c)"),
 
