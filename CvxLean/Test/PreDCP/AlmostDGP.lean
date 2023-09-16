@@ -2,7 +2,9 @@ import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Test.Util.TimeCmd
 
-noncomputable section GP
+namespace AlmostGP
+
+noncomputable section
 
 open CvxLean Minimization Real
 
@@ -149,3 +151,7 @@ end AlmostDGP4
 --   try { convexify } -- Should fail.
 
 -- end AlmostDGP6
+
+end
+
+end AlmostGP
