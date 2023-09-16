@@ -170,10 +170,10 @@ register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
 
 /- Power and square root rules. -/
 
-register_rewrite_map "pow-add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))" :=
+register_rewrite_map "pow_add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))" :=
   simp_or_rw [Real.rpow_add (by positivity)];
 
-register_rewrite_map "pow-add-rev"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))" :=
+register_rewrite_map "pow_add-rev"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))" :=
   simp_or_rw [←Real.rpow_add (by positivity)];
 
 register_rewrite_map "mul_pow"; "(mul (pow ?a ?n) (pow ?b ?n))" => "(pow (mul ?a ?b) ?n)" :=

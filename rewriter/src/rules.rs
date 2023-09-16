@@ -105,10 +105,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Power and square root rules. */
 
-    rw!("pow-add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"
+    rw!("pow_add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"
         if is_gt_zero("?a")),
 
-    rw!("pow-add-rev"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"
+    rw!("pow_add-rev"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))"
         if is_gt_zero("?a")),
 
     rw!("mul_pow"; "(pow (mul ?a ?b) ?n)" => "(mul (pow ?a ?n) (pow ?b ?n))"
