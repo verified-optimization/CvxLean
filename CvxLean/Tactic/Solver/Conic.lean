@@ -11,6 +11,7 @@ import CvxLean.Tactic.Solver.Float.FloatToReal
 import CvxLean.Tactic.Solver.Generation
 import CvxLean.Tactic.Solver.InferDimension
 import CvxLean.Tactic.Solver.Mosek.CBF
+import CvxLean.Tactic.Solver.Mosek.Path
 
 namespace CvxLean
 
@@ -94,17 +95,16 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
   let inputPath := "solver/test.cbf"
   IO.FS.writeFile inputPath (ToString.toString cbf)
 
-  -- Run solver.
-
-  -- TODO: Add this to build instructions. Sometimes it is not needed.
-  let mosekBinPath := 
-    "/Users/ramonfernandezmir/Documents/PhD-code/optimization" ++ 
-    "/mosek/10.0/tools/platform/osxaarch64/bin"
+  -- Adjust path to MOSEK.
   let p := if let some p' := ← IO.getEnv "PATH" then 
-    p' ++ ":" ++ mosekBinPath
+    if mosekBinPath != "" then
+      p' ++ ":" ++ mosekBinPath
+    else 
+      p'
   else 
     mosekBinPath
-  
+
+  -- Run solver.
   let out ← IO.Process.output { 
     cmd := "mosek", 
     args := #[inputPath],
