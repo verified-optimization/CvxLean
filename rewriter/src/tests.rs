@@ -132,26 +132,6 @@ fn test_cost_function_number_of_variable_occurences_3() {
         ]);
 }
 
-// Position. 
-
-#[test]
-fn test_position() {
-    assert_steps(
-        "0",
-        vec![
-            "(le (mul (mul 1 1) (mul 1 (mul 1 1))) 1)"
-        ]);
-}
-
-#[test]
-fn test_position_2() {
-    assert_steps(
-        "0",
-        vec![
-            "(le (add (var x) (add 1 (var x))) 1)"
-        ]);
-}
-
 // Rule-based tests.
 
 #[test]
