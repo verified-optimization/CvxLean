@@ -33,7 +33,7 @@ pub struct Step {
     rewrite_name : String,
     direction : Direction,
     location : String,
-    position : u32,
+    // position : u32,
     expected_term : String,
 }
 
@@ -78,7 +78,7 @@ fn get_step_aux(
                 rewrite_name: rule_name.to_string(), 
                 direction: Direction::Backward,
                 location: location.clone().unwrap(),
-                position: position.clone(),
+                // position: position.clone(),
                 expected_term: expected_term.clone().unwrap(),
             });
         } else {
@@ -92,7 +92,7 @@ fn get_step_aux(
                 rewrite_name: rule_name.to_string(), 
                 direction: Direction::Forward,
                 location: location.clone().unwrap(),
-                position: position.clone(),
+                // position: position.clone(),
                 expected_term: expected_term.clone().unwrap(),
             });
         } else {
