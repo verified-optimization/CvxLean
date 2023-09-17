@@ -15,7 +15,7 @@ def p :=
       h1 : 0.001 ≤ x
       h2 : 1 / (sqrt x) ≤ (exp x)
 
-time_cmd reduction eq/q : p := by
+time_cmd equivalence eq/q : p := by
   convexify
 
 #print q
