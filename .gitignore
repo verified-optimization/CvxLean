@@ -9,3 +9,4 @@
 /lake-packages
 
 /playground
+/CvxLean/Tactic/Solver/Mosek/Path.lean
