@@ -166,6 +166,28 @@ optimality by
   intros y' hx
   apply mul_le_mul_of_nonneg_right hx hy
 
+declare_atom mul3 [affine] (x : ℝ)& (y : ℝ)- : x * y :=
+bconditions (hx : x ≤ 0)
+homogenity by
+  simp
+  ring
+additivity by
+  ring
+optimality by
+  intros y' hy
+  apply mul_le_mul_of_nonpos_left hy hx
+
+declare_atom mul4 [affine] (x : ℝ)- (y : ℝ)& : x * y :=
+bconditions (hy : y ≤ 0)
+homogenity by
+  change _ * _ + _ = (_ * _) * _ + _ * _
+  ring
+additivity by
+  ring
+optimality by
+  intros y' hx
+  apply mul_le_mul_of_nonpos_right hx hy
+
 end RealAffine
 
 -- Affine operations on vectors.
@@ -519,26 +541,55 @@ optimality by
   exact hexpleexp.trans c_exp
 vconditionElimination
 
-declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
-vconditions (cond : 0 ≤ x)
+-- declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
+-- vconditions (cond : 0 ≤ x)
+-- implementationVars (t : ℝ)
+-- implementationObjective (t)
+-- implementationConstraints 
+--   (c1 : rotatedSoCone x (1/2) ![t])
+-- solution (t := Real.sqrt x)
+-- solutionEqualsAtom by
+--   rfl;
+-- feasibility 
+--   (c1 : by
+--     simp [rotatedSoCone]
+--     refine ⟨?_, cond, zero_le_two⟩
+--     rw [sq_sqrt cond])
+-- optimality by
+--   intros y hy 
+--   simp [rotatedSoCone] at c1
+--   have h := c1.1
+--   exact Real.le_sqrt_of_sq_le (le_trans h hy)
+-- vconditionElimination (cond : fun _ hx => c1.2.1.trans hx)
+
+-- NOTE: This will be removed when condition inference is implemented.
+declare_atom sqrt' [concave] (x : ℝ)+ : Real.sqrt x := 
+vconditions (cond : 1 / 1000 ≤ x)
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints 
-  (c1 : rotatedSoCone x (1/2) ![t])
+  (c1 : posOrthCone (x - 1 / 1000))
+  (c2 : rotatedSoCone x (1/2) ![t])
 solution (t := Real.sqrt x)
 solutionEqualsAtom by
   rfl;
 feasibility 
-  (c1 : by
+  (c1 : by 
+    simp only [posOrthCone, sub_nonneg, cond])
+  (c2 : by
     simp [rotatedSoCone]
-    refine ⟨?_, cond, zero_le_two⟩
-    rw [sq_sqrt cond])
+    have cond' : 0 ≤ x := le_trans (by positivity) cond
+    refine ⟨?_, cond', zero_le_two⟩
+    rw [sq_sqrt cond'])
 optimality by
   intros y hy 
-  simp [rotatedSoCone] at c1
-  have h := c1.1
+  simp [rotatedSoCone] at c2
+  have h := c2.1
   exact Real.le_sqrt_of_sq_le (le_trans h hy)
-vconditionElimination (cond : fun _ hx => c1.2.1.trans hx)
+vconditionElimination (cond : fun _ hx => by {
+    simp only [posOrthCone, sub_nonneg] at c1
+    exact le_trans c1 hx
+  })
 
 declare_atom log [concave] (x : ℝ)+ : log x :=
 vconditions (cond : 0 < x)
@@ -679,7 +730,7 @@ vconditionElimination
 
 end Vec
 
--- Non-affine atoms on real variables.
+-- Non-affine atoms on matrices.
 namespace Matrix
 
 declare_atom Matrix.PosSemidef [concave] 
@@ -736,7 +787,7 @@ optimality by
     intro i
     rw [Real.exp_iff_expCone]
     apply c_exp
-  -- TODO(RFM): Why does exact fail here?
+  -- TODO: Why does exact fail here?
   have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
     (Matrix.diagonal Y.diag) ht (by convert rfl) (by convert rfl) c_posdef
   refine' Eq.mp _ h

@@ -85,7 +85,7 @@ where
       | some fvarId => 
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- TODO(RFM): This is a hack. Trick to prove simple bconditions.
+        -- TODO: This is a hack. Trick to prove simple bconditions.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
           let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
@@ -606,8 +606,8 @@ withExistingLocalDecls originalVarsDecls.toList do
     ⟨Curvature.Convex, oc.constr.map (fun _ => Curvature.Concave)⟩
   let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
   let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
-  -- if failedAtom.objFun then
-  --   throwError "Failure in objective: {failedAtomMsgs.objFun}"
+  if failedAtom.objFun then
+    throwError "Failure in objective: {failedAtomMsgs.objFun}"
   
   let atoms := atomsAndArgs.map (·.snd.snd.fst)
   let args := atomsAndArgs.map (·.snd.snd.snd.fst)
@@ -622,22 +622,16 @@ def mkVConditions (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
   (failedAtom : OC Bool) (failedAtomMsgs : OC (Array MessageData)) (originalConstrVars : Array LocalDecl) :
   MetaM (OC (Tree (Array ℕ) Unit) × Array Bool × OC (Tree (Array Expr) Unit)) := do
 withExistingLocalDecls originalVarsDecls.toList do
-  let vcondData ← OC.map2M (findVConditions originalConstrVars oc.constr) atoms args
-
-  let isVCond := vcondData.fold ((originalConstrVars).map (fun _ => false)) 
-    fun acc vcondIdxAndExprTree =>
-      vcondIdxAndExprTree.fold acc fun acc ies => 
-        ies.foldl (fun acc (i, _) => acc.set! i true) acc
-  let vcondIdx := vcondData.map (fun vcondIdxAndExprTree => 
-    vcondIdxAndExprTree.map (fun ies => ies.map (fun (i, _) => i)) id)
-  let vcondVars := vcondData.map <| fun v => 
-    v.map (fun ies => ies.map (fun (_, e) => e)) id
-
-  trace[Meta.debug] "isVCond: {isVCond}"
+  let vcondIdx ← OC.map2M (findVConditions originalVarsDecls oc.constr) atoms args
+  trace[Meta.debug] "vcondIdx {vcondIdx}"
+  let isVCond := vcondIdx.fold (oc.constr.map (fun _ => false)) 
+    fun acc vcondIdxTree =>
+      vcondIdxTree.fold acc fun acc is => 
+        is.foldl (fun acc i => acc.set! i true) acc
+  let vcondVars := vcondIdx.map $ mkVCondVars (originalConstrVars.map LocalDecl.fvarId)
   for i in [:isVCond.size] do
-    trace[Meta.debug] "{constraints.toArray[i]!.1} is vcond? {isVCond[i]!}"
     if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
-      trace[Meta.debug] "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
+      throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
   return (vcondIdx, isVCond, vcondVars)
 
 /-- -/
@@ -772,9 +766,9 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
     (optimality := optimality)
 
 /-- -/
--- NOTE(RFM): Temporarily changing this to not only return the map from 
+-- NOTE: Temporarily changing this to not only return the map from 
 -- solution to solution but also the forward and backward maps. 
--- TODO(RFM): Better types for return type.
+-- TODO: Better types for return type.
 def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
   MetaM (Expr × (Expr × Expr × Expr)) := do
   -- Extract objective and constraints from `goalExprs`.

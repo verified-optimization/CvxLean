@@ -16,7 +16,7 @@ partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC (Name
 where 
   findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
     if DCP.isConstant e vars then
-      -- NOTE(RFM): There are special cases for constants with negation and 
+      -- NOTE: There are special cases for constants with negation and 
       -- division, but what about something like 2 * 3?
       if ← isOptimizationParam e.constName then 
         return Tree.node "param" #[Tree.leaf (toString e.constName)]

@@ -8,4 +8,5 @@
 /ffi/lake-packages 
 /lake-packages
 
-playground.py
+/playground
+/CvxLean/Tactic/Solver/Mosek/Path.lean

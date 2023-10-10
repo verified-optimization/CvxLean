@@ -1,7 +1,10 @@
 import CvxLean.Command.Solve
 import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Test.Util.TimeCmd
 
-noncomputable section GP
+namespace GP
+
+noncomputable section
 
 open CvxLean Minimization Real
 
@@ -14,17 +17,18 @@ def gp1 :=
         h1 : 0 < x
         h2 : x ^ 2 ≤ 10.123
 
-reduction red1/dcp1 : gp1 := by
+time_cmd reduction red1/dcp1 : gp1 := by
   map_exp
   convexify
-  exact done
 
 #print dcp1
 -- def dcp1 : Minimization ℝ ℝ :=
 -- optimization (x : ℝ) 
 --   minimize x
 --   subject to
---     _ : exp (x * 2) ≤ 10123 / 1000
+--     h2 : x * 2 ≤ log (10123 / 1000)
+
+solve dcp1
 
 end GP1
 
@@ -38,23 +42,49 @@ def gp2 :=
         h2 : 0 < y
         h3 : x * y ≤ 5.382
 
-reduction red2/dcp2 : gp2 := by
+time_cmd reduction red2/dcp2 : gp2 := by
   map_exp
   convexify
-  exact done
 
 #print dcp2
 -- def dcp2 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) 
 --   minimize x
 --   subject to
---     _ : exp (x + y) ≤ 2691 / 500
+--     h3 : x ≤ log (2691 / 500) - y
+
+solve dcp2
 
 end GP2
 
 section GP3 
 
-def gp3 := 
+def gp3 :=
+    optimization (x y : ℝ)
+      minimize (x)
+      subject to
+        h1 : 0 < x
+        h2 : 0 < y
+        h3 : sqrt (x * x + y) ≤ 1
+
+time_cmd reduction red3/dcp3 : gp3 := by
+  map_exp
+  convexify
+
+#print dcp3
+-- def dcp3 : Minimization (ℝ × ℝ) ℝ :=
+-- optimization (x : ℝ) (y : ℝ) 
+--   minimize x
+--   subject to
+--     h3 : exp (x * 2) + exp y ≤ 1
+
+solve dcp3
+
+end GP3
+
+section GP4 
+
+def gp4 := 
   optimization (x y z : ℝ) 
     minimize (x / y)
     subject to 
@@ -66,28 +96,29 @@ def gp3 :=
       h6 : x ^ 2 + 6 * y / z <= sqrt x
       h7 : x * y = z
 
-reduction red3/dcp3 : gp3 := by
+time_cmd reduction red4/dcp4 : gp4 := by
   map_exp
   convexify
-  exact done
 
-#print dcp3
--- def dcp3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+solve dcp4
+
+#print dcp4
+-- def dcp4 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
 --   minimize x - y
 --   subject to
---     _ : log 2 ≤ x
---     _ : exp x ≤ 3
---     _ : exp (2 * x - 1 / 2 * x) + 6 * exp (y - z + -(x * (1 / 2))) ≤ 1
---     _ : x + y = z
+--     h4 : log 2 ≤ x
+--     h5 : x ≤ log 3
+--     h6 : exp (x * (3 / 2)) + 6 * exp (y - z - x * (1 / 2)) ≤ 1
+--     h7 : x + y = z
 
-end GP3
+end GP4
 
 /- https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (4). -/
-section GP4
+section GP5
 
--- NOTE(RFM): `maximize` does not work because it is set to `Neg.neg`.
-def gp4 :=
+-- NOTE: `maximize` does not work because it is set to `Neg.neg`.
+def gp5 :=
   optimization (x y z : ℝ) 
     minimize 1 / (x / y)
     subject to 
@@ -99,83 +130,71 @@ def gp4 :=
       h6 : x^2 + 3 * y / z ≤ sqrt x
       h7 : x / y = z ^ 2
 
-reduction red4/dcp4 : gp4 := by 
+time_cmd reduction red5/dcp5 : gp5 := by 
   map_exp
   convexify
-  exact done
-
-#print dcp4
--- def dcp4 : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
---   minimize y - x
---   subject to
---     _ : log 2 ≤ x
---     _ : exp x ≤ 3
---     _ : exp (x * (3 / 2)) + 3 * exp (y - z - 1 / 2 * x) ≤ 1
---     _ : x - y = 2 * z
-
-end GP4
-
-/- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (5) and in
-https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
-section GP5
-
-@[optimization_param] def Awall : ℝ := 100
-@[optimization_param] def Aflr : ℝ := 10
-@[optimization_param] def α : ℝ := 0.5
-@[optimization_param] def β : ℝ := 0.5
-@[optimization_param] def γ : ℝ := 5
-@[optimization_param] def δ : ℝ := 6
-
--- NOTE(RFM): We need to provide proofs of positivity. For now, we just add 
--- them as simp lemmas.
-@[simp] lemma Aflr_pos : 0 < Aflr := by unfold Aflr; norm_num
-@[simp] lemma α_pos : 0 < α := by unfold α; norm_num
-@[simp] lemma β_pos : 0 < β := by unfold β; norm_num
-@[simp] lemma γ_pos : 0 < γ := by unfold γ; norm_num
-@[simp] lemma δ_pos : 0 < δ := by unfold δ; norm_num
-
--- NOTE(RFM): `maximize` issue.
-def gp5 :=
-  optimization (h w d : ℝ) 
-    minimize (1 / (h * w * d))
-    subject to 
-      h1 : 0 < h
-      h2 : 0 < w
-      h3 : 0 < d
-      h4 : 2 * (h * d + w * d) ≤ Awall
-      h5 : w * d ≤ Aflr
-      h6 : α ≤ h / w
-      h7 : h / w ≤ β  
-      h8 : γ ≤ d / w
-      h9 : d / w ≤ δ
-
-reduction red5/dcp5 : gp5 := by
-  map_exp
-  convexify
-  exact done
 
 #print dcp5
 -- def dcp5 : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (h : ℝ) (w : ℝ) (d : ℝ) 
---   minimize -d + (-h + -w)
+-- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+--   minimize -(x - y)
 --   subject to
---     _ : 2 * (exp (d + h) + exp (w + d)) ≤ Awall
---     _ : w + d ≤ log Aflr
---     _ : log α ≤ h - w
---     _ : h ≤ log β + w
---     _ : log γ ≤ d - w
---     _ : d ≤ log δ + w
+--     h4 : log 2 ≤ x
+--     h5 : x ≤ log 3
+--     h6 : exp (x * (3 / 2)) + 3 * exp (y - z - x * (1 / 2)) ≤ 1
+--     h7 : x - y = 2 * z
+
+solve dcp5
 
 end GP5
 
-/- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 2.2. -/
-section GP6
+-- TODO: Issue with repeated rewrites.
+-- /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf (5) and in
+-- https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
+-- section GP6
 
--- NOTE(RFM): We don't have the power atom yet.
+-- -- NOTE: `maximize` issue.
+-- def gp6 :=
+--   optimization (h w d : ℝ) 
+--     minimize (1 / (h * w * d))
+--     subject to 
+--       h1 : 0 < h
+--       h2 : 0 < w
+--       h3 : 0 < d
+--       h4 : 2 * (h * d + w * d) ≤ 100
+--       h5 : w * d ≤ 10
+--       h6 : 0.5 ≤ h / w
+--       h7 : h / w ≤ 0.5  
+--       h8 : 5 ≤ d / w
+--       h9 : d / w ≤ 6
+
+-- time_cmd reduction red6/dcp6 : gp6 := by
+--   map_exp
+--   convexify
+
+-- #print dcp6
+-- -- def dcp6 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+-- -- optimization (h : ℝ) (w : ℝ) (d : ℝ) 
+-- --   minimize -(h + (d + w))
+-- --   subject to
+-- --     h4 : 2 * (exp (h + d) + exp (d + w)) ≤ 100
+-- --     h5 : d + w ≤ log 10
+-- --     h6 : w - log 2 ≤ h
+-- --     h7 : h ≤ w - log 2
+-- --     h8 : log 5 ≤ d - w
+-- --     h9 : d - w ≤ log 6
+
+-- solve dcp6
+
+-- end GP6
+
+/- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 2.2. -/
+section GP7
+
+-- NOTE: We don't have the power atom yet.
 -- objFun : (x ^ (-1)) * y ^ (-1 / 2) * z ^ (-1) + 2.3 * x * z + 4 * x * y * z
 -- h4 : (1 / 3) * x ^ (-2) * y ^ (-2) + (4 / 3) * y ^ (1 / 2) * z ^ (-1) ≤ 1
-def gp6 := 
+def gp7 := 
   optimization (x y z : ℝ) 
     minimize (1 / x) * (1 / sqrt y) * (1 / z) + (2.3) * x * z + 4 * x * y * z
     subject to 
@@ -187,24 +206,23 @@ def gp6 :=
       h6 : (1 / 2) * x * y = 1
 
 set_option maxHeartbeats 1000000
-reduction red6/dcp6 : gp6 := by
+time_cmd reduction red7/dcp7 : gp7 := by
   map_exp
   convexify
-  exact done
 
-#print dcp6
--- def dcp3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
+#print dcp7
+-- def dcp7 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
---   minimize exp (-(y * (1 / 2)) - x - z) + (23 * (exp (z + x) / 10) + 4 * exp (y + (z + x)))
+--   minimize exp (y * -(1 / 2) - z - x) + (23 / 10 * exp (x + z) + 4 * exp (x + (y + z)))
 --   subject to
---     _ : 1 / 3 * exp (-(y * 2) + -(2 * x)) + 1 / 3 * (4 * exp (y * (1 / 2) - z)) ≤ 1
---     _ : exp x + (exp y * 2 + exp z * 3) ≤ 1
---     _ : y + (x - log 2) = 0
+--     h4 : exp (-2 * (x + y)) / 3 ≤ 1 - 4 / 3 * exp (y * (1 / 2) - z)
+--     h5 : exp z * 3 ≤ 1 - exp x - exp y * 2
+--     h6 : x + (y - log 2) = 0
 
-end GP6 
-
-section GP7
-
-
+solve dcp7
 
 end GP7
+
+end 
+
+end GP

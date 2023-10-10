@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install MOSEK
+        env:
+          MOSEK_LIC: ${{secrets.MOSEK_LIC}}
+        run: | 
+          set -o pipefail
+          curl -sSfL https://download.mosek.com/stable/10.0.12/mosektoolslinux64x86.tar.bz2 | tar xj
+          mv mosek $HOME
+          echo "$HOME/mosek/10.0/tools/platform/linux64x86/bin" >> $GITHUB_PATH
+          echo "$MOSEK_LIC" > $HOME/mosek.lic
+          echo "MOSEKLM_LICENSE_FILE=$HOME/mosek.lic" >> $GITHUB_ENV
+      - name: Install elan
+        run: |
+          set -o pipefail
+          curl -sSfL https://github.com/leanprover/elan/releases/download/v1.4.5/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          ./elan-init -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build CvxLean
+        run: |
+          ./build.sh

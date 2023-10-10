@@ -11,5 +11,5 @@ def evalTimeCmd : CommandElab := fun stx => match stx with
   elabCommand cmd
   let after ← BaseIO.toIO IO.monoMsNow
   let diff := after - before
-  IO.println s!"{diff} ms"
+  dbg_trace s!"Command time: {diff} ms"
 | _ => throwUnsupportedSyntax

@@ -55,6 +55,19 @@ syntax (name:=atomCommand)
   Parser.optimality
   &"vconditionElimination" id_with_type* : command
 
+syntax (name:=atomWithBCondsCommand) 
+  "declare_atom" ident "[" ident "]" arg_with_kind* ":" term ":="
+  &"bconditions" id_with_type*
+  &"vconditions" id_with_type*
+  &"implementationVars" id_with_type*
+  Parser.implementationObjective
+  &"implementationConstraints" id_with_type*
+  &"solution" id_with_def*
+  Parser.solutionEqualsAtom
+  &"feasibility" id_with_type*
+  Parser.optimality
+  &"vconditionElimination" id_with_type* : command
+
 syntax (name:=affineAtomCommand) 
   "declare_atom" ident "[" "affine" "]" arg_with_kind* ":" term ":="
   &"bconditions" id_with_type*

@@ -12,6 +12,8 @@ mod rules;
 
 mod cost;
 
+mod explain_utils;
+
 mod extract;
 use extract::Minimization as Minimization;
 use extract::Step as Step;
@@ -19,7 +21,7 @@ use extract::get_steps as get_steps;
 
 mod tests;
 
-// NOTE(RFM): Taken from https://github.com/opencompl/egg-tactic-code
+// NOTE: Taken from https://github.com/opencompl/egg-tactic-code
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "request")]

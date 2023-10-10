@@ -4,10 +4,12 @@ namespace CvxLean
 
 open Lean Lean.Meta
 
-def RewriteMapExtEntry : Type := String × (TSyntax `tactic)
+/-- An entry is the name of the rewrite, the corresponding tactic, and whether
+it is an objective function map or not. -/
+def RewriteMapExtEntry : Type := String × ((TSyntax `tactic) × Bool)
 deriving Inhabited
 
-def RewriteMapExtState : Type := HashMap String (TSyntax `tactic)
+def RewriteMapExtState : Type := HashMap String ((TSyntax `tactic) × Bool)
 deriving Inhabited
 
 /-- Environment extension to store the mapping between rewrite names in egg and 
@@ -24,11 +26,11 @@ initialize rewriteMapExt : RewriteMapExt ←
   }
 
 /-- Add a new rewrite mapping to the environment. -/
-def addRewriteMapEntry (rwName : String) (tac : TSyntax `tactic) : MetaM Unit := do
-  setEnv <| rewriteMapExt.addEntry (← getEnv) (rwName, tac)
+def addRewriteMapEntry (rwName : String) (tac : TSyntax `tactic) (mapObjFun : Bool) : MetaM Unit := do
+  setEnv <| rewriteMapExt.addEntry (← getEnv) (rwName, (tac, mapObjFun))
 
 /-- Given rewrite name, return associated tactic in the environment. -/
-def getTacticFromRewriteName (rwName : String) : MetaM (Option (TSyntax `tactic)) := do
+def getTacticFromRewriteName (rwName : String) : MetaM (Option (TSyntax `tactic × Bool)) := do
   return (rewriteMapExt.getState (← getEnv)).find? rwName
 
 /-- Return all the saved rewrite names. -/

@@ -5,7 +5,7 @@ section Egg.FromMinimization
 
 open Lean CvxLean
 
-/-- -/
+/-- Flatten an `EggTree` to a string to send to egg. -/
 partial def EggTree.toEggString : Tree String String → String
   | Tree.node n children =>
     let childrenStr := (children.map EggTree.toEggString).data
@@ -22,13 +22,16 @@ def EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
   let constrNode := Tree.node "constrs" constrs
   Tree.node "prob" #[objFunNode, constrNode]
 
+/-- Add the constructor `var` around every variable in the tree. -/
 partial def EggTree.surroundVars (t : Tree String String) (vars : List String) :=
   match t with
   | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
   | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
 
--- TODO(RFM): Construct this map with commands, not hard-coded. For every key
--- we have the name, the arity and the extra args.
+/-- Mapping between atom names that come from the unchecked tree construction
+and their egg counterparts. `prob`, `objFun`, `constr` and `constrs` are special
+cases. The rest of names come from the atom library. It also returns the arity 
+of the operation and some extra arguments. -/
 def EggTree.opMap : HashMap String (String × Nat × Array String) :=
   HashMap.ofList [
     ("prob",        ("prob", 2, #[])),
@@ -48,12 +51,14 @@ def EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("mul2",        ("mul", 2, #[])),
     ("sq",          ("pow", 1, #["2"])),
     ("sqrt",        ("sqrt", 1, #[])),
+    ("sqrt'",       ("sqrt", 1, #[])),
     ("div",         ("div", 2, #[])),
     ("log",         ("log", 1, #[])),
     ("exp",         ("exp", 1, #[]))
   ]
 
-/-- -/
+/-- Traverse the tree and use `EggTree.opMap` to align the names of the 
+constructors. -/
 partial def EggTree.adjustOps (t : Tree String String) :
   MetaM (Tree String String) := do
   match t with
@@ -69,31 +74,46 @@ partial def EggTree.adjustOps (t : Tree String String) :
   | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
-/-- -/
+/-- Given an expression representing a minimization problem, turn it into a 
+tree of strings, also extract all the domain information for single varibales,
+in particular positivity and nonnegativity constraints. -/
 def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
   MetaM (OC (String × Tree String String) × Array (String × String × String)) := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
-  -- Detect domain constraints.
+  -- NOTE: Detect domain constraints. This only works for very simple variable 
+  -- constraints. A better approach would be to detect these constraints when
+  -- building the unchecked DCP tree.
   let nonnegVars := ocTree.constr.filterMap <| fun (h, c) =>
     match c with
-    | Tree.node "le" #[Tree.leaf "0", Tree.leaf v] => 
-        if v ∈ vars then some (h, v) else none 
+    | Tree.node "le" #[Tree.leaf s, Tree.leaf v] => 
+        if let some i := s.toInt? then
+          if i = 0 && v ∈ vars then some (h, v) else none 
+        else none
     | _ => none
   let posVars := ocTree.constr.filterMap <| fun (h, c) =>
     match c with
-    | Tree.node "lt" #[Tree.leaf "0", Tree.leaf v] => 
-        if v ∈ vars then some (h, v) else none 
+    | Tree.node "lt" #[Tree.leaf s, Tree.leaf v] => 
+        if let some i := s.toInt? then
+          if i ≥ 0 && v ∈ vars then some (h, v) else none 
+        else none
+    | Tree.node "le" #[Tree.leaf s, Tree.leaf v] => 
+        if let some i := s.toInt? then
+          if i > 0 && v ∈ vars then some (h, v) else none 
+        else none
+    -- Special case to handle common constraints of the form n/d <= x.
+    | Tree.node "le" #[Tree.node "div" #[Tree.leaf n, Tree.leaf d], Tree.leaf v] => 
+        if let some ni := n.toInt? then
+          if let some di := d.toInt? then 
+            if ni ≥ 0 && di ≥ 0 && v ∈ vars then some (h, v) else none 
+          else none
+        else none
     | _ => none
 
   let domainConstrs := 
     (nonnegVars.map (fun (h, v) => (h, v, "NonNeg"))) ++ 
     (posVars.map (fun (h, v) => (h, v, "Pos")))
 
-  -- NOTE(RFM): Some empty constraints here coming from '<' conditions?
-  -- let ocTree := { ocTree with 
-  --   constr := ocTree.constr.filter (fun (_, c) => c.size > 1)}
-
-  -- TODO(RFM): Functions for this.
+  -- Surround variables and adjust operations in the whole tree.
   let ocTree : OC (String × Tree String String) := { 
     objFun := let (ho, o) := ocTree.objFun; (ho, EggTree.surroundVars o vars)
     constr := ocTree.constr.map (fun (h, c) => (h, EggTree.surroundVars c vars)) }

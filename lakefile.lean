@@ -7,12 +7,11 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @ 
   "c35ba47375c4f80f3ba26a7301b17eadfac2562c"
 
--- meta if get_config? env = some "dev" then
--- require «doc-gen4» from git 
---   "https://github.com/leanprover/doc-gen4" @ "main"
-
 @[default_target]
 lean_lib CvxLeanTest
+
+@[default_target]
+lean_lib CvxLeanPreDCPTest
 
 @[default_target]
 lean_lib CvxLean
@@ -45,7 +44,7 @@ target EggConvexify (pkg) : FilePath := do
   let manifestFile := buildDir / "Cargo.toml"
   buildCargo binFile manifestFile dest #[]
 
-script CleanEgg := do
+script EggClean := do
   let targetDir : FilePath := "." / "rewriter" / "target"
   let utilsDir : FilePath  := "." / "rewriter" / "utils"
   let out ← 

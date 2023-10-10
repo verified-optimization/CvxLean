@@ -1,5 +1,5 @@
 use egg::{*};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use ordered_float::NotNan;
 
 use crate::domain;
@@ -40,21 +40,14 @@ pub struct Meta {
 
 #[derive(Debug, Clone)]
 pub struct Data {
-    pub free_vars: HashSet<(Id, Symbol)>,
     pub domain: Option<Domain>,
     pub constant: Option<(Constant, PatternAst<Optimization>)>,
-    pub has_log: bool,
 }
 
 impl Analysis<Optimization> for Meta {    
     type Data = Data;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
-        let has_log_before = to.has_log;
-        to.has_log = to.has_log || from.has_log;
-        let to_has_log_diff = has_log_before != to.has_log;
-        let from_has_log_diff = to.has_log != from.has_log;
-
         let before_domain = to.domain.clone();
         match (to.domain, from.domain) {
             (None, Some(_)) => { to.domain = from.domain; }
@@ -66,20 +59,10 @@ impl Analysis<Optimization> for Meta {
         let to_domain_diff = before_domain != to.domain;
         let from_domain_diff = to.domain != from.domain;
 
-        let before_free_vars = to.free_vars.len();
-        to.free_vars.retain(|i| from.free_vars.contains(i));
-        let to_free_vars_diff = before_free_vars != to.free_vars.len();
-        let from_free_vars_diff = to.free_vars.len() != from.free_vars.len();
-
-        DidMerge(
-            to_has_log_diff || to_domain_diff || to_free_vars_diff,
-            from_has_log_diff || from_domain_diff || from_free_vars_diff,
-        )
+        DidMerge(to_domain_diff, from_domain_diff)
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
-        let get_vars = 
-            |i: &Id| egraph[*i].data.free_vars.iter().cloned();
         let get_constant = 
             |i: &Id| egraph[*i].data.constant.clone();
         let get_domain = 
@@ -87,37 +70,11 @@ impl Analysis<Optimization> for Meta {
         let domains_map = 
             egraph.analysis.domains.clone();
 
-        let mut free_vars = HashSet::default();
         let mut constant = None;
         let mut domain = None;
-        let mut has_log = false;
 
         match enode {
-            Optimization::Prob([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-            }
-            Optimization::ObjFun(a) => {
-                free_vars.extend(get_vars(a));
-            }
-            Optimization::Constr([_, c]) => {
-                free_vars.extend(get_vars(c));
-            }
-            Optimization::Constrs(a) => {
-                for c in a.iter() {
-                    free_vars.extend(get_vars(c));
-                }
-            }
-            Optimization::Eq([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-            }
-            Optimization::Le([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-            }
             Optimization::Neg(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -129,7 +86,6 @@ impl Analysis<Optimization> for Meta {
                 domain = domain::option_flip(get_domain(a));
             }
             Optimization::Sqrt(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -145,7 +101,7 @@ impl Analysis<Optimization> for Meta {
                         if domain::is_nonneg(d_a) {
                             domain = d_o_a;
                         } 
-                        // NOTE(RFM): If argument is negative, sqrt in Lean 
+                        // NOTE: If argument is negative, sqrt in Lean 
                         // returns zero, but we treat as if it didn't have a 
                         // domain.
                     }
@@ -153,8 +109,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Add([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -168,8 +122,6 @@ impl Analysis<Optimization> for Meta {
                     get_domain(a), get_domain(b));
             }
             Optimization::Sub([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -183,8 +135,6 @@ impl Analysis<Optimization> for Meta {
                     domain::option_flip(get_domain(b)));
             }
             Optimization::Mul([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -197,8 +147,6 @@ impl Analysis<Optimization> for Meta {
                     get_domain(a), get_domain(b))
             }
             Optimization::Div([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
                 match (get_constant(a), get_constant(b)) {
                     (Some((c1, _)), Some((c2, _))) => { 
                         constant = Some((
@@ -220,26 +168,22 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Pow([a, b]) => {
-                free_vars.extend(get_vars(a));
-                free_vars.extend(get_vars(b));
-
                 let d_o_a = get_domain(a);
                 let d_o_b = get_domain(b);
                 match (d_o_a, d_o_b) {
                     (Some(d_a), Some(d_b)) => { 
                         if !domain::is_zero(d_a) && domain::is_zero(d_b) {
-                            // NOTE(RFM): This is technically 1.
+                            // NOTE: This is technically 1.
                             domain = Some(Domain::PosConst);
                         } else if domain::is_pos(d_a) {
                             domain = d_o_a;
                         }
-                        // NOTE(RFM): There could be more cases here.
+                        // NOTE: There could be more cases here.
                     }
                     _ => ()
                 }
             }
             Optimization::Log(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -248,13 +192,12 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                has_log = true;
                 
                 let d_o_a = get_domain(a);
                 match d_o_a {
                     Some(d_a) => {
                         if domain::is_pos(d_a) {
-                            // NOTE(RFM): We do not know if the argument is less 
+                            // NOTE: We do not know if the argument is less 
                             // than 1 or not, so that's all we can say.
                             domain = Some(Domain::Free);
                         }
@@ -263,7 +206,6 @@ impl Analysis<Optimization> for Meta {
                 }
             }
             Optimization::Exp(a) => {
-                free_vars.extend(get_vars(a));
                 match get_constant(a) {
                     Some((c, _)) => { 
                         constant = Some((
@@ -279,7 +221,6 @@ impl Analysis<Optimization> for Meta {
                 // Assume that after var there is always a symbol.
                 match egraph[*a].nodes[0] { 
                     Optimization::Symbol(s) => {
-                        free_vars.insert((*a, s));
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(*d); }
@@ -289,8 +230,17 @@ impl Analysis<Optimization> for Meta {
                     _ => {}
                 }
             }
-            Optimization::Param(_) => {
-                // TODO(RFM): Add domain to parameters?
+            Optimization::Param(a) => {
+                match egraph[*a].nodes[0] { 
+                    Optimization::Symbol(s) => {
+                        let s_s = format!("{}", s); 
+                        match domains_map.get(&s_s) {
+                            Some(d) => { domain = Some(*d); }
+                            _ => ()
+                        }
+                    }
+                    _ => {}
+                }
             } 
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
@@ -305,31 +255,10 @@ impl Analysis<Optimization> for Meta {
                     }
                 }
             }
+            _ => {}
         }
 
-        Data { free_vars, constant, domain, has_log }
-    }
-}
-
-pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
-    let var = var.parse().unwrap();
-    move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            *(n) != 0.0
-        } else {
-            true
-        }
-    }
-}
-
-pub fn is_not_one(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
-    let var = var.parse().unwrap();
-    move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            *(n) != 1.0
-        } else {
-            true
-        }
+        Data { constant, domain }
     }
 }
 
@@ -339,14 +268,38 @@ pub fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
         if let Some((n, _)) = &egraph[subst[var]].data.constant {
             (*n).into_inner() > 0.0
         } else {
-            true
+            if let Some(d) = &egraph[subst[var]].data.domain {
+                return domain::is_pos(*d);
+            }
+            return false;
         }
     }
 }
 
-pub fn not_has_log(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+pub fn is_ge_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
-        !egraph[subst[var]].data.has_log
+        if let Some((n, _)) = &egraph[subst[var]].data.constant {
+            (*n).into_inner() >= 0.0
+        } else {
+            if let Some(d) = &egraph[subst[var]].data.domain {
+                return domain::is_nonneg(*d);
+            }
+            return false;
+        }
+    }
+}
+
+pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var = var.parse().unwrap();
+    move |egraph, _, subst| {
+        if let Some((n, _)) = &egraph[subst[var]].data.constant {
+            (*n).into_inner() != 0.0
+        } else {
+            if let Some(d) = &egraph[subst[var]].data.domain {
+                return domain::is_nonzero(*d);
+            }
+            return false;
+        }
     }
 }

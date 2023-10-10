@@ -17,18 +17,9 @@ def mkFloat (n : Nat) : Expr :=
   mkApp3 (mkConst ``OfNat.ofNat ([levelZero] : List Level)) 
     (mkConst ``Float) (mkNatLit n) (mkApp (mkConst ``instOfNatFloat) (mkNatLit n))
 
-/- Helper function to generate (i : Fin n) as an expression.
-TODO: Get rid of sorry's to access elements of a vector. How? -/
+/- Helper function to generate (i : Fin n) as an expression. -/
 def mkFinIdxExpr (i : Nat) (n : Nat) : MetaM Expr := do
-  let finProofExpr ← mkSyntheticSorry 
-    (mkApp4 (mkConst ``LT.lt ([levelZero] : List Level)) 
-      (mkConst ``Nat) (mkConst ``instLTNat) (mkNatLit i) (mkNatLit n))
-  return mkApp3 (mkConst ``Fin.mk) (mkNatLit n) (mkNatLit i) finProofExpr
-
-/- Same but for Finₓ. -/
-def mkFinxIdxExpr (i : Nat) (n : Nat) : MetaM Expr := do
-  let finProofExpr ← mkSyntheticSorry (← mkLt (mkNatLit i) (mkNatLit n))
-  mkAppM ``Fin.mk #[mkNatLit i, finProofExpr]
+  return mkApp2 (mkConst ``Fin.ofNat) (mkNatLit n.pred) (mkNatLit i) 
 
 /- Evaluate floating point expressions. -/
 unsafe def evalFloat (e : Expr) : MetaM Float := do
@@ -165,14 +156,14 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
     | Expr.app (Expr.app (Expr.const ``Real.Vec.zeroCone _) n) e =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do 
-          let idxExpr ← mkFinxIdxExpr i n
+          let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.zeroCone #[ei]) 
     -- Positive orthant cone.
     | Expr.app (Expr.app (Expr.const ``Real.Vec.posOrthCone _) n) e =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do 
-          let idxExpr ← mkFinxIdxExpr i n
+          let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.posOrthCone #[ei]) 
     -- Vector exponential cone.
@@ -180,7 +171,7 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
         (Expr.const ``Real.Vec.expCone _) n) a) b) c => 
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n 
         for i in [:n] do 
-          let idxExpr ← mkFinxIdxExpr i n
+          let idxExpr ← mkFinIdxExpr i n
           let ai := mkApp a idxExpr
           let bi := mkApp b idxExpr
           let ci := mkApp c idxExpr
@@ -273,7 +264,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n 
           -- TODO: This is a common issue with all vectors.
           let xis ← (Array.range n).mapM 
-            (fun i => return (mkApp x (← mkFinxIdxExpr i n)))
+            (fun i => return (mkApp x (← mkFinIdxExpr i n)))
           for e in (#[v, w] ++ xis) do
             let e ← realToFloat e
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
@@ -283,8 +274,8 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n  
           for i in [:m] do 
             for j in [:n] do 
-              let ei := mkApp e (← mkFinxIdxExpr i m)
-              let eij := mkApp ei (← mkFinxIdxExpr j n)
+              let ei := mkApp e (← mkFinIdxExpr i m)
+              let eij := mkApp ei (← mkFinIdxExpr j n)
               let eij ← realToFloat eij
               let res ← determineScalarCoeffsAux eij p floatDomain
               data := data.addPosOrthConstraint res.1 res.2 

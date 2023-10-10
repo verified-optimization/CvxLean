@@ -1,7 +1,7 @@
 import CvxLean.Command.Solve
 import CvxLean.Lib.PSDCone
 
-section SDP
+namespace SDP
 
 open CvxLean Minimization Real
 
