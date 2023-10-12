@@ -1,11 +1,14 @@
 import Lake
 open System Lake DSL
 
-package CvxLean
-
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @ 
-  "c35ba47375c4f80f3ba26a7301b17eadfac2562c"
+  "ab2d44e7027b663104d3c088084c7adcbf8f2150"
+
+-- meta if get_config? env = some "dev" then
+require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "main"
+
+package CvxLean
 
 @[default_target]
 lean_lib CvxLeanTest
