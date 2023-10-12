@@ -1,19 +1,21 @@
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.PreDCP.UncheckedDCP
 
+namespace CvxLean
+
 section Egg.FromMinimization
 
-open Lean CvxLean
+open Lean
 
 /-- Flatten an `EggTree` to a string to send to egg. -/
-partial def EggTree.toEggString : Tree String String → String
+partial def _root_.EggTree.toEggString : Tree String String → String
   | Tree.node n children =>
     let childrenStr := (children.map EggTree.toEggString).data
     "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
   | Tree.leaf n => n
 
 /-- -/
-def EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
+def _root_.EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
   Tree String String :=
   let objFun := ocTree.objFun.2
   let constrs := ocTree.constr.map 
@@ -23,7 +25,7 @@ def EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
   Tree.node "prob" #[objFunNode, constrNode]
 
 /-- Add the constructor `var` around every variable in the tree. -/
-partial def EggTree.surroundVars (t : Tree String String) (vars : List String) :=
+partial def _root_.EggTree.surroundVars (t : Tree String String) (vars : List String) :=
   match t with
   | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
   | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
@@ -32,7 +34,7 @@ partial def EggTree.surroundVars (t : Tree String String) (vars : List String) :
 and their egg counterparts. `prob`, `objFun`, `constr` and `constrs` are special
 cases. The rest of names come from the atom library. It also returns the arity 
 of the operation and some extra arguments. -/
-def EggTree.opMap : HashMap String (String × Nat × Array String) :=
+def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
   HashMap.ofList [
     ("prob",        ("prob", 2, #[])),
     ("objFun",      ("objFun", 1, #[])),
@@ -59,7 +61,7 @@ def EggTree.opMap : HashMap String (String × Nat × Array String) :=
 
 /-- Traverse the tree and use `EggTree.opMap` to align the names of the 
 constructors. -/
-partial def EggTree.adjustOps (t : Tree String String) :
+partial def _root_.EggTree.adjustOps (t : Tree String String) :
   MetaM (Tree String String) := do
   match t with
   | Tree.node op children =>
@@ -77,7 +79,7 @@ partial def EggTree.adjustOps (t : Tree String String) :
 /-- Given an expression representing a minimization problem, turn it into a 
 tree of strings, also extract all the domain information for single varibales,
 in particular positivity and nonnegativity constraints. -/
-def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
+def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
   MetaM (OC (String × Tree String String) × Array (String × String × String)) := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
   -- NOTE: Detect domain constraints. This only works for very simple variable 
@@ -123,3 +125,5 @@ def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List St
   return (ocTree, domainConstrs)
 
 end Egg.FromMinimization
+
+end CvxLean
