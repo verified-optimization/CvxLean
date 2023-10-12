@@ -16,8 +16,8 @@ open Lean Lean.Meta
 
 namespace DCP
 
-/-- Check if `expr` is constant by checking if it contains any free 
-variable from `vars`. -/
+/-- Check if `expr` is constant by checking if it contains any free variable 
+from `vars`. -/
 def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
   let fvarSet := (collectFVars {} expr).fvarSet
   for v in vars do
@@ -41,17 +41,38 @@ def findRegisteredAtoms (e : Expr) :
       goodAtoms := goodAtoms.push (args, atom.graph!)
     else
       trace[Meta.debug] "Pattern did not match. (Pattern {toString pattern}; Expression {toString e})"
-  -- Heuristic sorting of potential atoms to use: larger expressions have priority:
+  -- Heuristic sorting of potential atoms to use: larger expressions have priority.
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms
 
-/-- -/
+/-- Data type used to indicate whether an atom could be successfully 
+processed. It is used by `processAtom`. A successful match includes 4 trees:
+* A tree of atom data (see `GraphAtomData`).
+* A tree of arguments for every node.
+* A tree of curvatures.
+* A tree of background conditions. 
+-/
 inductive FindAtomResult
-| Success (res : Tree GraphAtomData Expr × Tree (Array Expr) Unit × Tree Curvature Curvature × Tree (Array Expr) (Array Expr))
+| Success (res : 
+    Tree GraphAtomData Expr × 
+    Tree (Array Expr) Unit × 
+    Tree Curvature Curvature × 
+    Tree (Array Expr) (Array Expr))
 | Error (msgs : Array MessageData)
 
-/-- -/
-partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) : MetaM (Bool × Array MessageData × Tree GraphAtomData Expr × Tree (Array Expr) Unit × Tree Curvature Curvature × Tree (Array Expr) (Array Expr)) := do
+/-- Given an expression `e`, optimization variables `vars` and the expected 
+curvature `curvature`, this function attempts to recursively match `e` with 
+atoms for the library outputing all the necessary information as explained 
+in `FindAtomResult`. The boolean in the output indicates whether a match from
+the library was used. -/
+partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) : 
+  MetaM (
+    Bool × 
+    Array MessageData × 
+    Tree GraphAtomData Expr × 
+    Tree (Array Expr) Unit × 
+    Tree Curvature Curvature × 
+    Tree (Array Expr) (Array Expr)) := do
   if isConstant e vars then
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   if e.isFVar ∧ vars.contains e.fvarId! then
@@ -63,9 +84,9 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
   for (args, atom) in potentialAtoms do
     match ← processAtom e vars curvature atom args with
     | FindAtomResult.Success (atoms, args, curvatures, bconds) =>
-      return (false, failedAtoms, atoms, args, curvatures, bconds)
+        return (false, failedAtoms, atoms, args, curvatures, bconds)
     | FindAtomResult.Error msg =>
-      failedAtoms := failedAtoms ++ msg
+        failedAtoms := failedAtoms ++ msg
   return (true, failedAtoms, Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
 where
   processAtom (e : Expr) (vars : Array FVarId) (curvature : Curvature) (atom : GraphAtomData) (args : Array Expr) : MetaM FindAtomResult := do
@@ -86,7 +107,7 @@ where
       | some fvarId => 
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- TODO: This is a hack. Trick to prove simple bconditions.
+        -- Try to prove simple bconditions by norm_num.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
           let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
