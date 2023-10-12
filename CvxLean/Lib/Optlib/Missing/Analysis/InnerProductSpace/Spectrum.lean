@@ -22,7 +22,7 @@ lemma spectral_theorem' (v : E) (i : Fin n)
   { simpa only [LinearIsometryEquiv.symm_apply_apply, LinearIsometryEquiv.apply_symm_apply]
       using congr_arg (fun (v : E) => (xs.repr) v i) (this ((xs.repr) v)) }
   intros w
-  simp_rw [← OrthonormalBasis.sum_repr_symm, LinearMap.map_sum,
+  simp_rw [← OrthonormalBasis.sum_repr_symm, map_sum,
     LinearMap.map_smul, fun j => Module.End.mem_eigenspace_iff.mp (hxs j).1, smul_smul, mul_comm]
 
 end LinearMap

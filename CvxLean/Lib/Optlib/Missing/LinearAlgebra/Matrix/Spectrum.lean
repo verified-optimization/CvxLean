@@ -50,14 +50,14 @@ theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n)) 
     xs' as' hxs'
   { erw [toLin'_apply]
     simp only [OrthonormalBasis.coe_toBasis_repr_apply, of_apply, OrthonormalBasis.repr_reindex]
-    erw [Equiv.symm_apply_apply, EuclideanSpace.single, PiLp.equiv_symm_apply 2, mulVec_single]
+    erw [Equiv.symm_apply_apply, EuclideanSpace.single, WithLp.equiv_symm_pi_apply 2, mulVec_single]
     simp_rw [mul_one]
     rfl }
   { simp only [diagonal_mul, Function.comp]
     erw [Basis.toMatrix_apply,
       OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_reindex,
       Pi.basisFun_apply, LinearMap.coe_stdBasis,
-      EuclideanSpace.single, PiLp.equiv_symm_apply 2, Equiv.symm_apply_apply,
+      EuclideanSpace.single, WithLp.equiv_symm_pi_apply 2, Equiv.symm_apply_apply,
       Equiv.apply_symm_apply]
     rfl }
 
