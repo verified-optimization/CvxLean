@@ -9,6 +9,16 @@ open CvxLean
 open Minimization
 open Real
 
+set_option trace.Meta.debug true
+noncomputable def testVCondInference : Solution <|
+  optimization (x : ℝ)
+    minimize (x)
+    subject to   
+      h1 : 0.001 ≤ x
+      h2 : 1 ≤ sqrt x := by 
+  dcp
+  sorry
+
 -- noncomputable def test004 : Solution $
 --   optimization (v w : ℝ)
 --     minimize exp v
