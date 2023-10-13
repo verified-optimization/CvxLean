@@ -123,7 +123,7 @@ def withDomainBinding [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α
 /-- -/
 @[delab app]
 partial def delabMinimization : Delab := do
-  if not (pp.optMinimization.get (← getOptions)) then Alternative.failure
+  -- if not (pp.optMinimization.get (← getOptions)) then Alternative.failure
   match ← getExpr with
   | Expr.app
       (Expr.app

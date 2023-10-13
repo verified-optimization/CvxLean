@@ -56,7 +56,7 @@ open Lean.PrettyPrinter.Delaborator SubExpr
 /-- Display labelled terms using the `{** term ** name **}` syntax. -/
 @[delab mdata] def delabNamedConstraint : Delab := do
   -- Omit delaboration if pretty printing option is disabled.
-  if not (pp.CvxLean.labels.get (← getOptions)) then failure
+  -- if not (pp.CvxLean.labels.get (← getOptions)) then failure
   -- Check if CvxLeanLabel meta data is attached to current expression.
   let Expr.mdata m e ← getExpr | unreachable!
   match m.get? `CvxLeanLabel with
