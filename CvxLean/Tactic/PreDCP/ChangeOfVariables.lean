@@ -29,7 +29,7 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R]
     psi_optimality := fun y _ => by simp
   }
 
-instance {D E F} (c₁ : E → D) (c₂ : F → E) 
+instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E) 
   [cov₁ : ChangeOfVariables c₁] [cov₂ : ChangeOfVariables c₂] 
   : ChangeOfVariables (c₁ ∘ c₂) := {
     inv := cov₂.inv ∘ cov₁.inv
@@ -40,7 +40,9 @@ instance {D E F} (c₁ : E → D) (c₂ : F → E)
     }
   } 
 
-noncomputable instance : ChangeOfVariables Real.exp := {
+noncomputable section Instances
+
+instance : ChangeOfVariables Real.exp := {
   inv := Real.log
   condition := fun x => 0 < x
   property := fun _ hx => Real.exp_log hx
@@ -48,23 +50,40 @@ noncomputable instance : ChangeOfVariables Real.exp := {
 
 -- NOTE(RFM): x ≠ 0 is technically not necessary as division is defined on all 
 -- of ℝ, but we want to avoid division by zero.  
-noncomputable instance : ChangeOfVariables (fun x : ℝ => 1 / x) := {
-  inv := fun x => 1 / x
+instance : ChangeOfVariables (fun x : ℝ => x⁻¹) := {
+  inv := fun x => x⁻¹
   condition := fun x => x ≠ 0 
-  property := fun x _ => by simp
+  property := fun x _ => by field_simp
 }
 
-noncomputable instance (a : ℝ) (h : a ≠ 0) : ChangeOfVariables (fun x : ℝ => a * x) := {
+instance {a : ℝ} [i : Fact (a ≠ 0)] : ChangeOfVariables (fun x : ℝ => a * x) := {
   inv := fun x => (1 / a) * x
   condition := fun _ => True
-  property := fun _ _ => by rw [← mul_assoc, mul_one_div, div_self h, one_mul]
+  property := fun _ _ => by rw [← mul_assoc, mul_one_div, div_self i.out, one_mul]
 }
 
-/--
+instance {a : ℝ} [Fact (a ≠ 0)] : ChangeOfVariables (fun x : ℝ => a / x) := by 
+  have := ChangeOfVariables.comp (fun x : ℝ => a * x) (fun x : ℝ => x⁻¹)
+  simp only [Function.comp, mul_one_div, ←div_eq_mul_inv] at this 
+  exact this
+
+instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => x + a) := {
+  inv := fun x => x - a
+  condition := fun _ => True
+  property := fun _ _ => by ring
+}
+
+end Instances
+
+/-
 The idea here is to have a tactic
 
   change_of_variables (x ↦ e^u)
 
+1. Detect exactly where to apply the change of variables. 
+2. Syntesize the instance.
+2. Prove the conditions. 
+3. Apply the c-of-v to equivalence theorem.
 -/
 
 end CvxLean
