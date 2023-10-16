@@ -165,9 +165,9 @@ def evalStep (g : MVarId) (step : EggRewrite)
       -- In the `equivalence` command, we first open a new goal by transitivty 
       -- and then apply the lemma, otherwise, we would solve it immediately and
       -- the process would terminate.
-      let transGs ← evalTacticAt (← `(tactic| apply Eq.trans)) g;
-      if transGs.length != 3 then 
-        throwError "Equivalence mode. Expected 3 goals after applying `Eq.trans`, got {transGs.length}."
+      let transGs ← evalTacticAt (← `(tactic| apply Minimization.Equivalence.trans)) g;
+      if transGs.length != 4 then 
+        throwError "Equivalence mode. Expected 4 goals after applying `trans`, got {transGs.length}."
       
       let gToChange := transGs[0]!
       let nextG := transGs[1]!
@@ -230,11 +230,10 @@ def evalStep (g : MVarId) (step : EggRewrite)
 `reduction` and `equivalence` cases. -/
 def getExprRawFromGoal (isEquiv : Bool) (e : Expr) : MetaM Expr := do
   if isEquiv then 
-    if let some (_, lhs, _) ← matchEq? e then 
-      if lhs.isAppOf ``MinimizationQ.mk then 
-        return lhs.getArg! 3            
-      else 
-        throwError "convexify expected an an Expr fo the form `MinimizationQ.mk ...`."
+    if e.isAppOf ``Minimization.Equivalence then
+      -- NOTE(RFM): Equivalence 0:R 1:D 2:E 3:RPreorder 4:p 5:q 
+      let lhs := e.getArg! 4 
+      return lhs
     else 
       throwError "convexify expected an equivalence, got {e}."
   else 
@@ -242,7 +241,7 @@ def getExprRawFromGoal (isEquiv : Bool) (e : Expr) : MetaM Expr := do
       -- Get `p` From `Solution p`.
       return e.getArg! 3
     else 
-      throwError "convexify expected an Expr fo the form `Solution ...`."
+      throwError "convexify expected an Expr of the form `Solution ...`."
 
 /-- The `convexify` tactic encodes a given minimization problem, sends it to 
 egg, and reconstructs the proof from egg's output. It works both under the 
@@ -256,7 +255,7 @@ def evalConvexify : Tactic := fun stx => match stx with
     -- equivalence case.
     normNumCleanUp (useSimp := false)
     let gTarget ← getMainTarget
-    let isEquiv := gTarget.isEq
+    let isEquiv := gTarget.isAppOf ``Minimization.Equivalence
     let mut gExprRaw ← liftM <| getExprRawFromGoal isEquiv gTarget
     
     -- Unfold if necessary, in which case we might need to clean up numbers 
@@ -328,7 +327,7 @@ def evalConvexify : Tactic := fun stx => match stx with
 
       if isEquiv then 
         -- `rfl` closes the goal in equivalence mode.
-        evalTactic (← `(tactic| rfl))
+        evalTactic (← `(tactic| exact Minimization.Equivalence.refl _))
     catch e => 
       let eStr ← e.toMessageData.toString
       throwError "convexify failed with error: {eStr}"
