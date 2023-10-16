@@ -18,25 +18,38 @@ partial def runEquivalenceTactic (mvarId : MVarId) (tacticCode : Syntax) :
         evalTactic code
 
 /-- Run equivalence tactic and return both the right-hand term (`q`) and the 
-equivalence proof, of type `{| p |} = {| q |}`. -/
+equivalence proof, of type `Equivalence p q`. -/
 def elabEquivalenceProof (prob : Expr) (stx : Syntax) : TermElabM (Expr × Expr) := do 
   withRef stx do
-    let eqTy ← mkEq prob (← mkFreshExprMVar none)
-    let eq ← elabTerm stx (some eqTy)
+    let probTy ← inferType prob
+    let R := probTy.getArg! 1
+    let D := probTy.getArg! 0
+    let E ← Meta.mkFreshTypeMVar
+    let RPreorder ← Meta.mkFreshExprMVar
+      (some <| mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R])
+    let prob₂ ← Meta.mkFreshExprMVar 
+      (some <| mkApp2 (Lean.mkConst ``Minimization) E R)
+    let eqvTy := mkAppN
+      (mkConst ``Minimization.Equivalence) 
+      #[R, D, E, RPreorder, prob, prob₂]
+    let eqv ← elabTerm stx (some eqvTy)
 
-    let some mvarDecl ← getSyntheticMVarDecl? eq.mvarId! | throwError "SyntheticMVarDecl not found."
+    let some mvarDecl ← getSyntheticMVarDecl? eqv.mvarId! | throwError "SyntheticMVarDecl not found."
     
     match mvarDecl.kind with
     | SyntheticMVarKind.tactic tacticCode savedContext =>
       withSavedContext savedContext do
-        runEquivalenceTactic eq.mvarId! tacticCode
+        runEquivalenceTactic eqv.mvarId! tacticCode
     | _ => throwError "Expected SyntheticMVarDecl of kind tactic, got {mvarDecl.kind}"
-    
-    let eqProof ← instantiateMVars eq
-    if let some (_, _, rhs) ← matchEq? (← inferType eqProof) then 
-      return (rhs, ← instantiateMVars eq)
+
+    let eqvWitness ← instantiateMVars eqv
+    let eqvWitnessTy ← inferType eqvWitness
+    if eqvWitnessTy.isAppOf ``Minimization.Equivalence then 
+      -- NOTE(RFM): Equivalence 0:R 1:D 2:E 3:RPreorder 4:p 5:q 
+      let rhs := eqvWitnessTy.getArg! 5
+      return (rhs, ← instantiateMVars eqv)
     else 
-      throwError "Expected equality proof, got {eqProof}."
+      throwError "Expected equivalence witness, got {eqvWitness}."
 
 syntax (name := equivalence) 
   "equivalence" ident "/" ident declSig ":=" term : command
@@ -52,20 +65,18 @@ def evalEquivalence : CommandElab := fun stx => match stx with
     elabBindersEx binders.getArgs fun xs => do
       let D ← Meta.mkFreshTypeMVar
       let R ← Meta.mkFreshTypeMVar
-      let RPreorder ← Meta.mkFreshExprMVar
-        (some <| mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R])
       let prob₁Ty := mkApp2 (Lean.mkConst ``Minimization) D R
       let prob₁ ← elabTermAndSynthesizeEnsuringType prob (some prob₁Ty)
-      let probQ₁ := mkAppN (Lean.mkConst ``MinimizationQ.mk) #[R, RPreorder, D, prob₁]
+      dbg_trace "prob₁: {prob₁}"
+      -- let probQ₁ := mkAppN (Lean.mkConst ``Minimization.mk) #[D, R, prob₁]
       -- NOTE: `instantiateMVars` does not infer the preorder instance.
-      for mvarId in ← getMVars probQ₁ do 
+      for mvarId in ← getMVars prob₁ do 
         try {
           let mvarVal ← synthInstance (← mvarId.getDecl).type
           mvarId.assign mvarVal }
         catch _ => pure ()
       
-      let (probQ₂, proof) ← elabEquivalenceProof probQ₁ proof.raw
-      let prob₂ := probQ₂.appArg!
+      let (prob₂, proof) ← elabEquivalenceProof prob₁ proof.raw
       let prob₂ ← instantiateMVars prob₂
       let prob₂ ← mkLambdaFVars (xs.map Prod.snd) prob₂
       Lean.addDecl <| 
@@ -91,5 +102,15 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           (DefinitionSafety.safe) 
           [probId.getId])
   | _ => throwUnsupportedSyntax
+
+def p : Minimization ℕ ℕ := sorry
+def q : Minimization ℕ ℕ := sorry
+
+def x : Equivalence p q := sorry
+
+equivalence eq / q : p := by
+  exact x
+
+#check eq.phi 
 
 end CvxLean 
