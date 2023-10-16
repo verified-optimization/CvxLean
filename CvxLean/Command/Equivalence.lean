@@ -67,7 +67,6 @@ def evalEquivalence : CommandElab := fun stx => match stx with
       let R ← Meta.mkFreshTypeMVar
       let prob₁Ty := mkApp2 (Lean.mkConst ``Minimization) D R
       let prob₁ ← elabTermAndSynthesizeEnsuringType prob (some prob₁Ty)
-      dbg_trace "prob₁: {prob₁}"
       -- let probQ₁ := mkAppN (Lean.mkConst ``Minimization.mk) #[D, R, prob₁]
       -- NOTE: `instantiateMVars` does not infer the preorder instance.
       for mvarId in ← getMVars prob₁ do 
@@ -102,15 +101,5 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           (DefinitionSafety.safe) 
           [probId.getId])
   | _ => throwUnsupportedSyntax
-
-def p : Minimization ℕ ℕ := sorry
-def q : Minimization ℕ ℕ := sorry
-
-def x : Equivalence p q := sorry
-
-equivalence eq / q : p := by
-  exact x
-
-#check eq.phi 
 
 end CvxLean 
