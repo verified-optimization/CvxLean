@@ -226,9 +226,6 @@ namespace MinimizationQ
 
 noncomputable section Maps
 
-#check Equivalence
-#check Minimization.mk
-
 def map_objFun_log {cs : D → Prop} {f : D → ℝ}
   (h : ∀ x, cs x → f x > 0) : 
   Equivalence 
