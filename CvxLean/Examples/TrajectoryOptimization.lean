@@ -38,80 +38,25 @@ def convexBezier (n d : ℕ)
       hv : V.mulVec x ≤ T • v
       ha : A.mulVec x ≤ y • a
       hy : T ^ 2 ≤ y
-      --hfix : ∀ i, a i < 0 → y * a i ≤ T ^ 2 * a i this doesn't work either
+
+-- map from cvx to og
 
 -- are k, v and a constant?
-
-def equiv (n d : ℕ)
+theorem test
   (K : Matrix (Fin (d + 2)) (Fin n) ℝ)
   (V : Matrix (Fin (d + 1)) (Fin n) ℝ)
   (A : Matrix (Fin d) (Fin n) ℝ)
   (k : Fin (d + 2) → ℝ)
   (v : Fin (d + 1) → ℝ)
-  (a : Fin d → ℝ) :
-  Equivalence (originalBezier n d K V A k v a) (convexBezier n d K V A k v a) := 
-  { phi := fun ⟨⟨x, T⟩, ⟨hT, hk, hv, ha⟩⟩ => 
-      ⟨⟨x, T, T ^ 2⟩, ⟨hT, hk, hv, ha, le_refl _⟩⟩, --, by {
-      --   intros i hai
-      --   simp
-      -- }⟩⟩,
-    psi := fun ⟨⟨x, T, y⟩, ⟨hT, hk, hv, ha, hy⟩⟩ => 
-      ⟨⟨x, T⟩, by {
-      simp at hT hk hv ha hy
-      have h0T : 0 ≤ T := by positivity
-      have h0T2 : 0 ≤ T ^ 2 := by positivity
-      have h0y : 0 ≤ y := le_trans h0T2 (rpow_two _ ▸ hy)
-      have hTsqrty := (le_sqrt h0T h0y).2 hy
-      refine' ⟨hT, hk, hv, _⟩
-      -- { exact le_trans hT hTsqrty }
-      -- { intros i
-      --   have hvi := hv i
-      --   simp at hvi ⊢ 
-      --   by_cases (v i < 0)
-      --   { have hfixi := hfix i h 
-      --     exact le_trans hvi sorry }
-      --   { replace h := le_of_not_lt h
-      --     have hTvisqrtyvi := mul_le_mul_of_nonneg_right hTsqrty h
-      --     exact le_trans hvi hTvisqrtyvi } }
-      { intros i
-        have hai := ha i
-        simp at hai ⊢
-        by_cases (a i < 0)
-        { have hfixi := hfix i h
-          exact le_trans hai  (rpow_two _ ▸ hfixi) }
-        { replace h := le_of_not_lt h
-          have hT2aiyai := mul_le_mul_of_nonneg_right hy h
-          exact le_trans hai hT2aiyai } } }⟩,
-    phi_optimality := fun ⟨⟨x, T⟩, ⟨hT, hk, hv, ha⟩⟩ hopt 
-      ⟨⟨x', T', y'⟩, ⟨hT', hk', hv', ha', hy', hfix'⟩⟩ => by {
-      simp at hT hk hv ha hT' hk' hv' ha' hy' hfix'
-      simp only [optimal, objFun, originalBezier, convexBezier] at hopt ⊢ 
-      have := hopt ⟨⟨x', sqrt y'⟩, by {
-        have h0T : 0 ≤ T' := by positivity
-        have h0T2 : 0 ≤ T' ^ 2 := by positivity
-        have h0y : 0 ≤ y' := le_trans h0T2 (rpow_two _ ▸ hy')
-        have hTsqrty := (le_sqrt h0T h0y).2 hy'
-        refine' ⟨_, hk', _, _⟩
-        { exact le_trans hT' hTsqrty }
-        { intros i
-          have hvi := hv' i
-          simp at hvi ⊢ 
-          by_cases (v i < 0)
-          { have hfixi := hfix' i h 
-            exact le_trans hvi sorry }
-          { replace h := le_of_not_lt h
-            have hTvisqrtyvi := mul_le_mul_of_nonneg_right hTsqrty h
-            exact le_trans hvi hTvisqrtyvi } }
-        { simp [sq_sqrt h0y]
-          exact ha' } }⟩
-      simp at this
-      sorry -- I think I can prove this.
-    },
-    psi_optimality := fun ⟨⟨x, T, y⟩, ⟨hT, hk, hv, ha, hy, hfix⟩⟩ hopt 
-      ⟨⟨x', T'⟩, ⟨hT', hk', hv', ha'⟩⟩ => by {
-      simp at hT hk hv ha hy hfix hT' hk' hv' ha'
-      
-    }
+  (a : Fin d → ℝ)
+  (S1 : Solution (originalBezier n d K V A k v a))
+  (S2 : Solution (convexBezier n d K V A k v a)) :
+  S1.point.1 = S2.point.1 := by {
+    rcases S1 with ⟨⟨x1, T1⟩, ⟨hT1, hk1, hv1, ha1⟩, hopt1⟩
+    rcases S2 with ⟨⟨x2, T2, y2⟩, ⟨hT2, hk2, hv2, ha2, hy2⟩, hopt2⟩
+    simp at hT1 hk1 hv1 ha1 hopt1 hT2 hk2 hv2 ha2 hy2 hopt2 ⊢ 
+    -- not true ?
+    sorry
   }
 
 end TrajectoryOptimization
