@@ -233,32 +233,6 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
           "Failed to apply `ChangeOfVariables.toEquivalence`. " ++ 
           "Make sure that the change of variables is inferrable by type class resolution.")
 
-      -- -- Synthesize the change of variables instance (with some help).
-      -- let mut gInst := gsAfterApply[1]!
-      -- for _ in [:covIdx] do 
-      --   let F ← mkFreshExprMVar none
-      --   let c' ← mkFreshExprMVar none
-      --   let gs ← gInst.apply (mkAppN 
-      --     (mkConst ``ChangeOfVariables.prod_right [levelZero, levelZero, levelZero]) 
-      --     #[mkConst ``Real, mkConst ``Real, F, c'])
-      --   if gs.length != 1 then 
-      --     throwError "Failed to reduce change of variables instance."
-      --   gInst := gs[0]!
-      -- for _ in [covIdx+1:vars.length] do 
-      --   let F ← mkFreshExprMVar none
-      --   let c' ← mkFreshExprMVar none
-      --   let gs ← gInst.apply (mkAppN 
-      --     (mkConst ``ChangeOfVariables.prod_left [levelZero, levelZero, levelZero]) 
-      --     #[mkConst ``Real, mkConst ``Real, F, c'])
-      --   if gs.length != 1 then 
-      --     throwError "Failed to reduce change of variables instance."
-      --   gInst := gs[0]!
-      -- try 
-      --   let gInstExpr ← synthInstance (← gInst.getDecl).type
-      --   gInst.assign gInstExpr
-      -- catch _ =>
-      --   throwError "Failed to infer change of variables instance."
-
       -- Solve change of variables condition.
       let gCondition := gsAfterApply[0]!
       let (_, gCondition) ← gCondition.intros
