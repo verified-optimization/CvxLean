@@ -31,7 +31,7 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R]
     psi_optimality := fun y _ => by simp
   }
 
-section StructuralInstances
+section Structural
 
 instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E) 
   [cov₁ : ChangeOfVariables c₁] [cov₂ : ChangeOfVariables c₂] : 
@@ -52,6 +52,24 @@ instance ChangeOfVariables.prod_left {D E F} (c : E → D)
     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
   }
 
+instance ChangeOfVariables.prod_left_binary_left_constant 
+  {D E F} {T} (c : T → E → D) (t : T)
+  [cov : ChangeOfVariables (fun x => c t x)] : 
+  ChangeOfVariables (fun x : E × F => (c t x.1, x.2)) := {
+    inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
+    condition := fun ⟨x₁, _⟩ => cov.condition x₁
+    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
+  }
+
+instance ChangeOfVariables.prod_left_binary_right_constant
+  {D E F} {T} (c : E → T → D) (t : T)
+  [cov : ChangeOfVariables (fun x => c x t)] : 
+  ChangeOfVariables (fun x : E × F => (c x.1 t, x.2)) := {
+    inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
+    condition := fun ⟨x₁, _⟩ => cov.condition x₁
+    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
+  }
+
 instance ChangeOfVariables.prod_right {D E F} (c : E → D)
   [cov : ChangeOfVariables c] : 
   ChangeOfVariables (fun x : F × E => (x.1, c x.2)) := {
@@ -60,7 +78,31 @@ instance ChangeOfVariables.prod_right {D E F} (c : E → D)
     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
   }
 
-end StructuralInstances
+instance ChangeOfVariables.prod_right_binary_left_constant
+  {D E F} {T} (c : T → E → D) (t : T)
+  [cov : ChangeOfVariables (fun x => c t x)] : 
+  ChangeOfVariables (fun x : F × E => (x.1, c t x.2)) := {
+    inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
+    condition := fun ⟨_, x₂⟩ => cov.condition x₂
+    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
+  }
+
+instance ChangeOfVariables.prod_right_binary_right_constant
+  {D E F} {T} (c : E → T → D) (t : T)
+  [cov : ChangeOfVariables (fun x => c x t)] : 
+  ChangeOfVariables (fun x : F × E => (x.1, c x.2 t)) := {
+    inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
+    condition := fun ⟨_, x₂⟩ => cov.condition x₂
+    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
+  }
+
+instance ChangeOfVariables.id {D} : ChangeOfVariables (fun x : D => x) := {
+  inv := fun x => x
+  condition := fun _ => True
+  property := fun _ _ => rfl
+}
+
+end Structural
 
 noncomputable section RealInstances
 
@@ -78,13 +120,15 @@ instance : ChangeOfVariables (fun x : ℝ => x⁻¹) := {
   property := fun x _ => by field_simp
 }
 
-instance {a : ℝ} [i : Fact (a ≠ 0)] : ChangeOfVariables (fun x : ℝ => a * x) := {
+-- NOTE(RFM): a ≠ 0 is not given as a parameter but instead added to the 
+-- condition to make type class inference work.
+instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a * x) := {
   inv := fun x => (1 / a) * x
-  condition := fun _ => True
-  property := fun _ _ => by rw [← mul_assoc, mul_one_div, div_self i.out, one_mul]
+  condition := fun _ => a ≠ 0
+  property := fun _ h => by rw [← mul_assoc, mul_one_div, div_self h, one_mul]
 }
 
-instance {a : ℝ} [Fact (a ≠ 0)] : ChangeOfVariables (fun x : ℝ => a / x) := by 
+instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a / x) := by 
   have := ChangeOfVariables.comp (fun x : ℝ => a * x) (fun x : ℝ => x⁻¹)
   simp only [Function.comp, mul_one_div, ←div_eq_mul_inv] at this 
   exact this
@@ -175,19 +219,47 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       let E := newDomain
       let R := gExpr.codomain
       let RPreorder ← synthInstance
-        (mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R])
+        (mkAppN (mkConst ``Preorder [levelZero]) #[R])
       let f := gExpr.objFun
       let cs := gExpr.constraints
+      -- let cov ← mkFreshExprMVar <| 
+      --   (mkAppN (mkConst ``ChangeOfVariables [levelZero, levelZero]) #[D, E, c])
       let toApply := mkAppN
         (mkConst ``ChangeOfVariables.toEquivalence)
         #[D, E, R, RPreorder, f, cs, c]
       let gsAfterApply ← gToChange.apply toApply
       if gsAfterApply.length != 1 then 
         throwError (
-          "Failed to apply `ChangeOfVariables.toEquivalence`." ++ 
+          "Failed to apply `ChangeOfVariables.toEquivalence`. " ++ 
           "Make sure that the change of variables is inferrable by type class resolution.")
 
-      -- Sovlve change of variables condition.
+      -- -- Synthesize the change of variables instance (with some help).
+      -- let mut gInst := gsAfterApply[1]!
+      -- for _ in [:covIdx] do 
+      --   let F ← mkFreshExprMVar none
+      --   let c' ← mkFreshExprMVar none
+      --   let gs ← gInst.apply (mkAppN 
+      --     (mkConst ``ChangeOfVariables.prod_right [levelZero, levelZero, levelZero]) 
+      --     #[mkConst ``Real, mkConst ``Real, F, c'])
+      --   if gs.length != 1 then 
+      --     throwError "Failed to reduce change of variables instance."
+      --   gInst := gs[0]!
+      -- for _ in [covIdx+1:vars.length] do 
+      --   let F ← mkFreshExprMVar none
+      --   let c' ← mkFreshExprMVar none
+      --   let gs ← gInst.apply (mkAppN 
+      --     (mkConst ``ChangeOfVariables.prod_left [levelZero, levelZero, levelZero]) 
+      --     #[mkConst ``Real, mkConst ``Real, F, c'])
+      --   if gs.length != 1 then 
+      --     throwError "Failed to reduce change of variables instance."
+      --   gInst := gs[0]!
+      -- try 
+      --   let gInstExpr ← synthInstance (← gInst.getDecl).type
+      --   gInst.assign gInstExpr
+      -- catch _ =>
+      --   throwError "Failed to infer change of variables instance."
+
+      -- Solve change of variables condition.
       let gCondition := gsAfterApply[0]!
       let (_, gCondition) ← gCondition.intros
       let gFinal ← evalTacticAt 
