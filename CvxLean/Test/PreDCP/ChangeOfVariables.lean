@@ -43,13 +43,13 @@ def p :=
 equivalence eqv/q : p := by 
   unfold p 
   change_of_variables (u) (x ↦ Real.exp u)
-  exact Minimization.Equivalence.refl _
+  equivalence_rfl
 
 #print q
 
 equivalence eqv2/q2 : p := by 
   unfold p 
   change_of_variables (u) (y ↦ u + (1 : ℝ))
-  exact Minimization.Equivalence.refl _
+  equivalence_rfl
 
 #print q2

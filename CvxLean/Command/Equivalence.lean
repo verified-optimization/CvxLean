@@ -102,4 +102,7 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           [probId.getId])
   | _ => throwUnsupportedSyntax
 
+macro "equivalence_rfl" : tactic =>
+  `(tactic| exact Minimization.Equivalence.refl _)
+
 end CvxLean 
