@@ -1,8 +1,10 @@
 import Lean
 import CvxLean.Lib.Minimization
 import CvxLean.Lib.Equivalence
+import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.PreDCP.Convexify -- TODO(RFM): we only need normNumCleanUp from here, factor out.
 
 namespace CvxLean
 
@@ -29,9 +31,11 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R]
     psi_optimality := fun y _ => by simp
   }
 
+section StructuralInstances
+
 instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E) 
-  [cov₁ : ChangeOfVariables c₁] [cov₂ : ChangeOfVariables c₂] 
-  : ChangeOfVariables (c₁ ∘ c₂) := {
+  [cov₁ : ChangeOfVariables c₁] [cov₂ : ChangeOfVariables c₂] : 
+  ChangeOfVariables (c₁ ∘ c₂) := {
     inv := cov₂.inv ∘ cov₁.inv
     condition := fun x => cov₁.condition x ∧ cov₂.condition (cov₁.inv x)
     property := fun x ⟨hx₁, hx₂⟩ => by {
@@ -40,7 +44,25 @@ instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E)
     }
   } 
 
-noncomputable section Instances
+instance ChangeOfVariables.prod_left {D E F} (c : E → D) 
+  [cov : ChangeOfVariables c] : 
+  ChangeOfVariables (fun x : E × F => (c x.1, x.2)) := {
+    inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
+    condition := fun ⟨x₁, _⟩ => cov.condition x₁
+    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
+  }
+
+instance ChangeOfVariables.prod_right {D E F} (c : E → D)
+  [cov : ChangeOfVariables c] : 
+  ChangeOfVariables (fun x : F × E => (x.1, c x.2)) := {
+    inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
+    condition := fun ⟨_, x₂⟩ => cov.condition x₂
+    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
+  }
+
+end StructuralInstances
+
+noncomputable section RealInstances
 
 instance : ChangeOfVariables Real.exp := {
   inv := Real.log
@@ -73,17 +95,115 @@ instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => x + a) := {
   property := fun _ _ => by ring
 }
 
-end Instances
+end RealInstances
 
 /-
 The idea here is to have a tactic
 
-  change_of_variables (x ↦ e^u)
+  change_of_variables (u) (x ↦ e^u)
 
 1. Detect exactly where to apply the change of variables. 
 2. Syntesize the instance.
 2. Prove the conditions. 
 3. Apply the c-of-v to equivalence theorem.
+
+For now, it only works with real variables.
 -/
+
+section Tactic
+
+open Lean Elab Meta Tactic Term
+
+syntax (name := change_of_variables) 
+  "change_of_variables" "(" ident ")" "(" ident "↦" term ")" : tactic
+
+@[tactic change_of_variables]
+def evalChangeOfVariables : Tactic := fun stx => match stx with
+  | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => 
+    withMainContext do
+      let newVar := newVarStx.getId
+      let varToChange := varToChangeStx.getId
+
+      let gTarget ← getMainTarget
+      if !gTarget.isAppOf ``Minimization.Equivalence then 
+        throwError "`change_of_variables` can only be applied to equivalences."
+      
+      -- TODO(RFM): Only working with equivalence for now.
+      let gExprRaw ← liftM <| Meta.getExprRawFromGoal true gTarget
+      let gExpr ← MinimizationExpr.fromExpr gExprRaw
+      let vars ← decomposeDomain (← instantiateMVars gExpr.domain)
+
+      -- Find change of variables location.
+      let covIdx := vars.findIdx? (fun ⟨n, _⟩ => n == varToChange)
+      if covIdx.isNone then 
+        throwError "Variable {varToChange} not found in domain."
+      let covIdx := covIdx.get!
+
+      -- New domain.
+      let newVars := vars.map (fun ⟨n, ty⟩ => ⟨if n = varToChange then newVar else n, ty⟩) 
+      let newDomain := composeDomain newVars
+
+      -- Construct change of variables function.
+      let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
+      -- u ↦ c(u)
+      let changeFnStx ← `(fun $newVarStx => $changeStx)
+      let changeFn ← Tactic.elabTerm changeFnStx none
+      -- c(x)
+      let changeTerm ← Core.betaReduce <| 
+        mkApp changeFn (mkFVar (FVarId.mk varToChange))
+      -- (x₁, ..., u, ..., xₙ) ↦ (x₁, ..., c(u), ..., xₙ)
+      let c ← withLocalDeclD `p newDomain fun p => do
+        Meta.withDomainLocalDecls newDomain p fun xs prs => do
+          -- (x₁, ..., c(xᵢ), ..., xₙ)
+          let fullChangeTerm ← Expr.mkProd <|
+            (xs.take covIdx) ++ 
+            #[changeTerm] ++ 
+            (xs.drop (covIdx + 1))
+          let replacedFVars := Expr.replaceFVars fullChangeTerm fvars xs
+          mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
+      
+      -- Apply transitivity.
+      let g ← getMainGoal
+      let gsTrans ← evalTacticAt (← `(tactic| apply Minimization.Equivalence.trans)) g
+      if gsTrans.length != 4 then 
+        throwError "Equivalence mode. Expected 4 goals after applying `trans`, got {gsTrans.length}."
+      let gToChange := gsTrans[0]!
+      let gNext := gsTrans[1]!
+
+      -- Apply `ChangeOfVariables.toEquivalence`.
+      let D := gExpr.domain
+      let E := newDomain
+      let R := gExpr.codomain
+      let RPreorder ← synthInstance
+        (mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R])
+      let f := gExpr.objFun
+      let cs := gExpr.constraints
+      let toApply := mkAppN
+        (mkConst ``ChangeOfVariables.toEquivalence)
+        #[D, E, R, RPreorder, f, cs, c]
+      let gsAfterApply ← gToChange.apply toApply
+      if gsAfterApply.length != 1 then 
+        throwError (
+          "Failed to apply `ChangeOfVariables.toEquivalence`." ++ 
+          "Make sure that the change of variables is inferrable by type class resolution.")
+
+      -- Sovlve change of variables condition.
+      let gCondition := gsAfterApply[0]!
+      let (_, gCondition) ← gCondition.intros
+      let gFinal ← evalTacticAt 
+        (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity)) gCondition
+      if gFinal.length != 0 then 
+        throwError "Failed to solve change of variables condition."
+
+      -- Replace main goal.
+      replaceMainGoal [gNext]
+
+      -- Clean up projections.
+      normNumCleanUp (useSimp := False)
+
+      pure ()
+  | _ => throwUnsupportedSyntax
+
+end Tactic
 
 end CvxLean
