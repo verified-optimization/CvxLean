@@ -40,12 +40,12 @@ def p :=
     subject to 
       h : 0 < x
 
-equivalence eqv/q : p := by 
+equivalence eqv/q1 : p := by 
   unfold p 
   change_of_variables (u) (x ↦ Real.exp u)
   equivalence_rfl
 
-#print q
+#print q1
 
 equivalence eqv2/q2 : p := by 
   unfold p 
@@ -53,3 +53,10 @@ equivalence eqv2/q2 : p := by
   equivalence_rfl
 
 #print q2
+
+equivalence eqv3/q3 : p := by 
+  unfold p 
+  change_of_variables (u) (x ↦ (1 : ℝ) / u)
+  equivalence_rfl
+
+#print q3
