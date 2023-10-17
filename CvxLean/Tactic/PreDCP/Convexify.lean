@@ -1,5 +1,6 @@
 import Lean
 import Mathlib.Tactic.NormNum
+import CvxLean.Meta.Minimization
 import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.PreDCP.Basic
 import CvxLean.Tactic.PreDCP.RewriteMapExt
@@ -226,23 +227,6 @@ def evalStep (g : MVarId) (step : EggRewrite)
     -- the step involves mapping the objectiver function.
     evalTacticAt tacStx g
 
-/-- Helper function used in `convexify` to read the goal handling the 
-`reduction` and `equivalence` cases. -/
-def getExprRawFromGoal (isEquiv : Bool) (e : Expr) : MetaM Expr := do
-  if isEquiv then 
-    if e.isAppOf ``Minimization.Equivalence then
-      -- NOTE(RFM): Equivalence 0:R 1:D 2:E 3:RPreorder 4:p 5:q 
-      let lhs := e.getArg! 4 
-      return lhs
-    else 
-      throwError "convexify expected an equivalence, got {e}."
-  else 
-    if e.isAppOf ``Minimization.Solution then 
-      -- Get `p` From `Solution p`.
-      return e.getArg! 3
-    else 
-      throwError "convexify expected an Expr of the form `Solution ...`."
-
 /-- The `convexify` tactic encodes a given minimization problem, sends it to 
 egg, and reconstructs the proof from egg's output. It works both under the 
 `reduction` and `equivalence` commands. -/
@@ -256,7 +240,7 @@ def evalConvexify : Tactic := fun stx => match stx with
     normNumCleanUp (useSimp := false)
     let gTarget ← getMainTarget
     let isEquiv := gTarget.isAppOf ``Minimization.Equivalence
-    let mut gExprRaw ← liftM <| getExprRawFromGoal isEquiv gTarget
+    let mut gExprRaw ← liftM <| Meta.getExprRawFromGoal isEquiv gTarget
     
     -- Unfold if necessary, in which case we might need to clean up numbers 
     -- again.
@@ -264,7 +248,7 @@ def evalConvexify : Tactic := fun stx => match stx with
       unfoldTarget n
       normNumCleanUp (useSimp := false)
       let gTarget ← getMainTarget
-      gExprRaw ← liftM <| getExprRawFromGoal isEquiv gTarget
+      gExprRaw ← liftM <| Meta.getExprRawFromGoal isEquiv gTarget
 
     -- Get `MinmizationExpr`.
     let gExpr ← MinimizationExpr.fromExpr gExprRaw
