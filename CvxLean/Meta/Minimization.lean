@@ -77,6 +77,22 @@ def fromGoal (goal : MVarId) : MetaM SolutionExpr := do
 
 end SolutionExpr
 
+/-- Helper function used in to read the goal handling the `reduction` and 
+`equivalence` cases. -/
+def getExprRawFromGoal (isEquiv : Bool) (e : Expr) : MetaM Expr := do
+  if isEquiv then 
+    if e.isAppOf `Minimization.Equivalence then
+      -- NOTE(RFM): Equivalence 0:R 1:D 2:E 3:RPreorder 4:p 5:q 
+      let lhs := e.getArg! 4 
+      return lhs
+    else 
+      throwError "convexify expected an equivalence, got {e}."
+  else 
+    if e.isAppOf `Minimization.Solution then 
+      -- Get `p` From `Solution p`.
+      return e.getArg! 3
+    else 
+      throwError "convexify expected an Expr of the form `Solution ...`."
 
 /-- Replaces projections of an FVar `p` in an expression `e` by the expressions `rs`.
   For example, `p.2.2.1` will be replaced by `rs[2]`. If `p` is not fully projected,
