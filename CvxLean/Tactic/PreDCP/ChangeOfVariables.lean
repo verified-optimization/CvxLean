@@ -128,10 +128,11 @@ instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a * x) := {
   property := fun _ h => by rw [← mul_assoc, mul_one_div, div_self h, one_mul]
 }
 
-instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a / x) := by 
-  have := ChangeOfVariables.comp (fun x : ℝ => a * x) (fun x : ℝ => x⁻¹)
-  simp only [Function.comp, mul_one_div, ←div_eq_mul_inv] at this 
-  exact this
+instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a / x) := {
+  inv := fun x => a / x
+  condition := fun x => x ≠ 0 ∧ a ≠ 0
+  property := fun _ ⟨_, ha⟩ => by field_simp; rw [mul_comm]
+}
 
 instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => x + a) := {
   inv := fun x => x - a
@@ -236,9 +237,11 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       -- Solve change of variables condition.
       let gCondition := gsAfterApply[0]!
       let (_, gCondition) ← gCondition.intros
-      let gFinal ← evalTacticAt 
+      let gsFinal ← evalTacticAt 
         (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity)) gCondition
-      if gFinal.length != 0 then 
+      if gsFinal.length != 0 then 
+        for g in gsFinal do  
+          dbg_trace s!"Could not prove {← Meta.ppGoal g}."
         throwError "Failed to solve change of variables condition."
 
       -- Replace main goal.
