@@ -31,7 +31,7 @@ def convexBezier (n d : ℕ)
   (v : Fin (d + 1) → ℝ)
   (a : Fin d → ℝ) :=
   optimization (x : Fin n → ℝ) (T : ℝ) (y : ℝ)
-    minimize y - T
+    minimize Real.sqrt (y - T)
     subject to
       hT : 1 ≤ T
       hk : K.mulVec x ≤ k
@@ -39,24 +39,32 @@ def convexBezier (n d : ℕ)
       ha : A.mulVec x ≤ y • a
       hy : T ^ 2 ≤ y
 
--- map from cvx to og
+variable {R D E : Type} [Preorder R]
+variable (p : Minimization D R) (q : Minimization E R)
 
--- are k, v and a constant?
-theorem test
+structure Relaxation := 
+  (phi : D → E)
+  (phi_injective : Function.Injective phi)
+  (phi_feasibility : ∀ x, p.constraints x → q.constraints (phi x))
+  (phi_lower_bound : ∀ x, p.constraints x → q.objFun (phi x) ≤ p.objFun x)
+
+def relaxationBezier (n d : ℕ)
   (K : Matrix (Fin (d + 2)) (Fin n) ℝ)
   (V : Matrix (Fin (d + 1)) (Fin n) ℝ)
   (A : Matrix (Fin d) (Fin n) ℝ)
   (k : Fin (d + 2) → ℝ)
   (v : Fin (d + 1) → ℝ)
-  (a : Fin d → ℝ)
-  (S1 : Solution (originalBezier n d K V A k v a))
-  (S2 : Solution (convexBezier n d K V A k v a)) :
-  S1.point.1 = S2.point.1 := by {
-    rcases S1 with ⟨⟨x1, T1⟩, ⟨hT1, hk1, hv1, ha1⟩, hopt1⟩
-    rcases S2 with ⟨⟨x2, T2, y2⟩, ⟨hT2, hk2, hv2, ha2, hy2⟩, hopt2⟩
-    simp at hT1 hk1 hv1 ha1 hopt1 hT2 hk2 hv2 ha2 hy2 hopt2 ⊢ 
-    -- not true ?
-    sorry
-  }
+  (a : Fin d → ℝ) :
+  Relaxation (originalBezier n d K V A k v a) (convexBezier n d K V A k v a) :=
+  { phi := fun ⟨x, T⟩ => ⟨x, T, T ^ 2⟩,
+    phi_injective := fun ⟨x, T⟩ ⟨x', T'⟩ h => by rcases h with ⟨hx, hT, _⟩; rfl,
+    phi_feasibility := fun ⟨x, T⟩ ⟨hT, hk, hv, ha⟩ => ⟨hT, hk, hv, ha, le_refl _⟩    
+    phi_lower_bound := fun ⟨x, T⟩ ⟨hT, _, _, _⟩ => by {
+      simp only [convexBezier, originalBezier]
+      rw [sqrt_le_iff]
+      have : 0 ≤ T := le_trans zero_le_one hT
+      simp [this]
+    } }
+
 
 end TrajectoryOptimization
