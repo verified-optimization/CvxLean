@@ -43,10 +43,10 @@ variable {R D E : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R)
 
 structure Relaxation := 
-  (phi : D → E)
-  (phi_injective : Function.Injective phi)
-  (phi_feasibility : ∀ x, p.constraints x → q.constraints (phi x))
-  (phi_lower_bound : ∀ x, p.constraints x → q.objFun (phi x) ≤ p.objFun x)
+  (r : D → E)
+  (r_injective : Function.Injective r)
+  (r_feasibility : ∀ x, p.constraints x → q.constraints (r x))
+  (r_lower_bound : ∀ x, p.constraints x → q.objFun (r x) ≤ p.objFun x)
 
 def relaxationBezier (n d : ℕ)
   (K : Matrix (Fin (d + 2)) (Fin n) ℝ)
@@ -56,10 +56,10 @@ def relaxationBezier (n d : ℕ)
   (v : Fin (d + 1) → ℝ)
   (a : Fin d → ℝ) :
   Relaxation (originalBezier n d K V A k v a) (convexBezier n d K V A k v a) :=
-  { phi := fun ⟨x, T⟩ => ⟨x, T, T ^ 2⟩,
-    phi_injective := fun ⟨x, T⟩ ⟨x', T'⟩ h => by rcases h with ⟨hx, hT, _⟩; rfl,
-    phi_feasibility := fun ⟨x, T⟩ ⟨hT, hk, hv, ha⟩ => ⟨hT, hk, hv, ha, le_refl _⟩    
-    phi_lower_bound := fun ⟨x, T⟩ ⟨hT, _, _, _⟩ => by {
+  { r := fun ⟨x, T⟩ => ⟨x, T, T ^ 2⟩,
+    r_injective := fun ⟨x, T⟩ ⟨x', T'⟩ h => by rcases h with ⟨hx, hT, _⟩; rfl,
+    r_feasibility := fun ⟨x, T⟩ ⟨hT, hk, hv, ha⟩ => ⟨hT, hk, hv, ha, le_refl _⟩    
+    r_lower_bound := fun ⟨x, T⟩ ⟨hT, _, _, _⟩ => by {
       simp only [convexBezier, originalBezier]
       rw [sqrt_le_iff]
       have : 0 ≤ T := le_trans zero_le_one hT
