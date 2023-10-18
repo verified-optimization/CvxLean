@@ -83,6 +83,12 @@ optimality by
     norm_num
   · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
 
+declare_atom soCone [cone] (n : Nat)& (t : ℝ)+ (x : (Fin n) → ℝ)? :
+  soCone t x :=
+optimality by
+  intros t' ht h 
+  exact le_trans h ht
+
 declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
   Vec.rotatedSoCone v w x :=
 optimality by
@@ -562,35 +568,6 @@ optimality by
   exact Real.le_sqrt_of_sq_le (le_trans h hy)
 vconditionElimination (cond : fun _ hx => c1.2.1.trans hx)
 
--- NOTE: This will be removed when condition inference is implemented.
--- declare_atom sqrt' [concave] (x : ℝ)+ : Real.sqrt x := 
--- vconditions (cond : 1 / 1000 ≤ x)
--- implementationVars (t : ℝ)
--- implementationObjective (t)
--- implementationConstraints 
---   (c1 : posOrthCone (x - 1 / 1000))
---   (c2 : rotatedSoCone x (1/2) ![t])
--- solution (t := Real.sqrt x)
--- solutionEqualsAtom by
---   rfl;
--- feasibility 
---   (c1 : by 
---     simp only [posOrthCone, sub_nonneg, cond])
---   (c2 : by
---     simp [rotatedSoCone]
---     have cond' : 0 ≤ x := le_trans (by positivity) cond
---     refine ⟨?_, cond', zero_le_two⟩
---     rw [sq_sqrt cond'])
--- optimality by
---   intros y hy 
---   simp [rotatedSoCone] at c2
---   have h := c2.1
---   exact Real.le_sqrt_of_sq_le (le_trans h hy)
--- vconditionElimination (cond : fun _ hx => by {
---     simp only [posOrthCone, sub_nonneg] at c1
---     exact le_trans c1 hx
---   })
-
 declare_atom log [concave] (x : ℝ)+ : log x :=
 vconditions (cond : 0 < x)
 implementationVars (t : ℝ)
@@ -640,6 +617,29 @@ optimality by
   rw [←sub_nonneg, sub_neg_eq_add, add_comm, ←sub_nonneg (b := x)]
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
+
+-- declare_atom natPowMod2 [convex] (x : ℝ)? (n : ℕ)& : x ^ n := 
+-- bconditions (hmod : n % 2 = 0)
+-- vconditions 
+-- implementationVars (t : ℝ) (w : ℝ) 
+-- implementationObjective w 
+-- implementationConstraints 
+--   (c1 : soCone (1 + w) ![1 - w, 2 * t]) -- t^2 <= w
+--   (c2 : x ^ (n / 2) ≤ t)
+-- solution (t := x ^ (n / 2)) (w := x ^ n)
+-- solutionEqualsAtom rfl
+-- feasibility
+--   (c1 : by {
+--     simp [soCone]
+--     sorry
+--   })
+--   (c2 : by {
+--     simp
+--   })
+-- optimality by {
+--   sorry
+-- }
+-- vconditionElimination
 
 end Real
 
