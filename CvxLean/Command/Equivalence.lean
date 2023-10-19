@@ -78,6 +78,7 @@ def evalEquivalence : CommandElab := fun stx => match stx with
       let (prob₂, proof) ← elabEquivalenceProof prob₁ proof.raw
       let prob₂ ← instantiateMVars prob₂
       let prob₂ ← mkLambdaFVars (xs.map Prod.snd) prob₂
+      let prob₂ ← instantiateMVars prob₂
       Lean.addDecl <| 
         Declaration.defnDecl 
         (mkDefinitionValEx probId.getId 
@@ -90,7 +91,9 @@ def evalEquivalence : CommandElab := fun stx => match stx with
       
       let proofTy ← inferType proof
       let proofTy ← mkForallFVars (xs.map Prod.snd) proofTy
+      let proofTy ← instantiateMVars proofTy
       let proof ← mkLambdaFVars (xs.map Prod.snd) proof
+      let proof ← instantiateMVars proof
       Lean.addDecl <| 
         Declaration.defnDecl 
           (mkDefinitionValEx eqvId.getId 
