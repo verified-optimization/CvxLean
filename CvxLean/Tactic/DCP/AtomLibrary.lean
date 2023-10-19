@@ -619,29 +619,6 @@ optimality by
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
 
--- declare_atom natPowMod2 [convex] (x : ℝ)? (n : ℕ)& : x ^ n := 
--- bconditions (hmod : n % 2 = 0)
--- vconditions 
--- implementationVars (t : ℝ) (w : ℝ) 
--- implementationObjective w 
--- implementationConstraints 
---   (c1 : soCone (1 + w) ![1 - w, 2 * t]) -- t^2 <= w
---   (c2 : x ^ (n / 2) ≤ t)
--- solution (t := x ^ (n / 2)) (w := x ^ n)
--- solutionEqualsAtom rfl
--- feasibility
---   (c1 : by {
---     simp [soCone]
---     sorry
---   })
---   (c2 : by {
---     simp
---   })
--- optimality by {
---   sorry
--- }
--- vconditionElimination
-
 end Real
 
 -- Non-affine atoms on vectors.
