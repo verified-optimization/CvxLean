@@ -142,6 +142,20 @@ instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => x + a) := {
 
 end RealInstances
 
+noncomputable section VecInstances
+
+instance {n : ℕ} {a : Fin n → ℝ} : 
+  ChangeOfVariables (fun (v : Fin n → ℝ) => a / v) := {
+  inv := fun v => a / v
+  condition := fun v => ∀ i, v i ≠ 0 ∧ a i ≠ 0
+  property := fun v hnot0 => by {
+    ext i
+    simp [←div_mul, div_self (hnot0 i).2, one_mul]
+  }
+}
+
+end VecInstances
+
 /-
 The idea here is to have a tactic
 
@@ -238,7 +252,7 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       let gCondition := gsAfterApply[0]!
       let (_, gCondition) ← gCondition.intros
       let gsFinal ← evalTacticAt 
-        (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity)) gCondition
+        (← `(tactic| simp [ChangeOfVariables.condition] <;> intros; positivity)) gCondition
       if gsFinal.length != 0 then 
         for g in gsFinal do  
           dbg_trace s!"Could not prove {← Meta.ppGoal g}."
