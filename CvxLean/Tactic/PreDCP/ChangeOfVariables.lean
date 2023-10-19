@@ -252,7 +252,7 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       let gCondition := gsAfterApply[0]!
       let (_, gCondition) ← gCondition.intros
       let gsFinal ← evalTacticAt 
-        (← `(tactic| simp [ChangeOfVariables.condition] <;> intros; positivity)) gCondition
+        (← `(tactic| simp [ChangeOfVariables.condition] <;> intros <;> positivity)) gCondition
       if gsFinal.length != 0 then 
         for g in gsFinal do  
           dbg_trace s!"Could not prove {← Meta.ppGoal g}."
