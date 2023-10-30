@@ -4,7 +4,6 @@ mod visualization {
 use egg::{*};
 use std::path::Path;
 use std::time::Duration;
-use std::collections::HashMap;
 use std::fmt::Display;
 
 use crate::domain; 
@@ -15,7 +14,6 @@ use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
 
 use crate::rules;
-use rules::rules as rules;
 
 pub fn egg_to_serialized_egraph<L, A>(egraph: &EGraph<L, A>) -> egraph_serialize::EGraph
 where
