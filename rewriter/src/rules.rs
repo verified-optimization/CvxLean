@@ -21,7 +21,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     /* Equality rules. */
     // NOTE: many more rules could apply here, but in our examples, equalities 
     // were either already affine or required applying logarithms to remove
-    // exponentials and make the affine.
+    // exponentials and make them affine.
 
     rw!("log_eq_log"; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" 
         if is_gt_zero("?a") if is_gt_zero("?b")),
