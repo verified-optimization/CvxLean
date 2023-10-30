@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod visualization {
 
-use egg::{*};
+use egg::{rewrite as rw, *};
 use std::path::Path;
 use std::time::Duration;
 use std::fmt::Display;
@@ -12,8 +12,10 @@ use domain::Domain as Domain;
 use crate::optimization;
 use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
+use optimization::is_gt_zero as is_gt_zero;
 
-use crate::rules;
+
+// Conversion to SVG.
 
 pub fn egg_to_serialized_egraph<L, A>(egraph: &EGraph<L, A>) -> egraph_serialize::EGraph
 where
@@ -42,7 +44,7 @@ where
     out
 }
 
-fn egg_to_svg(s: &str, domains: Vec<(String, Domain)>) {
+fn egg_to_svg(s: &str, domains: Vec<(String, Domain)>, rules: &Vec<Rewrite<Optimization, Meta>>, filename: &str) {
     let analysis = Meta {
         domains : domains.clone().into_iter().collect()
     };
@@ -54,25 +56,74 @@ fn egg_to_svg(s: &str, domains: Vec<(String, Domain)>) {
         .with_iter_limit(4)
         .with_time_limit(Duration::from_secs(5))
         .with_expr(&expr)
-        .run(&rules::rules_for_visualization());
+        .run(rules);
 
     let serialized_egraph = egg_to_serialized_egraph(&runner.egraph);
 
     let path = Path::new("/Users/ramonfernandezmir/Documents/PhD-code/misc/egraph-serialize/tests")
-        .join("test")
+        .join(filename)
         .with_extension("json");
     println!("Writing to {:?}", path);
     
     serialized_egraph.to_json_file(path).unwrap();
 }
 
-// Examples.
+
+// Rules.
+
+fn step0() -> Vec<Rewrite<Optimization, Meta>> { vec![] }
+
+fn step1() -> Vec<Rewrite<Optimization, Meta>> { vec![
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
+] }
+
+fn step2() -> Vec<Rewrite<Optimization, Meta>> { vec![
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
+    
+    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
+        if is_gt_zero("?c")),
+] }
+
+fn step3() -> Vec<Rewrite<Optimization, Meta>> { vec![
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
+    
+    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
+        if is_gt_zero("?c")),
+    
+    rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
+] }
+
+fn step4() -> Vec<Rewrite<Optimization, Meta>> { vec![
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
+    
+    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
+        if is_gt_zero("?c")),
+    
+    rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
+
+    rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
+] }
+
+
+// Run example.
 
 #[test]
-fn test_main_example() {
+fn run() {
     let domains = vec![("x".to_string(), Domain::Pos)];
     let s = "(le (div 1 (sqrt (var x))) (exp (var x)))";
-    egg_to_svg(s, domains);
+    let steps = vec![
+        ("step0", step0()), 
+        ("step1", step1()), 
+        ("step2", step2()), 
+        ("step3", step3()), 
+        ("step4", step4())];
+    for (filename, rules) in steps {
+        egg_to_svg(s, domains.clone(), &rules, filename);
+    }
 }
 
 }
