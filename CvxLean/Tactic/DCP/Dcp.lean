@@ -16,7 +16,7 @@ open Lean Lean.Meta
 
 namespace DCP
 
-/-- Check if `expr` is constant by checking if it contains any free variable 
+/-- Check if `expr` is constant by checking if it contains any free variable
 from `vars`. -/
 def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
   let fvarSet := (collectFVars {} expr).fvarSet
@@ -24,12 +24,15 @@ def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
     if fvarSet.contains v then return false
   return true
 
-/-- Return list of all registered atoms that match with a given expression. 
-For every registered atom, it returns: 
-1. The list of arguments as Lean expressions for further matching. 
-2. The atom entry, of type `GraphAtomData`. -/
-def findRegisteredAtoms (e : Expr) : 
-  MetaM (Array (Array Expr × GraphAtomData)) := do
+abbrev Argument := Expr
+abbrev Arguments := Array Argument
+
+/-- Return list of all registered atoms that match with a given expression.
+For every registered atom, it returns:
+* The list of arguments as Lean expressions for further matching.
+* The atom entry, of type `GraphAtomData`. -/
+def findRegisteredAtoms (e : Expr) :
+  MetaM (Array (Arguments × GraphAtomData)) := do
   let discrTree ← getAtomDiscrTree
   let atoms ← discrTree.getMatch (← zetaReduce (← e.removeMData))
   trace[Meta.debug] "discrTree {atoms.size} {e}"
@@ -45,34 +48,39 @@ def findRegisteredAtoms (e : Expr) :
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms
 
-/-- Data type used to indicate whether an atom could be successfully 
+abbrev GraphAtomDataTree := Tree GraphAtomData Expr
+
+abbrev ArgumentsTree := Tree Arguments Unit
+
+abbrev CurvatureTree := Tree Curvature Curvature
+
+abbrev BCondExpr := Expr
+abbrev BCondExprs := Array BCondExpr
+abbrev BCondsTree := Tree BCondExprs BCondExprs
+
+abbrev AtomDataTrees := GraphAtomDataTree × ArgumentsTree × CurvatureTree × BCondsTree
+
+/-- Data type used to indicate whether an atom could be successfully
 processed. It is used by `processAtom`. A successful match includes 4 trees:
 * A tree of atom data (see `GraphAtomData`).
 * A tree of arguments for every node.
 * A tree of curvatures.
-* A tree of background conditions. 
+* A tree of background conditions.
 -/
 inductive FindAtomResult
-| Success (res : 
-    Tree GraphAtomData Expr × 
-    Tree (Array Expr) Unit × 
-    Tree Curvature Curvature × 
-    Tree (Array Expr) (Array Expr))
+| Success (res : AtomDataTrees)
 | Error (msgs : Array MessageData)
 
-/-- Given an expression `e`, optimization variables `vars` and the expected 
-curvature `curvature`, this function attempts to recursively match `e` with 
-atoms for the library outputing all the necessary information as explained 
+/-- Given an expression `e`, optimization variables `vars` and the expected
+curvature `curvature`, this function attempts to recursively match `e` with
+atoms for the library outputing all the necessary information as explained
 in `FindAtomResult`. The boolean in the output indicates whether a match from
 the library was used. -/
-partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) : 
+partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
   MetaM (
-    Bool × 
-    Array MessageData × 
-    Tree GraphAtomData Expr × 
-    Tree (Array Expr) Unit × 
-    Tree Curvature Curvature × 
-    Tree (Array Expr) (Array Expr)) := do
+    Bool ×
+    Array MessageData ×
+    AtomDataTrees) := do
   if isConstant e vars then
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   if e.isFVar ∧ vars.contains e.fvarId! then
@@ -92,7 +100,7 @@ where
   processAtom (e : Expr) (vars : Array FVarId) (curvature : Curvature) (atom : GraphAtomData) (args : Array Expr) : MetaM FindAtomResult := do
     if atom.curvature != Curvature.Affine ∧ curvature != atom.curvature then
       return FindAtomResult.Error
-        #[m!"Trying atom {atom.expr} for expression {e}: " ++ 
+        #[m!"Trying atom {atom.expr} for expression {e}: " ++
           m!"Expected {curvature}, but atom is {atom.curvature}"]
     let mut abort := false -- TODO: use exception instead?
     let mut bconds := #[]
@@ -104,7 +112,7 @@ where
         | some decl => do
           if ← isDefEq decl.type bcondType then return some decl.fvarId else return none
       match fvarId? with
-      | some fvarId => 
+      | some fvarId =>
         bconds := bconds.push (mkFVar fvarId)
       | none =>
         -- Try to prove simple bconditions by norm_num.
@@ -113,11 +121,11 @@ where
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
           let v ← instantiateMVars v
           return v
-        if let some e' := e then 
-          bconds := bconds.push e' 
-        else 
+        if let some e' := e then
+          bconds := bconds.push e'
+        else
           return FindAtomResult.Error
-            #[m!"Trying atom {atom.expr} for expression {e}: " ++ 
+            #[m!"Trying atom {atom.expr} for expression {e}: " ++
               m!"Background Condition {bcondType} not found."]
 
     let mut childTrees := #[]
@@ -128,7 +136,7 @@ where
       let arg := args[i]!
       if atom.argKinds[i]! == ArgKind.Constant ∧ not (isConstant arg vars) then
         return FindAtomResult.Error
-          #[m!"Trying atom {atom.expr} for expression {e}: " ++ 
+          #[m!"Trying atom {atom.expr} for expression {e}: " ++
             m!"Expected constant argument, but found: {arg}"]
       let c := curvatureInArg curvature atom.argKinds[i]!
       let (childFailed, childFailedAtoms, childTree, childArgsTree, childCurvature, childBCond) ← findAtoms arg vars c
@@ -141,11 +149,13 @@ where
     if curvature == Curvature.Affine then
       -- For affine branches, we only check that all atoms are affine, but don't store the results.
       return FindAtomResult.Success (Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf bconds)
-    else 
+    else
       return FindAtomResult.Success (Tree.node atom childTrees, Tree.node args childArgsTrees, Tree.node curvature childCurvatures, Tree.node bconds childBConds)
 
-/-- -/
-partial def mkNewVars (i : Nat) : Tree GraphAtomData Expr → Tree (Array Expr) Unit → MetaM (Tree (Array LocalDecl) Unit × Nat)
+abbrev NewVarsTree := Tree (Array LocalDecl) Unit
+
+/-- Returns number of added variables -/
+partial def mkNewVars (i : Nat) : GraphAtomDataTree → ArgumentsTree → MetaM (NewVarsTree × Nat)
 | Tree.node atom childAtoms, Tree.node args childArgs => do
   let mut childNewVars := #[]
   let mut i := i
@@ -164,7 +174,7 @@ partial def mkNewVars (i : Nat) : Tree GraphAtomData Expr → Tree (Array Expr) 
 | _, _ => throwError "Tree mismatch"
 
 /-- -/
-def mkNewVarDeclList (newVars : OC (Tree (Array LocalDecl) Unit)) : 
+def mkNewVarDeclList (newVars : OC NewVarsTree) :
   MetaM (List LocalDecl) := do
   let newVarTrees := #[newVars.objFun] ++ newVars.constr
   let mut newVarDecls := #[]
@@ -201,36 +211,36 @@ partial def mkNewConstrs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Un
 /-- Returns index of constraint if vcondition corresponds exactly to a constraint
 (this is needed for condition elimination). If not, it tries to deduce the condition
 from other constraints and returns an expression. -/
-partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints : Array Expr) : 
-  Tree GraphAtomData Expr → 
-  Tree (Array Expr) Unit → 
+partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints : Array Expr) :
+  Tree GraphAtomData Expr →
+  Tree (Array Expr) Unit →
   MetaM (Tree (Array (ℕ ⊕ Expr)) Unit)
   | Tree.node atom childAtoms, Tree.node args childArgs => do
     let mut childrenVCondData := #[]
     for i in [:childAtoms.size] do
-      let childVCondData ← 
+      let childVCondData ←
         findVConditions originalConstrVars constraints childAtoms[i]! childArgs[i]!
       childrenVCondData := childrenVCondData.push childVCondData
     let mut vcondData := #[]
     for (n, vcond) in atom.vconds do
       let vcond := mkAppNBeta vcond args
-      
+
       -- First, try to see if it matches exactly with any of the constraints.
       match ← constraints.findIdxM? (isDefEq vcond) with
       | some i => do vcondData := vcondData.push (Sum.inl i)
-      | none => 
+      | none =>
         -- TODO(RFM): Same issue with background conditions. Find a less hacky way?
         -- Infer vconditions from constraints.
-        let vcondProofTyBody ← liftM <| constraints.foldrM mkArrow vcond 
+        let vcondProofTyBody ← liftM <| constraints.foldrM mkArrow vcond
         let vcondProofTy ← mkForallFVars args vcondProofTyBody
-        
+
         let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
             let tac ← `(by intros; try { norm_num } <;> try { positivity } <;> try { linarith })
             let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
             Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
             instantiateMVars v
 
-        if let some e' := e then 
+        if let some e' := e then
           -- The inferred variable condition.
           let newCondition := mkAppNBeta e' args
           let newCondition := mkAppNBeta newCondition (originalConstrVars.map (mkFVar ·.fvarId))
@@ -239,7 +249,7 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
           trace[Meta.debug] "originalConstrVars: {originalConstrVars.size}"
 
           vcondData := vcondData.push (Sum.inr newCondition)
-        else 
+        else
           throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
 
     return (Tree.node vcondData childrenVCondData)
@@ -298,7 +308,7 @@ partial def mkSolEqAtom : Tree GraphAtomData Expr → Tree (Expr × Array Expr) 
 
 /-- -/
 partial def mkFeasibility : Tree GraphAtomData Expr → Tree (Expr × Array Expr) (Expr × Array Expr) → Tree (Array Expr) Unit → Tree Expr Expr → MetaM (Tree (Array Expr) Unit)
-| Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution, 
+| Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution,
   Tree.node vcondVars childVCondVars, Tree.node solEqAtom childSolEqAtom => do
   -- Recursive calls for arguments.
   let mut childFeasibility := #[]
@@ -322,12 +332,12 @@ partial def mkFeasibility : Tree GraphAtomData Expr → Tree (Expr × Array Expr
 | _, _, _, _ => throwError "Tree mismatch"
 
 /-- -/
-partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array Expr) Unit → 
-    Tree Expr Expr → Tree (Array LocalDecl) Unit → 
+partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array Expr) Unit →
+    Tree Expr Expr → Tree (Array LocalDecl) Unit →
     Tree (Array LocalDecl) Unit → Tree Curvature Curvature →
     Tree (Array Expr) (Array Expr) →
     MetaM (Tree (Expr × Array Expr) (Expr × Array Expr))
-  | Tree.node atom childAtoms, Tree.node args childArgs, 
+  | Tree.node atom childAtoms, Tree.node args childArgs,
       Tree.node _reducedExpr childReducedExpr, Tree.node newVars childNewVars,
       Tree.node newConstrVars childNewConstrVars,
       Tree.node curvature childCurvature,
@@ -395,7 +405,7 @@ partial def mkNewConstrVars :  Tree (Array Expr) Unit → MetaM (Tree (Array Loc
 | Tree.leaf _ => pure $ Tree.leaf ()
 
 /-- -/
-def mkOriginalConstrVars (originalVarsDecls : Array LocalDecl) 
+def mkOriginalConstrVars (originalVarsDecls : Array LocalDecl)
   (constr : Array (Lean.Name × Expr)) : MetaM (Array LocalDecl) := do
 withExistingLocalDecls originalVarsDecls.toList do
   let mut decls : Array LocalDecl := #[]
@@ -405,8 +415,8 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkVCondVars (originalConstrVars : Array FVarId) (vcondIdx : Tree (Array (ℕ ⊕ Expr)) Unit) : Tree (Array Expr) Unit :=
-  vcondIdx.map (fun iores => iores.map fun iore => 
-    match iore with 
+  vcondIdx.map (fun iores => iores.map fun iore =>
+    match iore with
     | Sum.inl i => mkFVar originalConstrVars[i]!
     | Sum.inr e => e) id
 
@@ -491,9 +501,9 @@ def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars :
             ← mkAppM ``Eq.mpr #[constraintsEq[i]!, mkFVar originalConstrVars[i]!.fvarId]
 
       -- New constraint proofs.
-      let newConstrProofs := feasibility.fold #[] fun acc fs => 
+      let newConstrProofs := feasibility.fold #[] fun acc fs =>
           fs.fold acc Array.append
-      
+
       let constrForwardBody ← foldAndIntro $ (oldConstrProofs ++ newConstrProofs)
       let constrForwardBody := constrForwardBody.replaceFVars
         ((originalConstrVars).map (mkFVar ·.fvarId)) hProj
@@ -542,12 +552,12 @@ def makeConstrBackward (vcondElimMap : Std.HashMap Nat Expr) (newDomain : Expr) 
       let mut filteredCounter := 0
       for i in [:constrOpt.size] do
         match vcondElimMap.find? i with
-        | some p => 
+        | some p =>
           constrBackwardProofs := constrBackwardProofs.push $ p
-        | none => 
+        | none =>
           constrBackwardProofs := constrBackwardProofs.push $ mkApp constrOpt[i]! hProj.toArray[filteredCounter]!
           filteredCounter := filteredCounter + 1
-      
+
       let constrBackwardBody ← foldAndIntro constrBackwardProofs
 
       let constrBackwardBody := constrBackwardBody.replaceFVars
@@ -578,50 +588,50 @@ def mkOCWithNames (objFun : Expr) (constraints : List (Lean.Name × Expr)) (orig
 
 -- TODO: Better error message when discovering a concave atom where convex is expected, and vice versa.
 /-- Construct the atom tree. -/
-def mkAtomTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) : 
+def mkAtomTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
   MetaM (
-    OC Bool ×  
-    OC (Array MessageData) × 
-    OC (Tree GraphAtomData Expr) × 
-    OC (Tree (Array Expr) Unit) × 
-    OC (Tree Curvature Curvature) × 
+    OC Bool ×
+    OC (Array MessageData) ×
+    OC (Tree GraphAtomData Expr) ×
+    OC (Tree (Array Expr) Unit) ×
+    OC (Tree Curvature Curvature) ×
     OC (Tree (Array Expr) (Array Expr))) := do
 withExistingLocalDecls originalVarsDecls.toList do
   let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
   -- Find atoms.
-  let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!)) c) oc 
+  let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!)) c) oc
     ⟨Curvature.Convex, oc.constr.map (fun _ => Curvature.Concave)⟩
   let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
   let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
   if failedAtom.objFun then
     throwError "Failure in objective: {failedAtomMsgs.objFun}"
-  
+
   let atoms := atomsAndArgs.map (·.snd.snd.fst)
   let args := atomsAndArgs.map (·.snd.snd.snd.fst)
   let curvature := atomsAndArgs.map (·.snd.snd.snd.snd.fst)
   let bconds := atomsAndArgs.map (·.snd.snd.snd.snd.snd)
   return (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds)
 
-/-- Identify vconditions and check that all failed constraints can be used as 
+/-- Identify vconditions and check that all failed constraints can be used as
 vconditions. -/
 def mkVConditions (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
-  (constraints : List (Lean.Name × Expr)) (atoms : OC (Tree GraphAtomData Expr)) (args : OC (Tree (Array Expr) Unit)) 
+  (constraints : List (Lean.Name × Expr)) (atoms : OC (Tree GraphAtomData Expr)) (args : OC (Tree (Array Expr) Unit))
   (failedAtom : OC Bool) (failedAtomMsgs : OC (Array MessageData)) (originalConstrVars : Array LocalDecl) :
   MetaM (OC (Tree (Array ℕ) Unit) × Array Bool × OC (Tree (Array Expr) Unit)) := do
 withExistingLocalDecls originalVarsDecls.toList do
   let vcondData ← OC.map2M (findVConditions originalConstrVars oc.constr) atoms args
 
   -- Extract only indicies
-  let vcondIdx : OC (Tree (Array ℕ) Unit) := vcondData.map 
-    (fun t => t.map (fun iores => iores.foldl (init := #[]) (fun (acc : Array ℕ) iore => 
-      match iore with  
+  let vcondIdx : OC (Tree (Array ℕ) Unit) := vcondData.map
+    (fun t => t.map (fun iores => iores.foldl (init := #[]) (fun (acc : Array ℕ) iore =>
+      match iore with
       | Sum.inl i => acc.push i
       | Sum.inr _ => acc))
-      id) 
+      id)
 
-  let isVCond := vcondIdx.fold (oc.constr.map (fun _ => false)) 
+  let isVCond := vcondIdx.fold (oc.constr.map (fun _ => false))
     fun acc vcondIdxTree =>
-      vcondIdxTree.fold acc fun acc is => 
+      vcondIdxTree.fold acc fun acc is =>
         is.foldl (fun acc i => acc.set! i true) acc
   let vcondVars := vcondData.map $ mkVCondVars (originalConstrVars.map LocalDecl.fvarId)
   for i in [:isVCond.size] do
@@ -630,7 +640,7 @@ withExistingLocalDecls originalVarsDecls.toList do
   return (vcondIdx, isVCond, vcondVars)
 
 /-- -/
-def mkSolEqAtomOC (originalVarsDecls : Array LocalDecl) 
+def mkSolEqAtomOC (originalVarsDecls : Array LocalDecl)
   (atoms : OC (Tree GraphAtomData Expr)) (reducedWithSolution : OC (Tree (Expr × Array Expr) (Expr × Array Expr)))
   (vcondVars : OC (Tree (Array Expr) Unit)) (originalConstrVars : Array LocalDecl) : MetaM (OC (Tree Expr Expr)) :=
 withExistingLocalDecls originalVarsDecls.toList do
@@ -660,7 +670,7 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkNewConstrsOC (originalVarsDecls : Array LocalDecl) (newVarDecls : List LocalDecl)
- (atoms : OC (Tree GraphAtomData Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (reducedExprs : OC (Tree Expr Expr)) 
+ (atoms : OC (Tree GraphAtomData Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (reducedExprs : OC (Tree Expr Expr))
  : MetaM (Array Expr × OC (Tree (Array LocalDecl) Unit) × Array LocalDecl):=
 withExistingLocalDecls (originalVarsDecls.toList) do
   withExistingLocalDecls newVarDecls do
@@ -668,9 +678,9 @@ withExistingLocalDecls (originalVarsDecls.toList) do
     trace[Meta.debug] "newConstrs {newConstrs}"
     let newConstrVars ← OC.mapM mkNewConstrVars newConstrs
     trace[Meta.debug] "newConstrs {newConstrs}"
-    let newConstrs : Array Expr := newConstrs.fold #[] fun acc cs => 
+    let newConstrs : Array Expr := newConstrs.fold #[] fun acc cs =>
       cs.fold acc Array.append
-    let newConstrVarsArray : Array LocalDecl := newConstrVars.fold #[] fun acc cs => 
+    let newConstrVarsArray : Array LocalDecl := newConstrVars.fold #[] fun acc cs =>
       cs.fold acc Array.append
     return (newConstrs, newConstrVars, newConstrVarsArray)
 
@@ -688,14 +698,14 @@ def mkOptimalityAndVCondElimOC (originalVarsDecls : Array LocalDecl) (newVarDecl
         let vcondElim := optimalityAndVCondElim.map (fun oce => oce.map Prod.snd Prod.snd)
         trace[Meta.debug] "optimality {optimality}"
         trace[Meta.debug] "vcondElim {vcondElim}"
-        
-        
+
+
         trace[Meta.debug] "vcondIdx {vcondIdx}"
 
         trace[Meta.debug] "vcondIdx {vcondIdx}"
         let vcondElimWithIdx ← OC.map2M (fun a b => Tree.zip a b) vcondIdx vcondElim
         let vcondElimMap := vcondElimWithIdx.fold {}
-          fun (map : Std.HashMap Nat Expr) ci => 
+          fun (map : Std.HashMap Nat Expr) ci =>
             ci.fold map fun (map : Std.HashMap Nat Expr) ci => Id.run do
               let mut res := map
               for i in [:ci.1.size] do
@@ -705,18 +715,18 @@ def mkOptimalityAndVCondElimOC (originalVarsDecls : Array LocalDecl) (newVarDecl
 
 /-- -/
 structure ProcessedAtomTree where
-  (originalVarsDecls : Array LocalDecl) 
-  (originalConstrVars : Array LocalDecl) 
-  (newVarDecls : List LocalDecl) 
-  (newConstrs : Array Expr) 
-  (newConstrVarsArray : Array LocalDecl) 
-  (forwardImagesNewVars : Array Expr) 
+  (originalVarsDecls : Array LocalDecl)
+  (originalConstrVars : Array LocalDecl)
+  (newVarDecls : List LocalDecl)
+  (newConstrs : Array Expr)
+  (newConstrVarsArray : Array LocalDecl)
+  (forwardImagesNewVars : Array Expr)
   (constraints : List (Lean.Name × Expr))
-  (isVCond : Array Bool) 
+  (isVCond : Array Bool)
   (vcondElimMap : Std.HashMap ℕ Expr)
-  (solEqAtom : OC (Tree Expr Expr)) 
-  (feasibility : OC (Tree (Array Expr) Unit)) 
-  (reducedExprs : OC (Tree Expr Expr)) 
+  (solEqAtom : OC (Tree Expr Expr))
+  (feasibility : OC (Tree (Array Expr) Unit))
+  (reducedExprs : OC (Tree Expr Expr))
   (optimality : OC (Tree Expr Expr))
 
 /-- -/
@@ -736,50 +746,50 @@ def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr))
   let forwardImagesNewVars ← withExistingLocalDecls originalVarsDecls.toList do
     mkForwardImagesNewVars reducedWithSolution
   let solEqAtom ← mkSolEqAtomOC originalVarsDecls atoms reducedWithSolution vcondVars originalConstrVars
-  let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution vcondVars 
+  let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution vcondVars
     originalConstrVars solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
   let (newConstrs, newConstrVars, newConstrVarsArray)
     ← mkNewConstrsOC originalVarsDecls newVarDecls atoms newVars reducedExprs
   let (optimality, vcondElimMap) ← mkOptimalityAndVCondElimOC originalVarsDecls newVarDecls
     newConstrVarsArray atoms args reducedExprs newVars newConstrVars curvature bconds vcondIdx
-  
+
   return ProcessedAtomTree.mk
-    (originalVarsDecls := originalVarsDecls) 
-    (originalConstrVars := originalConstrVars) 
-    (newVarDecls := newVarDecls) 
-    (newConstrs := newConstrs) 
-    (newConstrVarsArray := newConstrVarsArray) 
-    (forwardImagesNewVars := forwardImagesNewVars) 
+    (originalVarsDecls := originalVarsDecls)
+    (originalConstrVars := originalConstrVars)
+    (newVarDecls := newVarDecls)
+    (newConstrs := newConstrs)
+    (newConstrVarsArray := newConstrVarsArray)
+    (forwardImagesNewVars := forwardImagesNewVars)
     (constraints := constraints)
-    (isVCond := isVCond) 
+    (isVCond := isVCond)
     (vcondElimMap := vcondElimMap)
-    (solEqAtom := solEqAtom) 
-    (feasibility := feasibility) 
-    (reducedExprs := reducedExprs) 
+    (solEqAtom := solEqAtom)
+    (feasibility := feasibility)
+    (reducedExprs := reducedExprs)
     (optimality := optimality)
 
 /-- -/
--- NOTE: Temporarily changing this to not only return the map from 
--- solution to solution but also the forward and backward maps. 
+-- NOTE: Temporarily changing this to not only return the map from
+-- solution to solution but also the forward and backward maps.
 -- TODO: Better types for return type.
-def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) : 
+def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
   MetaM (Expr × (Expr × Expr × Expr)) := do
   -- Extract objective and constraints from `goalExprs`.
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
     let pr := (← Meta.mkProjections goalExprs.domain p).toArray
     let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
         fun xs => do
           return ← xs.mapM fun x => x.fvarId!.getDecl
     withExistingLocalDecls originalVarsDecls.toList do
       let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
       let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ← 
+      let constraints : List (Lean.Name × Expr) ←
         Meta.decomposeConstraints constraints
-      let constraints ← 
-        constraints.mapM (fun ((n : Lean.Name), e) => do 
+      let constraints ←
+        constraints.mapM (fun ((n : Lean.Name), e) => do
           return (n, ← Expr.removeMData e))
       let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
       let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
@@ -791,24 +801,24 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
   -- Create new goal and reduction.
   let (forwardMap, backwardMap, reduction) ← withExistingLocalDecls pat.originalVarsDecls.toList do
       let xs := pat.originalVarsDecls.map fun decl => mkFVar decl.fvarId
-    
+
       let forwardMap ← makeForwardMap goalExprs.domain xs pat.forwardImagesNewVars
-      
-      let (objFunForward, constrForward) ← 
+
+      let (objFunForward, constrForward) ←
         withExistingLocalDecls pat.originalConstrVars.toList do
 
           let objFunForward ← makeObjFunForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
             (pat.constraints.toArray.map Prod.snd) pat.solEqAtom.objFun.val
           let constrForward ← makeConstrForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
             (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constr.map Tree.val) pat.feasibility
-          
+
           return (objFunForward, constrForward)
 
       withExistingLocalDecls pat.newVarDecls do
         let ys := (pat.newVarDecls.map (mkFVar ·.fvarId)).toArray
         trace[Meta.debug] "ys: {ys}"
 
-        let vars ← (xs ++ ys).mapM fun x => do 
+        let vars ← (xs ++ ys).mapM fun x => do
           let decl ← x.fvarId!.getDecl
           return (decl.userName, decl.type)
         let newDomain := Meta.composeDomain vars.toList
@@ -831,11 +841,11 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
         let backwardMap ← makeBackwardMap xs mkDomainFunc
 
-        let (objFunBackward, constrBackward) ← 
+        let (objFunBackward, constrBackward) ←
           withExistingLocalDecls pat.newConstrVarsArray.toList do
             let objFunBackward ← makeObjFunBackward newDomain newProblem.toMinimizationExpr.toExpr xs ys pat.optimality.objFun.val
               reducedConstrs pat.newConstrs pat.newConstrVarsArray
-            
+
             let constrBackward ← makeConstrBackward pat.vcondElimMap newDomain newProblem.toMinimizationExpr.toExpr xs ys (pat.optimality.constr.map (·.val))
               reducedConstrs pat.newConstrs pat.newConstrVarsArray
 
@@ -843,7 +853,7 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
         let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinimizationExpr.toExpr, newProblem.toMinimizationExpr.toExpr]
         check res
-        
+
         let res := mkApp res (mkBVar 0) -- Insert new goal here later.
         let res := mkApp6 res
           forwardMap
@@ -857,13 +867,13 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
         check res
         let res ← instantiateMVars res
         return (forwardMap, backwardMap, res)
-    
+
   let newGoal ← mkFreshExprMVar none
 
   return (newGoal, (forwardMap, backwardMap, reduction))
 
 /-- -/
-def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × (Expr × Expr × Expr)) := do 
+def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × (Expr × Expr × Expr)) := do
   let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
   canonizeGoalFromSolutionExpr goalExprs
 
