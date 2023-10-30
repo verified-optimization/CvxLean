@@ -74,38 +74,37 @@ fn egg_to_svg(s: &str, domains: Vec<(String, Domain)>, rules: &Vec<Rewrite<Optim
 fn step0() -> Vec<Rewrite<Optimization, Meta>> { vec![] }
 
 fn step1() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
         if is_gt_zero("?c")),
 ] }
 
 fn step2() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-        if is_gt_zero("?c")),
-    
     rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
         if is_gt_zero("?c")),
+    
+    rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
 ] }
 
 fn step3() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-        if is_gt_zero("?c")),
-    
     rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
         if is_gt_zero("?c")),
     
-    rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
+    rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
+    
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
 ] }
 
 fn step4() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-        if is_gt_zero("?c")),
-    
     rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
         if is_gt_zero("?c")),
     
-    rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
-
     rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
+
+    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
+        if is_gt_zero("?c")),
+    
+    rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
 ] }
 
 
