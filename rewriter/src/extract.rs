@@ -163,12 +163,13 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
             .with_iter_limit(iter_limit)
             .with_time_limit(Duration::from_secs(5))
             .with_expr(&expr)
-            .run(&rules());
+            .run(&rules::rules_for_visualization());
         
         if debug {
             println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
             let dot_str =  runner.egraph.dot().to_string();
             fs::write("test.dot", dot_str).expect("");
+            runner.egraph.dot().to_svg("test.svg").unwrap();
         }
 
         let root = runner.roots[0];

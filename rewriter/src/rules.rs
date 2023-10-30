@@ -193,7 +193,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 ] }
 
 #[allow(unused)]
-pub fn simple_example_rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
+pub fn rules_for_visualization() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
 
     rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
