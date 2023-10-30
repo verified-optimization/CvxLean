@@ -191,16 +191,3 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     
     rw!("log_exp"; "(log (exp ?a))" => "?a"),  
 ] }
-
-#[allow(unused)]
-pub fn rules_for_visualization() -> Vec<Rewrite<Optimization, Meta>> { vec![
-    rw!("mul-comm"; "(mul ?a ?b)" => "(mul ?b ?a)"),
-
-    rw!("le-mul"; "(le ?a (mul ?b ?c))" => "(le (div ?a ?c) ?b)" 
-        if is_gt_zero("?c")),
-    
-    rw!("le-mul-rev"; "(le (div ?a ?c) ?b)" => "(le ?a (mul ?b ?c))" 
-        if is_gt_zero("?c")),
-    
-    rw!("exp_neg_eq_one_div-rev"; "(div 1 (exp ?a))" => "(exp (neg ?a))"),
-] }

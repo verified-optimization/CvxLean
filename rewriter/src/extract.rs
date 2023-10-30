@@ -1,6 +1,5 @@
 use egg::{*};
 use std::fs;
-use std::path::Path;
 use std::time::Duration;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
@@ -164,7 +163,7 @@ pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool
             .with_iter_limit(iter_limit)
             .with_time_limit(Duration::from_secs(5))
             .with_expr(&expr)
-            .run(&rules::rules_for_visualization());
+            .run(&rules::rules());
         
         if debug {
             println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
