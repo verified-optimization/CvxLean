@@ -16,6 +16,24 @@ open Lean Lean.Meta
 
 namespace DCP
 
+abbrev GraphAtomDataTree := Tree GraphAtomData Expr
+
+abbrev Argument := Expr
+abbrev Arguments := Array Argument
+abbrev ArgumentsTree := Tree Arguments Unit
+
+abbrev CurvatureTree := Tree Curvature Curvature
+
+abbrev BCond := Expr
+abbrev BConds := Array BCond
+abbrev BCondsTree := Tree BConds BConds
+
+abbrev AtomDataTrees :=
+  GraphAtomDataTree × ArgumentsTree × CurvatureTree × BCondsTree
+
+abbrev NewVarsTree := Tree (Array LocalDecl) Unit
+abbrev NewConstrVarsTree := Tree (Array LocalDecl) Unit
+
 /-- Check if `expr` is constant by checking if it contains any free variable
 from `vars`. -/
 def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
@@ -23,9 +41,6 @@ def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
   for v in vars do
     if fvarSet.contains v then return false
   return true
-
-abbrev Argument := Expr
-abbrev Arguments := Array Argument
 
 /-- Return list of all registered atoms that match with a given expression.
 For every registered atom, it returns:
@@ -47,18 +62,6 @@ def findRegisteredAtoms (e : Expr) :
   -- Heuristic sorting of potential atoms to use: larger expressions have priority.
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms
-
-abbrev GraphAtomDataTree := Tree GraphAtomData Expr
-
-abbrev ArgumentsTree := Tree Arguments Unit
-
-abbrev CurvatureTree := Tree Curvature Curvature
-
-abbrev BCondExpr := Expr
-abbrev BCondExprs := Array BCondExpr
-abbrev BCondsTree := Tree BCondExprs BCondExprs
-
-abbrev AtomDataTrees := GraphAtomDataTree × ArgumentsTree × CurvatureTree × BCondsTree
 
 /-- Data type used to indicate whether an atom could be successfully
 processed. It is used by `processAtom`. A successful match includes 4 trees:
@@ -152,8 +155,6 @@ where
     else
       return FindAtomResult.Success (Tree.node atom childTrees, Tree.node args childArgsTrees, Tree.node curvature childCurvatures, Tree.node bconds childBConds)
 
-abbrev NewVarsTree := Tree (Array LocalDecl) Unit
-
 /-- Returns number of added variables -/
 partial def mkNewVars (i : Nat) : GraphAtomDataTree → ArgumentsTree → MetaM (NewVarsTree × Nat)
 | Tree.node atom childAtoms, Tree.node args childArgs => do
@@ -182,8 +183,11 @@ def mkNewVarDeclList (newVars : OC NewVarsTree) :
     newVarDecls := t.fold newVarDecls Array.append
   return newVarDecls.toList
 
+abbrev ReducedExpr := Expr
+abbrev ReducedExprsTree := Tree ReducedExpr ReducedExpr
+
 /-- -/
-partial def mkReducedExprs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Unit → MetaM (Tree Expr Expr)
+partial def mkReducedExprs : GraphAtomDataTree → NewVarsTree → MetaM (Tree Expr Expr)
   | Tree.node atom childAtoms, Tree.node newVars childNewVars => do
     let mut childReducedExprs := #[]
     for i in [:childAtoms.size] do
@@ -195,8 +199,10 @@ partial def mkReducedExprs : Tree GraphAtomData Expr → Tree (Array LocalDecl) 
   | Tree.leaf e, Tree.leaf () => pure $ Tree.leaf e
   | _, _ => throwError "Tree mismatch"
 
+abbrev NewConstrsTree := Tree (Array Expr) Unit
+
 /-- -/
-partial def mkNewConstrs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Unit → Tree Expr Expr → MetaM (Tree (Array Expr) Unit)
+partial def mkNewConstrs : GraphAtomDataTree → NewVarsTree → ReducedExprsTree → MetaM NewConstrsTree
   | Tree.node atom childAtoms, Tree.node newVars childNewVars, Tree.node reducedExprs childReducedExprs => do
     let mut childNewConstrs := #[]
     for i in [:childAtoms.size] do
@@ -208,13 +214,20 @@ partial def mkNewConstrs : Tree GraphAtomData Expr → Tree (Array LocalDecl) Un
   | Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
   | _, _, _ => throwError "Tree mismatch"
 
+
+abbrev PreVCond := ℕ ⊕ Expr
+abbrev PreVConds := Array PreVCond
+abbrev PreVCondsTree := Tree PreVConds Unit
+
+abbrev VCond := Expr
+abbrev VConds := Array VCond
+abbrev VCondsTree := Tree VConds Unit
+
 /-- Returns index of constraint if vcondition corresponds exactly to a constraint
 (this is needed for condition elimination). If not, it tries to deduce the condition
 from other constraints and returns an expression. -/
 partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints : Array Expr) :
-  Tree GraphAtomData Expr →
-  Tree (Array Expr) Unit →
-  MetaM (Tree (Array (ℕ ⊕ Expr)) Unit)
+  GraphAtomDataTree → ArgumentsTree → MetaM PreVCondsTree
   | Tree.node atom childAtoms, Tree.node args childArgs => do
     let mut childrenVCondData := #[]
     for i in [:childAtoms.size] do
@@ -235,7 +248,7 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
         let vcondProofTy ← mkForallFVars args vcondProofTyBody
 
         let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { norm_num } <;> try { positivity } <;> try { linarith })
+            let tac ← `(by intros; try { norm_num <;> positivity <;> linarith })
             let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
             Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
             instantiateMVars v
@@ -256,8 +269,21 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
   | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())
   | _, _ => throwError "Tree mismatch."
 
+-- One variable
+abbrev NewVarAssignment := Expr
+
+abbrev Solution := Array NewVarAssignment
+
+structure ReducedExprWithSolution where
+  reducedExpr : ReducedExpr
+  solution : Solution
+
+instance : Inhabited ReducedExprWithSolution := ⟨⟨default, default⟩⟩
+
+abbrev ReducedExprsWithSolutionTree := Tree ReducedExprWithSolution ReducedExprWithSolution
+
 /-- Returns the reduced expression and an array of forward images of new vars -/
-partial def mkReducedWithSolution : Tree GraphAtomData Expr → MetaM (Tree (Expr × Array Expr) (Expr × Array Expr))
+partial def mkReducedWithSolution : GraphAtomDataTree → MetaM ReducedExprsWithSolutionTree
   | Tree.node atom childAtoms => do
     let mut childReducedExprs := #[]
     for i in [:childAtoms.size] do
@@ -266,20 +292,26 @@ partial def mkReducedWithSolution : Tree GraphAtomData Expr → MetaM (Tree (Exp
     let reducedExpr := atom.impObjFun
     let reducedExpr := mkAppNBeta reducedExpr (childReducedExprs.1.map (·.val.1)).toArray
     let reducedExpr := mkAppNBeta reducedExpr sols
-    return Tree.node (reducedExpr, sols) childReducedExprs
-  | Tree.leaf e => pure $ Tree.leaf (e, #[])
+    return Tree.node ⟨reducedExpr, sols⟩  childReducedExprs
+  | Tree.leaf e => pure $ Tree.leaf ⟨e, #[]⟩
 
-/-- -/
-def mkForwardImagesNewVars (reducedWithSolution : OC (Tree (Expr × Array Expr) (Expr × Array Expr))) : MetaM (Array Expr) := do
+/-- Combine all the solutions introduced by every atom expansion. A solution
+tells us how to assign new variables from old ones. Here, we collect all such
+assignments, which will be used later on to build the forward map between the
+original and reduced problems. -/
+def mkForwardImagesNewVars (reducedWithSolution : OC ReducedExprsWithSolutionTree) : MetaM Solution := do
   let reducedWithSolutionTrees := #[reducedWithSolution.objFun] ++ reducedWithSolution.constr
   let mut fm := #[]
   for t in reducedWithSolutionTrees do
-    fm := t.fold fm (fun acc a => Array.append acc a.2)
+    fm := t.fold fm (fun acc a => Array.append acc a.solution)
   trace[Meta.debug] "forwardImagesNewVars {fm}"
   return fm
 
-/-- -/
-partial def mkSolEqAtom : Tree GraphAtomData Expr → Tree (Expr × Array Expr) (Expr × Array Expr) → Tree (Array Expr) Unit → MetaM (Tree Expr Expr)
+abbrev SolEqAtomProof := Expr
+abbrev SolEqAtomProofsTree := Tree SolEqAtomProof SolEqAtomProof
+
+/-- Proofs .-/
+partial def mkSolEqAtom : GraphAtomDataTree → ReducedExprsWithSolutionTree → VCondsTree → MetaM SolEqAtomProofsTree
   | Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution, Tree.node vcondVars childVCondVars => do
     -- Recursive calls for arguments.
     let mut childSolEqAtom := #[]
@@ -306,8 +338,13 @@ partial def mkSolEqAtom : Tree GraphAtomData Expr → Tree (Expr × Array Expr) 
   | Tree.leaf e, Tree.leaf _, Tree.leaf _ => do return Tree.leaf (← mkEqRefl e)
   | _, _, _ => throwError "Tree mismatch"
 
+abbrev FeasibilityProof := Expr
+abbrev FeasibilityProofs := Array FeasibilityProof
+abbrev FeasibilityProofsTree := Tree FeasibilityProofs Unit
+
 /-- -/
-partial def mkFeasibility : Tree GraphAtomData Expr → Tree (Expr × Array Expr) (Expr × Array Expr) → Tree (Array Expr) Unit → Tree Expr Expr → MetaM (Tree (Array Expr) Unit)
+partial def mkFeasibility :
+  GraphAtomDataTree → ReducedExprsWithSolutionTree → VCondsTree → SolEqAtomProofsTree → MetaM FeasibilityProofsTree
 | Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution,
   Tree.node vcondVars childVCondVars, Tree.node solEqAtom childSolEqAtom => do
   -- Recursive calls for arguments.
@@ -331,17 +368,27 @@ partial def mkFeasibility : Tree GraphAtomData Expr → Tree (Expr × Array Expr
 | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
 | _, _, _, _ => throwError "Tree mismatch"
 
+abbrev OptimalityProof := Expr
+
+-- TODO: What does this actually return?
+
 /-- -/
-partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array Expr) Unit →
-    Tree Expr Expr → Tree (Array LocalDecl) Unit →
-    Tree (Array LocalDecl) Unit → Tree Curvature Curvature →
-    Tree (Array Expr) (Array Expr) →
+partial def mkOptimalityAndVCondElim :
+    GraphAtomDataTree →
+    ArgumentsTree →
+    ReducedExprsTree →
+    NewVarsTree →
+    NewConstrVarsTree →
+    CurvatureTree →
+    BCondsTree →
     MetaM (Tree (Expr × Array Expr) (Expr × Array Expr))
-  | Tree.node atom childAtoms, Tree.node args childArgs,
-      Tree.node _reducedExpr childReducedExpr, Tree.node newVars childNewVars,
-      Tree.node newConstrVars childNewConstrVars,
-      Tree.node curvature childCurvature,
-      Tree.node bconds childBConds => do
+  | Tree.node atom childAtoms,
+    Tree.node args childArgs,
+    Tree.node _reducedExpr childReducedExpr,
+    Tree.node newVars childNewVars,
+    Tree.node newConstrVars childNewConstrVars,
+    Tree.node curvature childCurvature,
+    Tree.node bconds childBConds => do
     trace[Meta.debug] "Optimality Start"
     -- Recursive calls for arguments.
     let mut childOptimality := #[]
@@ -359,7 +406,7 @@ partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array E
       if atom.argKinds[i]! != ArgKind.Constant ∧ atom.argKinds[i]! != ArgKind.Neither then
         monoArgs := monoArgs.push args[i]!
 
-    -- Apply optimality property of atom.
+    -- Apply optimality property of atom. TODO: why these and.left/right?
     let optimality ←
       match curvature, atom.curvature with
       | Curvature.Concave, Curvature.Affine => mkAppM ``And.left #[atom.optimality]
@@ -389,7 +436,7 @@ partial def mkOptimalityAndVCondElim : Tree GraphAtomData Expr → Tree (Array E
   | _, _, _, _, _, _, _ => throwError "Tree mismatch"
 
 /-- -/
-partial def mkNewConstrVars :  Tree (Array Expr) Unit → MetaM (Tree (Array LocalDecl) Unit)
+partial def mkNewConstrVars : NewConstrsTree → MetaM NewConstrVarsTree
 | Tree.node newConstr childNewConstr => do
   -- Recursive calls for arguments
   let mut childNewConstrVar := #[]
