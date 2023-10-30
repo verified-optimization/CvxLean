@@ -21,6 +21,8 @@ use extract::get_steps as get_steps;
 
 mod tests;
 
+mod visualization;
+
 // NOTE: Taken from https://github.com/opencompl/egg-tactic-code
 
 #[derive(Deserialize, Debug)]
