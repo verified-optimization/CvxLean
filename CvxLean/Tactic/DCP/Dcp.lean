@@ -257,9 +257,6 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
           -- The inferred variable condition.
           let newCondition := mkAppNBeta e' args
           let newCondition := mkAppNBeta newCondition (originalConstrVars.map (mkFVar ·.fvarId))
-          trace[Meta.debug] "newCondition {newCondition} : {← inferType newCondition}"
-          trace[Meta.debug] "args: {args}" -- that's just the vars
-          trace[Meta.debug] "originalConstrVars: {originalConstrVars.size}"
 
           vcondData := vcondData.push (Sum.inr newCondition)
         else
@@ -285,15 +282,16 @@ abbrev ReducedExprsWithSolutionTree := Tree ReducedExprWithSolution ReducedExprW
 /-- Returns the reduced expression and an array of forward images of new vars -/
 partial def mkReducedWithSolution : GraphAtomDataTree → MetaM ReducedExprsWithSolutionTree
   | Tree.node atom childAtoms => do
-    let mut childReducedExprs := #[]
-    for i in [:childAtoms.size] do
-      childReducedExprs := childReducedExprs.push $ ← mkReducedWithSolution childAtoms[i]!
-    let sols := (atom.solution.map (mkAppNBeta · (childReducedExprs.1.map (·.val.1)).toArray))
-    let reducedExpr := atom.impObjFun
-    let reducedExpr := mkAppNBeta reducedExpr (childReducedExprs.1.map (·.val.1)).toArray
-    let reducedExpr := mkAppNBeta reducedExpr sols
-    return Tree.node ⟨reducedExpr, sols⟩  childReducedExprs
-  | Tree.leaf e => pure $ Tree.leaf ⟨e, #[]⟩
+      let mut childReducedExprs := #[]
+      for i in [:childAtoms.size] do
+        childReducedExprs := childReducedExprs.push $ ← mkReducedWithSolution childAtoms[i]!
+      let sols := (atom.solution.map (mkAppNBeta · (childReducedExprs.1.map (·.val.1)).toArray))
+      let reducedExpr := atom.impObjFun
+      let reducedExpr := mkAppNBeta reducedExpr (childReducedExprs.1.map (·.val.1)).toArray
+      let reducedExpr := mkAppNBeta reducedExpr sols
+      return Tree.node ⟨reducedExpr, sols⟩  childReducedExprs
+  | Tree.leaf e =>
+      return Tree.leaf ⟨e, #[]⟩
 
 /-- Combine all the solutions introduced by every atom expansion. A solution
 tells us how to assign new variables from old ones. Here, we collect all such
@@ -311,32 +309,40 @@ abbrev SolEqAtomProof := Expr
 abbrev SolEqAtomProofsTree := Tree SolEqAtomProof SolEqAtomProof
 
 /-- Proofs .-/
-partial def mkSolEqAtom : GraphAtomDataTree → ReducedExprsWithSolutionTree → VCondsTree → MetaM SolEqAtomProofsTree
-  | Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution, Tree.node vcondVars childVCondVars => do
-    -- Recursive calls for arguments.
-    let mut childSolEqAtom := #[]
-    for i in [:childAtoms.size] do
-      childSolEqAtom := childSolEqAtom.push $
-        ← mkSolEqAtom childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]!
-    -- Rewrite arguments in atom expr.
-    let mut solEqAtomR ← mkEqRefl atom.expr
-    for c in childSolEqAtom do
-      solEqAtomR ← mkCongr solEqAtomR c.val
-    -- Use solEqAtom of children to rewrite the arguments in the vconditions.
-    let mut vconds := #[]
-    for i in [:vcondVars.size] do
-      let mut vcondEqReducedVCond ← mkEqRefl atom.vconds[i]!.2
+partial def mkSolEqAtom :
+  GraphAtomDataTree →
+  ReducedExprsWithSolutionTree →
+  VCondsTree →
+  MetaM SolEqAtomProofsTree
+  | Tree.node atom childAtoms,
+    Tree.node reducedWithSolution childReducedWithSolution,
+    Tree.node vcondVars childVCondVars => do
+      -- Recursive calls for arguments.
+      let mut childSolEqAtom := #[]
+      for i in [:childAtoms.size] do
+        childSolEqAtom := childSolEqAtom.push $
+          ← mkSolEqAtom childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]!
+      -- Rewrite arguments in atom expr.
+      let mut solEqAtomR ← mkEqRefl atom.expr
       for c in childSolEqAtom do
-        vcondEqReducedVCond ← mkCongr vcondEqReducedVCond c.val
-      vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVars[i]!
-    -- Apply solEqAtom property of the atom.
-    let solEqAtomL := atom.solEqAtom
-    let solEqAtomL := mkAppN solEqAtomL (childReducedWithSolution.map (·.val.1))
-    let solEqAtomL := mkAppN solEqAtomL vconds
-    let solEqAtom ← mkEqTrans solEqAtomL solEqAtomR
-    return Tree.node solEqAtom childSolEqAtom
-  | Tree.leaf e, Tree.leaf _, Tree.leaf _ => do return Tree.leaf (← mkEqRefl e)
-  | _, _, _ => throwError "Tree mismatch"
+        solEqAtomR ← mkCongr solEqAtomR c.val
+      -- Use solEqAtom of children to rewrite the arguments in the vconditions.
+      let mut vconds := #[]
+      for i in [:vcondVars.size] do
+        let mut vcondEqReducedVCond ← mkEqRefl atom.vconds[i]!.2
+        for c in childSolEqAtom do
+          vcondEqReducedVCond ← mkCongr vcondEqReducedVCond c.val
+        vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVars[i]!
+      -- Apply solEqAtom property of the atom.
+      let solEqAtomL := atom.solEqAtom
+      let solEqAtomL := mkAppN solEqAtomL (childReducedWithSolution.map (·.val.1))
+      let solEqAtomL := mkAppN solEqAtomL vconds
+      let solEqAtom ← mkEqTrans solEqAtomL solEqAtomR
+      return Tree.node solEqAtom childSolEqAtom
+  | Tree.leaf e, Tree.leaf _, Tree.leaf _ => do
+      return Tree.leaf (← mkEqRefl e)
+  | _, _, _ =>
+      throwError "Tree mismatch"
 
 abbrev FeasibilityProof := Expr
 abbrev FeasibilityProofs := Array FeasibilityProof
@@ -344,44 +350,68 @@ abbrev FeasibilityProofsTree := Tree FeasibilityProofs Unit
 
 /-- -/
 partial def mkFeasibility :
-  GraphAtomDataTree → ReducedExprsWithSolutionTree → VCondsTree → SolEqAtomProofsTree → MetaM FeasibilityProofsTree
-| Tree.node atom childAtoms, Tree.node reducedWithSolution childReducedWithSolution,
-  Tree.node vcondVars childVCondVars, Tree.node solEqAtom childSolEqAtom => do
-  -- Recursive calls for arguments.
-  let mut childFeasibility := #[]
-  for i in [:childAtoms.size] do
-    let c ← mkFeasibility childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]! childSolEqAtom[i]!
-    childFeasibility := childFeasibility.push c
-  -- Use solEqAtom of children to rewrite the arguments in the vconditions.
-  let mut vconds := #[]
-  for i in [:vcondVars.size] do
-    let mut vcondEqReducedVCond ← mkEqRefl atom.vconds[i]!.2
-    for c in childSolEqAtom do
-      vcondEqReducedVCond ← mkCongr vcondEqReducedVCond c.val
-    vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVars[i]!
-  -- Apply feasibility property of the atom.
-  let feasibility := atom.feasibility
-  let feasibility := feasibility.map (mkAppN · (childReducedWithSolution.map (·.val.1)))
-  let feasibility := feasibility.map (mkAppN · vconds)
-  let _ ← feasibility.mapM check
-  return Tree.node feasibility childFeasibility
-| Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
-| _, _, _, _ => throwError "Tree mismatch"
+  GraphAtomDataTree →
+  ReducedExprsWithSolutionTree →
+  VCondsTree →
+  SolEqAtomProofsTree →
+  MetaM FeasibilityProofsTree
+  | Tree.node atom childAtoms,
+    Tree.node _reducedWithSolution childReducedWithSolution,
+    Tree.node vcondVars childVCondVars,
+    Tree.node _solEqAtom childSolEqAtom => do
+      -- Recursive calls for arguments.
+      let mut childFeasibility := #[]
+      for i in [:childAtoms.size] do
+        let c ← mkFeasibility childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]! childSolEqAtom[i]!
+        childFeasibility := childFeasibility.push c
+      -- Use solEqAtom of children to rewrite the arguments in the vconditions.
+      let mut vconds := #[]
+      for i in [:vcondVars.size] do
+        let mut vcondEqReducedVCond ← mkEqRefl atom.vconds[i]!.2
+        for c in childSolEqAtom do
+          vcondEqReducedVCond ← mkCongr vcondEqReducedVCond c.val
+        vconds := vconds.push $ ← mkEqMPR vcondEqReducedVCond vcondVars[i]!
+      -- Apply feasibility property of the atom.
+      let feasibility := atom.feasibility
+      let feasibility := feasibility.map (mkAppN · (childReducedWithSolution.map (·.val.1)))
+      let feasibility := feasibility.map (mkAppN · vconds)
+      let _ ← feasibility.mapM check
+      return Tree.node feasibility childFeasibility
+  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ =>
+      return Tree.leaf ()
+  | _, _, _, _ =>
+      throwError "Tree mismatch"
 
 abbrev OptimalityProof := Expr
 
+abbrev VCondElimProof := Expr
+abbrev VCondElimProofs := Array VCondElimProof
+
+abbrev OptimalityAndVCondElimProofs := OptimalityProof × VCondElimProofs
+abbrev OptimalityAndVCondElimProofsTree := Tree OptimalityAndVCondElimProofs OptimalityAndVCondElimProofs
+
 -- TODO: What does this actually return?
+
+-- What we call optimality is really the building blocks of
+-- the backward map.
+-- This is in fact the optimality property but with arguments applied to it.
+
+-- so they look like
+--   cone cond => inequality
+-- or just
+--   inequality (usually when it depends on new vars).
+-- vcond elimination
 
 /-- -/
 partial def mkOptimalityAndVCondElim :
-    GraphAtomDataTree →
-    ArgumentsTree →
-    ReducedExprsTree →
-    NewVarsTree →
-    NewConstrVarsTree →
-    CurvatureTree →
-    BCondsTree →
-    MetaM (Tree (Expr × Array Expr) (Expr × Array Expr))
+  GraphAtomDataTree →
+  ArgumentsTree →
+  ReducedExprsTree →
+  NewVarsTree →
+  NewConstrVarsTree →
+  CurvatureTree →
+  BCondsTree →
+  MetaM OptimalityAndVCondElimProofsTree
   | Tree.node atom childAtoms,
     Tree.node args childArgs,
     Tree.node _reducedExpr childReducedExpr,
@@ -389,71 +419,72 @@ partial def mkOptimalityAndVCondElim :
     Tree.node newConstrVars childNewConstrVars,
     Tree.node curvature childCurvature,
     Tree.node bconds childBConds => do
-    trace[Meta.debug] "Optimality Start"
-    -- Recursive calls for arguments.
-    let mut childOptimality := #[]
-    let mut childOptimalityFiltered := #[]
-    for i in [:childAtoms.size] do
-      if atom.argKinds[i]! != ArgKind.Constant ∧ atom.argKinds[i]! != ArgKind.Neither then
-        let opt ← mkOptimalityAndVCondElim childAtoms[i]! childArgs[i]! childReducedExpr[i]!
-            childNewVars[i]! childNewConstrVars[i]! childCurvature[i]! childBConds[i]!
-        childOptimality := childOptimality.push opt
-        childOptimalityFiltered := childOptimalityFiltered.push opt
-      else
-        childOptimality := childOptimality.push $ Tree.leaf (mkStrLit s!"dummy {args[i]!}", #[])
-    let mut monoArgs := #[]
-    for i in [:args.size] do
-      if atom.argKinds[i]! != ArgKind.Constant ∧ atom.argKinds[i]! != ArgKind.Neither then
-        monoArgs := monoArgs.push args[i]!
+      -- Recursive calls for arguments.
+      let mut childOptimality := #[]
+      let mut childOptimalityFiltered := #[]
+      for i in [:childAtoms.size] do
+        if atom.argKinds[i]! != ArgKind.Constant ∧ atom.argKinds[i]! != ArgKind.Neither then
+          let opt ← mkOptimalityAndVCondElim childAtoms[i]! childArgs[i]! childReducedExpr[i]!
+              childNewVars[i]! childNewConstrVars[i]! childCurvature[i]! childBConds[i]!
+          childOptimality := childOptimality.push opt
+          childOptimalityFiltered := childOptimalityFiltered.push opt
+        else
+          childOptimality := childOptimality.push $ Tree.leaf (mkStrLit s!"dummy {args[i]!}", #[])
+      let mut monoArgs := #[]
+      for i in [:args.size] do
+        if atom.argKinds[i]! != ArgKind.Constant ∧ atom.argKinds[i]! != ArgKind.Neither then
+          monoArgs := monoArgs.push args[i]!
 
-    -- Apply optimality property of atom. TODO: why these and.left/right?
-    let optimality ←
-      match curvature, atom.curvature with
-      | Curvature.Concave, Curvature.Affine => mkAppM ``And.left #[atom.optimality]
-      | Curvature.Convex, Curvature.Affine => mkAppM ``And.right #[atom.optimality]
-      | _, _ => pure atom.optimality
-    let optimality := mkAppN optimality (childReducedExpr.map Tree.val)
-    let optimality := mkAppN optimality bconds
-    check optimality
-    let optimality := mkAppN optimality (newVars.map (mkFVar ·.fvarId))
-    let optimality := mkAppN optimality (newConstrVars.map (mkFVar ·.fvarId))
-    let optimality := mkAppN optimality monoArgs
-    let optimality := mkAppN optimality (childOptimalityFiltered.map (·.val.1))
-    check optimality
+      -- Apply optimality property of atom. TODO: why these and.left/right?
+      let optimality ←
+        match curvature, atom.curvature with
+        | Curvature.Concave, Curvature.Affine => mkAppM ``And.left #[atom.optimality]
+        | Curvature.Convex, Curvature.Affine => mkAppM ``And.right #[atom.optimality]
+        | _, _ => pure atom.optimality
+      let optimality := mkAppN optimality (childReducedExpr.map Tree.val)
+      let optimality := mkAppN optimality bconds
+      check optimality
+      let optimality := mkAppN optimality (newVars.map (mkFVar ·.fvarId))
+      let optimality := mkAppN optimality (newConstrVars.map (mkFVar ·.fvarId))
+      let optimality := mkAppN optimality monoArgs
+      let optimality := mkAppN optimality (childOptimalityFiltered.map (·.val.1))
+      check optimality
 
-    -- Apply vcond elim property of atom.
-    let vcondElim := atom.vcondElim
-    let vcondElim := vcondElim.map (mkAppN · (childReducedExpr.map Tree.val))
-    let vcondElim := vcondElim.map (mkAppN · (newVars.map (mkFVar ·.fvarId)))
-    let vcondElim := vcondElim.map (mkAppN · (newConstrVars.map (mkFVar ·.fvarId)))
-    let vcondElim := vcondElim.map (mkAppN · monoArgs)
-    let vcondElim := vcondElim.map (mkAppN · (childOptimalityFiltered.map (·.val.1)))
+      -- Apply vcond elim property of atom.
+      let vcondElim := atom.vcondElim
+      let vcondElim := vcondElim.map (mkAppN · (childReducedExpr.map Tree.val))
+      let vcondElim := vcondElim.map (mkAppN · (newVars.map (mkFVar ·.fvarId)))
+      let vcondElim := vcondElim.map (mkAppN · (newConstrVars.map (mkFVar ·.fvarId)))
+      let vcondElim := vcondElim.map (mkAppN · monoArgs)
+      let vcondElim := vcondElim.map (mkAppN · (childOptimalityFiltered.map (·.val.1)))
 
-    return Tree.node (optimality, vcondElim) childOptimality
+      return Tree.node (optimality, vcondElim) childOptimality
   | Tree.leaf e, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ => do
-    trace[Meta.debug] "Optimality Leaf {e}"
-    return Tree.leaf (← mkAppM ``le_refl #[e], #[])
+      trace[Meta.debug] "Optimality Leaf {e}"
+      return Tree.leaf (← mkAppM ``le_refl #[e], #[])
   | _, _, _, _, _, _, _ => throwError "Tree mismatch"
 
 /-- -/
-partial def mkNewConstrVars : NewConstrsTree → MetaM NewConstrVarsTree
-| Tree.node newConstr childNewConstr => do
-  -- Recursive calls for arguments
-  let mut childNewConstrVar := #[]
-  for i in [:childNewConstr.size] do
-    childNewConstrVar := childNewConstrVar.push $
-      ← mkNewConstrVars childNewConstr[i]!
-  -- Create variables
-  let mut newConstrVars : Array LocalDecl := #[]
-  for ty in newConstr do
-    newConstrVars := newConstrVars.push $
-      LocalDecl.cdecl 0 (← mkFreshFVarId) `h ty Lean.BinderInfo.default LocalDeclKind.default
-  return Tree.node newConstrVars childNewConstrVar
-| Tree.leaf _ => pure $ Tree.leaf ()
+partial def mkNewConstrVars :
+  NewConstrsTree →
+  MetaM NewConstrVarsTree
+  | Tree.node newConstr childNewConstr => do
+    -- Recursive calls for arguments
+    let mut childNewConstrVar := #[]
+    for i in [:childNewConstr.size] do
+      childNewConstrVar := childNewConstrVar.push <|
+        ← mkNewConstrVars childNewConstr[i]!
+    -- Create variables
+    let mut newConstrVars : Array LocalDecl := #[]
+    for ty in newConstr do
+      newConstrVars := newConstrVars.push $
+        LocalDecl.cdecl 0 (← mkFreshFVarId) `h ty Lean.BinderInfo.default LocalDeclKind.default
+    return Tree.node newConstrVars childNewConstrVar
+  | Tree.leaf _ => pure $ Tree.leaf ()
 
 /-- -/
 def mkOriginalConstrVars (originalVarsDecls : Array LocalDecl)
-  (constr : Array (Lean.Name × Expr)) : MetaM (Array LocalDecl) := do
+  (constr : Array (Name × Expr)) : MetaM (Array LocalDecl) := do
 withExistingLocalDecls originalVarsDecls.toList do
   let mut decls : Array LocalDecl := #[]
   for i in [:constr.size] do
@@ -688,7 +719,8 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkSolEqAtomOC (originalVarsDecls : Array LocalDecl)
-  (atoms : OC (Tree GraphAtomData Expr)) (reducedWithSolution : OC (Tree (Expr × Array Expr) (Expr × Array Expr)))
+  (atoms : OC (Tree GraphAtomData Expr))
+  (reducedWithSolution : OC ReducedExprsWithSolutionTree)
   (vcondVars : OC (Tree (Array Expr) Unit)) (originalConstrVars : Array LocalDecl) : MetaM (OC (Tree Expr Expr)) :=
 withExistingLocalDecls originalVarsDecls.toList do
   withExistingLocalDecls originalConstrVars.toList do
@@ -698,7 +730,7 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkFeasibilityOC (originalVarsDecls : Array LocalDecl)
-  (atoms : OC (Tree GraphAtomData Expr)) (reducedWithSolution : OC (Tree (Expr × Array Expr) (Expr × Array Expr)))
+  (atoms : OC (Tree GraphAtomData Expr)) (reducedWithSolution : OC ReducedExprsWithSolutionTree)
   (vcondVars : OC (Tree (Array Expr) Unit)) (originalConstrVars : Array LocalDecl) (solEqAtom : OC (Tree Expr Expr)) :
   MetaM (OC (Tree (Array Expr) Unit)) :=
 withExistingLocalDecls originalVarsDecls.toList do
@@ -733,9 +765,15 @@ withExistingLocalDecls (originalVarsDecls.toList) do
 
 /-- -/
 def mkOptimalityAndVCondElimOC (originalVarsDecls : Array LocalDecl) (newVarDecls : List LocalDecl)
-  (newConstrVarsArray : Array LocalDecl) (atoms : OC (Tree GraphAtomData Expr)) (args : OC (Tree (Array Expr) Unit))
-  (reducedExprs : OC (Tree Expr Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (newConstrVars : OC (Tree (Array LocalDecl) Unit))
-  (curvature : OC (Tree Curvature Curvature)) (bconds : OC (Tree (Array Expr) (Array Expr))) (vcondIdx : OC (Tree (Array ℕ) Unit))
+  (newConstrVarsArray : Array LocalDecl)
+  (atoms : OC (Tree GraphAtomData Expr))
+  (args : OC (Tree (Array Expr) Unit))
+  (reducedExprs : OC (Tree Expr Expr))
+  (newVars : OC (Tree (Array LocalDecl) Unit))
+  (newConstrVars : OC (Tree (Array LocalDecl) Unit))
+  (curvature : OC (Tree Curvature Curvature))
+   (bconds : OC (Tree (Array Expr) (Array Expr)))
+   (vcondIdx : OC (Tree (Array ℕ) Unit))
   : MetaM (OC (Tree Expr Expr) × Std.HashMap ℕ Expr):=
   withExistingLocalDecls originalVarsDecls.toList do
     withExistingLocalDecls newVarDecls do
