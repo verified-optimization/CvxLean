@@ -61,6 +61,7 @@ dependencies = [
  "hashbrown",
  "indexmap",
  "instant",
+ "intervals-general",
  "log",
  "ordered-float",
  "serde",
@@ -70,6 +71,12 @@ dependencies = [
  "symbolic_expressions",
  "thiserror",
 ]
+
+[[package]]
+name = "either"
+version = "1.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 
 [[package]]
 name = "env_logger"
@@ -128,6 +135,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "intervals-general"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6261104c6643ef332fd8a7c1a1e630da692335c701bb5048c32c36826b5bd24e"
+dependencies = [
+ "either",
 ]
 
 [[package]]
