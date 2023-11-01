@@ -23,7 +23,7 @@ fn make(obj: &str, constrs: Vec<&str>) -> Minimization {
 fn assert_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: Vec<&str>) {
     let prob = make(obj, constrs);
     let domains = 
-        domains.iter().map(|(s, d)| ((*s).to_string(), *d)).collect();
+        domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
     let steps = get_steps(prob, domains, true);
     println!("{:?}", steps);
     assert!(steps.is_some());
@@ -38,7 +38,7 @@ fn assert_steps(obj: &str, constrs: Vec<&str>) {
 #[test]
 fn test_main_example() {
     assert_steps_with_domain(
-        vec![("x", Domain::Pos)],
+        vec![("x", domain::pos_d())],
         "0", 
         vec![
             "(le (div 1 (sqrt (var x))) (exp (var x)))"
@@ -80,7 +80,7 @@ fn test_gp4() {
 #[test]
 fn test_gp6() {
     assert_steps_with_domain(
-        vec![("Aflr", Domain::Pos), ("α", Domain::Pos), ("β", Domain::Pos), ("γ", Domain::Pos), ("δ", Domain::Pos)],
+        vec![("Aflr", domain::pos_d()), ("α", domain::pos_d()), ("β", domain::pos_d()), ("γ", domain::pos_d()), ("δ", domain::pos_d())],
         "(div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))", 
         vec![
             "(le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall))",
@@ -96,7 +96,7 @@ fn test_gp6() {
 #[test]
 fn test_dqcp() {
     assert_steps_with_domain(
-        vec![("x", Domain::Pos)], 
+        vec![("x", domain::pos_d())], 
         "(var x)", 
         vec![
             "(le (sqrt (div (var x) (add (var x) 1))) 1)"
@@ -137,7 +137,7 @@ fn test_cost_function_number_of_variable_occurences_3() {
 #[test]
 fn test_log_le_log() {
     assert_steps_with_domain(
-        vec![("x", Domain::Pos), ("y", Domain::Pos)],
+        vec![("x", domain::pos_d()), ("y", domain::pos_d())],
         "0", 
         vec![
             "(le (log (var x)) (log (var y)))"
@@ -165,7 +165,7 @@ fn test_log_le_log_rev() {
 #[test]
 fn test_exp_add() {
     assert_steps_with_domain(
-        vec![("x", Domain::Pos)],
+        vec![("x", domain::pos_d())],
         "0",
         vec![
             "(le (exp (add (log (var x)) 2)) 1)"
