@@ -118,40 +118,49 @@ impl Serialize for Domain {
 
 /* Domain checks. */
 
-#[allow(unused)]
 pub fn is_zero(d: Domain) -> bool {
     let zero = Interval::make(zero(), zero(), NO_ERROR);
     subseteq(&d.0, &zero)
 }
 
+fn pos_interval() -> Interval { Interval::make(eps(), inf(), NO_ERROR) }
+
+pub fn pos_d() -> Domain { Domain(pos_interval()) }
+
 pub fn is_pos(d: Domain) -> bool {
-    let pos = Interval::make(eps(), inf(), NO_ERROR);
-    subseteq(&d.0, &pos)
+    subseteq(&d.0, &pos_interval())
 }
 
 pub fn option_is_pos(d:Option<Domain>) -> bool {
     d.map_or(false, is_pos)
 }
 
-#[allow(unused)]
+fn neg_interval() -> Interval { Interval::make(neg_inf(), neg_eps(), NO_ERROR) }
+
+pub fn neg_d() -> Domain { Domain(neg_interval()) }
+
 pub fn is_neg(d: Domain) -> bool {
-    let neg = Interval::make(neg_inf(), neg_eps(), NO_ERROR);
-    subseteq(&d.0, &neg)
+    subseteq(&d.0, &neg_interval())
 }
 
+fn nonneg_interval() -> Interval { Interval::make(zero(), inf(), NO_ERROR) }
+
+pub fn nonneg_d() -> Domain { Domain(nonneg_interval()) }
+
 pub fn is_nonneg(d: Domain) -> bool {
-    let nonneg = Interval::make(zero(), inf(), NO_ERROR);
-    subseteq(&d.0, &nonneg)
+    subseteq(&d.0, &nonneg_interval())
 }
 
 pub fn option_is_nonneg(d: Option<Domain>) -> bool {
     d.map_or(false, is_nonneg)
 }
 
-#[allow(unused)]
+fn nonpos_interval() -> Interval { Interval::make(neg_inf(), zero(), NO_ERROR) }
+
+pub fn nonpos_d() -> Domain { Domain(nonneg_interval()) }
+
 pub fn is_nonpos(d: Domain) -> bool {
-    let nonpos = Interval::make(neg_inf(), zero(), NO_ERROR);
-    subseteq(&d.0, &nonpos)
+    subseteq(&d.0, &nonpos_interval())
 }
 
 // This really means that it does not contain zero.
