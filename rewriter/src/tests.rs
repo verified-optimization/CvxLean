@@ -33,12 +33,34 @@ fn assert_steps(obj: &str, constrs: Vec<&str>) {
     assert_steps_with_domain(vec![], obj, constrs);
 }
 
+// Domain tests.
+
+#[test]
+fn domain_test_add_pos_nonneg() {
+    let d = domain::add(domain::pos_dom(), domain::nonneg_dom());
+    println!("{:?}", d);
+}
+
+#[test]
+fn domain_test_mul_pos_nonneg() {
+    let d = domain::mul(domain::pos_dom(), domain::nonneg_dom());
+    println!("{:?}", d);
+    // TODO: There is an issue here, because 0 * inf, gives NaN.
+}
+
+#[test]
+fn domain_test_mul_pos_pos() {
+    let d = domain::mul(domain::pos_dom(), domain::pos_dom());
+    println!("{:?}", d);
+}
+
+
 // Examples.
 
 #[test]
 fn test_main_example() {
     assert_steps_with_domain(
-        vec![("x", domain::pos_d())],
+        vec![("x", domain::pos_dom())],
         "0", 
         vec![
             "(le (div 1 (sqrt (var x))) (exp (var x)))"
@@ -48,14 +70,14 @@ fn test_main_example() {
 
 #[test]
 fn test_agp2() {
-    let r = domain::div(domain::pos_dom(), domain::nonneg_dom());
-    // let r = domain::log(domain::pos_d());
-    println!("{:?}", r);
-    // assert_steps(
-    //     "(exp (var x))", 
-    //     vec![
-    //         "(le (mul (exp (var x)) (exp (var y))) (neg (div 2691 500)))"
-    //     ]);
+    // let r = domain::div(domain::pos_dom(), domain::nonneg_dom());
+    // let r = domain::log(domain::pos_dom());
+    // println!("{:?}", r);
+    assert_steps(
+        "(exp (var x))", 
+        vec![
+            "(le (mul (exp (var x)) (exp (var y))) (neg (div 2691 500)))"
+        ]);
     
 }
 
@@ -83,7 +105,7 @@ fn test_gp4() {
 #[test]
 fn test_gp6() {
     assert_steps_with_domain(
-        vec![("Aflr", domain::pos_d()), ("α", domain::pos_d()), ("β", domain::pos_d()), ("γ", domain::pos_d()), ("δ", domain::pos_d())],
+        vec![("Aflr", domain::pos_dom()), ("α", domain::pos_dom()), ("β", domain::pos_dom()), ("γ", domain::pos_dom()), ("δ", domain::pos_dom())],
         "(div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))", 
         vec![
             "(le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall))",
@@ -99,7 +121,7 @@ fn test_gp6() {
 #[test]
 fn test_dqcp() {
     assert_steps_with_domain(
-        vec![("x", domain::pos_d())], 
+        vec![("x", domain::pos_dom())], 
         "(var x)", 
         vec![
             "(le (sqrt (div (var x) (add (var x) 1))) 1)"
@@ -140,7 +162,7 @@ fn test_cost_function_number_of_variable_occurences_3() {
 #[test]
 fn test_log_le_log() {
     assert_steps_with_domain(
-        vec![("x", domain::pos_d()), ("y", domain::pos_d())],
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())],
         "0", 
         vec![
             "(le (log (var x)) (log (var y)))"
@@ -168,7 +190,7 @@ fn test_log_le_log_rev() {
 #[test]
 fn test_exp_add() {
     assert_steps_with_domain(
-        vec![("x", domain::pos_d())],
+        vec![("x", domain::pos_dom())],
         "0",
         vec![
             "(le (exp (add (log (var x)) 2)) 1)"
