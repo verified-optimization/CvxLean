@@ -49,8 +49,8 @@ impl Analysis<Optimization> for Meta {
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         let before_domain = to.domain.clone();
-        match (to.domain, from.domain) {
-            (None, Some(_)) => { to.domain = from.domain; }
+        match (to.domain.clone(), from.domain.clone()) {
+            (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
                 if d_to != d_from { to.domain = None; }
             }
@@ -83,7 +83,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = domain::option_flip(get_domain(a));
+                domain = domain::option_neg(get_domain(a));
             }
             Optimization::Sqrt(a) => {
                 match get_constant(a) {
@@ -94,19 +94,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-
-                let d_o_a = get_domain(a);
-                match d_o_a {
-                    Some(d_a) => { 
-                        if domain::is_nonneg(d_a) {
-                            domain = d_o_a;
-                        } 
-                        // NOTE: If argument is negative, sqrt in Lean 
-                        // returns zero, but we treat as if it didn't have a 
-                        // domain.
-                    }
-                    _ => ()
-                }
+                domain = domain::option_sqrt(get_domain(a));
             }
             Optimization::Add([a, b]) => {
                 match (get_constant(a), get_constant(b)) {
@@ -130,9 +118,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = domain::option_add(
-                    get_domain(a), 
-                    domain::option_flip(get_domain(b)));
+                domain = domain::option_sub(get_domain(a), get_domain(b));
             }
             Optimization::Mul([a, b]) => {
                 match (get_constant(a), get_constant(b)) {
@@ -143,8 +129,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                domain = domain::option_mul(
-                    get_domain(a), get_domain(b))
+                domain = domain::option_mul(get_domain(a), get_domain(b));
             }
             Optimization::Div([a, b]) => {
                 match (get_constant(a), get_constant(b)) {
@@ -155,33 +140,18 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-
-                let d_o_b = get_domain(b);
-                match d_o_b {
-                    Some(d_b) => {
-                        if domain::is_pos(d_b) || domain::is_neg(d_b) {
-                            domain = domain::option_mul(
-                                get_domain(a), d_o_b);
-                        }
-                    },
-                    _ => ()
-                }
+                domain = domain::option_div(get_domain(a), get_domain(b));
             }
             Optimization::Pow([a, b]) => {
-                let d_o_a = get_domain(a);
-                let d_o_b = get_domain(b);
-                match (d_o_a, d_o_b) {
-                    (Some(d_a), Some(d_b)) => { 
-                        if !domain::is_zero(d_a) && domain::is_zero(d_b) {
-                            // NOTE: This is technically 1.
-                            domain = Some(Domain::PosConst);
-                        } else if domain::is_pos(d_a) {
-                            domain = d_o_a;
-                        }
-                        // NOTE: There could be more cases here.
+                match (get_constant(a), get_constant(b)) {
+                    (Some((c1, _)), Some((c2, _))) => { 
+                        constant = Some((
+                            NotNan::new(c1.powf(c2.into())).unwrap(), 
+                            format!("(pow {} {})", c1, c2).parse().unwrap())); 
                     }
-                    _ => ()
+                    _ => {}
                 }
+                domain = domain::option_pow(get_domain(a), get_domain(b))
             }
             Optimization::Log(a) => {
                 match get_constant(a) {
@@ -192,18 +162,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-                
-                let d_o_a = get_domain(a);
-                match d_o_a {
-                    Some(d_a) => {
-                        if domain::is_pos(d_a) {
-                            // NOTE: We do not know if the argument is less 
-                            // than 1 or not, so that's all we can say.
-                            domain = Some(Domain::Free);
-                        }
-                    }
-                    _ => ()
-                }
+                domain = domain::option_log(get_domain(a));
             }
             Optimization::Exp(a) => {
                 match get_constant(a) {
@@ -214,8 +173,7 @@ impl Analysis<Optimization> for Meta {
                     }
                     _ => {}
                 }
-
-                domain = Some(Domain::Pos);
+                domain = domain::option_exp(get_domain(a));
             }
             Optimization::Var(a) => {
                 // Assume that after var there is always a symbol.
@@ -223,7 +181,7 @@ impl Analysis<Optimization> for Meta {
                     Optimization::Symbol(s) => {
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
-                            Some(d) => { domain = Some(*d); }
+                            Some(d) => { domain = Some(d.clone()); }
                             _ => ()
                         }
                     }
@@ -235,7 +193,7 @@ impl Analysis<Optimization> for Meta {
                     Optimization::Symbol(s) => {
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
-                            Some(d) => { domain = Some(*d); }
+                            Some(d) => { domain = Some(d.clone()); }
                             _ => ()
                         }
                     }
@@ -245,15 +203,7 @@ impl Analysis<Optimization> for Meta {
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
                 constant = Some((*f, format!("{}", f).parse().unwrap()));
-                if (*f).is_finite() {
-                    if (*f).into_inner() > 0.0 {
-                        domain = Some(Domain::PosConst);
-                    } else if (*f).into_inner() < 0.0 {
-                        domain = Some(Domain::NegConst);
-                    } else {
-                        domain = Some(Domain::Zero);
-                    }
-                }
+                domain = Some(domain::singleton((*f).into_inner()));
             }
             _ => {}
         }
@@ -265,41 +215,29 @@ impl Analysis<Optimization> for Meta {
 pub fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            (*n).into_inner() > 0.0
-        } else {
-            if let Some(d) = &egraph[subst[var]].data.domain {
-                return domain::is_pos(*d);
-            }
-            return false;
+        if let Some(d) = &egraph[subst[var]].data.domain {
+            return domain::is_pos(d.clone());
         }
+        return false;
     }
 }
 
 pub fn is_ge_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            (*n).into_inner() >= 0.0
-        } else {
-            if let Some(d) = &egraph[subst[var]].data.domain {
-                return domain::is_nonneg(*d);
-            }
-            return false;
+        if let Some(d) = &egraph[subst[var]].data.domain {
+            return domain::is_nonneg(d.clone());
         }
+        return false;
     }
 }
 
 pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
-        if let Some((n, _)) = &egraph[subst[var]].data.constant {
-            (*n).into_inner() != 0.0
-        } else {
-            if let Some(d) = &egraph[subst[var]].data.domain {
-                return domain::is_nonzero(*d);
-            }
-            return false;
+        if let Some(d) = &egraph[subst[var]].data.domain {
+            return domain::is_nonzero(d.clone());
         }
+        return false;
     }
 }

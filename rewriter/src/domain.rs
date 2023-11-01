@@ -1,254 +1,276 @@
-use core::{cmp::Ordering, panic};
-use std::ops::Bound;
-use serde::{Deserialize, Serialize};
-use intervals_general::{interval::*, bound_pair::*};
+use core::cmp::Ordering;
+use serde::{Deserialize, Serialize, Deserializer, Serializer, ser::SerializeSeq};
+use intervals_good::*;
+use rug::Float;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Domain(Interval<f64>);
+const F64_PREC: u32 = 53;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Domain(Interval);
+
+
+/* Comparing domains. */
+
+// a \subseteq b
+fn subseteq(a: &Interval, b: &Interval) -> bool {
+    let a_lo: Float = a.lo.clone().into();
+    let a_hi: Float = a.hi.clone().into();
+    let b_lo: Float = b.lo.clone().into();
+    let b_hi: Float = b.hi.clone().into();
+
+    return b_lo <= a_lo && a_hi <= b_hi;
+}
 
 impl PartialOrd for Domain {
     fn partial_cmp(&self, other: &Domain) -> Option<Ordering> {
         if *self == *other {
             return Some(Ordering::Equal);
         }
-        if self.0.contains(&other.0) {
+        if subseteq(&self.0, &other.0) {
             return Some(Ordering::Greater);
         }
-        if other.0.contains(&self.0) {
-            return Some(Ordering::Less)
+        if subseteq(&other.0, &self.0) {
+            return Some(Ordering::Less);
         }
-        return None
+        return None;
     }
 }
 
-pub fn is_free(d:Domain) -> bool {
-    return d.0 == Interval::Unbounded;
+
+/* Useful constants. */
+
+fn zero() -> Float { Float::with_val(F64_PREC, 0.0) }
+
+fn eps() -> Float { Float::with_val(F64_PREC, f64::EPSILON) }
+
+fn neg_eps() -> Float { Float::with_val(F64_PREC, -f64::EPSILON) }
+
+fn inf() -> Float { Float::with_val(F64_PREC, f64::INFINITY) }
+
+fn neg_inf() -> Float { Float::with_val(F64_PREC, f64::NEG_INFINITY) }
+
+const NO_ERROR: ErrorInterval = ErrorInterval { lo: false, hi: false };
+
+
+/* Make domain from single float. */
+
+pub fn singleton(f: f64) -> Domain {
+    let f_f = Float::with_val(F64_PREC, f);
+    Domain(Interval::make(f_f.clone(), f_f.clone(), NO_ERROR))
 }
 
-// Is {0} the same as [0,0] ??
-// #[test]
-// fn ttt() {
-//     let x = Interval::Singleton { at: 0.0 } == Interval::Closed { bound_pair: BoundPair::new(0.0, 0.0).unwrap() };
-//     print!("{}", x);
-// }
 
+/* Serialize and deserialize. */
+
+fn custom_string_to_float(s: &str) -> Option<Float> {
+    match s {
+        "eps" => Some(eps()),
+        "-eps" => Some(neg_eps()),
+        "inf" => Some(inf()),
+        "-inf" => Some(neg_inf()),
+        _ => {
+            match s.parse::<f64>() {
+                Ok(f) => Some(Float::with_val(F64_PREC, f)),
+                _ => None
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Domain {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de> 
+    {
+        let v: Vec<&str> = Vec::deserialize(deserializer)?;
+        if v.len() == 2 {
+            let v0_f_o = custom_string_to_float(v[0]);
+            let v1_f_o = custom_string_to_float(v[1]);
+            match (v0_f_o, v1_f_o) {
+                (Some(v0_f), Some(v1_f)) => {
+                    let lo = Float::with_val(F64_PREC, v0_f);
+                    let hi = Float::with_val(F64_PREC, v1_f);
+                    Ok(Domain(Interval::make(lo, hi, NO_ERROR)))
+                }
+                _ => Err(serde::de::Error::custom("Domain deserialization error."))
+            } 
+        } else {
+            Err(serde::de::Error::custom("Domain deserialization error."))
+        }
+    }
+}
+
+impl Serialize for Domain {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer 
+    {
+        let lo: Float = self.0.lo.clone().into();
+        let hi: Float = self.0.hi.clone().into();
+
+        let mut s = serializer.serialize_seq(Some(2))?;
+        s.serialize_element(&lo.to_f64())?;
+        s.serialize_element(&hi.to_f64())?;
+        s.end()
+    }
+}
+
+
+/* Domain checks. */
+
+#[allow(unused)]
 pub fn is_zero(d: Domain) -> bool {
-    let zero = Interval::Singleton { at: 0.0 };
-    return zero.contains(&d.0);
+    let zero = Interval::make(zero(), zero(), NO_ERROR);
+    subseteq(&d.0, &zero)
 }
 
 pub fn is_pos(d: Domain) -> bool {
-    let pos = Interval::UnboundedOpenLeft { left: 0.0 };
-    return pos.contains(&d.0);
+    let pos = Interval::make(eps(), inf(), NO_ERROR);
+    subseteq(&d.0, &pos)
 }
 
 pub fn option_is_pos(d:Option<Domain>) -> bool {
-    return d.map_or(false, is_pos);
+    d.map_or(false, is_pos)
 }
 
+#[allow(unused)]
 pub fn is_neg(d: Domain) -> bool {
-    let neg = Interval::UnboundedOpenRight { right: 0.0 };
-    return neg.contains(&d.0);
+    let neg = Interval::make(neg_inf(), neg_eps(), NO_ERROR);
+    subseteq(&d.0, &neg)
 }
 
 pub fn is_nonneg(d: Domain) -> bool {
-    let nonneg = Interval::UnboundedClosedLeft { left: 0.0 };
-    return nonneg.contains(&d.0);
+    let nonneg = Interval::make(zero(), inf(), NO_ERROR);
+    subseteq(&d.0, &nonneg)
 }
 
 pub fn option_is_nonneg(d: Option<Domain>) -> bool {
-    return d.map_or(false, is_nonneg);
+    d.map_or(false, is_nonneg)
 }
 
+#[allow(unused)]
 pub fn is_nonpos(d: Domain) -> bool {
-    let nonpos = Interval::UnboundedClosedRight { right: 0.0 };
-    return nonpos.contains(&d.0);
+    let nonpos = Interval::make(neg_inf(), zero(), NO_ERROR);
+    subseteq(&d.0, &nonpos)
 }
 
+// This really means that it does not contain zero.
 pub fn is_nonzero(d: Domain) -> bool {
-    let zero = Interval::Singleton { at: 0.0 };
-    return !(d.0.contains(&zero));
+    !(d.0.contains(&zero()))
 }
 
-fn flip_bound_pair(bound_pair: BoundPair<f64>) -> BoundPair<f64> {
-    let l = bound_pair.left();
-    let r = bound_pair.right();
-    return BoundPair::new(-r, -l).unwrap();
-}
 
-pub fn flip(d:Domain) -> Domain {
-    Domain(
-        match d.0 {
-            Interval::Closed { bound_pair } => {
-                Interval::Closed { bound_pair: flip_bound_pair(bound_pair) }
-            },
-            Interval::Open { bound_pair } => {
-                Interval::Open { bound_pair: flip_bound_pair(bound_pair) }
-            },
-            Interval::LeftHalfOpen { bound_pair } => {
-                Interval::RightHalfOpen { bound_pair: flip_bound_pair(bound_pair) }
-            },
-            Interval::RightHalfOpen { bound_pair } => {
-                Interval::LeftHalfOpen { bound_pair: flip_bound_pair(bound_pair) }
-            },
-            Interval::UnboundedClosedLeft { left } => {
-                Interval::UnboundedClosedRight { right: -left }
-            },
-            Interval::UnboundedClosedRight { right } => {
-                Interval::UnboundedClosedLeft { left: -right }
-            },
-            Interval::UnboundedOpenLeft { left } => {
-                Interval::UnboundedOpenRight { right: -left }
-            },
-            Interval::UnboundedOpenRight { right } => {
-                Interval::UnboundedOpenLeft { left: -right }
-            },
-            Interval::Singleton { at } => {
-                Interval::Singleton { at: -at }
-            },
-            Interval::Unbounded => {
-                Interval::Unbounded
-            },
-            Interval::Empty => {
-                Interval::Empty
+/* Execute operations handling errors (conservatively). */
+
+fn execute_unary<F>(d_o: Option<Domain>, f: F) -> Option<Domain>
+    where 
+        F : FnOnce(Domain) -> Domain,
+{
+    match d_o {
+        Some(d) => {
+            let res = f(d);
+            let may_error = res.0.err.lo || res.0.err.hi;
+            if may_error {
+                None
+            } else {
+                Some(res)
             }
         }
-    )
-}
-
-pub fn option_flip(d:Option<Domain>) -> Option<Domain> {
-    return d.map(flip);
-}
-
-// Copied from interval_general.
-enum IntervalBound<T> {
-    None,
-    Unbounded,
-    Open(T),
-    Closed(T),
-}
-
-// TODO: Define adition of IntervalBound.
-// TODO: Define multiplication of IntervalBound.
-// TODO: Define min and max of bound.
-
-// Copied from interval_general.
-fn left_bound(i: &Interval<f64>) -> IntervalBound<f64> {
-    match i {
-        | Interval::Empty => IntervalBound::None,
-        | Interval::Singleton { at } => IntervalBound::Closed(*at),
-        // The cases where left bound of self is open -inf.
-        | Interval::Unbounded
-        | Interval::UnboundedClosedRight { .. }
-        | Interval::UnboundedOpenRight { .. } => IntervalBound::Unbounded,
-        // The cases where left bound of self is Closed and Bounded.
-        | Interval::Closed { ref bound_pair}
-        | Interval::RightHalfOpen { ref bound_pair } => 
-            IntervalBound::Closed(*bound_pair.left()),
-        | Interval::UnboundedClosedLeft { ref left } => 
-            IntervalBound::Closed(*left),
-        // The cases where left bound of self is Open and Bounded.
-        | Interval::Open { ref bound_pair }
-        | Interval::LeftHalfOpen { ref bound_pair } => 
-            IntervalBound::Open(*bound_pair.left()),
-        | Interval::UnboundedOpenLeft { ref left } => 
-            IntervalBound::Open(*left),
+        _ => { None }
     }
 }
 
-// Copied from interval_general.
-fn right_bound(i: &Interval<f64>) -> IntervalBound<f64> {
-    match i {
-        | Interval::Empty => IntervalBound::None,
-        | Interval::Singleton { ref at } => IntervalBound::Closed(*at),
-        // The cases where right bound of self is open +inf.
-        | Interval::Unbounded
-        | Interval::UnboundedClosedLeft { .. }
-        | Interval::UnboundedOpenLeft { .. } => IntervalBound::Unbounded,
-        // The cases where right bound of self is Closed and Bounded.
-        | Interval::Closed { ref bound_pair }
-        | Interval::LeftHalfOpen { ref bound_pair } => 
-            IntervalBound::Closed(*bound_pair.right()),
-        | Interval::UnboundedClosedRight { ref right } => 
-            IntervalBound::Closed(*right),
-        // The cases where right bound of self is Open and Bounded.
-        | Interval::Open { bound_pair }
-        | Interval::RightHalfOpen { bound_pair } => 
-            IntervalBound::Open(*bound_pair.right()),
-        | Interval::UnboundedOpenRight { ref right } => 
-            IntervalBound::Open(*right),
-    }
-}
-
-// Conservative union, e.g., {-1} U {1} = [-1, 1].
-pub fn union(d_a:Domain, d_b:Domain) -> Domain {
-    let l = 
-        match d_a.0.left_partial_cmp(&d_b.0) {
-            | Some(Ordering::Equal)
-            | Some(Ordering::Less) => { left_bound(&d_a.0) },
-            | Some(Ordering::Greater) => { left_bound(&d_b.0) },
-            | None => { IntervalBound::None }
-        };
-    let r = 
-        match d_a.0.right_partial_cmp(&d_b.0) {
-            | Some(Ordering::Equal)
-            | Some(Ordering::Greater) => { right_bound(&d_a.0) },
-            | Some(Ordering::Less) => { right_bound(&d_b.0) },
-            | None => { IntervalBound::None }
-        };
-    return Domain(Interval::Empty);
-}
-
-// TODO: Move.
-pub fn option_map2<T1, T2, U, F>(x1: Option<T1>, x2: Option<T2>, f: F) -> Option<U>
+fn execute_binary<F>(d_a_o: Option<Domain>, d_b_o: Option<Domain>, f: F) -> Option<Domain>
     where
-        F: FnOnce(T1, T2) -> U,
-    {
-        match (x1, x2) {
-            (Some(x1_val), Some(x2_val)) => { 
-                return Some(f(x1_val, x2_val)); 
+        F: FnOnce(Domain, Domain) -> Domain,
+{
+    match (d_a_o, d_b_o) {
+        (Some(d_a), Some(d_b)) => { 
+            let res = f(d_a, d_b);
+            let may_error = res.0.err.lo || res.0.err.hi;
+            if may_error {
+                None 
+            } else {
+                Some(res)
             }
-            _ => { return None; }
         }
+        _ => { None }
     }
+}
+
+
+/* Operations. */
+
+pub fn neg(d:Domain) -> Domain {
+    Domain(d.0.neg())
+}
+
+pub fn option_neg(d_o:Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, neg)
+}
+
+pub fn sqrt(d:Domain) -> Domain {
+    Domain(d.0.sqrt())
+}
+
+pub fn option_sqrt(d_o:Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, sqrt)
+}
+
+pub fn log(d:Domain) -> Domain {
+    Domain(d.0.ln())
+}
+
+pub fn option_log(d_o:Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, log)
+}
+
+pub fn exp(d:Domain) -> Domain {
+    Domain(d.0.exp())
+}
+
+pub fn option_exp(d_o:Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, exp)
+}
 
 pub fn add(d_a:Domain, d_b:Domain) -> Domain {
-    match (d_a, d_b) {
-        (Domain::Zero,   _             ) => { return d_b; }
-        (_,              Domain::Zero  ) => { return d_a; }
-        (Domain::NonNeg, Domain::Pos   ) => { return Domain::Pos; }
-        (Domain::Pos,    Domain::NonNeg) => { return Domain::Pos; }
-        (Domain::NonPos, Domain::Neg   ) => { return Domain::Neg; }
-        (Domain::Neg,    Domain::NonPos) => { return Domain::Neg; }
-        _ => { return union(d_a, d_b); }
-    }
+    Domain(d_a.0.add(&d_b.0))
 }
 
 pub fn option_add(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
-    return option_map2(d_o_a, d_o_b, add);
+    execute_binary(d_o_a, d_o_b, add)
+}
+
+pub fn sub(d_a:Domain, d_b:Domain) -> Domain {
+    Domain(d_a.0.sub(&d_b.0))
+}
+
+pub fn option_sub(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    execute_binary(d_o_a, d_o_b, sub)
 }
 
 pub fn mul(d_a:Domain, d_b:Domain) -> Domain {
-    if is_zero(d_a) || is_zero(d_b) {
-        return Domain::Zero;
-    } else if is_free(d_a) || is_free(d_b) {
-        return Domain::Free;
-    } else if is_nonneg(d_a) && is_nonneg(d_b) {
-        return add(d_a, d_b);
-    } else if is_nonpos(d_a) && is_nonpos(d_b) {
-        return add(d_a, d_b);
-    } else {
-        // Opposite sign case.
-        if is_nonpos(d_a) {
-            return flip(d_b);
-        } else if is_nonpos(d_b) {
-            return flip(d_a);
-        } else {
-            return Domain::Free;
-        }
-    }
+    Domain(d_a.0.mul(&d_b.0))
 }
 
 pub fn option_mul(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
-    return option_map2(d_o_a, d_o_b, mul);
+    execute_binary(d_o_a, d_o_b, mul)
 }
+
+pub fn div(d_a:Domain, d_b:Domain) -> Domain {
+    Domain(d_a.0.div(&d_b.0))
+}
+
+pub fn option_div(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    execute_binary(d_o_a, d_o_b, div)
+}
+
+pub fn pow(d_a:Domain, d_b:Domain) -> Domain {
+    Domain(d_a.0.pow(&d_b.0))
+}
+
+pub fn option_pow(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+    execute_binary(d_o_a, d_o_b, pow)
+}
+
+
