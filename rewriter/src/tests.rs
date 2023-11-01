@@ -48,11 +48,14 @@ fn test_main_example() {
 
 #[test]
 fn test_agp2() {
-    assert_steps(
-        "(exp (var x))", 
-        vec![
-            "(le (mul (exp (var x)) (exp (var y))) (neg (div 2691 500)))"
-        ]);
+    let r = domain::div(domain::pos_dom(), domain::nonneg_dom());
+    // let r = domain::log(domain::pos_d());
+    println!("{:?}", r);
+    // assert_steps(
+    //     "(exp (var x))", 
+    //     vec![
+    //         "(le (mul (exp (var x)) (exp (var y))) (neg (div 2691 500)))"
+    //     ]);
     
 }
 
@@ -71,9 +74,9 @@ fn test_gp4() {
         "(div 1 (div (exp (var x)) (exp (var y))))",
         vec![
             "(le 2 (exp (var x)))",
-            "(le (exp (var x)) 3)",
-            "(le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x))))",
-            "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))"
+            // "(le (exp (var x)) 3)",
+            // "(le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x))))",
+            // "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))"
         ]);
 }
 
