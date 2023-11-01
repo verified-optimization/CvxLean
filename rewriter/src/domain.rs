@@ -325,8 +325,13 @@ pub fn exp(d:Domain) -> Domain {
     }
 }
 
+// Special case, exp is always positive even if we don't know the domain. More
+// fine-grained domains are also possible.
 pub fn option_exp(d_o:Option<Domain>) -> Option<Domain> {
-    execute_unary(d_o, exp)
+    match execute_unary(d_o, exp) {
+        None => Some(pos_dom()),
+        d_o => d_o
+    }
 }
 
 pub fn add(d_a:Domain, d_b:Domain) -> Domain {
