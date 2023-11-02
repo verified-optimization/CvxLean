@@ -173,14 +173,14 @@ pub fn of_pow_by_const(c: Curvature, k: f64, d_o: Option<Domain>) -> Curvature {
                 return Affine;
             // Case x^p with p < 0.
             } else if k < 0.0 {
-                if domain::option_is_pos(d_o) {
+                if domain::option_is_pos(d_o.as_ref()) {
                     return Convex;
                 } else {
                     return Unknown;
                 }
             // Case x^p with 0 < p < 1.
             } else if 0.0 < k && k < 1.0 {
-                if domain::option_is_nonneg(d_o) {
+                if domain::option_is_nonneg(d_o.as_ref()) {
                     return Concave;
                 } else {
                     return Unknown;
@@ -189,7 +189,7 @@ pub fn of_pow_by_const(c: Curvature, k: f64, d_o: Option<Domain>) -> Curvature {
             } else if k == (k as u32) as f64 && (k as u32) % 2 == 0 {
                 return Convex;
             } else {
-                if domain::option_is_nonneg(d_o) {
+                if domain::option_is_nonneg(d_o.as_ref()) {
                     return Convex;
                 } else {
                     return Unknown;

@@ -216,7 +216,7 @@ pub fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
         if let Some(d) = &egraph[subst[var]].data.domain {
-            return domain::is_pos(d.clone());
+            return domain::is_pos(d);
         }
         return false;
     }
@@ -226,7 +226,7 @@ pub fn is_ge_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
         if let Some(d) = &egraph[subst[var]].data.domain {
-            return domain::is_nonneg(d.clone());
+            return domain::is_nonneg(d);
         }
         return false;
     }
@@ -236,7 +236,7 @@ pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
         if let Some(d) = &egraph[subst[var]].data.domain {
-            return domain::is_nonzero(d.clone());
+            return domain::is_nonzero(d);
         }
         return false;
     }
