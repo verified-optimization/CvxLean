@@ -71,13 +71,11 @@ fn test_gp4() {
     assert_steps(
         "(div 1 (div (exp (var x)) (exp (var y))))",
         vec![
-            // "(le 2 (exp (var x)))",
-            // "(le (exp (var x)) 3)",
-            // "(le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x))))",
-            // "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))"
-            "(eq (div (exp (var x)) (exp (var y))) 1)"
+            "(le 2 (exp (var x)))",
+            "(le (exp (var x)) 3)",
+            "(le (add (pow (exp (var x)) 2) (div (mul 3 (exp (var y))) (exp (var z)))) (sqrt (exp (var x))))",
+            "(eq (div (exp (var x)) (exp (var y))) (pow (exp (var z)) 2))"
         ]);
-    // Timeout when we have both the objective function and the equality constraint.
 }
 
 #[test]

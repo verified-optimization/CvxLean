@@ -121,8 +121,9 @@ impl PartialOrd for Domain {
     }
 }
 
-/* Domain union. */
+/* Domain union and intersection. */
 
+#[allow(unused)]
 pub fn union(d_a: &Domain, d_b: &Domain) -> Domain {
     let lo_a = d_a.lo_float();
     let hi_a = d_a.hi_float();
@@ -143,6 +144,30 @@ pub fn union(d_a: &Domain, d_b: &Domain) -> Domain {
             (hi_b, d_b.hi_open)
         } else {
             (hi_a, d_a.hi_open && d_b.hi_open)
+        };
+    Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
+}
+
+pub fn intersection(d_a: &Domain, d_b: &Domain) -> Domain {
+    let lo_a = d_a.lo_float();
+    let hi_a = d_a.hi_float();
+    let lo_b = d_b.lo_float();
+    let hi_b = d_b.hi_float();
+    let (lo, lo_open) = 
+        if lo_a < lo_b {
+            (lo_b, d_b.lo_open)
+        } else if lo_b < lo_a {
+            (lo_a, d_a.lo_open)
+        } else {
+            (lo_a, d_a.lo_open || d_b.lo_open)
+        };
+    let (hi, hi_open) =
+        if hi_b < hi_a {
+            (hi_b, d_b.hi_open)
+        } else if hi_a < hi_b {
+            (hi_a, d_a.hi_open)
+        } else {
+            (hi_a, d_a.hi_open || d_b.hi_open)
         };
     Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
 }
