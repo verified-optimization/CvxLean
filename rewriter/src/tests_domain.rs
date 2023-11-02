@@ -592,4 +592,20 @@ fn pow_neg_neg() {
     assert!(domain::eq(&result, &expected));
 }
 
+
+/* Other tests. */
+
+#[test]
+fn one_div_pos() {
+    // [1, 1] / (0, +inf] = (0, 1]
+    let result = domain::div(&domain::singleton(1.0), &domain::pos_dom());
+    let expected = domain::Domain::make_from_endpoints(
+        domain::zero(), 
+        domain::one(),
+        true,
+        false
+    );
+    assert!(domain::eq(&result, &expected));
+}
+
 }
