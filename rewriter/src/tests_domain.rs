@@ -597,14 +597,9 @@ fn pow_neg_neg() {
 
 #[test]
 fn one_div_pos() {
-    // [1, 1] / (0, +inf] = (0, 1]
+    // [1, 1] / (0, +inf] = (0, +inf]
     let result = domain::div(&domain::singleton(1.0), &domain::pos_dom());
-    let expected = domain::Domain::make_from_endpoints(
-        domain::zero(), 
-        domain::one(),
-        true,
-        false
-    );
+    let expected = domain::pos_dom();
     assert!(domain::eq(&result, &expected));
 }
 
