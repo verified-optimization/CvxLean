@@ -560,25 +560,29 @@ pub fn div(d_a: &Domain, d_b: &Domain) -> Domain {
         if d_a_pos && d_b_pos {
             (
                 perform_div(d_a.lo_float(), d_b.hi_float(), d_a.hi_float(), d_b.lo_float()),
-                d_a.lo_open,
+                // Interval is left-open if it comes from /inf.
+                d_a.lo_open || d_b.hi_float().is_infinite(),
                 d_a.hi_open
             )
         } else if d_a_pos && d_b_neg {
             (
                 perform_div(d_a.hi_float(), d_b.hi_float(), d_a.lo_float(), d_b.lo_float()),
                 d_a.hi_open,
-                d_a.lo_open
+                // Interval is right-open if it comes from /-inf.
+                d_a.lo_open || d_b.lo_float().is_infinite()
             )
         } else if d_a_neg && d_b_pos {
             (
                 perform_div(d_a.lo_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
                 d_a.lo_open,
-                d_a.hi_open
+                // Interval is right-open if it comes from /inf.
+                d_a.hi_open || d_b.hi_float().is_infinite()
             )
         } else if d_a_neg && d_b_neg {
             (
                 perform_div(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.hi_float()),
-                d_a.hi_open,
+                // Interval is left-open if it comes from /-inf.
+                d_a.hi_open || d_b.lo_float().is_infinite(),
                 d_a.lo_open
             )
         } else if d_a_mix && d_b_pos {
