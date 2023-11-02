@@ -33,27 +33,6 @@ fn assert_steps(obj: &str, constrs: Vec<&str>) {
     assert_steps_with_domain(vec![], obj, constrs);
 }
 
-// Domain tests.
-
-#[test]
-fn domain_test_add_pos_nonneg() {
-    let d = domain::add(&domain::pos_dom(), &domain::nonneg_dom());
-    println!("{:?}", d);
-}
-
-#[test]
-fn domain_test_mul_pos_nonneg() {
-    let d = domain::mul(&domain::pos_dom(), &domain::nonneg_dom());
-    println!("{:?}", d);
-    // TODO: There is an issue here, because 0 * inf, gives NaN.
-}
-
-#[test]
-fn domain_test_mul_pos_pos() {
-    let d = domain::mul(&domain::pos_dom(), &domain::pos_dom());
-    println!("{:?}", d);
-}
-
 
 // Examples.
 
