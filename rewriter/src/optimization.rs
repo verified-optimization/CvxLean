@@ -52,7 +52,9 @@ impl Analysis<Optimization> for Meta {
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
-                if d_to != d_from { to.domain = None; }
+                if d_to != d_from { 
+                    to.domain = Some(domain::union(&d_to, &d_from)); 
+                }
             }
             _ => ()
         }
@@ -208,6 +210,7 @@ impl Analysis<Optimization> for Meta {
             _ => {}
         }
 
+        println!("{}: {:?}", enode, domain);
         Data { constant, domain }
     }
 }
