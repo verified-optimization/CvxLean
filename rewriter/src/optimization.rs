@@ -52,14 +52,24 @@ impl Analysis<Optimization> for Meta {
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
-                if d_to != d_from { 
-                    to.domain = Some(domain::union(&d_to, &d_from)); 
+                if !domain::eq(&d_to, &d_from) {
+                    to.domain = Some(domain::intersection(&d_to, &d_from)); 
                 }
             }
             _ => ()
         }
-        let to_domain_diff = before_domain != to.domain;
-        let from_domain_diff = to.domain != from.domain;
+        let to_domain_diff = 
+            match (before_domain, to.domain.clone()) {
+                (Some(d_before), Some(d_to)) => !domain::eq(&d_before, &d_to),
+                (None, None) => false,
+                _ => true
+            };
+        let from_domain_diff = 
+            match (to.domain.clone(), from.domain.clone()) {
+                (Some(d_to), Some(d_from)) => !domain::eq(&d_to, &d_from),
+                (None, None) => false,
+                _ => true
+            };
 
         DidMerge(to_domain_diff, from_domain_diff)
     }
@@ -210,7 +220,7 @@ impl Analysis<Optimization> for Meta {
             _ => {}
         }
 
-        println!("{}: {:?}", enode, domain);
+        // println!("{}: {:?}", enode, domain);
         Data { constant, domain }
     }
 }
