@@ -184,8 +184,8 @@ fn zero_dom() -> Domain {
     Domain { interval: zero_ival(), lo_open: false, hi_open: false }    
 }
 
-pub fn is_zero(d: Domain) -> bool {
-    subseteq(&d, &zero_dom())
+pub fn is_zero(d: &Domain) -> bool {
+    subseteq(d, &zero_dom())
 }
 
 fn nonneg_ival() -> Interval { Interval::make(zero(), inf(), NO_ERROR) }
@@ -194,11 +194,11 @@ pub fn nonneg_dom() -> Domain {
     Domain { interval: nonneg_ival(), lo_open: false, hi_open: false }
 }
 
-pub fn is_nonneg(d: Domain) -> bool {
-    subseteq(&d, &nonneg_dom())
+pub fn is_nonneg(d: &Domain) -> bool {
+    subseteq(d, &nonneg_dom())
 }
 
-pub fn option_is_nonneg(d: Option<Domain>) -> bool {
+pub fn option_is_nonneg(d: Option<&Domain>) -> bool {
     d.map_or(false, is_nonneg)
 }
 
@@ -208,19 +208,19 @@ pub fn nonpos_dom() -> Domain {
     Domain { interval: nonpos_ival(), lo_open: false, hi_open: false }
 }
 
-pub fn is_nonpos(d: Domain) -> bool {
-    subseteq(&d, &nonpos_dom())
+pub fn is_nonpos(d: &Domain) -> bool {
+    subseteq(d, &nonpos_dom())
 }
 
 pub fn pos_dom() -> Domain { 
     Domain { interval: nonneg_ival(), lo_open: true, hi_open: false }
 }
 
-pub fn is_pos(d: Domain) -> bool {
-    subseteq(&d, &pos_dom())
+pub fn is_pos(d: &Domain) -> bool {
+    subseteq(d, &pos_dom())
 }
 
-pub fn option_is_pos(d:Option<Domain>) -> bool {
+pub fn option_is_pos(d: Option<&Domain>) -> bool {
     d.map_or(false, is_pos)
 }
 
@@ -228,13 +228,13 @@ pub fn neg_dom() -> Domain {
     Domain { interval: nonpos_ival(), lo_open: false, hi_open: true }
 }
 
-pub fn is_neg(d: Domain) -> bool {
-    subseteq(&d, &neg_dom())
+pub fn is_neg(d: &Domain) -> bool {
+    subseteq(d, &neg_dom())
 }
 
 // This really means that it does not contain zero.
-pub fn is_nonzero(d: Domain) -> bool {
-    subseteq(&zero_dom(), &d)
+pub fn is_nonzero(d: &Domain) -> bool {
+    subseteq(&zero_dom(), d)
 }
 
 
@@ -242,11 +242,11 @@ pub fn is_nonzero(d: Domain) -> bool {
 
 fn execute_unary<F>(d_o: Option<Domain>, f: F) -> Option<Domain>
     where 
-        F : FnOnce(Domain) -> Domain,
+        F : FnOnce(&Domain) -> Domain,
 {
     match d_o {
         Some(d) => {
-            let res = f(d);
+            let res = f(&d);
             let res_lo_f = lo_float(&res);
             let res_hi_f = hi_float(&res);
             if res_lo_f.is_nan() || res_hi_f.is_nan() {
@@ -261,11 +261,11 @@ fn execute_unary<F>(d_o: Option<Domain>, f: F) -> Option<Domain>
 
 fn execute_binary<F>(d_a_o: Option<Domain>, d_b_o: Option<Domain>, f: F) -> Option<Domain>
     where
-        F: FnOnce(Domain, Domain) -> Domain,
+        F: FnOnce(&Domain, &Domain) -> Domain,
 {
     match (d_a_o, d_b_o) {
         (Some(d_a), Some(d_b)) => { 
-            let res = f(d_a, d_b);
+            let res = f(&d_a, &d_b);
             let res_lo_f = lo_float(&res);
             let res_hi_f = hi_float(&res);
             if res_lo_f.is_nan() || res_hi_f.is_nan() {
@@ -281,7 +281,7 @@ fn execute_binary<F>(d_a_o: Option<Domain>, d_b_o: Option<Domain>, f: F) -> Opti
 
 /* Operations. */
 
-pub fn neg(d:Domain) -> Domain {
+pub fn neg(d: &Domain) -> Domain {
     Domain {
         interval: d.interval.neg(),
         lo_open: d.hi_open,
@@ -289,11 +289,11 @@ pub fn neg(d:Domain) -> Domain {
     }
 }
 
-pub fn option_neg(d_o:Option<Domain>) -> Option<Domain> {
+pub fn option_neg(d_o: Option<Domain>) -> Option<Domain> {
     execute_unary(d_o, neg)
 }
 
-pub fn sqrt(d:Domain) -> Domain {
+pub fn sqrt(d: &Domain) -> Domain {
     Domain {
         interval: d.interval.sqrt(),
         lo_open: d.lo_open,
@@ -301,11 +301,11 @@ pub fn sqrt(d:Domain) -> Domain {
     }
 }
 
-pub fn option_sqrt(d_o:Option<Domain>) -> Option<Domain> {
+pub fn option_sqrt(d_o: Option<Domain>) -> Option<Domain> {
     execute_unary(d_o, sqrt)
 }
 
-pub fn log(d:Domain) -> Domain {
+pub fn log(d: &Domain) -> Domain {
     Domain {
         interval: d.interval.ln(),
         lo_open: d.lo_open,
@@ -313,11 +313,11 @@ pub fn log(d:Domain) -> Domain {
     }
 }
 
-pub fn option_log(d_o:Option<Domain>) -> Option<Domain> {
+pub fn option_log(d_o: Option<Domain>) -> Option<Domain> {
     execute_unary(d_o, log)
 }
 
-pub fn exp(d:Domain) -> Domain {
+pub fn exp(d: &Domain) -> Domain {
     Domain {
         interval: d.interval.exp(),
         lo_open: d.lo_open,
@@ -327,14 +327,14 @@ pub fn exp(d:Domain) -> Domain {
 
 // Special case, exp is always positive even if we don't know the domain. More
 // fine-grained domains are also possible.
-pub fn option_exp(d_o:Option<Domain>) -> Option<Domain> {
+pub fn option_exp(d_o: Option<Domain>) -> Option<Domain> {
     match execute_unary(d_o, exp) {
         None => Some(pos_dom()),
         d_o => d_o
     }
 }
 
-pub fn add(d_a:Domain, d_b:Domain) -> Domain {
+pub fn add(d_a: &Domain, d_b: &Domain) -> Domain {
     Domain {
         interval: d_a.interval.add(&d_b.interval),
         lo_open: d_a.lo_open || d_b.lo_open,
@@ -342,11 +342,11 @@ pub fn add(d_a:Domain, d_b:Domain) -> Domain {
     }
 }
 
-pub fn option_add(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+pub fn option_add(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, add)
 }
 
-pub fn sub(d_a:Domain, d_b:Domain) -> Domain {
+pub fn sub(d_a: &Domain, d_b: &Domain) -> Domain {
     Domain {
         interval: d_a.interval.sub(&d_b.interval),
         lo_open: d_a.lo_open || d_b.hi_open,
@@ -354,7 +354,7 @@ pub fn sub(d_a:Domain, d_b:Domain) -> Domain {
     }
 }
 
-pub fn option_sub(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+pub fn option_sub(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, sub)
 }
 
@@ -375,53 +375,53 @@ fn perform_mult(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval 
 
 // For multiplication, opennes of endpoints depends on the values.
 // NOTE(RFM): For the case splitting part, c.f. with `classify`.
-pub fn mul(d_a:Domain, d_b:Domain) -> Domain {
-    let d_a_ival_pos = zero() < lo_float(&d_a);
-    let d_a_ival_neg = hi_float(&d_a) < zero();
-    let d_a_ival_mix = !d_a_ival_pos && !d_a_ival_neg;
+pub fn mul(d_a: &Domain, d_b: &Domain) -> Domain {
+    let d_a_pos = is_pos(d_a);
+    let d_a_neg = is_neg(d_a);
+    let d_a_mix = !d_a_pos && !d_a_neg;
 
-    let d_b_ival_pos = zero() < lo_float(&d_b);
-    let d_b_ival_neg = hi_float(&d_b) < zero();
-    let d_b_ival_mix = !d_b_ival_pos && !d_b_ival_neg;
+    let d_b_pos = is_pos(d_b);
+    let d_b_neg = is_neg(d_b);
+    let d_b_mix = !d_b_pos && !d_b_neg;
 
     // This matches the rules for multiplication (self=d_a, other=d_b).
     let (lo_open, hi_open) = 
-        if d_a_ival_pos && d_b_ival_pos {
+        if d_a_pos && d_b_pos {
             ( // `perform_mult(&self.lo(), &other.lo(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.lo_open, d_b.lo_open), 
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_pos && d_b_ival_neg {
+        } else if d_a_pos && d_b_neg {
             ( // `perform_mult(&self.hi(), &other.lo(), &self.lo(), &other.hi())`
                 choose_opennes(d_a.hi_open, d_b.lo_open), 
                 choose_opennes(d_a.lo_open, d_b.hi_open)
             )
-        } else if d_a_ival_pos && d_b_ival_mix {
+        } else if d_a_pos && d_b_mix {
             ( // `perform_mult(&self.hi(), &other.lo(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.hi_open, d_b.lo_open), 
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_neg && d_b_ival_mix {
+        } else if d_a_neg && d_b_mix {
             ( // `perform_mult(&self.lo(), &other.hi(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.lo_open, d_a.lo_open)
             )
-        } else if d_a_ival_neg && d_b_ival_pos {
+        } else if d_a_neg && d_b_pos {
             ( // `perform_mult(&self.lo(), &other.hi(), &self.hi(), &other.lo())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.hi_open, d_b.lo_open)
             )
-        } else if d_a_ival_neg && d_b_ival_neg {
+        } else if d_a_neg && d_b_neg {
             ( // perform_mult(&self.hi(), &other.hi(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.hi_open, d_b.hi_open),
                 choose_opennes(d_a.lo_open, d_b.lo_open)
             )
-        } else if d_a_ival_mix && d_b_ival_pos {
+        } else if d_a_mix && d_b_pos {
             ( // perform_mult(&self.lo(), &other.hi(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_mix && d_b_ival_neg {
+        } else if d_a_mix && d_b_neg {
             ( // `perform_mult(&self.hi(), &other.lo(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.hi_open, d_b.lo_open),
                 choose_opennes(d_a.lo_open, d_b.lo_open)
@@ -474,46 +474,46 @@ pub fn mul(d_a:Domain, d_b:Domain) -> Domain {
     }
 }
 
-pub fn option_mul(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+pub fn option_mul(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, mul)
 }
 
 // Similar idea to multiplication, except for the division by zero cases.
-pub fn div(d_a:Domain, d_b:Domain) -> Domain {
-    let d_a_ival_pos = zero() < lo_float(&d_a);
-    let d_a_ival_neg = hi_float(&d_a) < zero();
-    let d_a_ival_mix = !d_a_ival_pos && !d_a_ival_neg;
+pub fn div(d_a: &Domain, d_b: &Domain) -> Domain {
+    let d_a_pos = is_pos(d_a);
+    let d_a_neg = is_neg(d_a);
+    let d_a_mix = !d_a_pos && !d_a_neg;
 
-    let d_b_ival_pos = zero() < lo_float(&d_b);
-    let d_b_ival_neg = hi_float(&d_b) < zero();
+    let d_b_pos = is_pos(d_b);
+    let d_b_neg = is_neg(d_b);
 
     let (lo_open, hi_open) =
-        if d_a_ival_pos && d_b_ival_pos {
+        if d_a_pos && d_b_pos {
             ( // `perform_div(&self.lo(), &other.hi(), &self.hi(), &other.lo())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.hi_open, d_b.lo_open)
             )
-        } else if d_a_ival_pos && d_b_ival_neg {
+        } else if d_a_pos && d_b_neg {
             ( // `perform_div(&self.hi(), &other.hi(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.hi_open, d_b.hi_open),
                 choose_opennes(d_a.lo_open, d_b.lo_open)
             )
-        } else if d_a_ival_neg && d_b_ival_pos {
+        } else if d_a_neg && d_b_pos {
             ( // `perform_div(&self.lo(), &other.lo(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.lo_open, d_b.lo_open),
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_neg && d_b_ival_neg {
+        } else if d_a_neg && d_b_neg {
             ( // `perform_div(&self.hi(), &other.lo(), &self.lo(), &other.hi())`
                 choose_opennes(d_a.hi_open, d_b.lo_open),
                 choose_opennes(d_a.lo_open, d_b.hi_open)
             )
-        } else if d_a_ival_mix && d_b_ival_pos {
+        } else if d_a_mix && d_b_pos {
             ( // `perform_div(&self.lo(), &other.lo(), &self.hi(), &other.lo())`
                 choose_opennes(d_a.lo_open, d_b.lo_open),
                 choose_opennes(d_a.hi_open, d_b.lo_open)
             )
-        } else if d_a_ival_mix && d_b_ival_neg {
+        } else if d_a_mix && d_b_neg {
             ( // `perform_div(&self.hi(), &other.hi(), &self.lo(), &other.hi())`
                 choose_opennes(d_a.hi_open, d_b.hi_open),
                 choose_opennes(d_a.lo_open, d_b.hi_open)
@@ -530,7 +530,7 @@ pub fn div(d_a:Domain, d_b:Domain) -> Domain {
     }
 }
 
-pub fn option_div(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+pub fn option_div(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, div)
 }
 
@@ -545,53 +545,53 @@ fn perform_pow(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
 
 // The opennes computation is copied from multiplication replacing 
 // `perform_mult` with `perform_pow`.
-pub fn pow(d_a:Domain, d_b:Domain) -> Domain {
-    let d_a_ival_pos = zero() < lo_float(&d_a);
-    let d_a_ival_neg = hi_float(&d_a) < zero();
-    let d_a_ival_mix = !d_a_ival_pos && !d_a_ival_neg;
+pub fn pow(d_a: &Domain, d_b: &Domain) -> Domain {
+    let d_a_pos = is_pos(d_a);
+    let d_a_neg = is_neg(d_a);
+    let d_a_mix = !d_a_pos && !d_a_neg;
 
-    let d_b_ival_pos = zero() < lo_float(&d_b);
-    let d_b_ival_neg = hi_float(&d_b) < zero();
-    let d_b_ival_mix = !d_b_ival_pos && !d_b_ival_neg;
+    let d_b_pos = is_pos(d_b);
+    let d_b_neg = is_neg(d_b);
+    let d_b_mix = !d_b_pos && !d_b_neg;
 
     // This matches the rules for multiplication (self=d_a, other=d_b).
     let (lo_open, hi_open) = 
-        if d_a_ival_pos && d_b_ival_pos {
+        if d_a_pos && d_b_pos {
             ( // `perform_pow(&self.lo(), &other.lo(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.lo_open, d_b.lo_open), 
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_pos && d_b_ival_neg {
+        } else if d_a_pos && d_b_neg {
             ( // `perform_pow(&self.hi(), &other.lo(), &self.lo(), &other.hi())`
                 choose_opennes(d_a.hi_open, d_b.lo_open), 
                 choose_opennes(d_a.lo_open, d_b.hi_open)
             )
-        } else if d_a_ival_pos && d_b_ival_mix {
+        } else if d_a_pos && d_b_mix {
             ( // `perform_pow(&self.hi(), &other.lo(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.hi_open, d_b.lo_open), 
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_neg && d_b_ival_mix {
+        } else if d_a_neg && d_b_mix {
             ( // `perform_pow(&self.lo(), &other.hi(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.lo_open, d_a.lo_open)
             )
-        } else if d_a_ival_neg && d_b_ival_pos {
+        } else if d_a_neg && d_b_pos {
             ( // `perform_pow(&self.lo(), &other.hi(), &self.hi(), &other.lo())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.hi_open, d_b.lo_open)
             )
-        } else if d_a_ival_neg && d_b_ival_neg {
+        } else if d_a_neg && d_b_neg {
             ( // perform_pow(&self.hi(), &other.hi(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.hi_open, d_b.hi_open),
                 choose_opennes(d_a.lo_open, d_b.lo_open)
             )
-        } else if d_a_ival_mix && d_b_ival_pos {
+        } else if d_a_mix && d_b_pos {
             ( // perform_pow(&self.lo(), &other.hi(), &self.hi(), &other.hi())`
                 choose_opennes(d_a.lo_open, d_b.hi_open),
                 choose_opennes(d_a.hi_open, d_b.hi_open)
             )
-        } else if d_a_ival_mix && d_b_ival_neg {
+        } else if d_a_mix && d_b_neg {
             ( // `perform_pow(&self.hi(), &other.lo(), &self.lo(), &other.lo())`
                 choose_opennes(d_a.hi_open, d_b.lo_open),
                 choose_opennes(d_a.lo_open, d_b.lo_open)
@@ -641,6 +641,6 @@ pub fn pow(d_a:Domain, d_b:Domain) -> Domain {
     }
 }
 
-pub fn option_pow(d_o_a:Option<Domain>, d_o_b:Option<Domain>) -> Option<Domain> {
+pub fn option_pow(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, pow)
 }
