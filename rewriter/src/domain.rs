@@ -1,7 +1,7 @@
 use core::cmp::Ordering;
 use serde::{Deserialize, Serialize, Deserializer, Serializer, ser::SerializeSeq};
 use intervals_good::*;
-use rug::{Float, float::Round, ops::DivAssignRound, ops::PowAssignRound, Assign};
+use rug::{Float, float::Round, ops::DivAssignRound, ops::PowAssignRound};
 
 const F64_PREC: u32 = 53;
 
@@ -30,7 +30,7 @@ impl Domain {
     //         lo.assign(Float::with_val(F64_PREC, 0.0));
     //     }
     //     let hi = self.interval.hi.as_float_mut();
-    //     if hi.is_zero() && hi.is_sign_positive() {
+    //     if hi.is_zero() && hi.is_sign_negative() {
     //         hi.assign(Float::with_val(F64_PREC, 0.0));
     //     }
     // }
@@ -50,18 +50,7 @@ impl Domain {
 
 /* Comparing domains. */
 
-// Closed interval "a" is a subset of closed interval "b".
-#[allow(unused)]
-fn subseteq_ival(a: &Interval, b: &Interval) -> bool {
-    let a_lo: Float = a.lo.clone().into();
-    let a_hi: Float = a.hi.clone().into();
-    let b_lo: Float = b.lo.clone().into();
-    let b_hi: Float = b.hi.clone().into();
-
-    return b_lo <= a_lo && a_hi <= b_hi;
-}
-
-// Taking into account openness.
+// Interval "a" is a subset of interval "b", taking into account openness.
 fn subseteq(a: &Domain, b: &Domain) -> bool {
     let a_lo = a.lo_float();
     let a_hi = a.hi_float();
@@ -122,6 +111,8 @@ impl PartialOrd for Domain {
 /* Useful constants. */
 
 fn zero() -> Float { Float::with_val(F64_PREC, 0.0) }
+
+fn neg_zero() -> Float { Float::with_val(F64_PREC, -0.0) }
 
 fn inf() -> Float { Float::with_val(F64_PREC, f64::INFINITY) }
 
@@ -247,7 +238,7 @@ pub fn option_is_nonneg(d: Option<&Domain>) -> bool {
     d.map_or(false, is_nonneg)
 }
 
-fn nonpos_ival() -> Interval { Interval::make(neg_inf(), zero(), NO_ERROR) }
+fn nonpos_ival() -> Interval { Interval::make(neg_inf(), neg_zero(), NO_ERROR) }
 
 #[allow(unused)]
 pub fn nonpos_dom() -> Domain { 
@@ -394,17 +385,22 @@ fn choose_opennes(o_a: bool, o_b: bool) -> bool {
     o_a || o_b
 }
 
-// Copied from interval-goods, but making multiplication by zero always be zero.
+// Copied from interval-goods, but making multiplication by zero always be zero,
+// with the correct sign.
 fn perform_mult(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
     let mut lo = lo1.clone();
-    lo.mul_add_round(lo2, &Float::with_val(lo1.prec(), 0.0), Round::Down);
     if lo1.is_zero() || lo2.is_zero() {
-        lo = zero();
+        let neg_sign = lo1.is_sign_negative() ^ lo2.is_sign_negative();
+        lo = if neg_sign { neg_zero() } else { zero() };
+    } else {
+        lo.mul_add_round(lo2, &Float::with_val(lo1.prec(), 0.0), Round::Down);
     }
     let mut hi = hi1.clone();
-    hi.mul_add_round(&hi2, &Float::with_val(hi1.prec(), 0.0), Round::Up);
     if hi1.is_zero() || hi2.is_zero() {
-        hi = zero();
+        let neg_sign = hi1.is_sign_negative() ^ hi2.is_sign_negative();
+        hi = if neg_sign { neg_zero() } else { zero() };
+    } else {
+        hi.mul_add_round(&hi2, &Float::with_val(hi1.prec(), 0.0), Round::Up);
     }
     Interval::make(lo, hi, NO_ERROR)
 }
@@ -518,12 +514,26 @@ pub fn option_mul(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain
     execute_binary(d_o_a, d_o_b, mul)
 }
 
-// Copied from intervals-good.
+// Copied from intervals-good. Again, zero divided by anything is zero, with the
+// correct sign. Note that this function is never used on denominator intervals
+// containing zero, so it's safe to assume that we are always dividing by a 
+// non-zero quanitity, even though hi2 and lo2 might be zero if they come from
+// an open endpoint.
 fn perform_div(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
     let mut lo = lo1.clone();
-    lo.div_assign_round(lo2, Round::Down);
+    if lo1.is_zero() {
+        let neg_sign = lo1.is_sign_negative() ^ lo2.is_sign_negative();
+        lo = if neg_sign { neg_zero() } else { zero() };
+    } else {
+        lo.div_assign_round(lo2, Round::Down);
+    }
     let mut hi = hi1.clone();
-    hi.div_assign_round(hi2, Round::Up);
+    if hi1.is_zero() {
+        let neg_sign = hi1.is_sign_negative() ^ hi2.is_sign_negative();
+        hi = if neg_sign { neg_zero() } else { zero() };
+    } else {
+        hi.div_assign_round(hi2, Round::Up);
+    }
     Interval::make(lo, hi, NO_ERROR)
 }
 
@@ -540,38 +550,38 @@ pub fn div(d_a: &Domain, d_b: &Domain) -> Domain {
         if d_a_pos && d_b_pos {
             (
                 perform_div(d_a.lo_float(), d_b.hi_float(), d_a.hi_float(), d_b.lo_float()),
-                choose_opennes(d_a.lo_open, d_b.hi_open),
-                choose_opennes(d_a.hi_open, d_b.lo_open)
+                d_a.lo_open,
+                d_a.hi_open
             )
         } else if d_a_pos && d_b_neg {
             (
                 perform_div(d_a.hi_float(), d_b.hi_float(), d_a.lo_float(), d_b.lo_float()),
-                choose_opennes(d_a.hi_open, d_b.hi_open),
-                choose_opennes(d_a.lo_open, d_b.lo_open)
+                d_a.hi_open,
+                d_a.lo_open
             )
         } else if d_a_neg && d_b_pos {
             (
                 perform_div(d_a.lo_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
-                choose_opennes(d_a.lo_open, d_b.lo_open),
-                choose_opennes(d_a.hi_open, d_b.hi_open)
+                d_a.lo_open,
+                d_a.hi_open
             )
         } else if d_a_neg && d_b_neg {
             (
                 perform_div(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.hi_float()),
-                choose_opennes(d_a.hi_open, d_b.lo_open),
-                choose_opennes(d_a.lo_open, d_b.hi_open)
+                d_a.hi_open,
+                d_a.lo_open
             )
         } else if d_a_mix && d_b_pos {
             (
                 perform_div(d_a.lo_float(), d_b.lo_float(), d_a.hi_float(), d_b.lo_float()),
-                choose_opennes(d_a.lo_open, d_b.lo_open),
-                choose_opennes(d_a.hi_open, d_b.lo_open)
+                d_a.lo_open,
+                d_a.hi_open
             )
         } else if d_a_mix && d_b_neg {
             (
                 perform_div(d_a.hi_float(), d_b.hi_float(), d_a.lo_float(), d_b.hi_float()),
-                choose_opennes(d_a.hi_open, d_b.hi_open),
-                choose_opennes(d_a.lo_open, d_b.hi_open)
+                d_a.hi_open,
+                d_a.lo_open
             )
         } else {
             // Division by mixed (potentially zero), so the result is [-inf, inf].
