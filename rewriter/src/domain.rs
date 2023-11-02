@@ -43,12 +43,21 @@ impl Domain {
         // };
         // d.adjust_zeros();
         // d
-        Domain { interval: interval, lo_open: lo_open, hi_open: hi_open }
+        // Domain { interval: interval, lo_open: lo_open, hi_open: hi_open }
+        
+        // Ensure that infinite endpoints are closed.
+        let lo_is_infinte = interval.lo.as_float().is_infinite().clone();
+        let hi_is_infinte = interval.hi.as_float().is_infinite().clone();
+        Domain {
+            interval: interval,
+            lo_open: lo_open && !lo_is_infinte,
+            hi_open: hi_open && !hi_is_infinte
+        }
     }
 
     pub fn make_from_endpoints(lo: Float, hi: Float, lo_open: bool, hi_open: bool) -> Self {
         let interval = Interval::make(lo, hi, NO_ERROR);
-        Domain { interval: interval, lo_open: lo_open, hi_open: hi_open }
+        Domain::make(interval, lo_open, hi_open)
     }
 }
 
