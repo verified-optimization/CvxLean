@@ -3,177 +3,10 @@ use serde::{Deserialize, Serialize, Deserializer, Serializer, ser::SerializeSeq}
 use intervals_good::*;
 use rug::{Float, float::Round, ops::DivAssignRound, ops::PowAssignRound};
 
+
+/* Constants. */
+
 const F64_PREC: u32 = 53;
-
-// Extension of intervals-good intervals keeping track of opennes at the 
-// endpoints. Unbounded endpoints are closed.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Domain{
-    interval: Interval,
-    lo_open: bool,
-    hi_open: bool,
-}
-
-impl Domain {
-    fn lo_float(&self) -> &Float {
-        self.interval.lo.as_float()
-    }
-    
-    fn hi_float(&self) -> &Float {
-        self.interval.hi.as_float()
-    }
-
-    // Turn -0 into 0.
-    // fn adjust_zeros(&mut self) -> () {
-    //     let lo = self.interval.lo.as_float_mut();
-    //     if lo.is_zero() && lo.is_sign_negative() {
-    //         lo.assign(Float::with_val(F64_PREC, 0.0));
-    //     }
-    //     let hi = self.interval.hi.as_float_mut();
-    //     if hi.is_zero() && hi.is_sign_negative() {
-    //         hi.assign(Float::with_val(F64_PREC, 0.0));
-    //     }
-    // }
-
-    pub fn make(interval: Interval, lo_open: bool, hi_open: bool) -> Self {
-        // let mut d = Domain {
-        //     interval: interval,
-        //     lo_open: lo_open,
-        //     hi_open: hi_open
-        // };
-        // d.adjust_zeros();
-        // d
-        // Domain { interval: interval, lo_open: lo_open, hi_open: hi_open }
-
-        // Ensure that infinite endpoints are closed.
-        let lo_is_infinte = interval.lo.as_float().is_infinite().clone();
-        let hi_is_infinte = interval.hi.as_float().is_infinite().clone();
-        Domain {
-            interval: interval,
-            lo_open: lo_open && !lo_is_infinte,
-            hi_open: hi_open && !hi_is_infinte
-        }
-    }
-
-    pub fn make_from_endpoints(lo: Float, hi: Float, lo_open: bool, hi_open: bool) -> Self {
-        let interval = Interval::make(lo, hi, NO_ERROR);
-        Domain::make(interval, lo_open, hi_open)
-    }
-}
-
-
-/* Comparing domains. */
-
-// Interval "a" is a subset of interval "b", taking into account openness.
-fn subseteq(a: &Domain, b: &Domain) -> bool {
-    let a_lo = a.lo_float();
-    let a_hi = a.hi_float();
-    let a_lo_open = a.lo_open;
-    let a_hi_open = a.hi_open;
-
-    let b_lo = b.lo_float();
-    let b_hi = b.hi_float();
-    let b_lo_open = b.lo_open;
-    let b_hi_open = b.hi_open;
-
-    let same_infinite = |x: &Float, y: &Float| {
-        x.is_infinite() && y.is_infinite() && 
-        (x.is_sign_positive() == y.is_sign_positive())
-    };
-
-    let left_inclusion = 
-        if !a_lo_open && b_lo_open { 
-            // ( ... [ ...
-            // NOTE: In the infinite case, ignore openness.
-            b_lo < a_lo || same_infinite(a_lo, b_lo)
-        } else {
-            b_lo <= a_lo
-        };
-    let right_inclusion = 
-        if !a_hi_open && b_hi_open {
-            // ... ] ... )
-            a_hi < b_hi || same_infinite(a_hi, b_hi)
-        } else {
-            a_hi <= b_hi
-        };
-    
-    left_inclusion && right_inclusion
-}
-
-pub fn eq(a: &Domain, b: &Domain) -> bool {
-    subseteq(a, b) && subseteq(b, a)
-}
-
-impl PartialOrd for Domain {
-    fn partial_cmp(&self, other: &Domain) -> Option<Ordering> {
-        if *self == *other {
-            Some(Ordering::Equal)
-        }
-        else if subseteq(&self, &other) {
-            Some(Ordering::Greater)
-        }
-        else if subseteq(&other, &self) {
-            Some(Ordering::Less)
-        }
-        else {
-            None
-        }
-    }
-}
-
-/* Domain union and intersection. */
-
-#[allow(unused)]
-pub fn union(d_a: &Domain, d_b: &Domain) -> Domain {
-    let lo_a = d_a.lo_float();
-    let hi_a = d_a.hi_float();
-    let lo_b = d_b.lo_float();
-    let hi_b = d_b.hi_float();
-    let (lo, lo_open) = 
-        if lo_a < lo_b {
-            (lo_a, d_a.lo_open)
-        } else if lo_b < lo_a {
-            (lo_b, d_b.lo_open)
-        } else {
-            (lo_a, d_a.lo_open && d_b.lo_open)
-        };
-    let (hi, hi_open) =
-        if hi_b < hi_a {
-            (hi_a, d_a.hi_open)
-        } else if hi_a < hi_b {
-            (hi_b, d_b.hi_open)
-        } else {
-            (hi_a, d_a.hi_open && d_b.hi_open)
-        };
-    Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
-}
-
-pub fn intersection(d_a: &Domain, d_b: &Domain) -> Domain {
-    let lo_a = d_a.lo_float();
-    let hi_a = d_a.hi_float();
-    let lo_b = d_b.lo_float();
-    let hi_b = d_b.hi_float();
-    let (lo, lo_open) = 
-        if lo_a < lo_b {
-            (lo_b, d_b.lo_open)
-        } else if lo_b < lo_a {
-            (lo_a, d_a.lo_open)
-        } else {
-            (lo_a, d_a.lo_open || d_b.lo_open)
-        };
-    let (hi, hi_open) =
-        if hi_b < hi_a {
-            (hi_b, d_b.hi_open)
-        } else if hi_a < hi_b {
-            (hi_a, d_a.hi_open)
-        } else {
-            (hi_a, d_a.hi_open || d_b.hi_open)
-        };
-    Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
-}
-
-
-/* Useful constants. */
 
 pub fn zero() -> Float { Float::with_val(F64_PREC, 0.0) }
 
@@ -191,15 +24,204 @@ pub fn neg_inf() -> Float { Float::with_val(F64_PREC, f64::NEG_INFINITY) }
 const NO_ERROR: ErrorInterval = ErrorInterval { lo: false, hi: false };
 
 
-/* Make domain from single float. */
+/* Domain. */
 
-pub fn singleton(f: f64) -> Domain {
-    let f_f = Float::with_val(F64_PREC, f);
-    Domain::make(
-        Interval::make(f_f.clone(), f_f.clone(), NO_ERROR),
-        false,
-        false
-    )
+// Extension of intervals-good intervals keeping track of opennes at the 
+// endpoints. Unbounded endpoints are closed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Domain{
+    interval: Interval,
+    lo_open: bool,
+    hi_open: bool,
+}
+
+impl Domain {
+    /* Getters. */
+
+    fn lo_float(&self) -> &Float {
+        self.interval.lo.as_float()
+    }
+    
+    fn hi_float(&self) -> &Float {
+        self.interval.hi.as_float()
+    }
+
+    /* Constructors. */
+
+    pub fn make(interval: Interval, lo_open: bool, hi_open: bool) -> Self {
+        // Ensure that infinite endpoints are closed.
+        let lo_is_infinte = interval.lo.as_float().is_infinite().clone();
+        let hi_is_infinte = interval.hi.as_float().is_infinite().clone();
+        Domain {
+            interval: interval,
+            lo_open: lo_open && !lo_is_infinte,
+            hi_open: hi_open && !hi_is_infinte
+        }
+    }
+
+    pub fn make_from_endpoints(lo: Float, hi: Float, lo_open: bool, hi_open: bool) -> Self {
+        let interval = Interval::make(lo, hi, NO_ERROR);
+        Domain::make(interval, lo_open, hi_open)
+    }
+
+    pub fn make_singleton(f: f64) -> Domain {
+        let f_f = Float::with_val(F64_PREC, f);
+        Domain::make_from_endpoints(
+            f_f.clone(), f_f.clone(), false, false
+        )
+    }
+
+    pub fn make_cc(lo: Float, hi: Float) -> Self {
+        Domain::make_from_endpoints(lo, hi, false, false)
+    }
+
+    pub fn make_co(lo: Float, hi: Float) -> Self {
+        Domain::make_from_endpoints(lo, hi, false, true)
+    }
+
+    pub fn make_ci(lo: Float) -> Self {
+        Domain::make_from_endpoints(lo, inf(), false, false)
+    }
+
+    pub fn make_oc(lo: Float, hi: Float) -> Self {
+        Domain::make_from_endpoints(lo, hi, true, false)
+    }
+
+    pub fn make_oo(lo: Float, hi: Float) -> Self {
+        Domain::make_from_endpoints(lo, hi, true, true)
+    }
+
+    pub fn make_oi(lo: Float) -> Self {
+        Domain::make_from_endpoints(lo, inf(), false, true)
+    }
+
+    pub fn make_ic(hi: Float) -> Self {
+        Domain::make_from_endpoints(neg_inf(), hi, false, false)
+    }
+
+    pub fn make_io(hi: Float) -> Self {
+        Domain::make_from_endpoints(neg_inf(), hi, false, true)
+    }
+
+    pub fn make_ii() -> Self {
+        Domain::make_from_endpoints(neg_inf(), inf(), false, false)
+    }
+
+    /* Comparisons. */
+
+    pub fn subseteq(&self, other: &Domain) -> bool {
+        let self_lo = self.lo_float();
+        let self_hi = self.hi_float();
+        let self_lo_open = self.lo_open;
+        let self_hi_open = self.hi_open;
+
+        let other_lo = other.lo_float();
+        let other_hi = other.hi_float();
+        let other_lo_open = other.lo_open;
+        let other_hi_open = other.hi_open;
+
+        let same_infinite = |x: &Float, y: &Float| {
+            x.is_infinite() && y.is_infinite() && 
+            (x.is_sign_positive() == y.is_sign_positive())
+        };
+
+        let left_inclusion = 
+            if !self_lo_open && other_lo_open { 
+                // ( ... [ ...
+                // NOTE: In the infinite case, ignore openness.
+                other_lo < self_lo || same_infinite(self_lo, other_lo)
+            } else {
+                other_lo <= self_lo
+            };
+        
+        let right_inclusion =
+            if !self_hi_open && other_hi_open {
+                // ... ] ... )
+                self_hi < other_hi || same_infinite(self_hi, other_hi)
+            } else {
+                self_hi <= other_hi
+            };
+        
+        left_inclusion && right_inclusion
+    }
+
+    pub fn eq(&self, other: &Domain) -> bool {
+        self.subseteq(other) && other.subseteq(self)
+    }
+
+    /* Union and intersection. */
+
+    pub fn union(self, other: &Domain) -> Domain {
+        let self_lo = self.lo_float();
+        let self_hi = self.hi_float();
+        let other_lo = other.lo_float();
+        let other_hi = other.hi_float();
+
+        let (lo, lo_open) = 
+            if self_lo < other_lo {
+                (self_lo, self.lo_open)
+            } else if other_lo < self_lo {
+                (other_lo, other.lo_open)
+            } else {
+                (self_lo, self.lo_open && other.lo_open)
+            };
+        
+        let (hi, hi_open) =
+            if other_hi < self_hi {
+                (self_hi, self.hi_open)
+            } else if self_hi < other_hi {
+                (other_hi, other.hi_open)
+            } else {
+                (self_hi, self.hi_open && other.hi_open)
+            };
+        
+        Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
+    }
+
+    pub fn intersection(self, other: &Domain) -> Domain {
+        let self_lo = self.lo_float();
+        let self_hi = self.hi_float();
+        let other_lo = other.lo_float();
+        let other_hi = other.hi_float();
+        
+        let (lo, lo_open) = 
+            if self_lo < other_lo {
+                (other_lo, other.lo_open)
+            } else if other_lo < self_lo {
+                (self_lo, self.lo_open)
+            } else {
+                (self_lo, self.lo_open || other.lo_open)
+            };
+
+        let (hi, hi_open) =
+            if other_hi < self_hi {
+                (other_hi, other.hi_open)
+            } else if self_hi < other_hi {
+                (self_hi, self.hi_open)
+            } else {
+                (self_hi, self.hi_open || other.hi_open)
+            };
+
+        Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
+    }
+}
+
+
+impl PartialOrd for Domain {
+    fn partial_cmp(&self, other: &Domain) -> Option<Ordering> {
+        if self.eq(other) {
+            Some(Ordering::Equal)
+        }
+        else if self.subseteq(other) {
+            Some(Ordering::Greater)
+        }
+        else if other.subseteq(self) {
+            Some(Ordering::Less)
+        }
+        else {
+            None
+        }
+    }
 }
 
 
@@ -285,7 +307,7 @@ pub fn zero_dom() -> Domain {
 
 #[allow(unused)]
 pub fn is_zero(d: &Domain) -> bool {
-    subseteq(d, &zero_dom())
+    d.subseteq(&zero_dom())
 }
 
 fn free_ival() -> Interval { Interval::make(neg_inf(), inf(), NO_ERROR) }
@@ -301,7 +323,7 @@ pub fn nonneg_dom() -> Domain {
 }
 
 pub fn is_nonneg(d: &Domain) -> bool {
-    subseteq(d, &nonneg_dom())
+    d.subseteq(&nonneg_dom())
 }
 
 pub fn option_is_nonneg(d: Option<&Domain>) -> bool {
@@ -317,7 +339,7 @@ pub fn nonpos_dom() -> Domain {
 
 #[allow(unused)]
 pub fn is_nonpos(d: &Domain) -> bool {
-    subseteq(d, &nonpos_dom())
+    d.subseteq(&nonpos_dom())
 }
 
 pub fn pos_dom() -> Domain { 
@@ -325,7 +347,7 @@ pub fn pos_dom() -> Domain {
 }
 
 pub fn is_pos(d: &Domain) -> bool {
-    subseteq(d, &pos_dom())
+    d.subseteq(&pos_dom())
 }
 
 pub fn option_is_pos(d: Option<&Domain>) -> bool {
@@ -337,12 +359,12 @@ pub fn neg_dom() -> Domain {
 }
 
 pub fn is_neg(d: &Domain) -> bool {
-    subseteq(d, &neg_dom())
+    d.subseteq(&neg_dom())
 }
 
 // This really means that it does not contain zero.
 pub fn is_nonzero(d: &Domain) -> bool {
-    subseteq(&zero_dom(), d)
+    !zero_dom().subseteq(d)
 }
 
 

@@ -52,21 +52,19 @@ impl Analysis<Optimization> for Meta {
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
-                if !domain::eq(&d_to, &d_from) {
-                    to.domain = Some(domain::intersection(&d_to, &d_from)); 
-                }
+                if !d_to.eq(&d_from) { to.domain = None; }
             }
             _ => ()
         }
         let to_domain_diff = 
             match (before_domain, to.domain.clone()) {
-                (Some(d_before), Some(d_to)) => !domain::eq(&d_before, &d_to),
+                (Some(d_before), Some(d_to)) => !d_before.eq(&d_to),
                 (None, None) => false,
                 _ => true
             };
         let from_domain_diff = 
             match (to.domain.clone(), from.domain.clone()) {
-                (Some(d_to), Some(d_from)) => !domain::eq(&d_to, &d_from),
+                (Some(d_to), Some(d_from)) => !d_to.eq(&d_from),
                 (None, None) => false,
                 _ => true
             };
@@ -215,7 +213,7 @@ impl Analysis<Optimization> for Meta {
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
                 constant = Some((*f, format!("{}", f).parse().unwrap()));
-                domain = Some(domain::singleton((*f).into_inner()));
+                domain = Some(Domain::make_singleton((*f).into_inner()));
             }
             _ => {}
         }
