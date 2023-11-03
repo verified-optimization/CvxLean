@@ -62,8 +62,8 @@ def EggRequest.toJson (e : EggRequest) : String :=
   surroundQuotes "domains" ++ " : " ++
     "[" ++
       (", ".intercalate <| e.domains.map (fun domain =>
-        "[" ++ (surroundQuotes domain.1) ++                  -- Variable name.
-        ", " ++ (surroundQuotes domain.2.toJson) ++ "]")) ++ -- Encoded interval.
+        "[" ++ (surroundQuotes domain.1) ++ -- Variable name.
+        ", " ++ domain.2.toJson ++ "]")) ++ -- Encoded interval.
     "]" ++ ", " ++
   surroundQuotes "target" ++ " : " ++ (e.target.toJson) ++
   "}"
