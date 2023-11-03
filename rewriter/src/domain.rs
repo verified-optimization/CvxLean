@@ -265,11 +265,11 @@ impl<'de> Deserialize<'de> for Domain {
                 (Some(v0_f), Some(v1_f)) => {
                     let lo = Float::with_val(F64_PREC, v0_f);
                     let hi = Float::with_val(F64_PREC, v1_f);
-                    Ok(Domain {
-                        interval: Interval::make(lo, hi, NO_ERROR),
-                        lo_open: lo_open,
-                        hi_open: hi_open,
-                    })
+                    Ok(Domain::make(
+                        Interval::make(lo, hi, NO_ERROR),
+                        lo_open,
+                        hi_open,
+                    ))
                 }
                 _ => Err(serde::de::Error::custom("Domain deserialization error."))
             } 
