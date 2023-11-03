@@ -616,7 +616,7 @@ def mulAddRevObj :=
     minimize (x * 2 + x * 3 : ℝ)
     subject to
       hx : 0 ≤ x
-  
+
 time_cmd equivalence mulAddRevObjRed/mulAddRevObjAuto : mulAddRevObj := by
   convexify
 
@@ -806,8 +806,8 @@ def divSelfConstr :=
       h : (x / x) * y ≤ 1
 
 time_cmd equivalence divSelfConstrRed/divSelfConstrAuto : divSelfConstr := by
-  convexify
-  
+  convexify -- ERROR: No output
+
 #print divSelfConstrAuto
 
 
@@ -865,7 +865,7 @@ def mulPowConstr :=
       h : ((x * (sqrt x)) ^ 2 / x) ≤ 1
 
 time_cmd equivalence mulPowConstrRed/mulPowConstrAuto : mulPowConstr := by
-  convexify
+  convexify -- ERROR with div_le_iff-rev
 
 #print mulPowConstrAuto
 
@@ -971,7 +971,7 @@ def divPowRevConstr :=
       h : ((x + x) ^ 2 / x ^ 2) ≤ x
 
 time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
-  convexify
+  convexify -- ERROR with div_le_iff-rev
 
 #print divPowRevConstrAuto
 
@@ -1086,7 +1086,7 @@ time_cmd equivalence sqrtEqRpowConstrRed/sqrtEqRpowConstrAuto : sqrtEqRpowConstr
   convexify
 
 #print sqrtEqRpowConstrAuto
-  
+
 -- pow_half_two (obj)
 def powHalfTwoObj :=
   optimization (x : ℝ)
@@ -1221,7 +1221,7 @@ def expMulObj :=
     minimize (exp (log x * 2) : ℝ)
     subject to
       hx : 0 < x
-  
+
 time_cmd equivalence expMulObjRed/expMulObjAuto : expMulObj := by
   convexify
 
@@ -1285,7 +1285,7 @@ def expNegEqOneDivConstr :=
       h : x * exp (-(log x)) ≤ x
 
 time_cmd equivalence expNegEqOneDivConstrRed/expNegEqOneDivConstrAuto : expNegEqOneDivConstr := by
-  convexify
+  convexify -- ERROR with div_le_iff-rev
 
 #print expNegEqOneDivConstrAuto
 
@@ -1331,7 +1331,7 @@ def logMulConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : 1 ≤ log (x * x) 
+      h : 1 ≤ log (x * x)
 
 time_cmd equivalence logMulConstrRed/logMulConstrAuto : logMulConstr := by
   convexify
@@ -1359,7 +1359,7 @@ def logMulRevConstr :=
       h : exp (log x + log (x + 1)) ≤ 1
 
 time_cmd equivalence logMulRevConstrRed/logMulRevConstrAuto : logMulRevConstr := by
-  convexify
+  convexify -- ERROR with pow_add-rev
 
 #print logMulRevConstrAuto
 
