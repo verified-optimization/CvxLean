@@ -226,8 +226,8 @@ impl PartialOrd for Domain {
 
 /* Serialize and deserialize. */
 
-fn custom_string_to_float(s: &str) -> Option<Float> {
-    match s {
+fn custom_string_to_float(s: String) -> Option<Float> {
+    match s.as_str() {
         "inf" => Some(inf()),
         "-inf" => Some(neg_inf()),
         _ => {
@@ -239,8 +239,8 @@ fn custom_string_to_float(s: &str) -> Option<Float> {
     }
 }
 
-fn string_to_bool(s: &str) -> bool {
-    match s {
+fn string_to_bool(s: String) -> bool {
+    match s.as_str() {
         "0" => false,
         _ => true
     }
@@ -251,13 +251,13 @@ impl<'de> Deserialize<'de> for Domain {
         where
             D: Deserializer<'de> 
     {
-        let v: Vec<&str> = Vec::deserialize(deserializer)?;
+        let v: Vec<String> = Vec::deserialize(deserializer)?;
         if v.len() == 4 {
             // For example, [a, b) is represented by [a, b, 0, 1].
-            let v0_f_o = custom_string_to_float(v[0]);
-            let v1_f_o = custom_string_to_float(v[1]);
-            let lo_open = string_to_bool(v[2]);
-            let hi_open = string_to_bool(v[3]);
+            let v0_f_o = custom_string_to_float(v[0].clone());
+            let v1_f_o = custom_string_to_float(v[1].clone());
+            let lo_open = string_to_bool(v[2].clone());
+            let hi_open = string_to_bool(v[3].clone());
             match (v0_f_o, v1_f_o) {
                 (Some(v0_f), Some(v1_f)) => {
                     let lo = Float::with_val(F64_PREC, v0_f);
