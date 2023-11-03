@@ -1,3 +1,6 @@
+#[allow(dead_code)]
+mod domain {
+
 use core::cmp::Ordering;
 use serde::{Deserialize, Serialize, Deserializer, Serializer, ser::SerializeSeq};
 use intervals_good::*;
@@ -14,7 +17,6 @@ pub fn neg_zero() -> Float { Float::with_val(F64_PREC, -0.0) }
 
 pub fn one() -> Float { Float::with_val(F64_PREC, 1.0) }
 
-#[allow(unused)]
 pub fn neg_one() -> Float { Float::with_val(F64_PREC, -1.0) }
 
 pub fn inf() -> Float { Float::with_val(F64_PREC, f64::INFINITY) }
@@ -743,4 +745,6 @@ pub fn pow(d_a: &Domain, d_b: &Domain) -> Domain {
 
 pub fn option_pow(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, pow)
+}
+
 }
