@@ -1,4 +1,5 @@
 import Lean
+import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
 open Lean
 
@@ -28,33 +29,43 @@ instance : MonadExceptOf String MetaM := {
 def surroundQuotes (s : String) : String :=
   "\"" ++ s ++ "\""
 
-structure EggMinimization where 
-  objFun : String 
-  constrs : List (List String) -- Tuples are lists of two elements.
-
-def EggMinimization.toJson (e : EggMinimization) : String := 
-  "{" ++ 
+/-- TODO
+NOTE: Tuples are lists of two elements. -/
+def EggMinimization.toJson (e : EggMinimization) : String :=
+  "{" ++
   surroundQuotes "obj_fun" ++ " : " ++ surroundQuotes e.objFun ++ ", " ++
-  surroundQuotes "constrs" ++ " : " ++ 
+  surroundQuotes "constrs" ++ " : " ++
     "[" ++
-      (", ".intercalate <| e.constrs.map (fun d => 
-        "[" ++ ",".intercalate (d.map surroundQuotes) ++ "]")) ++
+      (", ".intercalate <| e.constrs.map (fun constr =>
+        "["  ++ (surroundQuotes constr.1) ++          -- Constraint name.
+        ", " ++ (surroundQuotes constr.2) ++ "]")) ++ -- Constraint expression.
     "]" ++
   "}"
 
+def EggDomain.toJson (e : EggDomain) : String :=
+  "[" ++
+  surroundQuotes e.hi ++ ", " ++
+  surroundQuotes e.lo ++ ", " ++
+  surroundQuotes e.hi_open ++ ", " ++
+  surroundQuotes e.lo_open ++
+  "]"
+
 structure EggRequest where
-  domains : List (List String) -- Tuples are lists of two elements.
+  domains : List (String × EggDomain) -- Tuples are lists of two elements.
   target : EggMinimization
 
-def EggRequest.toJson (e : EggRequest) : String := 
-  "{" ++ 
-  surroundQuotes "request" ++ " : " ++ surroundQuotes "PerformRewrite" ++ ", " ++ 
-  surroundQuotes "domains" ++ " : " ++ 
+/-- TODO
+NOTE: Tuples are lists of two elements. -/
+def EggRequest.toJson (e : EggRequest) : String :=
+  "{" ++
+  surroundQuotes "request" ++ " : " ++ surroundQuotes "PerformRewrite" ++ ", " ++
+  surroundQuotes "domains" ++ " : " ++
     "[" ++
-      (", ".intercalate <| e.domains.map (fun d => 
-        "[" ++ ",".intercalate (d.map surroundQuotes) ++ "]")) ++
+      (", ".intercalate <| e.domains.map (fun domain =>
+        "[" ++ (surroundQuotes domain.1) ++                  -- Variable name.
+        ", " ++ (surroundQuotes domain.2.toJson) ++ "]")) ++ -- Encoded interval.
     "]" ++ ", " ++
-  surroundQuotes "target" ++ " : " ++ (e.target.toJson) ++ 
+  surroundQuotes "target" ++ " : " ++ (e.target.toJson) ++
   "}"
 
 inductive EggRewriteDirection where
@@ -75,12 +86,13 @@ structure EggRewrite where
   location : String
   expectedTerm : String
 
-def EggRewrite.toString (e : EggRewrite) : String := "{"
-  ++ surroundQuotes "rewrite_name" ++ ":" ++ surroundQuotes e.rewriteName ++ ","
-  ++ surroundQuotes "direction" ++ ":" ++ surroundQuotes (e.direction.toString) ++ ","
-  ++ surroundQuotes "location" ++ ":" ++ surroundQuotes e.location ++ ","
-  ++ surroundQuotes "expected_term" ++ ":" ++ surroundQuotes e.expectedTerm
-  ++ "}"
+def EggRewrite.toString (e : EggRewrite) : String :=
+  "{" ++
+  surroundQuotes "rewrite_name" ++ " : " ++ surroundQuotes e.rewriteName ++ ", " ++
+  surroundQuotes "direction" ++ " : " ++ surroundQuotes (e.direction.toString) ++ ", " ++
+  surroundQuotes "location" ++ " : " ++ surroundQuotes e.location ++ ", " ++
+  surroundQuotes "expected_term" ++ " : " ++ surroundQuotes e.expectedTerm ++
+  "}"
 
 instance : ToString EggRewrite where
   toString := EggRewrite.toString
@@ -115,10 +127,10 @@ def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
   let responseType := (outJson.getObjValD "response").getStr!
 
   if responseType == "Error" then
-    match (outJson.getObjValD "error").getStr? with 
+    match (outJson.getObjValD "error").getStr? with
     | Except.error _ => throwError "Error calling egg."
     | Except.ok errorMessage => throwError "Error calling egg. Error: {errorMessage}"
-    
+
   else
     let steps ← liftExcept <| outJson.getObjVal? "steps"
     let steps ← liftExcept <| Json.getArr? steps

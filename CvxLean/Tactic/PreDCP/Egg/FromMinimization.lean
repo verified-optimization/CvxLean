@@ -1,5 +1,6 @@
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.PreDCP.UncheckedDCP
+import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
 namespace CvxLean
 
@@ -18,7 +19,7 @@ partial def _root_.EggTree.toEggString : Tree String String → String
 def _root_.EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
   Tree String String :=
   let objFun := ocTree.objFun.2
-  let constrs := ocTree.constr.map 
+  let constrs := ocTree.constr.map
     fun (h, c) => Tree.node "constr" #[Tree.leaf h, c]
   let objFunNode := Tree.node "objFun" #[objFun]
   let constrNode := Tree.node "constrs" constrs
@@ -32,7 +33,7 @@ partial def _root_.EggTree.surroundVars (t : Tree String String) (vars : List St
 
 /-- Mapping between atom names that come from the unchecked tree construction
 and their egg counterparts. `prob`, `objFun`, `constr` and `constrs` are special
-cases. The rest of names come from the atom library. It also returns the arity 
+cases. The rest of names come from the atom library. It also returns the arity
 of the operation and some extra arguments. -/
 def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
   HashMap.ofList [
@@ -59,7 +60,7 @@ def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("exp",         ("exp", 1, #[]))
   ]
 
-/-- Traverse the tree and use `EggTree.opMap` to align the names of the 
+/-- Traverse the tree and use `EggTree.opMap` to align the names of the
 constructors. -/
 partial def _root_.EggTree.adjustOps (t : Tree String String) :
   MetaM (Tree String String) := do
@@ -76,47 +77,94 @@ partial def _root_.EggTree.adjustOps (t : Tree String String) :
   | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
-/-- Given an expression representing a minimization problem, turn it into a 
+def _root_.Option.map2 {α β γ} (f : α → β → γ) : Option α → Option β → Option γ
+  | some a, some b => some <| f a b
+  | _, _ => none
+
+/-- Extract the numerical value from the egg tree, if any. This is used to
+construct the domain information needed in the e-class analyses.
+NOTE(RFM): This is a source of inaccuracy as some operations are approximate,
+however, it does not compromise the soundness of the procedure. If the domains
+sent to egg are incorrect, which may lead to an incorrect sequence of steps to,
+transform the problem, Lean will reject the proof. -/
+partial def _root_.EggTree.getNumericalValue? : EggTree → Option Float
+  | Tree.leaf s =>
+      Option.map Float.ofInt s.toInt?
+  | Tree.node "neg" #[(t : EggTree)] =>
+      Option.map Float.neg t.getNumericalValue?
+  | Tree.node "sqrt" #[(t : EggTree)] =>
+      Option.map Float.sqrt t.getNumericalValue?
+  | Tree.node "log" #[(t : EggTree)] =>
+      Option.map Float.log t.getNumericalValue?
+  | Tree.node "exp" #[(t : EggTree)] =>
+      Option.map Float.exp t.getNumericalValue?
+  | Tree.node "add" #[(t1 : EggTree), (t2 : EggTree)] =>
+      Option.map2 Float.add t1.getNumericalValue? t2.getNumericalValue?
+  | Tree.node "sub" #[(t1 : EggTree), (t2 : EggTree)] =>
+      Option.map2 Float.sub t1.getNumericalValue? t2.getNumericalValue?
+  | Tree.node "mul" #[(t1 : EggTree), (t2 : EggTree)] =>
+      Option.map2 Float.mul t1.getNumericalValue? t2.getNumericalValue?
+  | Tree.node "div" #[(t1 : EggTree), (t2 : EggTree)] =>
+      Option.map2 Float.div t1.getNumericalValue? t2.getNumericalValue?
+  | Tree.node "pow" #[(t1 : EggTree), (t2 : EggTree)] =>
+      Option.map2 Float.pow t1.getNumericalValue? t2.getNumericalValue?
+  | _ => none
+
+/-- -/
+def _root_.EggTree.getVariableName? (vars : List String) : EggTree → Option String
+  | Tree.leaf s => if s ∈ vars then some s else none
+  | _ => none
+
+/-- Given an expression representing a minimization problem, turn it into a
 tree of strings, also extract all the domain information for single varibales,
 in particular positivity and nonnegativity constraints. -/
 def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
-  MetaM (OC (String × Tree String String) × Array (String × String × String)) := do
+  MetaM (OC (String × EggTree) × Array (String × String × EggDomain)) := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
-  -- NOTE: Detect domain constraints. This only works for very simple variable 
-  -- constraints. A better approach would be to detect these constraints when
-  -- building the unchecked DCP tree.
-  let nonnegVars := ocTree.constr.filterMap <| fun (h, c) =>
+  -- Detect domain constraints. We capture the following cases:
+  -- * x ≤ f and f ≤ x,
+  -- * x < f and f < x,
+  -- * x = f and f = x,
+  -- where "x" is a variable name and "f" is a numerical value.
+  let domainConstrs := ocTree.constr.filterMap <| fun (h, c) =>
     match c with
-    | Tree.node "le" #[Tree.leaf s, Tree.leaf v] => 
-        if let some i := s.toInt? then
-          if i = 0 && v ∈ vars then some (h, v) else none 
-        else none
+    | Tree.node "le" #[(tl : EggTree), (tr : EggTree)] =>
+        match (tl.getVariableName? vars, tr.getNumericalValue?) with
+        | (some v, some f) =>
+            -- v ∈ [-inf, f]
+            some (h, v, ⟨"-inf", f.toString, "0", "0"⟩)
+        | _ =>
+          match (tl.getNumericalValue?, tr.getVariableName? vars) with
+          | (some f, some v) =>
+              -- v ∈ [f, inf]
+              some (h, v, ⟨f.toString, "inf", "0", "0"⟩)
+          | _ => none
+    | Tree.node "lt" #[(tl : EggTree), (tr : EggTree)] =>
+        match (tl.getVariableName? vars, tr.getNumericalValue?) with
+        | (some v, some f) =>
+            -- v ∈ [-inf, f)
+            some (h, v, ⟨"-inf", f.toString, "0", "1"⟩)
+        | _ =>
+          match (tl.getNumericalValue?, tr.getVariableName? vars) with
+          | (some f, some v) =>
+              -- v ∈ (f, inf]
+              some (h, v, ⟨f.toString, "inf", "1", "0"⟩)
+          | _ => none
+    | Tree.node "eq" #[(tl : EggTree), (tr : EggTree)] =>
+        match (tl.getVariableName? vars, tr.getNumericalValue?) with
+        | (some v, some f) =>
+            -- v ∈ [f, f]
+            some (h, v, ⟨f.toString, f.toString, "1", "1"⟩)
+        | _ =>
+          match (tl.getNumericalValue?, tr.getVariableName? vars) with
+          | (some f, some v) =>
+              -- v ∈ [f, f]
+              some (h, v, ⟨f.toString, f.toString, "1", "1"⟩)
+          | _ => none
     | _ => none
-  let posVars := ocTree.constr.filterMap <| fun (h, c) =>
-    match c with
-    | Tree.node "lt" #[Tree.leaf s, Tree.leaf v] => 
-        if let some i := s.toInt? then
-          if i ≥ 0 && v ∈ vars then some (h, v) else none 
-        else none
-    | Tree.node "le" #[Tree.leaf s, Tree.leaf v] => 
-        if let some i := s.toInt? then
-          if i > 0 && v ∈ vars then some (h, v) else none 
-        else none
-    -- Special case to handle common constraints of the form n/d <= x.
-    | Tree.node "le" #[Tree.node "div" #[Tree.leaf n, Tree.leaf d], Tree.leaf v] => 
-        if let some ni := n.toInt? then
-          if let some di := d.toInt? then 
-            if ni ≥ 0 && di ≥ 0 && v ∈ vars then some (h, v) else none 
-          else none
-        else none
-    | _ => none
-
-  let domainConstrs := 
-    (nonnegVars.map (fun (h, v) => (h, v, "NonNeg"))) ++ 
-    (posVars.map (fun (h, v) => (h, v, "Pos")))
 
   -- Surround variables and adjust operations in the whole tree.
-  let ocTree : OC (String × Tree String String) := { 
+  let ocTree : OC (String × Tree String String) := {
     objFun := let (ho, o) := ocTree.objFun; (ho, EggTree.surroundVars o vars)
     constr := ocTree.constr.map (fun (h, c) => (h, EggTree.surroundVars c vars)) }
   let ocTree : OC (String × Tree String String) := {
