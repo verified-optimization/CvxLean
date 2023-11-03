@@ -52,7 +52,9 @@ impl Analysis<Optimization> for Meta {
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
-                if !d_to.eq(&d_from) { to.domain = None; }
+                if !d_to.eq(&d_from) { 
+                    to.domain = Some(d_to.intersection(&d_from)); 
+                }
             }
             _ => ()
         }
