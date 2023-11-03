@@ -1,6 +1,7 @@
 use std::io;
 use serde::{Deserialize, Serialize};
 
+#[allow(dead_code)]
 mod domain;
 use domain::Domain as Domain;
 

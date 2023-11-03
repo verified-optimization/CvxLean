@@ -1,6 +1,3 @@
-#[allow(dead_code)]
-mod domain {
-
 use core::cmp::Ordering;
 use serde::{Deserialize, Serialize, Deserializer, Serializer, ser::SerializeSeq};
 use intervals_good::*;
@@ -31,7 +28,7 @@ const NO_ERROR: ErrorInterval = ErrorInterval { lo: false, hi: false };
 // Extension of intervals-good intervals keeping track of opennes at the 
 // endpoints. Unbounded endpoints are closed.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Domain{
+pub struct Domain {
     interval: Interval,
     lo_open: bool,
     hi_open: bool,
@@ -745,6 +742,4 @@ pub fn pow(d_a: &Domain, d_b: &Domain) -> Domain {
 
 pub fn option_pow(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
     execute_binary(d_o_a, d_o_b, pow)
-}
-
 }
