@@ -192,4 +192,14 @@ fn test_div_self() {
         ]);
 }
 
+#[test]
+fn test_div_le_iff_rev() {
+    assert_steps_with_domain(
+        vec![("x", domain::pos_dom())], 
+        "0", 
+        vec![
+            "(le (mul (var x) (var y)) (var x))"
+        ]);
+}
+
 }
