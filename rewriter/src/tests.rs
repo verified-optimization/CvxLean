@@ -174,6 +174,34 @@ fn test_exp_add() {
 }
 
 #[test]
+fn test_exp_neg_eq_one_div_obj() {
+    assert_steps_with_domain(
+        vec![("x", Domain::make_ci(domain::one()))],
+        "(mul (var x) (exp (neg (log (var x)))))",
+        vec![
+        ]);
+}
+
+#[test]
+fn test_exp_neg_eq_one_div_constr() {
+    assert_steps_with_domain(
+        vec![("x", Domain::make_ci(domain::one()))],
+        "(le (mul (var x) (exp (neg (log (var x))))) (var x))",
+        vec![
+        ]);
+}
+
+#[test]
+fn test_log_mul_rev_constr() {
+    assert_steps_with_domain(
+        vec![("x", domain::pos_dom())],
+        "0",
+        vec![
+            "(le (exp (add (log (var x)) (log (add (var x) 1)))) 1)"
+        ]);
+}
+
+#[test]
 fn test_exp_neg_eq_one_div_rev() {
     assert_steps(
         "(div 1 (exp (var x)))",
