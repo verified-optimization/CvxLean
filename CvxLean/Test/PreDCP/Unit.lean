@@ -1,6 +1,7 @@
 import CvxLean.Command.Solve
 import CvxLean.Command.Equivalence
 import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Tactic.DCP.Dcp
 import CvxLean.Test.Util.TimeCmd
 
 namespace Unit
@@ -697,17 +698,49 @@ time_cmd equivalence addDivObjRed/addDivObjAuto : addDivObj := by
 
 #print addDivObjAuto
 
+end
+
+end Unit
+
+-- NOTE(RFM): This is the only way to extend the positivity tactic.
+
+lemma Real.exp_sub_one_pos {x : ℝ} : 0 < x → 0 < Real.exp x - 1 :=
+  fun h => by simp [h]
+
+namespace Mathlib.Meta.Positivity
+open Lean.Meta Qq
+
+@[positivity ((Real.exp (_ : ℝ)) - 1)]
+def evalExpSubOne : PositivityExt where eval {_ _α} zα pα e := do
+  let (.app (.app _sub (.app _exp (x : Q(ℝ)))) _one) ←
+    withReducible (whnf e) | throwError "not (Real.exp x - 1)"
+  match ← core zα pα x with
+  | .positive pa =>
+      let pa' ← mkAppM ``Real.exp_sub_one_pos #[pa]
+      pure (.positive pa')
+  | _ =>
+      pure .none
+
+end Mathlib.Meta.Positivity
+
+namespace Unit
+
+noncomputable section
+
+open CvxLean Minimization Real
+
 -- add_div (constr)
 def addDivConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
     subject to
       hx : 0 ≤ x
-      hy : 0 < y
+      hy : 0.0001 ≤ y
       h : (exp x + 1) / (exp y) ≤ 1
 
-time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
+time_cmd reduction addDivConstrRed/addDivConstrAuto : addDivConstr := by
   convexify
+  dcp
 
 #print addDivConstrAuto
 
