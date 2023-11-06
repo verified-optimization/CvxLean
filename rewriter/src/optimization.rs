@@ -41,7 +41,6 @@ pub struct Meta {
 #[derive(Debug, Clone)]
 pub struct Data {
     pub domain: Option<Domain>,
-    pub constant: Option<(Constant, PatternAst<Optimization>)>,
 }
 
 impl Analysis<Optimization> for Meta {    
@@ -75,116 +74,40 @@ impl Analysis<Optimization> for Meta {
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
-        let get_constant = 
-            |i: &Id| egraph[*i].data.constant.clone();
         let get_domain = 
             |i: &Id| egraph[*i].data.domain.clone();
         let domains_map = 
             egraph.analysis.domains.clone();
 
-        let mut constant = None;
         let mut domain = None;
 
         match enode {
             Optimization::Neg(a) => {
-                match get_constant(a) {
-                    Some((c, _)) => { 
-                        constant = Some((
-                            -c, 
-                            format!("(neg {})", c).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_neg(get_domain(a));
             }
             Optimization::Sqrt(a) => {
-                match get_constant(a) {
-                    Some((c, _)) => { 
-                        constant = Some((
-                            NotNan::new(c.sqrt()).unwrap(), 
-                            format!("(sqrt {})", c).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_sqrt(get_domain(a));
             }
             Optimization::Add([a, b]) => {
-                match (get_constant(a), get_constant(b)) {
-                    (Some((c1, _)), Some((c2, _))) => { 
-                        constant = Some((
-                            c1 + c2, 
-                            format!("(add {} {})", c1, c2).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
-
                 domain = domain::option_add(
                     get_domain(a), get_domain(b));
             }
             Optimization::Sub([a, b]) => {
-                match (get_constant(a), get_constant(b)) {
-                    (Some((c1, _)), Some((c2, _))) => { 
-                        constant = Some((
-                            c1 - c2, 
-                            format!("(sub {} {})", c1, c2).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_sub(get_domain(a), get_domain(b));
             }
             Optimization::Mul([a, b]) => {
-                match (get_constant(a), get_constant(b)) {
-                    (Some((c1, _)), Some((c2, _))) => { 
-                        constant = Some((
-                            c1 * c2, 
-                            format!("(mul {} {})", c1, c2).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_mul(get_domain(a), get_domain(b));
             }
             Optimization::Div([a, b]) => {
-                match (get_constant(a), get_constant(b)) {
-                    (Some((c1, _)), Some((c2, _))) => { 
-                        constant = Some((
-                            c1 / c2, 
-                            format!("(div {} {})", c1, c2).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_div(get_domain(a), get_domain(b));
             }
             Optimization::Pow([a, b]) => {
-                match (get_constant(a), get_constant(b)) {
-                    (Some((c1, _)), Some((c2, _))) => { 
-                        constant = Some((
-                            NotNan::new(c1.powf(c2.into())).unwrap(), 
-                            format!("(pow {} {})", c1, c2).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_pow(get_domain(a), get_domain(b))
             }
             Optimization::Log(a) => {
-                match get_constant(a) {
-                    Some((c, _)) => { 
-                        constant = Some((
-                            NotNan::new(c.ln()).unwrap(), 
-                            format!("(log {})", c).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_log(get_domain(a));
             }
             Optimization::Exp(a) => {
-                match get_constant(a) {
-                    Some((c, _)) => { 
-                        constant = Some((
-                            NotNan::new(c.exp()).unwrap(), 
-                            format!("(exp {})", c).parse().unwrap())); 
-                    }
-                    _ => {}
-                }
                 domain = domain::option_exp(get_domain(a));
             }
             Optimization::Var(a) => {
@@ -214,14 +137,12 @@ impl Analysis<Optimization> for Meta {
             } 
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
-                constant = Some((*f, format!("{}", f).parse().unwrap()));
                 domain = Some(Domain::make_singleton((*f).into_inner()));
             }
             _ => {}
         }
 
-        // println!("{}: {:?}", enode, domain);
-        Data { constant, domain }
+        Data { domain }
     }
 }
 
@@ -249,7 +170,7 @@ pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     let var = var.parse().unwrap();
     move |egraph, _, subst| {
         if let Some(d) = &egraph[subst[var]].data.domain {
-            return domain::is_nonzero(d);
+            return domain::does_not_contain_zero(d);
         }
         return false;
     }

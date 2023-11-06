@@ -150,7 +150,7 @@ impl Domain {
 
     /* Union and intersection. */
 
-    pub fn union(self, other: &Domain) -> Domain {
+    pub fn union(&self, other: &Domain) -> Domain {
         let self_lo = self.lo_float();
         let self_hi = self.hi_float();
         let other_lo = other.lo_float();
@@ -177,7 +177,7 @@ impl Domain {
         Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
     }
 
-    pub fn intersection(self, other: &Domain) -> Domain {
+    pub fn intersection(&self, other: &Domain) -> Domain {
         let self_lo = self.lo_float();
         let self_hi = self.hi_float();
         let other_lo = other.lo_float();
@@ -202,6 +202,30 @@ impl Domain {
             };
 
         Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
+    }
+
+
+    /* Get constant. */
+
+    pub fn get_constant(&self) -> Option<f64> {
+        // If is singleton.
+        let lo_f = self.lo_float();
+        let hi_f = self.hi_float();
+        if lo_f.is_finite() && hi_f.is_finite() {
+            let lo_f64 = lo_f.to_f64();
+            let hi_f64 = hi_f.to_f64();
+            if lo_f64 == hi_f64 {
+                Some(lo_f64)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn option_get_constant(d_o: Option<Domain>) -> Option<f64> {
+        d_o.as_ref().map_or(None, Domain::get_constant)
     }
 }
 
@@ -304,7 +328,6 @@ pub fn zero_dom() -> Domain {
     Domain::make(zero_ival(), false, false) 
 }
 
-#[allow(unused)]
 pub fn is_zero(d: &Domain) -> bool {
     d.subseteq(&zero_dom())
 }
@@ -331,12 +354,10 @@ pub fn option_is_nonneg(d: Option<&Domain>) -> bool {
 
 fn nonpos_ival() -> Interval { Interval::make(neg_inf(), neg_zero(), NO_ERROR) }
 
-#[allow(unused)]
 pub fn nonpos_dom() -> Domain { 
     Domain::make(nonpos_ival(), false, false)
 }
 
-#[allow(unused)]
 pub fn is_nonpos(d: &Domain) -> bool {
     d.subseteq(&nonpos_dom())
 }
@@ -362,7 +383,7 @@ pub fn is_neg(d: &Domain) -> bool {
 }
 
 // This really means that it does not contain zero.
-pub fn is_nonzero(d: &Domain) -> bool {
+pub fn does_not_contain_zero(d: &Domain) -> bool {
     !zero_dom().subseteq(d)
 }
 
