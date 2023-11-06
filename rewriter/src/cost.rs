@@ -157,16 +157,26 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 let db_o = get_domain(b);
                 curvature = match (get_is_constant(a), get_is_constant(b)) {
                     (true, true) => {
-                        if domain::option_is_zero(db_o.as_ref()) {
-                            Curvature::Unknown
-                        } else {
-                            Curvature::Constant
+                        match db_o {
+                            Some(db) => {
+                                if domain::does_not_contain_zero(&db) {
+                                    Curvature::Constant
+                                } else {
+                                    Curvature::Unknown
+                                }
+                                
+                            }
+                            None => { Curvature::Unknown }
                         }
                     }
                     (false, true) => {
                         match db_o {
                             Some(db) => {
-                                curvature::of_mul_by_const(get_curvature!(a), db)
+                                if domain::does_not_contain_zero(&db) {
+                                    curvature::of_mul_by_const(get_curvature!(a), db)
+                                } else {
+                                    Curvature::Unknown
+                                }
                             }
                             None => { Curvature::Unknown }
                         }
