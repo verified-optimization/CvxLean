@@ -52,16 +52,14 @@ impl Analysis<Optimization> for Meta {
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
-                if !d_to.eq(&d_from) { 
-                    // println!("To: {:?}", d_to);
-                    // println!("From: {:?}", d_from);
+                if !d_to.eq(&d_from) {
                     let inter = d_to.intersection(&d_from);
-                    // println!("Inter: {:?}", inter);
-                    // if Domain::is_empty(&inter) {
-                    //     to.domain = None;
-                    // } else {
+                    if Domain::is_empty(&inter) {
+                        // Should never get here.
+                        to.domain = None
+                    } else {
                         to.domain = Some(inter); 
-                    // }
+                    }
                 }
             }
             _ => ()
@@ -146,7 +144,7 @@ impl Analysis<Optimization> for Meta {
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(d.clone()); }
-                            _ => { } //{ domain = Some(domain::free_dom()); }
+                            _ => { domain = Some(domain::free_dom()); }
                         }
                     }
                     _ => {}
@@ -158,7 +156,7 @@ impl Analysis<Optimization> for Meta {
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(d.clone()); }
-                            _ => { } //{ domain = Some(domain::free_dom()); }
+                            _ => { domain = Some(domain::free_dom()); }
                         }
                     }
                     _ => {}

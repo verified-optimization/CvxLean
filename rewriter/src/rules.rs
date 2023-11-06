@@ -130,10 +130,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
         if is_ge_zero("?a")),
 
     rw!("div_pow"; "(pow (div ?a ?b) ?n)" => "(div (pow ?a ?n) (pow ?b ?n))"
-        if is_ge_zero("?a") if is_ge_zero("?b")),
+        if is_ge_zero("?a") if is_gt_zero("?b")),
     
     rw!("div_pow-rev"; "(div (pow ?a ?n) (pow ?b ?n))" => "(pow (div ?a ?b) ?n)"
-        if is_ge_zero("?a") if is_ge_zero("?b")),
+        if is_ge_zero("?a") if is_gt_zero("?b")),
 
     rw!("pow_sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow ?a ?c))" 
         if is_gt_zero("?a")),
