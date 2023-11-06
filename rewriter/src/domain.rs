@@ -91,7 +91,7 @@ impl Domain {
     }
 
     pub fn make_oi(lo: Float) -> Self {
-        Domain::make_from_endpoints(lo, inf(), false, true)
+        Domain::make_from_endpoints(lo, inf(), true, false)
     }
 
     pub fn make_ic(hi: Float) -> Self {
@@ -476,7 +476,10 @@ pub fn option_log(d_o: Option<Domain>) -> Option<Domain> {
 }
 
 pub fn exp(d: &Domain) -> Domain {
-    Domain::make(d.interval.exp(), d.lo_open, d.hi_open)
+    // Don't include zero if lo is -inf.
+    let lo_float = d.lo_float();
+    let lo_is_neg_inf = lo_float.is_infinite() && lo_float.is_sign_negative();
+    Domain::make(d.interval.exp(), d.lo_open || lo_is_neg_inf, d.hi_open)
 }
 
 // Special case, exp is always positive even if we don't know the domain. More
@@ -740,44 +743,48 @@ fn perform_pow(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
     Interval::make(tmp_lo, tmp_hi, NO_ERROR)
 }
 
-// The opennes computation is copied from multiplication replacing 
-// `perform_mult` with `perform_pow`.
+// TODO: Implementation was wrong, more cases needed.
+// See https://github.com/oflatt/intervals-good/blob/main/src/lib.rs#L721
 pub fn pow(d_a: &Domain, d_b: &Domain) -> Domain {
-    let d_a_pos = is_pos(d_a);
+    // let d_a_pos = is_pos(d_a);
+    // let d_a_ge_one = d_a.subseteq(&Domain::make_ci(one()));
 
-    let d_b_pos = is_pos(d_b);
-    let d_b_neg = is_neg(d_b);
-    let d_b_mix = !d_b_pos && !d_b_neg;
+    // let d_b_pos = is_pos(d_b);
+    // let d_b_neg = is_neg(d_b);
+    // let d_b_mix = !d_b_pos && !d_b_neg;
 
-    // This matches the rules for multiplication (self=d_a, other=d_b).
+    // let (interval, lo_open, hi_open) = 
+        // if d_a_pos && d_b_pos {
+        //     (
+        //         perform_pow(d_a.lo_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
+        //         choose_opennes(d_a.lo_open, d_b.lo_open), 
+        //         choose_opennes(d_a.hi_open, d_b.hi_open)
+        //     )
+        // } else if d_a_pos && d_b_neg {
+        //     (
+        //         perform_pow(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.hi_float()),
+        //         // Interval is left-open if it comes from ^-inf.
+        //         choose_opennes(d_a.hi_open, d_b.lo_open) || (d_b.lo_float().is_infinite() && !d_a_ge_one), 
+        //         choose_opennes(d_a.lo_open, d_b.hi_open)
+        //     )
+        // } else if d_a_pos && d_b_mix {
+        //     (
+        //         perform_pow(d_a.hi_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
+        //         // Interval is left-open if it comes from ^-inf.
+        //         choose_opennes(d_a.hi_open, d_b.lo_open) || (d_b.lo_float().is_infinite() && !d_a_ge_one), 
+        //         choose_opennes(d_a.hi_open, d_b.hi_open)
+        //     )
+        // } else {
+        //     // Negative and mixed cases are problematic, so we overapproximate
+        //     // them with the free domain.
+        //     // TODO: support nonneg.
+        //    (free_ival(), false, false)
+        // };
+    
+    // NOTE: For now, conservative.
     let (interval, lo_open, hi_open) = 
-        if d_a_pos && d_b_pos {
-            (
-                perform_pow(d_a.lo_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
-                choose_opennes(d_a.lo_open, d_b.lo_open), 
-                choose_opennes(d_a.hi_open, d_b.hi_open)
-            )
-        } else if d_a_pos && d_b_neg {
-            (
-                perform_pow(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.hi_float()),
-                // Interval is left-open if it comes from ^-inf.
-                choose_opennes(d_a.hi_open, d_b.lo_open) || d_b.lo_float().is_infinite(), 
-                choose_opennes(d_a.lo_open, d_b.hi_open)
-            )
-        } else if d_a_pos && d_b_mix {
-            (
-                perform_pow(d_a.hi_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
-                // Interval is left-open if it comes from ^-inf.
-                choose_opennes(d_a.hi_open, d_b.lo_open) || d_b.lo_float().is_infinite(), 
-                choose_opennes(d_a.hi_open, d_b.hi_open)
-            )
-        } else {
-            // Negative and mixed cases are problematic, so we overapproximate
-            // them with the free domain.
-            // TODO: support nonneg.
-            (free_ival(), false, false)
-        };
-
+        (Interval::pow(&d_a.interval, &d_b.interval), false, false);
+    
     Domain::make(interval, lo_open, hi_open)
 }
 
