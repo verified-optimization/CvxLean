@@ -209,7 +209,16 @@ impl Domain {
     pub fn is_empty(&self) -> bool {
         let lo = self.lo_float();
         let hi = self.hi_float();
-        lo > hi || (lo == hi && (self.lo_open || self.hi_open))
+        if lo.is_nan() || hi.is_nan() {
+            true 
+        } else {
+            match (lo.is_infinite(), hi.is_infinite()) {
+                (true, true) => lo.is_sign_positive() || !hi.is_sign_positive(),
+                (true, false) => lo.is_sign_positive(),
+                (false, true) => !hi.is_sign_positive(),
+                _ => lo > hi || (lo == hi && (self.lo_open || self.hi_open))
+            }  
+        } 
     }
 
     /* Get constant. */
