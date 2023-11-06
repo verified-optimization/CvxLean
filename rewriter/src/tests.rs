@@ -230,4 +230,13 @@ fn test_div_le_iff_rev() {
         ]);
 }
 
+#[test]
+fn test_log_div_rev_obj() {
+    assert_steps_with_domain(
+        vec![("x", domain::pos_dom())], 
+        "(neg (sub (log (pow (var x) 2)) (log (var x))))", 
+        vec![
+        ]);
+}
+
 }

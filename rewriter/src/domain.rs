@@ -781,9 +781,14 @@ pub fn pow(d_a: &Domain, d_b: &Domain) -> Domain {
         //    (free_ival(), false, false)
         // };
     
-    // NOTE: For now, conservative.
+    // NOTE: For now, we stay conservative. 
+    // We only consider the opennes for the case Pos ^ Pos.
+    let d_a_pos = is_pos(d_a);
+    let d_b_pos = is_pos(d_b);
     let (interval, lo_open, hi_open) = 
-        (Interval::pow(&d_a.interval, &d_b.interval), false, false);
+        (Interval::pow(&d_a.interval, &d_b.interval), 
+        if d_a_pos && d_b_pos { d_a.lo_open } else { false }, 
+        false);
     
     Domain::make(interval, lo_open, hi_open)
 }
