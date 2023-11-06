@@ -34,6 +34,9 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
         
         let get_domain = 
             |i: &Id| self.egraph[*i].data.domain.clone();
+        
+        let get_is_constant = 
+            |i: &Id| self.egraph[*i].data.is_constant.clone();
 
         let mut curvature = Curvature::Unknown;
         let mut num_vars = 0;
