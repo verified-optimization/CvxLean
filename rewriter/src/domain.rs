@@ -204,6 +204,13 @@ impl Domain {
         Domain::make_from_endpoints(lo.clone(), hi.clone(), lo_open, hi_open)
     }
 
+    /* Is empty. */
+
+    pub fn is_empty(&self) -> bool {
+        let lo = self.lo_float();
+        let hi = self.hi_float();
+        lo > hi || (lo == hi && (self.lo_open || self.hi_open))
+    }
 
     /* Get constant. */
 
@@ -211,7 +218,7 @@ impl Domain {
         // If is singleton.
         let lo_f = self.lo_float();
         let hi_f = self.hi_float();
-        if lo_f.is_finite() && hi_f.is_finite() {
+        if lo_f.is_finite() && hi_f.is_finite() && !self.lo_open && !self.hi_open {
             let lo_f64 = lo_f.to_f64();
             let hi_f64 = hi_f.to_f64();
             if lo_f64 == hi_f64 {
@@ -263,7 +270,7 @@ fn custom_string_to_float(s: String) -> Option<Float> {
     }
 }
 
-fn string_to_bool(s: String) -> bool {
+fn custom_string_to_bool(s: String) -> bool {
     match s.as_str() {
         "0" => false,
         _ => true
@@ -280,8 +287,8 @@ impl<'de> Deserialize<'de> for Domain {
             // For example, [a, b) is represented by [a, b, 0, 1].
             let v0_f_o = custom_string_to_float(v[0].clone());
             let v1_f_o = custom_string_to_float(v[1].clone());
-            let lo_open = string_to_bool(v[2].clone());
-            let hi_open = string_to_bool(v[3].clone());
+            let lo_open = custom_string_to_bool(v[2].clone());
+            let hi_open = custom_string_to_bool(v[3].clone());
             match (v0_f_o, v1_f_o) {
                 (Some(v0_f), Some(v1_f)) => {
                     let lo = Float::with_val(F64_PREC, v0_f);
