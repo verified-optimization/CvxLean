@@ -605,4 +605,75 @@ fn one_div_pos() {
     assert!(result.eq(&expected));
 }
 
+
+/* Logarithm tests. */
+
+#[test]
+fn log_pos() {
+    // log((0, +inf]) = [-inf, +inf]
+    let result = domain::log(&domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_nonneg() {
+    // log([0, +inf]) = [-inf, +inf]
+    let result = domain::log(&domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_ge_one() {
+    // log([1, +inf]) = [0, +inf]
+    let result = domain::log(&domain::Domain::make_from_endpoints(
+        domain::one(), 
+        domain::inf(),
+        false,
+        false
+    ));
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_gt_one() {
+    // log((1, +inf]) = (0, +inf]
+    let result = domain::log(&domain::Domain::make_from_endpoints(
+        domain::one(), 
+        domain::inf(),
+        true,
+        false
+    ));
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_le_one() {
+    // log([0, 1]) = [-inf, 0]
+    let result = domain::log(&domain::Domain::make_from_endpoints(
+        domain::zero(), 
+        domain::one(),
+        false,
+        false
+    ));
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_lt_one() {
+    // log([0, 1)) = [-inf, 0)
+    let result = domain::log(&domain::Domain::make_from_endpoints(
+        domain::zero(), 
+        domain::one(),
+        false,
+        true
+    ));
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
 }
