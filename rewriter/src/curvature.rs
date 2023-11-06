@@ -103,7 +103,7 @@ pub fn of_neg(c: Curvature) -> Curvature {
     }
 }
 
-pub fn of_concave_fn(c: Curvature) -> Curvature {
+pub fn of_concave_increasing_fn(c: Curvature) -> Curvature {
     match c {
         Concave  => { return Concave;  }
         Affine   => { return Concave;  }
@@ -112,7 +112,7 @@ pub fn of_concave_fn(c: Curvature) -> Curvature {
     }
 }
 
-pub fn of_convex_fn(c: Curvature) -> Curvature {
+pub fn of_convex_increasing_fn(c: Curvature) -> Curvature {
     match c {
         Convex   => { return Convex;   }
         Affine   => { return Convex;   }
@@ -149,51 +149,70 @@ pub fn of_sub(c1: Curvature, c2: Curvature) -> Curvature {
     return of_add(c1, of_neg(c2));
 }
 
-pub fn of_mul_by_const(c: Curvature, k: f64) -> Curvature {
-    if k < 0.0 {
+// NOTE: we know that it is constant but we only have an interval.
+pub fn of_mul_by_const(c: Curvature, k: Domain) -> Curvature {
+    if domain::is_neg(&k) {
         return of_neg(c);
-    } else if k > 0.0 {
+    } else if domain::is_pos(&k) {
         return c;
-    } else {
+    } else if domain::is_zero(&k) {
         return Constant;
+    } else {
+        return Unknown;
     }
 }
 
-pub fn of_pow_by_const(c: Curvature, k: f64, d_o: Option<Domain>) -> Curvature {
+// NOTE: we know that it is constant but we only have an interval.
+pub fn of_pow_by_const(c: Curvature, k: Domain, d_o: Option<Domain>) -> Curvature {
     match c {
         Constant => { 
             return Constant;
         }
         Affine => {
             // Case x^0.
-            if k == 0.0 {
+            if domain::is_zero(&k) {
                 return Constant;
             // Case x^1.
-            } else if k == 1.0 {
+            } else if k.subseteq(&Domain::make_cc(domain::one(), domain::one())) {
                 return Affine;
             // Case x^p with p < 0.
-            } else if k < 0.0 {
+            } else if domain::is_neg(&k) {
                 if domain::option_is_pos(d_o.as_ref()) {
                     return Convex;
                 } else {
                     return Unknown;
                 }
             // Case x^p with 0 < p < 1.
-            } else if 0.0 < k && k < 1.0 {
+            } else if k.subseteq(&Domain::make_oo(domain::zero(), domain::one())) {
                 if domain::option_is_nonneg(d_o.as_ref()) {
                     return Concave;
                 } else {
                     return Unknown;
                 }
-            // Case x^p with p = 2, 4, 6, ....
-            } else if k == (k as u32) as f64 && (k as u32) % 2 == 0 {
-                return Convex;
-            } else {
-                if domain::option_is_nonneg(d_o.as_ref()) {
-                    return Convex;
-                } else {
-                    return Unknown;
+            // Cases x^p with p > 1
+            } else if k.subseteq(&Domain::make_oi(domain::one())) {
+                let mut is_pow_even = false;
+                match k.get_constant() {
+                    Some(k_f) => {
+                        if k_f == (k_f as u32) as f64 && (k_f as u32).is_power_of_two() {
+                            is_pow_even = true;
+                        } 
+                    }
+                    _ => {}
                 }
+                // Case x^p with p = 2, 4, 8, ...
+                if is_pow_even {
+                    return Convex;
+                // Case x^p with p > 1 and p != 2, 4, 8, ...
+                } else {
+                    if domain::option_is_nonneg(d_o.as_ref()) {
+                        return Convex;
+                    } else {
+                        return Unknown;
+                    }
+                }
+            } else {
+                return Unknown;
             }
         }
         _ => { return Unknown; }

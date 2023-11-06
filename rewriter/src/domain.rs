@@ -348,6 +348,10 @@ pub fn is_zero(d: &Domain) -> bool {
     d.subseteq(&zero_dom())
 }
 
+pub fn option_is_zero(d: Option<&Domain>) -> bool {
+    d.map_or(false, is_zero)
+}
+
 fn free_ival() -> Interval { Interval::make(neg_inf(), inf(), NO_ERROR) }
 
 pub fn free_dom() -> Domain { 
