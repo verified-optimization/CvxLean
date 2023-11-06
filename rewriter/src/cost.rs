@@ -1,5 +1,8 @@
 use egg::{*};
 
+use crate::domain;
+use domain::Domain as Domain;
+
 use crate::curvature;
 use curvature::Curvature as Curvature;
 
@@ -29,8 +32,6 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
             ($i:expr) => { costs(*$i).2 }
         }
         
-        let get_constant = 
-            |i: &Id| self.egraph[*i].data.constant.clone();
         let get_domain = 
             |i: &Id| self.egraph[*i].data.domain.clone();
 
@@ -123,15 +124,17 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Mul([a, b]) => {
-                curvature = match (get_constant(a), get_constant(b)) {
+                let ca_o = Domain::option_get_constant(get_domain(a));
+                let cb_o = Domain::option_get_constant(get_domain(b));
+                curvature = match (ca_o, cb_o) {
                     (Some(_), Some(_)) => { 
                         Curvature::Constant
                     }
-                    (Some((c1, _)), None) => {
-                        curvature::of_mul_by_const(get_curvature!(b), c1.into_inner())
+                    (Some(ca), None) => {
+                        curvature::of_mul_by_const(get_curvature!(b), ca)
                     }
-                    (None, Some((c2, _))) => {
-                        curvature::of_mul_by_const(get_curvature!(a), c2.into_inner())
+                    (None, Some(cb)) => {
+                        curvature::of_mul_by_const(get_curvature!(a), cb)
                     }
                     _ => { Curvature::Unknown }
                 };
@@ -139,12 +142,18 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Div([a, b]) => {
-                curvature = match (get_constant(a), get_constant(b)) {
-                    (Some(_), Some(_)) => { 
-                        Curvature::Constant
+                let ca_o = Domain::option_get_constant(get_domain(a));
+                let cb_o = Domain::option_get_constant(get_domain(b));
+                curvature = match (ca_o, cb_o) {
+                    (Some(_), Some(cb)) => { 
+                        if cb == 0.0 {
+                            Curvature::Unknown
+                        } else {
+                            Curvature::Constant
+                        }
                     }
-                    (None, Some((c2, _))) => {
-                        curvature::of_mul_by_const(get_curvature!(a), c2.into_inner())
+                    (None, Some(cb)) => {
+                        curvature::of_mul_by_const(get_curvature!(a), cb)
                     }
                     _ => { Curvature::Unknown }
                 };
@@ -152,9 +161,10 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Pow([a, b]) => {
-                curvature = match get_constant(b) {
-                    Some((c, _)) => {
-                        curvature::of_pow_by_const(get_curvature!(a), c.into_inner(), get_domain(a))
+                let cb_o = Domain::option_get_constant(get_domain(b));
+                curvature = match cb_o {
+                    Some(cb) => {
+                        curvature::of_pow_by_const(get_curvature!(a), cb, get_domain(a))
                     }
                     _ => { Curvature::Unknown }
                 };
