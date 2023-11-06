@@ -735,14 +735,16 @@ def addDivConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 ≤ x
-      hy : 0.0001 ≤ y
+      hy : 0 < y
       h : (exp x + 1) / (exp y) ≤ 1
 
-time_cmd reduction addDivConstrRed/addDivConstrAuto : addDivConstr := by
-  convexify
-  dcp
+-- TODO(RFM): This almost works if we extend positivity. But we need to fix the
+-- position of error messages first before reviving positivity_ext.
 
-#print addDivConstrAuto
+-- time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
+--   convexify
+
+-- #print addDivConstrAuto
 
 -- add_div-rev (obj)
 def addDivRevObj :=
