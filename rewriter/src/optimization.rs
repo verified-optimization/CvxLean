@@ -47,18 +47,23 @@ impl Analysis<Optimization> for Meta {
     type Data = Data;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
-        let before_domain = to.domain.clone();
+        let d_before_o = to.domain.clone();
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
                 if !d_to.eq(&d_from) { 
-                    to.domain = Some(d_to.intersection(&d_from)); 
+                    let inter = d_to.intersection(&d_from);
+                    if Domain::is_empty(&inter) {
+                        to.domain = None;
+                    } else {
+                        to.domain = Some(inter); 
+                    }
                 }
             }
             _ => ()
         }
         let to_domain_diff = 
-            match (before_domain, to.domain.clone()) {
+            match (d_before_o, to.domain.clone()) {
                 (Some(d_before), Some(d_to)) => !d_before.eq(&d_to),
                 (None, None) => false,
                 _ => true

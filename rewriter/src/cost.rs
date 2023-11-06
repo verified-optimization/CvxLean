@@ -145,7 +145,7 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 let ca_o = Domain::option_get_constant(get_domain(a));
                 let cb_o = Domain::option_get_constant(get_domain(b));
                 curvature = match (ca_o, cb_o) {
-                    (Some(_), Some(cb)) => { 
+                    (Some(_), Some(cb)) => {
                         if cb == 0.0 {
                             Curvature::Unknown
                         } else {
