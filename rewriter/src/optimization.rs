@@ -41,6 +41,7 @@ pub struct Meta {
 #[derive(Debug, Clone)]
 pub struct Data {
     pub domain: Option<Domain>,
+    pub is_constant: bool,
 }
 
 impl Analysis<Optimization> for Meta {    
@@ -52,12 +53,15 @@ impl Analysis<Optimization> for Meta {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
             (Some(d_to), Some(d_from)) => {
                 if !d_to.eq(&d_from) { 
+                    // println!("To: {:?}", d_to);
+                    // println!("From: {:?}", d_from);
                     let inter = d_to.intersection(&d_from);
-                    if Domain::is_empty(&inter) {
-                        to.domain = None;
-                    } else {
+                    // println!("Inter: {:?}", inter);
+                    // if Domain::is_empty(&inter) {
+                    //     to.domain = None;
+                    // } else {
                         to.domain = Some(inter); 
-                    }
+                    // }
                 }
             }
             _ => ()
@@ -74,46 +78,66 @@ impl Analysis<Optimization> for Meta {
                 (None, None) => false,
                 _ => true
             };
+        
+        let is_constant_before = to.is_constant.clone();
+        to.is_constant = to.is_constant || from.is_constant;
+        let to_is_constant_diff = is_constant_before != to.is_constant;
+        let from_is_constant_diff = to.is_constant != from.is_constant;
 
-        DidMerge(to_domain_diff, from_domain_diff)
+        DidMerge(
+            to_domain_diff || to_is_constant_diff, 
+            from_domain_diff || from_is_constant_diff)
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
         let get_domain = 
             |i: &Id| egraph[*i].data.domain.clone();
+        let get_is_constant = 
+            |i: &Id| egraph[*i].data.is_constant.clone();
+
         let domains_map = 
             egraph.analysis.domains.clone();
 
         let mut domain = None;
+        let mut is_constant = false;
 
         match enode {
             Optimization::Neg(a) => {
                 domain = domain::option_neg(get_domain(a));
+                is_constant = get_is_constant(a);
             }
             Optimization::Sqrt(a) => {
                 domain = domain::option_sqrt(get_domain(a));
+                is_constant = get_is_constant(a);
             }
             Optimization::Add([a, b]) => {
                 domain = domain::option_add(
                     get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Sub([a, b]) => {
                 domain = domain::option_sub(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Mul([a, b]) => {
                 domain = domain::option_mul(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Div([a, b]) => {
                 domain = domain::option_div(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Pow([a, b]) => {
-                domain = domain::option_pow(get_domain(a), get_domain(b))
+                domain = domain::option_pow(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Log(a) => {
                 domain = domain::option_log(get_domain(a));
+                is_constant = get_is_constant(a);
             }
             Optimization::Exp(a) => {
                 domain = domain::option_exp(get_domain(a));
+                is_constant = get_is_constant(a);
             }
             Optimization::Var(a) => {
                 // Assume that after var there is always a symbol.
@@ -122,7 +146,7 @@ impl Analysis<Optimization> for Meta {
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(d.clone()); }
-                            _ => ()
+                            _ => { } //{ domain = Some(domain::free_dom()); }
                         }
                     }
                     _ => {}
@@ -134,20 +158,23 @@ impl Analysis<Optimization> for Meta {
                         let s_s = format!("{}", s); 
                         match domains_map.get(&s_s) {
                             Some(d) => { domain = Some(d.clone()); }
-                            _ => ()
+                            _ => { } //{ domain = Some(domain::free_dom()); }
                         }
                     }
                     _ => {}
                 }
+                // NOTE: parameters are treated as constants.
+                is_constant = true;
             } 
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
                 domain = Some(Domain::make_singleton((*f).into_inner()));
+                is_constant = true;
             }
             _ => {}
         }
 
-        Data { domain }
+        Data { domain, is_constant }
     }
 }
 
