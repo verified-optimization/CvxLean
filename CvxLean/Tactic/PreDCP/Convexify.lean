@@ -234,7 +234,7 @@ syntax (name := convexify) "convexify" : tactic
 
 @[tactic convexify]
 def evalConvexify : Tactic := fun stx => match stx with
-  | `(tactic| convexify) => withMainContext do
+  | `(tactic| convexify) => withMainContext <| withRef stx do
     -- Generate expression from goal. Handle cleaning up numbers, and
     -- equivalence case.
     normNumCleanUp (useSimp := false)
