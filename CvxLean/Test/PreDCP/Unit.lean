@@ -704,7 +704,7 @@ end Unit
 
 -- NOTE(RFM): This is the only way to extend the positivity tactic.
 
-lemma Real.exp_sub_one_pos {x : ℝ} : 0 < x → 0 < Real.exp x - 1 :=
+lemma Real.exp_sub_one_pos_of_pos {x : ℝ} : 0 < x → 0 < Real.exp x - 1 :=
   fun h => by simp [h]
 
 namespace Mathlib.Meta.Positivity
@@ -716,7 +716,26 @@ def evalExpSubOne : PositivityExt where eval {_ _α} zα pα e := do
     withReducible (whnf e) | throwError "not (Real.exp x - 1)"
   match ← core zα pα x with
   | .positive pa =>
-      let pa' ← mkAppM ``Real.exp_sub_one_pos #[pa]
+      let pa' ← mkAppM ``Real.exp_sub_one_pos_of_pos #[pa]
+      pure (.positive pa')
+  | _ =>
+      pure .none
+
+end Mathlib.Meta.Positivity
+
+lemma Real.one_sub_div_exp_pos_of_pos {x : ℝ} : 0 < x → 0 < 1 - 1 / Real.exp x :=
+  fun h => by field_simp; positivity
+
+namespace Mathlib.Meta.Positivity
+open Lean.Meta Qq
+
+@[positivity (1 - (1 / (Real.exp (_ : ℝ))))]
+def evalOneSubDivExp : PositivityExt where eval {_ _α} zα pα e := do
+  let (.app (.app _sub _one) (.app (.app _div _one') (.app _exp (x : Q(ℝ))))) ←
+    withReducible (whnf e) | throwError "not (1 - 1 / Real.exp x)"
+  match ← core zα pα x with
+  | .positive pa =>
+      let pa' ← mkAppM ``Real.one_sub_div_exp_pos_of_pos #[pa]
       pure (.positive pa')
   | _ =>
       pure .none
@@ -738,13 +757,11 @@ def addDivConstr :=
       hy : 0 < y
       h : (exp x + 1) / (exp y) ≤ 1
 
--- TODO(RFM): This almost works if we extend positivity. But we need to fix the
--- position of error messages first before reviving positivity_ext.
+-- NOTE(RFM): This relies on the extension of positivity above.
+time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
+  convexify
 
--- time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
---   convexify
-
--- #print addDivConstrAuto
+#print addDivConstrAuto
 
 -- add_div-rev (obj)
 def addDivRevObj :=
