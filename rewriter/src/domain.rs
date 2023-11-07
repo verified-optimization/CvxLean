@@ -476,10 +476,7 @@ pub fn option_log(d_o: Option<Domain>) -> Option<Domain> {
 }
 
 pub fn exp(d: &Domain) -> Domain {
-    // Don't include zero if lo is -inf.
-    let lo_float = d.lo_float();
-    let lo_is_neg_inf = lo_float.is_infinite() && lo_float.is_sign_negative();
-    Domain::make(d.interval.exp(), d.lo_open || lo_is_neg_inf, d.hi_open)
+    Domain::make(d.interval.exp(), d.lo_open, d.hi_open)
 }
 
 // Special case, exp is always positive even if we don't know the domain. More
