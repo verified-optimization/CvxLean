@@ -26,7 +26,7 @@ const NO_ERROR: ErrorInterval = ErrorInterval { lo: false, hi: false };
 /* Domain. */
 
 // Extension of intervals-good intervals keeping track of opennes at the 
-// endpoints. Unbounded endpoints are closed.
+// endpoints.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Domain {
     interval: Interval,
@@ -48,13 +48,13 @@ impl Domain {
     /* Constructors. */
 
     pub fn make(interval: Interval, lo_open: bool, hi_open: bool) -> Self {
-        // Ensure that infinite endpoints are closed.
+        // Ensure that infinite endpoints are open.
         let lo_is_infinte = interval.lo.as_float().is_infinite().clone();
         let hi_is_infinte = interval.hi.as_float().is_infinite().clone();
         Domain {
             interval: interval,
-            lo_open: lo_open && !lo_is_infinte,
-            hi_open: hi_open && !hi_is_infinte
+            lo_open: lo_open || lo_is_infinte,
+            hi_open: hi_open || hi_is_infinte
         }
     }
 
@@ -522,22 +522,31 @@ fn choose_opennes(o_a: bool, o_b: bool) -> bool {
 
 // Copied from interval-goods, but making multiplication by zero always be zero,
 // with the correct sign.
-fn perform_mult(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
+fn perform_mult(
+        lo1: &Float, lo2: &Float, 
+        hi1: &Float, hi2: &Float,
+        lo1_open: bool, lo2_open: bool,
+        hi1_open: bool, hi2_open: bool) -> Domain {
     let mut lo = lo1.clone();
+    let mut lo_open = lo1_open || lo2_open;
     if lo1.is_zero() || lo2.is_zero() {
         let neg_sign = lo1.is_sign_negative() ^ lo2.is_sign_negative();
         lo = if neg_sign { neg_zero() } else { zero() };
+        lo_open = if lo1.is_zero() { lo1_open } else { lo2_open }
     } else {
         lo.mul_add_round(lo2, &Float::with_val(lo1.prec(), 0.0), Round::Down);
     }
     let mut hi = hi1.clone();
+    let mut hi_open = hi1_open || hi2_open;
     if hi1.is_zero() || hi2.is_zero() {
         let neg_sign = hi1.is_sign_negative() ^ hi2.is_sign_negative();
         hi = if neg_sign { neg_zero() } else { zero() };
+        hi_open = if hi1.is_zero() { hi1_open } else { hi2_open }
     } else {
         hi.mul_add_round(&hi2, &Float::with_val(hi1.prec(), 0.0), Round::Up);
     }
-    Interval::make(lo, hi, NO_ERROR)
+    let ival = Interval::make(lo, hi, NO_ERROR);
+    Domain::make(ival, lo_open, hi_open)
 }
 
 // For multiplication, opennes of endpoints depends on the values.
@@ -551,98 +560,72 @@ pub fn mul(d_a: &Domain, d_b: &Domain) -> Domain {
     let d_b_neg = is_neg(d_b);
     let d_b_mix = !d_b_pos && !d_b_neg;
 
-    // This matches the rules for multiplication (self=d_a, other=d_b).
-    let (interval, lo_open, hi_open) = 
-        if d_a_pos && d_b_pos {
-            (
-                perform_mult(d_a.lo_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
-                choose_opennes(d_a.lo_open, d_b.lo_open), 
-                choose_opennes(d_a.hi_open, d_b.hi_open)
-            )
-        } else if d_a_pos && d_b_neg {
-            (
-                perform_mult(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.hi_float()),
-                choose_opennes(d_a.hi_open, d_b.lo_open) , 
-                choose_opennes(d_a.lo_open, d_b.hi_open) 
-            )
-        } else if d_a_pos && d_b_mix {
-            (
-                perform_mult(d_a.hi_float(), d_b.lo_float(), d_a.hi_float(), d_b.hi_float()),
-                choose_opennes(d_a.hi_open, d_b.lo_open), 
-                choose_opennes(d_a.hi_open, d_b.hi_open)
-            )
-        } else if d_a_neg && d_b_mix {
-            (
-                perform_mult(d_a.lo_float(), d_b.hi_float(), d_a.lo_float(), d_b.lo_float()),
-                choose_opennes(d_a.lo_open, d_b.hi_open),
-                choose_opennes(d_a.lo_open, d_a.lo_open)
-            )
-        } else if d_a_neg && d_b_pos {
-            (
-                perform_mult(d_a.lo_float(), d_b.hi_float(), d_a.hi_float(), d_b.lo_float()),
-                choose_opennes(d_a.lo_open, d_b.hi_open),
-                choose_opennes(d_a.hi_open, d_b.lo_open)
-            )
-        } else if d_a_neg && d_b_neg {
-            (
-                perform_mult(d_a.hi_float(), d_b.hi_float(), d_a.lo_float(), d_b.lo_float()),
-                choose_opennes(d_a.hi_open, d_b.hi_open),
-                choose_opennes(d_a.lo_open, d_b.lo_open)
-            )
-        } else if d_a_mix && d_b_pos {
-            (
-                perform_mult(d_a.lo_float(), d_b.hi_float(), d_a.hi_float(), d_b.hi_float()),
-                choose_opennes(d_a.lo_open, d_b.hi_open),
-                choose_opennes(d_a.hi_open, d_b.hi_open)
-            )
-        } else if d_a_mix && d_b_neg {
-            (
-                perform_mult(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.lo_float()),
-                choose_opennes(d_a.hi_open, d_b.lo_open),
-                choose_opennes(d_a.lo_open, d_b.lo_open)
-            )
-        }
-        else {
-            // Both intervals are mixed. Union of:
-            // 1. perform_mult(d_a.hi_float(), d_b.lo_float(), d_a.lo_float(), d_b.lo_float())
-            // 2. perform_mult(d_a.lo_float(), d_b.hi_float(), d_a.hi_float(), d_b.hi_float())
-            let ival1 = perform_mult(
-                d_a.hi_float(), d_b.lo_float(), 
-                d_a.lo_float(), d_b.lo_float());
-            let lo1_open = choose_opennes(d_a.hi_open, d_b.lo_open);
-            let hi1_open = choose_opennes(d_a.lo_open, d_b.lo_open);
-            
-            let ival2 = perform_mult(
-                d_a.lo_float(), d_b.hi_float(), 
-                d_a.hi_float(), d_b.hi_float());
-            let lo2_open = choose_opennes(d_a.lo_open, d_b.hi_open);
-            let hi2_open = choose_opennes(d_a.hi_open, d_b.hi_open);
+    if d_a_pos && d_b_pos {
+        perform_mult(
+            d_a.lo_float(), d_b.lo_float(), 
+            d_a.hi_float(), d_b.hi_float(),
+            d_a.lo_open, d_b.lo_open, 
+            d_a.hi_open, d_b.hi_open)
+    } else if d_a_pos && d_b_neg {
+        perform_mult(
+            d_a.hi_float(), d_b.lo_float(), 
+            d_a.lo_float(), d_b.hi_float(),
+            d_a.hi_open, d_b.lo_open,
+            d_a.lo_open, d_b.hi_open)
+    } else if d_a_pos && d_b_mix {
+        perform_mult(
+            d_a.hi_float(), d_b.lo_float(), 
+            d_a.hi_float(), d_b.hi_float(),
+            d_a.hi_open, d_b.lo_open, 
+            d_a.hi_open, d_b.hi_open)
+    } else if d_a_neg && d_b_mix {
+        perform_mult(
+            d_a.lo_float(), d_b.hi_float(), 
+            d_a.lo_float(), d_b.lo_float(),
+            d_a.lo_open, d_b.hi_open,
+            d_a.lo_open, d_a.lo_open)
+    } else if d_a_neg && d_b_pos {
+        perform_mult(
+            d_a.lo_float(), d_b.hi_float(), 
+            d_a.hi_float(), d_b.lo_float(),
+            d_a.lo_open, d_b.hi_open,
+            d_a.hi_open, d_b.lo_open)
+    } else if d_a_neg && d_b_neg {
+        perform_mult(
+            d_a.hi_float(), d_b.hi_float(), 
+            d_a.lo_float(), d_b.lo_float(),
+            d_a.hi_open, d_b.hi_open,
+            d_a.lo_open, d_b.lo_open)
+    } else if d_a_mix && d_b_pos {
+        perform_mult(
+            d_a.lo_float(), d_b.hi_float(),
+            d_a.hi_float(), d_b.hi_float(),
+            d_a.lo_open, d_b.hi_open,
+            d_a.hi_open, d_b.hi_open)
+    } else if d_a_mix && d_b_neg {
+        perform_mult(
+            d_a.hi_float(), d_b.lo_float(), 
+            d_a.lo_float(), d_b.lo_float(),
+            d_a.hi_open, d_b.lo_open,
+            d_a.lo_open, d_b.lo_open)
+    }
+    else {
+        // Both intervals are mixed. 
+        let ival1 = perform_mult(
+            d_a.hi_float(), d_b.lo_float(), 
+            d_a.lo_float(), d_b.lo_float(),
+            d_a.hi_open, d_b.lo_open,
+            d_a.lo_open, d_b.lo_open);
+        
+        let ival2 = perform_mult(
+            d_a.lo_float(), d_b.hi_float(), 
+            d_a.hi_float(), d_b.hi_float(),
+            d_a.lo_open, d_b.hi_open,
+            d_a.hi_open, d_b.hi_open);
+        
+        ival1.union(&ival2)
+    }
 
-            let lo_open = 
-                if ival1.lo < ival2.lo {
-                    lo1_open
-                } else if ival2.lo < ival1.lo {
-                    lo2_open
-                } else {
-                    // This is a union, so if they have the same value and and 
-                    // one of the endpoints is closed, the result should be 
-                    // closed.
-                    lo1_open && lo2_open
-                };
-            
-            let hi_open =
-                if ival2.hi < ival1.hi {
-                    hi1_open
-                } else if ival1.hi < ival2.hi {
-                    hi2_open
-                } else {
-                    hi1_open && hi2_open
-                };
-
-            (ival1.union(&ival2), lo_open, hi_open)
-        };
-
-    Domain::make(interval, lo_open, hi_open)
 }
 
 pub fn option_mul(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
@@ -746,6 +729,9 @@ fn perform_pow(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
 // TODO: Implementation was wrong, more cases needed.
 // See https://github.com/oflatt/intervals-good/blob/main/src/lib.rs#L721
 pub fn pow(d_a: &Domain, d_b: &Domain) -> Domain {
+    let d_a_zero = is_zero(d_a);
+    let d_a_pos = is_pos(d_a);
+
     // let d_a_pos = is_pos(d_a);
     // let d_a_ge_one = d_a.subseteq(&Domain::make_ci(one()));
 
