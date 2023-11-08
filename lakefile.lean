@@ -2,11 +2,13 @@ import Lake
 open System Lake DSL
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ 
-  "ab2d44e7027b663104d3c088084c7adcbf8f2150"
+  "https://github.com/verified-optimization/mathlib4" @ "master"
+
+require scilean from git
+  "https://github.com/verified-optimization/SciLean" @ "master"
 
 -- meta if get_config? env = some "dev" then
-require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "main"
+require «doc-gen4» from git "https://github.com/verified-optimization/doc-gen4" @ "main"
 
 package CvxLean
 
@@ -27,7 +29,7 @@ def compileCargo (name : String) (manifestFile : FilePath)
     args := #["build", "--release", "--manifest-path", manifestFile.toString]
   }
 
-def buildCargo (targetFile : FilePath) (manifestFile : FilePath) 
+def buildCargo (targetFile : FilePath) (manifestFile : FilePath)
 (targetDest : FilePath) (oFileJobs : Array (BuildJob FilePath)) :
 SchedulerM (BuildJob FilePath) :=
   let name := targetFile.fileName.getD targetFile.toString
@@ -50,12 +52,12 @@ target EggConvexify (pkg) : FilePath := do
 script EggClean := do
   let targetDir : FilePath := "." / "rewriter" / "target"
   let utilsDir : FilePath  := "." / "rewriter" / "utils"
-  let out ← 
-  IO.Process.output { 
+  let out ←
+  IO.Process.output {
     cmd := "rm"
     args := #["-rf", targetDir.toString]
-  } *> 
-  IO.Process.output { 
+  } *>
+  IO.Process.output {
     cmd := "rm"
     args := #["-rf", utilsDir.toString]
   }
