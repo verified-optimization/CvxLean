@@ -62,10 +62,10 @@ BlockTriangular.transpose hM
 
 lemma diag_inv_mul_diag_eq_one_of_upperTriangular [Fintype m] [LinearOrder m] [Invertible M]
   (hM : upperTriangular M) (k : m) : M⁻¹ k k * M k k = 1 := by
-  letI : Unique {a // id a = k} := ⟨⟨⟨k, rfl⟩⟩, fun j => Subtype.ext j.property⟩
+  letI : Unique {a // id a = k} := ⟨⟨⟨k, rfl⟩⟩, fun j => Subtype.ext j.property⟩;
   have h := congr_fun (congr_fun (toSquareBlock_inv_mul_toSquareBlock_eq_one hM k) ⟨k, rfl⟩) ⟨k, rfl⟩
-  dsimp [HMul.hMul, dotProduct] at h
-  rw [@Fintype.sum_unique _ _ _ this] at h
+  dsimp only [HMul.hMul, dotProduct] at h
+  rw [@Fintype.sum_unique _ _ _ _] at h
   simp at h; rw [←h]; simp [toSquareBlock, toSquareBlockProp]; rfl
 
 lemma diag_inv_mul_diag_eq_one_of_lowerTriangular [Fintype m] [LinearOrder m] [Invertible M]
