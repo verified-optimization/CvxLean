@@ -4,13 +4,13 @@ section SO
 
 open CvxLean Minimization Real
 
-noncomputable def so1 := 
-  optimization (x y : ℝ) 
+noncomputable def so1 :=
+  optimization (x y : ℝ)
     maximize sqrt (x - y)
     subject to
       c1 : y = 2 * x - 3
       c2 : x ^ 2 ≤ 2
-      c3 : 1 / 1000 ≤ x - y
+      c3 : 0 ≤ x - y -- TODO: error if 1 / 1000 ≤ x - y
 
 solve so1
 
@@ -23,13 +23,11 @@ solve so1
 def so2 :=
   optimization (x : ℝ)
     minimize (x)
-    subject to 
+    subject to
       hx : 1 / 1000 ≤ x
       h : exp (-x) ≤ sqrt x
 
 set_option trace.Meta.debug true
-
-#check Eq.mpr
 
 solve so2
 
