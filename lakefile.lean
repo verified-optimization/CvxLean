@@ -2,13 +2,17 @@ import Lake
 open System Lake DSL
 
 require mathlib from git
-  "https://github.com/verified-optimization/mathlib4" @ "master"
+  "https://github.com/leanprover-community/mathlib4" @
+  "81dd376a02781030ead59ee35ca5334a7fccc527"
 
 require scilean from git
-  "https://github.com/verified-optimization/SciLean" @ "master"
+  "https://github.com/verified-optimization/SciLean" @
+  "master"
 
--- meta if get_config? env = some "dev" then
-require «doc-gen4» from git "https://github.com/verified-optimization/doc-gen4" @ "main"
+meta if get_config? env = some "dev" then
+require «doc-gen4» from git
+  "https://github.com/verified-optimization/doc-gen4" @
+  "main"
 
 package CvxLean
 
