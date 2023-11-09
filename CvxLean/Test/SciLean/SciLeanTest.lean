@@ -20,8 +20,11 @@ by
     lhs
     ftrans; ftrans; simp
 
--- TODO: This needs to be computable.
-noncomputable def f := SciLean.isomorph `RealToFloat <|
-  fun (p : Real × (Fin 2 → Real)) => Real.exp p.1 + p.2 0
+def f := (SciLean.isomorph `RealToFloat <|
+  fun (p : Real × (Fin 2 → Real)) => Real.exp p.1 + p.2 0)
+  rewrite_by
+    ftrans; ftrans; simp
+
+#eval f (1, fun _ => 0)
 
 end SciLeanTest
