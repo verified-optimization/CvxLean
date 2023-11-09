@@ -5,7 +5,7 @@ namespace Lean.Meta
 /-- Open lambda-expression by introducing a new local declaration. Similar to lambdaTelescope, but for only one variable. -/
 def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α) : MetaM α := do
   match e with
-  | Expr.lam n ty body _ => 
+  | Expr.lam n ty body _ =>
     withLocalDeclD n ty fun fvar => do
       let body := body.instantiate1 fvar
       x fvar body
@@ -18,7 +18,7 @@ def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr))
   withLocalDeclsD (declInfos.map fun (n, t) => (n, fun _ => pure t)) k
 
 /-- Introduce let declarations into the local context. -/
-partial def withLetDecls
+partial def withLetDecls' -- TODO: SciLean conflict.
     [Inhabited α]
     (declInfos : Array (Name × (Array Expr → m Expr) × (Array Expr → m Expr)))
     (k : (xs : Array Expr) → m α)
