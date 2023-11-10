@@ -119,16 +119,10 @@ impl Domain {
         let other_lo_open = other.lo_open;
         let other_hi_open = other.hi_open;
 
-        let same_infinite = |x: &Float, y: &Float| {
-            x.is_infinite() && y.is_infinite() && 
-            (x.is_sign_positive() == y.is_sign_positive())
-        };
-
         let left_inclusion = 
             if !self_lo_open && other_lo_open { 
                 // ( ... [ ...
-                // NOTE: In the infinite case, ignore openness.
-                other_lo < self_lo || same_infinite(self_lo, other_lo)
+                other_lo < self_lo
             } else {
                 other_lo <= self_lo
             };
@@ -136,7 +130,7 @@ impl Domain {
         let right_inclusion =
             if !self_hi_open && other_hi_open {
                 // ... ] ... )
-                self_hi < other_hi || same_infinite(self_hi, other_hi)
+                self_hi < other_hi
             } else {
                 self_hi <= other_hi
             };
