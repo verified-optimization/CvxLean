@@ -243,7 +243,6 @@ fn sub_nonneg_neg() {
     // [0, +inf) - (-inf, 0) = [0, +inf)
     let result = domain::sub(&domain::nonneg_dom(), &domain::neg_dom());
     let expected = domain::pos_dom();
-    println!("{:?}", result);
     assert!(result.eq(&expected));
 }
 
@@ -343,7 +342,6 @@ fn div_pos_neg() {
     // (0, +inf) / (-inf, 0) = (-inf, 0)
     let result = domain::div(&domain::pos_dom(), &domain::neg_dom());
     let expected = domain::neg_dom();
-    println!("{:?}", result);
     assert!(result.eq(&expected));
 }
 
@@ -376,7 +374,6 @@ fn div_nonneg_neg() {
     // [0, +inf) / (-inf, 0) = (-inf, 0]
     let result = domain::div(&domain::nonneg_dom(), &domain::neg_dom());
     let expected = domain::nonpos_dom();
-    println!("{:?}", result);
     assert!(result.eq(&expected));
 }
 
@@ -453,155 +450,134 @@ fn div_free_pos() {
 }
 
 // Powers (16 tests, not commutative).
-// TODO: bring tests back when pow is refined.
 
-// #[test]
-// fn pow_pos_pos() {
-//     // (0, +inf) ^ (0, +inf) = (1, +inf)
-//     let result = domain::pow(&domain::pos_dom(), &domain::pos_dom());
-//     let expected = domain::Domain::make_from_endpoints(
-//         domain::one(), 
-//         domain::inf(),
-//         true,
-//         false
-//     );
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_pos_pos() {
+    // (0, +inf) ^ (0, +inf) = (0, +inf)
+    let result = domain::pow(&domain::pos_dom(), &domain::pos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_pos_nonneg() {
-//     // (0, +inf) ^ [0, +inf) = [1, +inf)
-//     let result = domain::pow(&domain::pos_dom(), &domain::nonneg_dom());
-//     let expected = domain::Domain::make_from_endpoints(
-//         domain::one(), 
-//         domain::inf(),
-//         false,
-//         false
-//     );
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_pos_nonneg() {
+    // (0, +inf) ^ [0, +inf) = (0, +inf)
+    let result = domain::pow(&domain::pos_dom(), &domain::nonneg_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_pos_nonpos() {
-//     // (0, +inf) ^ (-inf, 0] = (0, 1]
-//     let result = domain::pow(&domain::pos_dom(), &domain::nonpos_dom());
-//     let expected = domain::Domain::make_from_endpoints(
-//         domain::zero(), 
-//         domain::one(),
-//         true,
-//         false
-//     );
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_pos_nonpos() {
+    // (0, +inf) ^ (-inf, 0] = (0, +inf)
+    let result = domain::pow(&domain::pos_dom(), &domain::nonpos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_pos_neg() {
-//     // (0, +inf) ^ (-inf, 0) = (0, 1)
-//     let result = domain::pow(&domain::pos_dom(), &domain::neg_dom());
-//     let expected = domain::Domain::make_from_endpoints(
-//         domain::zero(), 
-//         domain::one(),
-//         true,
-//         true
-//     );
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_pos_neg() {
+    // (0, +inf) ^ (-inf, 0) = (0, +inf)
+    let result = domain::pow(&domain::pos_dom(), &domain::neg_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonneg_pos() {
-//     // [0, +inf) ^ (0, +inf) = (-inf, +inf) // Could be [0, +inf)
-//     let result = domain::pow(&domain::nonneg_dom(), &domain::pos_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonneg_pos() {
+    // [0, +inf) ^ (0, +inf) = [0, +inf)
+    let result = domain::pow(&domain::nonneg_dom(), &domain::pos_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonneg_nonneg() {
-//     // [0, +inf) ^ [0, +inf) = (-inf, +inf)
-//     let result = domain::pow(&domain::nonneg_dom(), &domain::nonneg_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonneg_nonneg() {
+    // [0, +inf) ^ [0, +inf) = [0, +inf)
+    let result = domain::pow(&domain::nonneg_dom(), &domain::nonneg_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonneg_nonpos() {
-//     // [0, +inf) ^ (-inf, 0] = (-inf, +inf)
-//     let result = domain::pow(&domain::nonneg_dom(), &domain::nonpos_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonneg_nonpos() {
+    // [0, +inf) ^ (-inf, 0] = (0, +inf)
+    let result = domain::pow(&domain::nonneg_dom(), &domain::nonpos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonneg_neg() {
-//     // [0, +inf) ^ (-inf, 0) = (-inf, +inf)
-//     let result = domain::pow(&domain::nonneg_dom(), &domain::neg_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonneg_neg() {
+    // [0, +inf) ^ (-inf, 0) = (0, +inf)
+    let result = domain::pow(&domain::nonneg_dom(), &domain::neg_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonpos_pos() {
-//     // (-inf, 0] ^ (0, +inf) = (-inf, +inf)
-//     let result = domain::pow(&domain::nonpos_dom(), &domain::pos_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonpos_pos() {
+    // (-inf, 0] ^ (0, +inf) = (-inf, +inf)
+    let result = domain::pow(&domain::nonpos_dom(), &domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonpos_nonneg() {
-//     // (-inf, 0] ^ [0, +inf) = (-inf, +inf)
-//     let result = domain::pow(&domain::nonpos_dom(), &domain::nonneg_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonpos_nonneg() {
+    // (-inf, 0] ^ [0, +inf) = (-inf, +inf)
+    let result = domain::pow(&domain::nonpos_dom(), &domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonpos_nonpos() {
-//     // (-inf, 0] ^ (-inf, 0] = (-inf, +inf)
-//     let result = domain::pow(&domain::nonpos_dom(), &domain::nonpos_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonpos_nonpos() {
+    // (-inf, 0] ^ (-inf, 0] = (-inf, +inf)
+    let result = domain::pow(&domain::nonpos_dom(), &domain::nonpos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_nonpos_neg() {
-//     // (-inf, 0] ^ (-inf, 0) = (-inf, +inf)
-//     let result = domain::pow(&domain::nonpos_dom(), &domain::neg_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_nonpos_neg() {
+    // (-inf, 0] ^ (-inf, 0) = (-inf, +inf)
+    let result = domain::pow(&domain::nonpos_dom(), &domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_neg_pos() {
-//     // (-inf, 0) ^ (0, +inf) = (-inf, +inf)
-//     let result = domain::pow(&domain::neg_dom(), &domain::pos_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_neg_pos() {
+    // (-inf, 0) ^ (0, +inf) = (-inf, +inf)
+    let result = domain::pow(&domain::neg_dom(), &domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_neg_nonneg() {
-//     // (-inf, 0) ^ [0, +inf) = (-inf, +inf)
-//     let result = domain::pow(&domain::neg_dom(), &domain::nonneg_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_neg_nonneg() {
+    // (-inf, 0) ^ [0, +inf) = (-inf, +inf)
+    let result = domain::pow(&domain::neg_dom(), &domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_neg_nonpos() {
-//     // (-inf, 0) ^ (-inf, 0] = (-inf, +inf)
-//     let result = domain::pow(&domain::neg_dom(), &domain::nonpos_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_neg_nonpos() {
+    // (-inf, 0) ^ (-inf, 0] = (-inf, +inf)
+    let result = domain::pow(&domain::neg_dom(), &domain::nonpos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// #[test]
-// fn pow_neg_neg() {
-//     // (-inf, 0) ^ (-inf, 0) = (-inf, +inf)
-//     let result = domain::pow(&domain::neg_dom(), &domain::neg_dom());
-//     let expected = domain::free_dom();
-//     assert!(result.eq(&expected));
-// }
+#[test]
+fn pow_neg_neg() {
+    // (-inf, 0) ^ (-inf, 0) = (-inf, +inf)
+    let result = domain::pow(&domain::neg_dom(), &domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
 
 /* Other tests. */
@@ -636,12 +612,7 @@ fn log_nonneg() {
 #[test]
 fn log_ge_one() {
     // log([1, +inf)) = [0, +inf)
-    let result = domain::log(&domain::Domain::make_from_endpoints(
-        domain::one(), 
-        domain::inf(),
-        false,
-        false
-    ));
+    let result = domain::log(&Domain::make_co(domain::one(), domain::inf()));
     let expected = domain::nonneg_dom();
     assert!(result.eq(&expected));
 }
@@ -649,12 +620,7 @@ fn log_ge_one() {
 #[test]
 fn log_gt_one() {
     // log((1, +inf)) = (0, +inf)
-    let result = domain::log(&domain::Domain::make_from_endpoints(
-        domain::one(), 
-        domain::inf(),
-        true,
-        false
-    ));
+    let result = domain::log(&Domain::make_oi(domain::one()));
     let expected = domain::pos_dom();
     assert!(result.eq(&expected));
 }
@@ -662,12 +628,7 @@ fn log_gt_one() {
 #[test]
 fn log_le_one() {
     // log([0, 1]) = (-inf, 0]
-    let result = domain::log(&domain::Domain::make_from_endpoints(
-        domain::zero(), 
-        domain::one(),
-        false,
-        false
-    ));
+    let result = domain::log(&Domain::make_cc(domain::zero(), domain::one()));
     let expected = domain::nonpos_dom();
     assert!(result.eq(&expected));
 }
@@ -675,12 +636,7 @@ fn log_le_one() {
 #[test]
 fn log_lt_one() {
     // log([0, 1)) = (-inf, 0)
-    let result = domain::log(&domain::Domain::make_from_endpoints(
-        domain::zero(), 
-        domain::one(),
-        false,
-        true
-    ));
+    let result = domain::log(&Domain::make_co(domain::zero(), domain::one()));
     let expected = domain::neg_dom();
     assert!(result.eq(&expected));
 }
@@ -693,7 +649,6 @@ fn exp_free() {
     // exp((-inf, +inf)) = (0, +inf)
     let result = domain::exp(&domain::free_dom());
     let expected = domain::pos_dom();
-    println!("{:?}", result);
     assert!(result.eq(&expected));
 }
 
