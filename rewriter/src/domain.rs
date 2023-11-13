@@ -707,65 +707,106 @@ pub fn option_div(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain
 }
 
 // Same reasoning as in `perform_pow`
-fn perform_pow(lo1: &Float, lo2: &Float, hi1: &Float, hi2: &Float) -> Interval {
-    let mut tmp_lo = lo1.clone();
-    tmp_lo.pow_assign_round(lo2, Round::Down);
-    let mut tmp_hi = hi1.clone();
-    tmp_hi.pow_assign_round(hi2, Round::Up);
-    Interval::make(tmp_lo, tmp_hi, NO_ERROR)
+fn perform_pow(
+    lo1: &Float, lo2: &Float, 
+    hi1: &Float, hi2: &Float,
+    lo1_open: bool, lo2_open: bool,
+    hi1_open: bool, hi2_open: bool) -> Domain {
+    let mut lo = lo1.clone();
+    let mut lo_open = lo1_open || lo2_open;
+    if lo2.is_zero() {
+        lo = one();
+        lo_open = lo2_open;
+    } else if (lo1.is_zero() && lo2.is_sign_positive()) || lo1.eq(&one()) {
+        lo_open = lo1_open;
+    } else {
+        lo.pow_assign_round(lo2, Round::Down);
+    }
+
+    let mut hi = hi1.clone();
+    let mut hi_open = hi1_open || hi2_open;
+    if hi2.is_zero() {
+        hi = one();
+        hi_open = hi2_open;
+    } else if (hi1.is_zero() && hi2.is_sign_positive()) || hi1.eq(&one()) {
+        hi_open = hi1_open;
+    } else {
+        hi.pow_assign_round(hi2, Round::Up);
+    }
+
+    let ival = Interval::make(lo, hi, NO_ERROR);
+    Domain::make(ival, lo_open, hi_open)
 }
 
-// TODO: Implementation was wrong, more cases needed.
-// See https://github.com/oflatt/intervals-good/blob/main/src/lib.rs#L721
 pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
-    let d1_zero = is_zero(d1);
-    let d1_pos = is_pos(d1);
+    let d1_nonneg = is_nonneg(d1);
+    if !d1_nonneg {
+        // We only define it for nonnegative bases. Otherwise, return the 
+        // free domain.
+        return free_dom();
+    }
 
-    // let d1_pos = is_pos(d1);
-    // let d1_ge_one = d1.subseteq(&Domain::make_ci(one()));
+    let d1_lrg = d1.subseteq(&Domain::make_oi(one()));
+    let d1_sml = d1.subseteq(&Domain::make_oo(zero(), one()));
+    let d1_unk = !d1_lrg && !d1_sml;
 
-    // let d2_pos = is_pos(d2);
-    // let d2_neg = is_neg(d2);
-    // let d2_mix = !d2_pos && !d2_neg;
-
-    // let (interval, lo_open, hi_open) = 
-        // if d1_pos && d2_pos {
-        //     (
-        //         perform_pow(a1, a2, b1, b2),
-        //         choose_opennes(l1, l2), 
-        //         choose_opennes(r1, r2)
-        //     )
-        // } else if d1_pos && d2_neg {
-        //     (
-        //         perform_pow(b1, a2, a1, b2),
-        //         // Interval is left-open if it comes from ^-inf.
-        //         choose_opennes(r1, l2) || (a2.is_infinite() && !d1_ge_one), 
-        //         choose_opennes(l1, r2)
-        //     )
-        // } else if d1_pos && d2_mix {
-        //     (
-        //         perform_pow(b1, a2, b1, b2),
-        //         // Interval is left-open if it comes from ^-inf.
-        //         choose_opennes(r1, l2) || (a2.is_infinite() && !d1_ge_one), 
-        //         choose_opennes(r1, r2)
-        //     )
-        // } else {
-        //     // Negative and mixed cases are problematic, so we overapproximate
-        //     // them with the free domain.
-        //     // TODO: support nonneg.
-        //    (free_ival(), false, false)
-        // };
-    
-    // NOTE: For now, we stay conservative. 
-    // We only consider the opennes for the case Pos ^ Pos.
-    let d1_pos = is_pos(d1);
     let d2_pos = is_pos(d2);
-    let (interval, lo_open, hi_open) = 
-        (Interval::pow(&d1.interval, &d2.interval), 
-        if d1_pos && d2_pos { d1.lo_open } else { false }, 
-        false);
+    let d2_neg = is_neg(d2);
+    let d2_mix = !d2_pos && !d2_neg;
+
+    let a1 = d1.lo_float();
+    let b1 = d1.hi_float();
+    let l1 = d1.lo_open;
+    let r1 = d1.hi_open;
+
+    let a2 = d2.lo_float();
+    let b2 = d2.hi_float();
+    let l2 = d2.lo_open;
+    let r2 = d2.hi_open; 
     
-    Domain::make(interval, lo_open, hi_open)
+    if d1_lrg && d2_pos {
+        perform_pow(
+            a1, a2, b1, b2,
+            l1, l2, r1, r2)
+    } else if d1_lrg && d2_neg {
+        perform_pow(
+            b1, a2, a1, b2,
+            r1, l2, l1, r2)
+    } else if d1_lrg && d2_mix {
+        perform_pow(
+            b1, a2, b1, b2, 
+            r1, l2, r1, r2)
+    } else if d1_sml && d2_pos {
+        perform_pow(
+            a1, b2, b1, a2,
+            l1, r2, r1, l2)
+    } else if d1_sml && d2_neg {
+        perform_pow(
+            b1, b2, a1, a2,
+            r1, r2, l1, l2)
+    } else if d1_sml && d2_mix {
+        perform_pow(
+            a1, b2, a1, a2,
+            l1, r2, l1, l2)
+    } else if d1_unk && d2_pos {
+        perform_pow(
+            a1, b2, b1, b2, 
+            l1, r2, r1, r2)
+    } else if d1_unk && d2_neg {
+        perform_pow(
+            b1, a2, a1, a2,
+            r1, l2, l1, l2)
+    } else {
+        let du = perform_pow(
+            b1, a2, a1, a2,
+            r1, l2, l1, l2);
+        
+        let dv = perform_pow(
+            a1, b2, b1, b2,
+            l1, r2, r1, r2);
+        
+        du.union(&dv)
+    }
 }
 
 pub fn option_pow(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
