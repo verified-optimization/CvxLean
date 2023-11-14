@@ -28,7 +28,7 @@ optimality by
   simp only [expCone] at hexp ⊢
   cases hexp with
   | inl hexp => {
-      left 
+      left
       rcases hexp with ⟨hy, hexp⟩
       apply And.intro hy;
       refine' le_transₓ _ (le_transₓ hexp hz);
@@ -41,12 +41,13 @@ optimality by
         apply le_of_ltₓ;
         exact hy } }
   | inr hyzx => {
-      right 
+      right
       rcases hyzx with ⟨hy, h0z, hx0⟩
       apply And.intro hy;
       exact ⟨le_transₓ h0z hz, le_transₓ hx hx0⟩ }
 
-declare_atom Vec.expCone [cone] (n : Nat)& (x : (Finₓ n) → ℝ)- (z : (Finₓ n) → ℝ)+ : Vec.expCone x 1 z :=
+declare_atom Vec.expCone [cone]
+  (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp i
   unfold Vec.expCone at *
@@ -59,13 +60,13 @@ optimality by
   intros x' hx hx0
   exact hx0.trans hx
 
-declare_atom Vec.posOrthCone [cone] 
+declare_atom Vec.posOrthCone [cone]
   (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
 optimality by
   intros x' hx hx0 i
   exact (hx0 i).trans (hx i)
 
-declare_atom Matrix.posOrthCone [cone] 
+declare_atom Matrix.posOrthCone [cone]
   (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
   Real.Matrix.posOrthCone M :=
 optimality by
@@ -87,7 +88,7 @@ optimality by
 declare_atom soCone [cone] (n : Nat)& (t : ℝ)+ (x : (Fin n) → ℝ)? :
   soCone t x :=
 optimality by
-  intros t' ht h 
+  intros t' ht h
   exact le_trans h ht
 
 declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
@@ -96,8 +97,8 @@ optimality by
   unfold Vec.rotatedSoCone
   intros v' w' hv hw h i
   apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
-  
-declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? : 
+
+declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? :
   Matrix.PSDCone A :=
 optimality fun h => h
 
@@ -263,16 +264,16 @@ optimality by
     apply hx
     apply lt_of_le_of_ne hy h
 
-declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y := 
+declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y :=
 bconditions
 homogenity by
-  rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero, 
+  rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero,
       Matrix.dotProduct_smul']
 additivity by
   rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
 optimality le_refl _
 
-declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y := 
+declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y :=
 bconditions
 homogenity by
   rw [Matrix.zero_dotProduct, smul_zero, add_zero, add_zero,
@@ -294,11 +295,11 @@ optimality by
 end VecAffine
 
 -- Affine operations on matrices.
-section MatrixAffine 
+section MatrixAffine
 
 open Matrix
 
-declare_atom Matrix.vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ : 
+declare_atom Matrix.vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ :
   Matrix.vecCons x y :=
 bconditions
 homogenity by
@@ -358,7 +359,7 @@ optimality le_refl _
 declare_atom Matrix.diagonal [affine] (n : ℕ)& (d : Fin n → ℝ)+ : Matrix.diagonal d :=
 bconditions
 homogenity by
-  rw [Matrix.diagonal_zero', add_zero, smul_zero, add_zero, 
+  rw [Matrix.diagonal_zero', add_zero, smul_zero, add_zero,
       Matrix.diagonal_smul']
 additivity by
   rw [Matrix.diagonal_add', Matrix.diagonal_zero', add_zero]
@@ -368,7 +369,7 @@ optimality by
 
 declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
 bconditions
-homogenity by 
+homogenity by
   rw [Matrix.trace_zero', add_zero, smul_zero, add_zero, Matrix.trace_smul']
 additivity by
   rw [Matrix.trace_add', Matrix.trace_zero', add_zero]
@@ -378,11 +379,11 @@ optimality by
   intros i _
   exact hA i i
 
-declare_atom Matrix.toUpperTri [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
+declare_atom Matrix.toUpperTri [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ :
   Matrix.toUpperTri A :=
 bconditions
 homogenity by
-  rw [Matrix.toUpperTri_zero, add_zero, smul_zero, add_zero, 
+  rw [Matrix.toUpperTri_zero, add_zero, smul_zero, add_zero,
       Matrix.toUpperTri_smul]
 additivity by
   rw [Matrix.toUpperTri_zero, add_zero, Matrix.toUpperTri_add]
@@ -390,7 +391,7 @@ optimality by
   intros A' hA i j
   by_cases h : i ≤ j <;> simp [Matrix.toUpperTri, h] ; exact hA i j
 
-declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : 
+declare_atom Matrix.transpose [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ :
   A.transpose :=
 bconditions
 homogenity by
@@ -402,21 +403,21 @@ optimality by
   intros _ hA i j
   exact hA j i
 
-declare_atom Matrix.fromBlocks [affine] (n : ℕ)& 
-  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ 
+declare_atom Matrix.fromBlocks [affine] (n : ℕ)&
+  (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+
   (B : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+
-  (C : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ 
+  (C : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+
   (D : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ :
   Matrix.fromBlocks A B C D :=
 bconditions
 homogenity by
-  rw [Matrix.fromBlocks_zero, smul_zero, add_zero, add_zero, 
+  rw [Matrix.fromBlocks_zero, smul_zero, add_zero, add_zero,
       Matrix.fromBlocks_smul']
 additivity by
   simp [Matrix.fromBlocks_add]
 optimality by
   intros A' B' C' D' hA hB hC hD i j
-  cases i <;> cases j <;> simp [Matrix.fromBlocks] 
+  cases i <;> cases j <;> simp [Matrix.fromBlocks]
   . exact hA _ _
   . exact hB _ _
   . exact hC _ _
@@ -433,7 +434,7 @@ optimality by
   intros A' B' hA hB i j
   apply add_le_add (hA i j) (hB i j)
 
-declare_atom Matrix.sub [affine] (m : Type)& (n : Type)& 
+declare_atom Matrix.sub [affine] (m : Type)& (n : Type)&
   (A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)- : A - B :=
 bconditions
 homogenity by
@@ -451,7 +452,7 @@ declare_atom Matrix.mul1 [affine] (m : Type)& (hm : Fintype.{0} m)&
 bconditions
 homogenity by
   simp
-additivity by 
+additivity by
   simp [Matrix.mul_add]
 optimality le_refl _
 
@@ -461,11 +462,11 @@ declare_atom Matrix.mul2 [affine] (m : Type)& (hm : Fintype.{0} m)&
 bconditions
 homogenity by
   simp
-additivity by 
+additivity by
   simp [Matrix.add_mul]
 optimality le_refl _
 
-declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)& 
+declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)&
   (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)& (v : Fin n → ℝ)? : Matrix.mulVec M v :=
 bconditions
 homogenity by
@@ -474,7 +475,7 @@ additivity by
   simp [Matrix.mulVec_add', Matrix.mulVec_zero', add_zero]
 optimality le_refl _
 
-end MatrixAffine 
+end MatrixAffine
 
 -- Non-affine atoms on real variables.
 section Real
@@ -487,31 +488,31 @@ implementationVars
 implementationObjective Real.posOrthCone (y - x)
 implementationConstraints
 solution
-solutionEqualsAtom by 
+solutionEqualsAtom by
   simp [Real.posOrthCone]
 feasibility
 optimality by
   intros x' y' hx hy h
-  simp [Real.posOrthCone] at h 
+  simp [Real.posOrthCone] at h
   exact (hx.trans h).trans hy
 vconditionElimination
 
-declare_atom eq [concave] (x : ℝ)? (y : ℝ)? : x = y := 
+declare_atom eq [concave] (x : ℝ)? (y : ℝ)? : x = y :=
 vconditions
 implementationVars
 implementationObjective Real.zeroCone (y - x)
 implementationConstraints
 solution
-solutionEqualsAtom by 
+solutionEqualsAtom by
   simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
   exact Iff.intro Eq.symm Eq.symm;
 feasibility
-optimality by 
+optimality by
   simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
   exact Eq.symm
 vconditionElimination
 
-declare_atom sq [convex] (x : ℝ)? : x ^ 2 := 
+declare_atom sq [convex] (x : ℝ)? : x ^ 2 :=
 vconditions
 implementationVars (t : ℝ)
 implementationObjective (t)
@@ -521,14 +522,14 @@ solution
   (t := x ^ 2)
 solutionEqualsAtom rfl
 feasibility
-  (c1 : by 
+  (c1 : by
     simp [rotatedSoCone]
     exact ⟨sq_nonneg x, zero_le_two⟩)
 optimality by
   have h := c1.1
   simp at h ⊢
   exact h
-vconditionElimination 
+vconditionElimination
 
 declare_atom exp [convex] (x : ℝ)+ : Real.exp x :=
 vconditions
@@ -538,8 +539,8 @@ implementationConstraints (c_exp : expCone x 1 t)
 solution (t := exp x)
 solutionEqualsAtom by
   rfl;
-feasibility 
-  (c_exp : by 
+feasibility
+  (c_exp : by
     simp [expCone])
 optimality by
   intros x' hx
@@ -548,22 +549,22 @@ optimality by
   exact hexpleexp.trans c_exp
 vconditionElimination
 
-declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x := 
+declare_atom sqrt [concave] (x : ℝ)+ : Real.sqrt x :=
 vconditions (cond : 0 ≤ x)
 implementationVars (t : ℝ)
 implementationObjective (t)
-implementationConstraints 
+implementationConstraints
   (c1 : rotatedSoCone x (1/2) ![t])
 solution (t := Real.sqrt x)
 solutionEqualsAtom by
   rfl;
-feasibility 
+feasibility
   (c1 : by
     simp [rotatedSoCone]
     refine ⟨?_, cond, zero_le_two⟩
     rw [sq_sqrt cond])
 optimality by
-  intros y hy 
+  intros y hy
   simp [rotatedSoCone] at c1
   have h := c1.1
   exact Real.le_sqrt_of_sq_le (le_trans h hy)
@@ -575,19 +576,19 @@ implementationVars (t : ℝ)
 implementationObjective t
 implementationConstraints (c_exp : expCone t 1 x)
 solution (t := log x)
-solutionEqualsAtom by 
+solutionEqualsAtom by
   rfl;
-feasibility (c_exp : by 
+feasibility (c_exp : by
   simp [expCone]
   rw [Real.exp_log cond])
 optimality by
   intros y hy
-  simp [expCone] at c_exp 
+  simp [expCone] at c_exp
   have hxpos := lt_of_lt_of_le (exp_pos t) c_exp
   have hypos := lt_of_lt_of_le hxpos hy
   have hexptley := le_trans c_exp hy
   exact (le_log_iff_exp_le hypos).2 hexptley
-vconditionElimination 
+vconditionElimination
   (cond : by
     intros y hy
     simp [expCone] at c_exp
@@ -604,11 +605,11 @@ implementationConstraints
   (c_neg : posOrthCone (t + x))
 solution (t := abs x)
 solutionEqualsAtom rfl
-feasibility 
+feasibility
   (c_pos : by
     unfold posOrthCone
     rw [sub_nonneg]
-    exact le_abs_self x) 
+    exact le_abs_self x)
   (c_neg : by
     unfold posOrthCone
     rw [←neg_le_iff_add_nonneg']
@@ -619,25 +620,25 @@ optimality by
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
 
-declare_atom xexp [convex] (x : ℝ)? : x * exp x := 
+declare_atom xexp [convex] (x : ℝ)? : x * exp x :=
 vconditions (cond : 0 ≤ x)
 implementationVars (t₀ : ℝ) (t₁ : ℝ) (t₂ : ℝ)
 implementationObjective t₀
-implementationConstraints 
+implementationConstraints
   (c1 : expCone t₁ x t₀)
   (c2 : rotatedSoCone t₂ (1 / 2) ![x]) -- x ^ 2 ≤ t₂
   (c3 : posOrthCone (t₁ - t₂))
   (c4 : posOrthCone x)
 solution (t₀ := x * exp x) (t₁ := x ^ 2) (t₂ := x ^ 2)
-solutionEqualsAtom rfl 
+solutionEqualsAtom rfl
 feasibility
   (c1 : by {
     simp only [expCone]
     by_cases (0 < x)
-    { left 
+    { left
       refine ⟨h, ?_⟩
       rw [rpow_two, pow_two, ←mul_div, div_self (ne_of_lt h).symm, mul_one] }
-    { right 
+    { right
       replace h := le_of_not_lt h
       have hxeq0 := le_antisymm h cond
       simp [hxeq0] }
@@ -653,15 +654,15 @@ feasibility
     simp [posOrthCone, cond]
   })
 optimality by {
-    simp [expCone] at c1 
+    simp [expCone] at c1
     simp [rotatedSoCone] at c2
     simp [posOrthCone] at c3 c4
-    rcases c2 with ⟨hx2t₂, h0t₂, _⟩ 
-    cases c1 with 
+    rcases c2 with ⟨hx2t₂, h0t₂, _⟩
+    cases c1 with
     | inl c1l => {
         rcases c1l with ⟨hxpos, hxexp⟩
         apply le_trans _ hxexp
-        apply mul_le_mul_of_nonneg_left _ c4 
+        apply mul_le_mul_of_nonneg_left _ c4
         rw [Real.exp_le_exp]
         rw [le_div_iff hxpos]
         rw [pow_two] at hx2t₂
@@ -669,12 +670,70 @@ optimality by {
       }
     | inr c1r => {
         rcases c1r with ⟨hxeq0, h0t, _⟩
-        rw [hxeq0] 
+        rw [hxeq0]
         simp [h0t]
       }
   }
 vconditionElimination
   (cond : c4)
+
+
+-- -- Convex
+-- class IsRealAtom (f : ℝ → ℝ) where
+--   (impObj : ℝ × ℝ → ℝ)
+--   (impObjAffine : ∀ (x : ℝ) (t : ℝ) (s : ℝ), s * impObj ⟨x, t⟩ = impObj ⟨s * x, s * t⟩)
+--   (impConstr : ℝ × ℝ → Prop)
+--   (sol : ℝ → ℝ)
+--   (solEqAtom : ∀ (x : ℝ), impObj ⟨x, sol x⟩ = f x)
+--   (feasibility : ∀ (x : ℝ), impConstr ⟨x, sol x⟩)
+--   (optimality : ∀ (x : ℝ) (t : ℝ), impConstr ⟨x, t⟩ → f x ≤ impObj ⟨x, t⟩)
+
+-- declare_atom IsSimpleRealAtom.impConstr [cone] (f : ℝ → ℝ)? (hatom : IsRealAtom f)? (x : ℝ)? (t : ℝ)? (s : ℝ)? : hatom.impConstr ⟨x / s, t / s⟩ :=
+-- optimality le_refl _
+
+-- declare_atom IsSimpleRealAtom.impObj [convex] (f : ℝ → ℝ)? (hatom : IsRealAtom f)? (x : ℝ)? (t : ℝ)? (s : ℝ)? : hatom.impObj ⟨x, t⟩ :=
+-- vconditions
+-- implementationVars (z : ℝ)
+-- implementationObjective sorry
+-- implementationConstraints
+--   (c : True)
+-- solution (z := sorry)
+-- solutionEqualsAtom sorry
+-- feasibility
+--   (c : trivial)
+-- optimality by
+--   sorry
+-- vconditionElimination
+
+-- #check EuclideanDomain.mul_div_cancel_left
+
+-- -- IsConvexReducible?
+
+-- declare_atom perspective [convex] (f : ℝ → ℝ)? (x : ℝ)? (hatom : IsRealAtom f)? (s : ℝ)? : s * f (x / s) :=
+-- vconditions (cond : 0 < s)
+-- implementationVars (t : ℝ)
+-- implementationObjective (hatom.impObj ⟨x, t⟩)
+-- implementationConstraints
+--   (c : hatom.impConstr ⟨x / s, t / s⟩)
+--   (cs : 0 < s)
+-- solution (t := s * hatom.sol (x / s))
+-- solutionEqualsAtom by {
+--   simp
+--   sorry
+-- }
+-- feasibility
+--   (c : by {
+--     dsimp
+--     simp [mul_div_cancel_left (a := s) (hatom.sol (x / s)) (ne_of_lt cond).symm]
+--     exact hatom.feasibility (x / s)
+--   })
+--   (cs : cond)
+-- optimality by {
+--     have := hatom.optimality (x / s) (t / s) c
+--     sorry
+--   }
+-- vconditionElimination
+--   (cond : cs)
 
 end Real
 
@@ -712,9 +771,9 @@ implementationVars (t : Fin n → ℝ)
 implementationObjective t
 implementationConstraints (c_exp : Real.Vec.expCone x 1 t)
 solution (t := exp x)
-solutionEqualsAtom 
+solutionEqualsAtom
   rfl
-feasibility 
+feasibility
   (c_exp: by
     intros _ _
     apply exp.feasibility0)
@@ -730,7 +789,7 @@ implementationObjective t
 implementationConstraints (c_exp : Real.Vec.expCone t 1 x)
 solution (t := log x)
 solutionEqualsAtom rfl
-feasibility 
+feasibility
   (c_exp: by
     intros _ i
     apply log.feasibility0
@@ -768,8 +827,8 @@ end Vec
 -- Non-affine atoms on matrices.
 namespace Matrix
 
-declare_atom Matrix.PosSemidef [concave] 
-  (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? 
+declare_atom Matrix.PosSemidef [concave]
+  (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)?
   : Matrix.PosSemidef A :=
 vconditions
 implementationVars
@@ -786,26 +845,26 @@ vconditions (hA : A.PosDef)
 implementationVars (t : Fin n → ℝ) (Y : Matrix (Fin n) (Fin n) ℝ)
 -- The lower left values of `Y` are unused. CVXPy uses a vector `z` instead of a matrix `Y`.
 implementationObjective Vec.sum t
-implementationConstraints 
+implementationConstraints
   (c_exp : Real.Vec.expCone t 1 Y.diag)
   (c_posdef : Matrix.PosSemidef $
     let Z := Y.toUpperTri;
     let D := Matrix.diagonal Y.diag
-    let X := Matrix.fromBlocks D            Z 
+    let X := Matrix.fromBlocks D            Z
                                Z.transpose  A;
     X)
-solution 
-  (t := 
-    have : Decidable (A.PosDef) := Classical.dec _ 
-    if h : A.PosDef then Vec.log (LDL.diagEntries h) else 0) 
+solution
+  (t :=
+    have : Decidable (A.PosDef) := Classical.dec _
+    if h : A.PosDef then Vec.log (LDL.diagEntries h) else 0)
   (Y :=
-    have : Decidable (A.PosDef) := Classical.dec _ 
-    if h : A.PosDef then (LDL.diag h) * (LDL.lower h).transpose else 0) 
+    have : Decidable (A.PosDef) := Classical.dec _
+    if h : A.PosDef then (LDL.diag h) * (LDL.lower h).transpose else 0)
 solutionEqualsAtom by
   simp only [dif_pos hA, Vec.sum, Vec.log]
   rw [Matrix.LogDetAtom.solution_eq_atom hA]
   congr
-feasibility 
+feasibility
   (c_exp : by
     simp only [Real.Vec.expCone, dif_pos hA]
     intro i
@@ -818,26 +877,25 @@ feasibility
     simp only [dif_pos hA]
     convert Matrix.LogDetAtom.feasibility_PosDef' hA rfl rfl rfl)
 optimality by
-  have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by 
+  have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by
     intro i
     rw [Real.exp_iff_expCone]
     apply c_exp
-  -- TODO: Why does exact fail here?
-  have h := @Matrix.LogDetAtom.optimality (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
-    (Matrix.diagonal Y.diag) ht (by convert rfl) (by convert rfl) c_posdef
-  refine' Eq.mp _ h
-  congr
-vconditionElimination 
+  dsimp at c_posdef
+  -- NOTE: Not matching instances, hence `convert` not `exact`.
+  have h := Matrix.LogDetAtom.optimality
+    (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef)
+  convert h
+vconditionElimination
   (hA : by
-    have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by 
+    have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by
       intro i
       rw [Real.exp_iff_expCone]
       apply c_exp
-    exact @Matrix.LogDetAtom.cond_elim (Fin n) _ _ A t Y (Matrix.toUpperTri Y) 
-      (Matrix.diagonal (Matrix.diag Y)) ht (by convert rfl) (by convert rfl) c_posdef)
+    exact Matrix.LogDetAtom.cond_elim (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef))
 
-declare_atom Matrix.abs [convex] 
-  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? 
+declare_atom Matrix.abs [convex]
+  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)?
   : M.abs :=
 vconditions
 implementationVars (T : Matrix (Fin m) (Fin n) ℝ)
@@ -848,10 +906,10 @@ implementationConstraints
 solution (T := M.abs)
 solutionEqualsAtom rfl
 feasibility
-  (c_pos : by 
+  (c_pos : by
     intros _ _ _
     apply abs.feasibility0)
-  (c_neg :  by 
+  (c_neg :  by
     intros _ _ _
     apply abs.feasibility1)
 optimality by
