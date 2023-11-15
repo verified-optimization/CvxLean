@@ -55,16 +55,18 @@ optimality by
   have hexpleexp := exp_le_exp.2 (hx i)
   exact (hexpleexp.trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
 
-declare_atom posOrthCone [cone] (n : Nat)& (x : ℝ)+ : posOrthCone x :=
+declare_atom zeroCone [cone] (x : ℝ)? : zeroCone x :=
 optimality by
-  intros x' hx hx0
-  exact hx0.trans hx
+  simp [zeroCone]
+
+declare_atom posOrthCone [cone] (x : ℝ)? : posOrthCone x :=
+optimality by
+  simp [posOrthCone]
 
 declare_atom Vec.posOrthCone [cone]
-  (n : Nat)& (x : (Fin n) → ℝ)+ : Vec.posOrthCone x :=
+  (n : Nat)& (x : (Fin n) → ℝ)? : Vec.posOrthCone x :=
 optimality by
-  intros x' hx hx0 i
-  exact (hx0 i).trans (hx i)
+  simp [Vec.posOrthCone]
 
 declare_atom Matrix.posOrthCone [cone]
   (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
@@ -482,7 +484,13 @@ section Real
 
 open Real
 
-declare_atom le [concave] (x : ℝ)- (y : ℝ)+ : x ≤ y :=
+-- instance : HSMul ℝ Prop Prop where
+--   hSMul k P := ∃ a b : ℝ, (P ↔ a ≤ b) ∧ k • a ≤ k • b
+
+-- instance : HAdd Prop Prop Prop where
+--   hAdd P Q := ∃ a b c d : ℝ, (P ↔ a ≤ b) ∧ (Q ↔ c ≤ d) ∧ (a + c ≤ b + d)
+
+declare_atom le [convex_set] (x : ℝ)- (y : ℝ)+ : x ≤ y :=
 vconditions
 implementationVars
 implementationObjective Real.posOrthCone (y - x)
@@ -497,7 +505,7 @@ optimality by
   exact (hx.trans h).trans hy
 vconditionElimination
 
-declare_atom eq [concave] (x : ℝ)? (y : ℝ)? : x = y :=
+declare_atom eq [convex_set] (x : ℝ)? (y : ℝ)? : x = y :=
 vconditions
 implementationVars
 implementationObjective Real.zeroCone (y - x)
@@ -512,6 +520,21 @@ optimality by
   exact Eq.symm
 vconditionElimination
 
+-- Constr:[(
+--   node:[][
+--     leaf:[],
+--     leaf:[],
+--     leaf:[],
+--     leaf:[]])]
+
+-- Constr:[(
+--   node:[][
+--     leaf:(),
+--     leaf:(),
+--     leaf:(),
+--     (node:[][leaf:(), leaf:(), leaf:()])])] -- ![x]
+
+set_option trace.Meta.debug true in
 declare_atom sq [convex] (x : ℝ)? : x ^ 2 :=
 vconditions
 implementationVars (t : ℝ)
@@ -620,13 +643,20 @@ optimality by
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
 
+-- example : Minimization.Solution <| Minimization.mk (fun x:ℝ => 0) (fun x => x ^ 2 ≤ 3) := by {
+--   dcp
+-- }
+
+
+set_option trace.Meta.debug true in
 declare_atom xexp [convex] (x : ℝ)? : x * exp x :=
 vconditions (cond : 0 ≤ x)
 implementationVars (t₀ : ℝ) (t₁ : ℝ) (t₂ : ℝ)
 implementationObjective t₀
 implementationConstraints
   (c1 : expCone t₁ x t₀)
-  (c2 : rotatedSoCone t₂ (1 / 2) ![x]) -- x ^ 2 ≤ t₂
+  --(c2 : rotatedSoCone t₂ (1 / 2) ![x])
+  (c2 : x ^ 2 ≤ t₂)
   (c3 : posOrthCone (t₁ - t₂))
   (c4 : posOrthCone x)
 solution (t₀ := x * exp x) (t₁ := x ^ 2) (t₂ := x ^ 2)
@@ -644,7 +674,7 @@ feasibility
       simp [hxeq0] }
   })
   (c2 : by {
-    simp [rotatedSoCone, pow_two_nonneg]
+    -- simp [rotatedSoCone, pow_two_nonneg]
     norm_num
   })
   (c3 : by {
@@ -657,7 +687,7 @@ optimality by {
     simp [expCone] at c1
     simp [rotatedSoCone] at c2
     simp [posOrthCone] at c3 c4
-    rcases c2 with ⟨hx2t₂, h0t₂, _⟩
+    -- rcases c2 with ⟨hx2t₂, h0t₂, _⟩
     cases c1 with
     | inl c1l => {
         rcases c1l with ⟨hxpos, hxexp⟩
@@ -665,8 +695,8 @@ optimality by {
         apply mul_le_mul_of_nonneg_left _ c4
         rw [Real.exp_le_exp]
         rw [le_div_iff hxpos]
-        rw [pow_two] at hx2t₂
-        exact le_trans hx2t₂ c3
+        rw [pow_two] at c2 --hx2t₂
+        exact le_trans c2 c3--hx2t₂ c3
       }
     | inr c1r => {
         rcases c1r with ⟨hxeq0, h0t, _⟩
@@ -742,7 +772,7 @@ section Vec
 
 open Vec
 
-declare_atom Vec.le [concave] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ : x ≤ y :=
+declare_atom Vec.le [convex_set] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ : x ≤ y :=
 vconditions
 implementationVars
 implementationObjective Real.Vec.posOrthCone (y - x : (Fin n) → ℝ)
@@ -827,7 +857,7 @@ end Vec
 -- Non-affine atoms on matrices.
 namespace Matrix
 
-declare_atom Matrix.PosSemidef [concave]
+declare_atom Matrix.PosSemidef [convex_set]
   (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)?
   : Matrix.PosSemidef A :=
 vconditions
@@ -840,6 +870,7 @@ feasibility
 optimality by simp [Real.Matrix.PSDCone]
 vconditionElimination
 
+set_option trace.Meta.debug true in
 declare_atom Matrix.logDet [concave] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : Real.log A.det :=
 vconditions (hA : A.PosDef)
 implementationVars (t : Fin n → ℝ) (Y : Matrix (Fin n) (Fin n) ℝ)

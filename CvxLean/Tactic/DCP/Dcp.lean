@@ -34,9 +34,13 @@ abbrev AtomDataTrees :=
 abbrev NewVarsTree := Tree (Array LocalDecl) Unit
 abbrev NewConstrVarsTree := Tree (Array LocalDecl) Unit
 
+/-- TODO Check if `expr` is constant by checking if it contains any free variable
+from `vars`. -/
+def isConstant (expr : Expr) : Bool := (collectFVars {} expr).fvarSet.isEmpty
+
 /-- Check if `expr` is constant by checking if it contains any free variable
 from `vars`. -/
-def isConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
+def isRelativelyConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
   let fvarSet := (collectFVars {} expr).fvarSet
   for v in vars do
     if fvarSet.contains v then return false
@@ -84,9 +88,12 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
     Bool ×
     Array MessageData ×
     AtomDataTrees) := do
-  if isConstant e vars then
+  trace[Meta.debug] "Constant? {e} {vars.map (mkFVar ·)}"
+  if isConstant e || curvature == Curvature.Constant then
+    trace[Meta.debug] "Yes"
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
-  if e.isFVar ∧ vars.contains e.fvarId! then
+  if e.isFVar then --∧ vars.contains e.fvarId! then
+    trace[Meta.debug] "Variable {e}"
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   let potentialAtoms ← findRegisteredAtoms e
   let mut failedAtoms : Array MessageData := #[]
@@ -95,12 +102,15 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
   for (args, atom) in potentialAtoms do
     match ← processAtom e vars curvature atom args with
     | FindAtomResult.Success (atoms, args, curvatures, bconds) =>
+        trace[Meta.debug] "Success {e} : {atom}"
         return (false, failedAtoms, atoms, args, curvatures, bconds)
     | FindAtomResult.Error msg =>
         failedAtoms := failedAtoms ++ msg
   return (true, failedAtoms, Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
 where
   processAtom (e : Expr) (vars : Array FVarId) (curvature : Curvature) (atom : GraphAtomData) (args : Array Expr) : MetaM FindAtomResult := do
+    trace[Meta.debug] "Processing atom {atom.expr} for expression {e}, curvature {curvature}"
+    -- TODO: is this correct?
     if atom.curvature != Curvature.Affine ∧ curvature != atom.curvature then
       return FindAtomResult.Error
         #[m!"Trying atom {atom.expr} for expression {e}: " ++
@@ -109,7 +119,6 @@ where
     let mut bconds := #[]
     for (bcondName, bcondType) in atom.bconds do
       let bcondType := mkAppNBeta bcondType args
-      trace[Meta.debug] "decls: {((← getLCtx).decls.map fun decl => decl.map fun decl => decl.type).toArray}"
       let fvarId? ← (← getLCtx).decls.findSomeM? fun decl => match decl with
         | none => pure none
         | some decl => do
@@ -137,19 +146,24 @@ where
     let mut childBConds := #[]
     for i in [:args.size] do
       let arg := args[i]!
-      if atom.argKinds[i]! == ArgKind.Constant ∧ not (isConstant arg vars) then
+      if atom.argKinds[i]! == ArgKind.Constant ∧ not (isRelativelyConstant arg vars) then
         return FindAtomResult.Error
           #[m!"Trying atom {atom.expr} for expression {e}: " ++
             m!"Expected constant argument, but found: {arg}"]
       let c := curvatureInArg curvature atom.argKinds[i]!
+      trace[Meta.debug] "Trying to find atoms for {arg} with curvature {c}"
+      trace[Meta.debug] "vars: {vars.map (mkFVar ·)}"
+      trace[Meta.debug] "args: {args}"
       let (childFailed, childFailedAtoms, childTree, childArgsTree, childCurvature, childBCond) ← findAtoms arg vars c
       if childFailed then
         return FindAtomResult.Error childFailedAtoms
+      trace[Meta.debug] "Found {childTree}"
       childTrees := childTrees.push childTree
       childArgsTrees := childArgsTrees.push childArgsTree
       childCurvatures := childCurvatures.push childCurvature
       childBConds := childBConds.push childBCond
     if curvature == Curvature.Affine then
+      trace[Meta.debug] "Affine branch for {e}"
       -- For affine branches, we only check that all atoms are affine, but don't store the results.
       return FindAtomResult.Success (Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf bconds)
     else
@@ -666,7 +680,7 @@ def mkOCWithNames (objFun : Expr) (constraints : List (Lean.Name × Expr)) (orig
 
 -- TODO: Better error message when discovering a concave atom where convex is expected, and vice versa.
 /-- Construct the atom tree. -/
-def mkAtomTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
+def mkAtomTree (objCurv : Curvature) (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
   MetaM (
     OC Bool ×
     OC (Array MessageData) ×
@@ -676,9 +690,10 @@ def mkAtomTree (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
     OC (Tree (Array Expr) (Array Expr))) := do
 withExistingLocalDecls originalVarsDecls.toList do
   let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+  trace[Meta.debug] "mkAtomTree xs: {xs}"
   -- Find atoms.
   let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!)) c) oc
-    ⟨Curvature.Convex, oc.constr.map (fun _ => Curvature.Concave)⟩
+    ⟨objCurv, oc.constr.map (fun _ => Curvature.ConvexSet)⟩
   let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
   let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
   if failedAtom.objFun then
@@ -773,8 +788,8 @@ def mkOptimalityAndVCondElimOC (originalVarsDecls : Array LocalDecl) (newVarDecl
   (newVars : OC (Tree (Array LocalDecl) Unit))
   (newConstrVars : OC (Tree (Array LocalDecl) Unit))
   (curvature : OC (Tree Curvature Curvature))
-   (bconds : OC (Tree (Array Expr) (Array Expr)))
-   (vcondIdx : OC (Tree (Array ℕ) Unit))
+  (bconds : OC (Tree (Array Expr) (Array Expr)))
+  (vcondIdx : OC (Tree (Array ℕ) Unit))
   : MetaM (OC (Tree Expr Expr) × Std.HashMap ℕ Expr):=
   withExistingLocalDecls originalVarsDecls.toList do
     withExistingLocalDecls newVarDecls do
@@ -784,9 +799,6 @@ def mkOptimalityAndVCondElimOC (originalVarsDecls : Array LocalDecl) (newVarDecl
         let vcondElim := optimalityAndVCondElim.map (fun oce => oce.map Prod.snd Prod.snd)
         trace[Meta.debug] "optimality {optimality}"
         trace[Meta.debug] "vcondElim {vcondElim}"
-
-
-        trace[Meta.debug] "vcondIdx {vcondIdx}"
 
         trace[Meta.debug] "vcondIdx {vcondIdx}"
         let vcondElimWithIdx ← OC.map2M (fun a b => Tree.zip a b) vcondIdx vcondElim
@@ -816,12 +828,11 @@ structure ProcessedAtomTree where
   (optimality : OC (Tree Expr Expr))
 
 /-- -/
-def mkProcessedAtomTree (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl)
+def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl)
   : MetaM ProcessedAtomTree := do
   let oc ← mkOC objFun constraints originalVarsDecls
-  let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree originalVarsDecls oc
+  let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree objCurv originalVarsDecls oc
   let originalConstrVars ← mkOriginalConstrVars originalVarsDecls constraints.toArray
-  trace[Meta.debug] "originalVarsDecls in mkProcessedAtomTree {originalVarsDecls.size}"
   let (vcondIdx, isVCond, vcondVars) ← mkVConditions originalVarsDecls oc constraints atoms args failedAtom
     failedAtomMsgs originalConstrVars
   let newVars ← withExistingLocalDecls originalVarsDecls.toList do
@@ -882,7 +893,7 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
       return (objFun, constraints, originalVarsDecls)
 
   -- Process the atom tree.
-  let pat ← mkProcessedAtomTree objFun constraints originalVarsDecls
+  let pat ← mkProcessedAtomTree Curvature.Convex objFun constraints originalVarsDecls
 
   -- Create new goal and reduction.
   let (forwardMap, backwardMap, reduction) ← withExistingLocalDecls pat.originalVarsDecls.toList do
