@@ -6,23 +6,26 @@ open Lean Lean.Meta
 
 /-- An atom can be affine, concave or convex. -/
 inductive Curvature where
-  | Affine | Concave | Convex
+  | Constant | Affine | Concave | Convex | AffineSet | ConvexSet
 deriving BEq, Inhabited
 
-/-- Arguments of an atom are increasing (+), decreasing (-), constant (&) or 
+/-- Arguments of an atom are increasing (+), decreasing (-), constant (&) or
 neither (?). -/
 inductive ArgKind where
   | Increasing | Decreasing | Neither | Constant
 deriving BEq, Inhabited
 
-instance : ToMessageData Curvature where 
+instance : ToMessageData Curvature where
   toMessageData
+  | Curvature.Constant => "constant"
   | Curvature.Affine => "affine"
   | Curvature.Concave => "concave"
   | Curvature.Convex => "convex"
+  | Curvature.AffineSet => "affine_set"
+  | Curvature.ConvexSet => "convex_set"
 
-instance : ToMessageData ArgKind where 
-  toMessageData 
+instance : ToMessageData ArgKind where
+  toMessageData
   | ArgKind.Increasing => "increasing"
   | ArgKind.Decreasing => "decreasing"
   | ArgKind.Neither => "neither"
@@ -47,7 +50,7 @@ structure GraphAtomData where
 deriving BEq, Inhabited
 
 instance : ToMessageData GraphAtomData where
-  toMessageData d := 
+  toMessageData d :=
     m!"id: {d.id}
     curvature: {d.curvature}
     expr: {d.expr}
@@ -69,7 +72,7 @@ inductive AtomData
 deriving Inhabited, BEq
 
 instance : ToMessageData AtomData where
-  toMessageData 
+  toMessageData
   | AtomData.graph d => toMessageData d
 
 /-- Get the expression corresponding to the atom. -/
@@ -81,8 +84,8 @@ def AtomData.graph! : AtomData → GraphAtomData
   | graph d => d
 
 /-- Environment extension to store atoms. -/
-def AtomExtension : Type := 
-  PersistentEnvExtension 
+def AtomExtension : Type :=
+  PersistentEnvExtension
     (Array Key × AtomData) (Array Key × AtomData) (DiscrTree AtomData)
 deriving Inhabited
 
@@ -91,8 +94,8 @@ initialize atomExtension : AtomExtension ← do
     name            := `atomExtension
     mkInitial       := return {}
     addImportedFn   := fun as _ =>
-      let addEntryFn : 
-        DiscrTree AtomData → Array Key × AtomData → DiscrTree AtomData := 
+      let addEntryFn :
+        DiscrTree AtomData → Array Key × AtomData → DiscrTree AtomData :=
         fun s d => s.insertCore d.1 d.2
       return mkStateFromImportedEntries addEntryFn {} as,
     addEntryFn      := fun s d => s.insertCore d.1 d.2,
@@ -112,10 +115,14 @@ def getAtomDiscrTree : MetaM (DiscrTree AtomData) := do
 
 /-- Caclulate curvature depending on monotonicity. -/
 def curvatureInArg : Curvature → ArgKind → Curvature
+  | _, ArgKind.Constant => Curvature.Constant
   | Curvature.Concave, ArgKind.Increasing => Curvature.Concave
   | Curvature.Concave, ArgKind.Decreasing => Curvature.Convex
   | Curvature.Convex, ArgKind.Increasing => Curvature.Convex
   | Curvature.Convex, ArgKind.Decreasing => Curvature.Concave
+  -- TODO: Check if this is correct
+  | Curvature.ConvexSet, ArgKind.Increasing => Curvature.Concave
+  | Curvature.ConvexSet, ArgKind.Decreasing => Curvature.Convex
   | _, _ => Curvature.Affine
 
 end CvxLean
