@@ -3,6 +3,7 @@ import Mathlib.LinearAlgebra.Matrix.LDL
 import CvxLean.Lib.Math.SchurComplement
 import CvxLean.Lib.Math.Subadditivity
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.Triangular
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.ToUpperTri
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.LDL
 
 /- In this file we prove properties needed for the log-det-atom.

@@ -1,5 +1,6 @@
 import CvxLean.Tactic.DCP.Atoms
 import CvxLean.Lib.Math.Data.Matrix
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.ToUpperTri
 
 namespace CvxLean
 
