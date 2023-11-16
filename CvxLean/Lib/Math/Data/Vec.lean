@@ -9,6 +9,17 @@ def abs [Abs α] (x : m → α) : m → α :=
 
 instance [Abs α] : Abs (m → α) := ⟨abs⟩
 
+section AddCommMonoid
+
+variable [AddCommMonoid α] {m : Nat} {n : Nat} (x : Fin m → α) (y : Fin n → α)
+
+open BigOperators
+
+def sum {m : Type} [Fintype m] (x : m → α) : α :=
+  ∑ i, x i
+
+end AddCommMonoid
+
 section Real
 
 variable (x y : m → Real)

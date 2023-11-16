@@ -1,5 +1,5 @@
 import CvxLean.Syntax.Minimization
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.DCP.AtomLibrary.All
 import CvxLean.Tactic.Solver.Float.Coeffs
 
 section Coeffs
@@ -34,12 +34,12 @@ noncomputable def testVecExpAndMatrix1 : Solution $
   sorry
 
 noncomputable def testMatrixPosOrth : Solution $
-  optimization (x : ℝ) (X : Matrix (Fin 2) (Fin 2) ℝ) (y : ℝ) 
+  optimization (x : ℝ) (X : Matrix (Fin 2) (Fin 2) ℝ) (y : ℝ)
     minimize (0 : ℝ)
-    subject to 
+    subject to
       c0 : Real.Matrix.posOrthCone (2 • X)
-       := by 
-  coeffs 
+       := by
+  coeffs
   sorry
 
 end Coeffs

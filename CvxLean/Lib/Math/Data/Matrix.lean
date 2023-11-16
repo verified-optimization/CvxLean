@@ -37,10 +37,12 @@ theorem add_vecCons {n} (x : ℝ) (v : Fin n → ℝ) (y : ℝ) (w : Fin n → �
   : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
--- open BigOperators
+-- Sum
 
--- def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α :=
---   ∑ i, (∑ j, X i j)
+open BigOperators
+
+def sum [Fintype m] [AddCommMonoid α] (X : Matrix m m α) : α :=
+  ∑ i, (∑ j, X i j)
 
 -- theorem vecCons_zero_zero {n}
 --   : Matrix.vecCons (0 : ℝ) (0 : Fin n → ℝ) = 0 := by
