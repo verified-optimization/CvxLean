@@ -8,7 +8,7 @@ import CvxLean.Meta.Minimization
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.Solver.Float.Coeffs
 import CvxLean.Tactic.Solver.Float.FloatToReal
-import CvxLean.Tactic.Solver.Generation
+import CvxLean.Tactic.Solver.Mosek.Sol
 import CvxLean.Tactic.Solver.InferDimension
 import CvxLean.Tactic.Solver.Mosek.CBF
 import CvxLean.Tactic.Solver.Mosek.Path
