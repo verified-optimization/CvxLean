@@ -1,4 +1,5 @@
 import CvxLean.Tactic.DCP.Atoms
+import CvxLean.Lib.Missing.Matrix
 
 namespace CvxLean
 
@@ -19,13 +20,6 @@ optimality by
   apply Finset.sum_le_sum
   intros _ _
   apply hx
-
--- TODO: Is this somewhere in mathlib?
-instance [Preorder α] : Preorder (Matrix m n α) :=
-{ le := fun A B => ∀ i j, A i j ≤ B i j
-  le_refl := fun _ _ _ => le_refl _
-  le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
-  lt_iff_le_not_le := fun _ _ => refl _ }
 
 -- TODO: Do I need Matrix.sum from missing?
 declare_atom Matrix.sum [affine] (m : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin m) ℝ)+ : ∑ i, (∑ j, X i j) :=

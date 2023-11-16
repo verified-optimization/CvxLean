@@ -2,8 +2,10 @@ import Lean
 
 namespace Lean.Meta
 
-/-- Open lambda-expression by introducing a new local declaration. Similar to lambdaTelescope, but for only one variable. -/
-def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α) : MetaM α := do
+/-- Open lambda-expression by introducing a new local declaration. Similar to
+lambdaTelescope, but for only one variable. -/
+def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α) :
+  MetaM α := do
   match e with
   | Expr.lam n ty body _ =>
     withLocalDeclD n ty fun fvar => do
@@ -13,8 +15,8 @@ def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α)
 
 variable [MonadControlT MetaM m] [Monad m]
 
-
-def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr)) (k : (xs : Array Expr) → m α) : m α :=
+def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr))
+  (k : (xs : Array Expr) → m α) : m α :=
   withLocalDeclsD (declInfos.map fun (n, t) => (n, fun _ => pure t)) k
 
 /-- Introduce let declarations into the local context. -/
@@ -42,7 +44,8 @@ namespace Lean.Meta
 
 open Lean.Elab.Tactic Lean.Elab.Term
 
-partial def runTactic (goal : MVarId) (tac : MVarId → TacticM (List MVarId)) : MetaM (List MVarId) := do
-  TermElabM.run' (run goal (do replaceMainGoal $ ← tac $ ← getMainGoal))
+partial def runTactic (goal : MVarId) (tac : MVarId → TacticM (List MVarId)) :
+  MetaM (List MVarId) := do
+  TermElabM.run' (run goal (do replaceMainGoal <| ← tac <| ← getMainGoal))
 
 end Lean.Meta
