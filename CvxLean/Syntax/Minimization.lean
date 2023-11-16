@@ -1,5 +1,5 @@
 import CvxLean.Lib.Minimization
-import CvxLean.Meta.Missing.SubExpr
+import CvxLean.Meta.Util.SubExpr
 import CvxLean.Meta.Minimization
 import CvxLean.Syntax.Parser
 
@@ -7,7 +7,7 @@ namespace CvxLean
 
 open Lean
 
-/-- This alias for negation is used to mark a minimization problem to be pretty 
+/-- This alias for negation is used to mark a minimization problem to be pretty
 printed as maximization. -/
 def maximizeNeg := @Neg.neg
 
@@ -27,7 +27,7 @@ partial def elabVars (idents : Array Syntax) : TermElabM (Array (Lean.Name × Ex
   let idents ← idents.mapM fun (id, ty) => do
     match id with
       | Syntax.ident _ _ val _ => return (val, ← Term.elabTerm ty none)
-      | _ => throwError "Expected identifier: {id}"  
+      | _ => throwError "Expected identifier: {id}"
   return idents
 
 -- TODO: allow dependently typed variables?
@@ -50,14 +50,14 @@ partial def elabVars (idents : Array Syntax) : TermElabM (Array (Lean.Name × Ex
         let minOrMaxStx := minOrMax.raw[0]!
         if minOrMaxStx.isOfKind `maximize then
           obj ← mkAppM ``maximizeNeg #[obj]
-        else if !(minOrMaxStx.isOfKind `minimize) then 
+        else if !(minOrMaxStx.isOfKind `minimize) then
           throwError "expected minimize or maximize, got: {minOrMaxStx.getKind}"
         obj ← mkLambdaFVars #[p] obj
         -- Elaborate constraints.
         let constraints := constraints.raw[0]!.getArgs
-        let constraints ← constraints.mapM fun c => do 
+        let constraints ← constraints.mapM fun c => do
           return Meta.mkLabel c[0].getId (← Term.elabTerm c[2] none)
-        let constraints ← mkLambdaFVars #[p] $ 
+        let constraints ← mkLambdaFVars #[p] $
           Expr.replaceFVars (Meta.composeAnd constraints.data) xs prs
         -- Put it all together.
         let res ← mkAppM ``Minimization.mk #[obj, constraints]
@@ -139,7 +139,7 @@ partial def delabMinimization : Delab := do
       return tys.toArray
     let (objFun, isMax) ← withNaryArg 2 do withDomainBinding domain do
       match ← getExpr with
-      | Expr.app (Expr.app (Expr.app (Expr.const ``maximizeNeg _) _) _) e => 
+      | Expr.app (Expr.app (Expr.app (Expr.const ``maximizeNeg _) _) _) e =>
         withExpr e do
           return (← delab, true)
       | _ =>

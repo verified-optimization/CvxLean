@@ -1,6 +1,6 @@
-import CvxLean.Lib.Missing.Vec
-import CvxLean.Lib.Optlib.CovarianceEstimation
-import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.PosDef
+import CvxLean.Lib.Math.Data.Vec
+import CvxLean.Lib.Math.CovarianceEstimation
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.DCP.AtomLibrary
 import CvxLean.Tactic.Conv.ConvOpt
@@ -13,10 +13,10 @@ open CvxLean
 open BigOperators
 open Matrix
 
-noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) := 
+noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) :=
   optimization (R : Matrix (Fin n) (Fin n) ℝ)
     maximize (∏ i, gaussianPdf R (y i))
-    subject to 
+    subject to
       c_pos_def : R.PosDef
       c_sparse : R⁻¹.abs.sum ≤ α
 

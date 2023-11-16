@@ -1,7 +1,7 @@
 import Lean
 import CvxLean.Lib.Minimization
 import CvxLean.Syntax.Minimization
-import CvxLean.Meta.Missing.Expr
+import CvxLean.Meta.Util.Expr
 
 namespace CvxLean
 
@@ -9,7 +9,7 @@ open Lean Lean.Elab Lean.Meta Lean.Elab.Tactic Lean.Elab.Term Lean.Elab.Command
 open Minimization
 
 /-- Run the tactics written by the user. -/
-partial def runReductionTactic (mvarId : MVarId) (tacticCode : Syntax) 
+partial def runReductionTactic (mvarId : MVarId) (tacticCode : Syntax)
 : TermElabM Unit := do
   -- Recall, `tacticCode` is the whole `by ...` expression.
   let code := tacticCode[1]
@@ -22,7 +22,7 @@ partial def runReductionTactic (mvarId : MVarId) (tacticCode : Syntax)
 
     match remainingGoals with
     | [] => pure ()
-    | [g] => do 
+    | [g] => do
       MVarId.withContext g do
         if ← isDefEq (← inferType $ mkMVar g) (← inferType $ mkFVar fvarDone) then
           MVarId.assign g (mkFVar fvarDone)
@@ -45,7 +45,7 @@ def elabReductionProof (stx : Syntax) (expectedType : Expr) : TermElabM Expr :=
         | throwError "SyntheticMVarDecl not found."
 
       modify fun s => { s with syntheticMVars := {} }
-      
+
       match mvarDecl.kind with
       | SyntheticMVarKind.tactic tacticCode savedContext =>
         withSavedContext savedContext do
@@ -53,10 +53,10 @@ def elabReductionProof (stx : Syntax) (expectedType : Expr) : TermElabM Expr :=
       | _ => throwError "Expected SyntheticMVarDecl of kind tactic."
       return ← instantiateMVars mvar
     finally
-      modify fun s => { s with syntheticMVars := 
+      modify fun s => { s with syntheticMVars :=
         s.syntheticMVars.mergeBy (fun _ _ a => a) syntheticMVarsSaved }
 
-syntax (name := reduction) 
+syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Parser.Term.byTactic : command
 
 /-- Reduction command. -/
@@ -77,15 +77,15 @@ def evalReduction : CommandElab := fun stx => match stx with
       let prob₂Ty := mkAppN (Lean.mkConst ``Minimization) #[D2, R2]
       let prob₂ ← Meta.mkFreshExprMVar (some $ prob₂Ty)
       let proof ← elabReductionProof proof.raw
-        (← mkArrow 
-          (mkAppN (Lean.mkConst ``Solution) #[D2, R2, R2Preorder, prob₂]) 
+        (← mkArrow
+          (mkAppN (Lean.mkConst ``Solution) #[D2, R2, R2Preorder, prob₂])
           (← mkAppM ``Solution #[prob]))
       let prob₂ ← instantiateMVars prob₂
       let prob₂ ← mkLambdaFVars (xs.map Prod.snd) prob₂
       -- TODO: Generalize the function in Solve to add definitions inferring type.
       Lean.addDecl $ Declaration.defnDecl (mkDefinitionValEx probId.getId [] (← inferType prob₂) prob₂ (Lean.ReducibilityHints.regular 0) (DefinitionSafety.safe) [probId.getId])
-      let proofTy ← instantiateMVars (← mkArrow 
-          (mkAppN (Lean.mkConst ``Solution) #[D2, R2, R2Preorder, (mkAppN (Lean.mkConst probId.getId) (xs.map Prod.snd))]) 
+      let proofTy ← instantiateMVars (← mkArrow
+          (mkAppN (Lean.mkConst ``Solution) #[D2, R2, R2Preorder, (mkAppN (Lean.mkConst probId.getId) (xs.map Prod.snd))])
           (← mkAppM ``Solution #[prob]))
       let proofTy ← mkForallFVars (xs.map Prod.snd) proofTy
       let proof ← mkLambdaFVars (xs.map Prod.snd) proof

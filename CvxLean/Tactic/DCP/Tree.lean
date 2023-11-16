@@ -1,5 +1,5 @@
 import Lean
-import CvxLean.Lib.Missing.Array
+import CvxLean.Lib.Math.Data.Array
 
 namespace CvxLean
 
@@ -16,15 +16,15 @@ partial def toMessageData [ToMessageData α] [ToMessageData β] (x : Tree α β)
   | Tree.node val children =>
     let children := children.map toMessageData
     MessageData.paren (
-      "node:" ++ ToMessageData.toMessageData val ++ "[" ++ (MessageData.joinSep children.toList ", ") ++ "]" 
-    ) 
+      "node:" ++ ToMessageData.toMessageData val ++ "[" ++ (MessageData.joinSep children.toList ", ") ++ "]"
+    )
   | Tree.leaf val => "leaf:" ++ ToMessageData.toMessageData val
 
 instance [ToMessageData α] [ToMessageData β] : ToMessageData (Tree α β) := {
   toMessageData := toMessageData
 }
 
-partial def zip [Inhabited α] [Inhabited β] [ToMessageData α] [ToMessageData β] [ToMessageData γ] [ToMessageData δ] : 
+partial def zip [Inhabited α] [Inhabited β] [ToMessageData α] [ToMessageData β] [ToMessageData γ] [ToMessageData δ] :
   Tree α γ → Tree β δ → MetaM (Tree (α × β) (γ × δ))
   | node val₁ children₁, node val₂ children₂ => do return node (val₁, val₂) (← Array.zipWithM zip children₁ children₂)
   | leaf val₁, leaf val₂ => pure $ leaf (val₁, val₂)

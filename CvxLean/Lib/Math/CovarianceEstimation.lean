@@ -1,4 +1,4 @@
-import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.PosDef
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 
 open Real
 
@@ -48,7 +48,7 @@ lemma log_prod_gaussianPdf {N n : ℕ} (y : Fin N → Fin n → ℝ) (R : Matrix
     norm_num
     exact sqrt_2_pi_n_R_det_ne_zero
     exact div_ne_zero (by norm_num) sqrt_2_pi_n_R_det_ne_zero
-    exact exp_ne_zero _ 
+    exact exp_ne_zero _
 
 #check congrArg
 
