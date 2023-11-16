@@ -89,7 +89,7 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
     Array MessageData ×
     AtomDataTrees) := do
   trace[Meta.debug] "Constant? {e} {vars.map (mkFVar ·)}"
-  if isConstant e || curvature == Curvature.Constant then
+  if isRelativelyConstant e vars || curvature == Curvature.Constant then
     trace[Meta.debug] "Yes"
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   if e.isFVar then --∧ vars.contains e.fvarId! then

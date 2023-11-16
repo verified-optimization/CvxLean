@@ -43,7 +43,7 @@ optimality by
   simp [expCone]
 
 declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)? (y : (Fin n) → ℝ)?
-  (z : (Fin n) → ℝ)? : Vec.expCone x 1 z :=
+  (z : (Fin n) → ℝ)? : Vec.expCone x y z :=
 optimality by
   simp [Vec.expCone]
 
