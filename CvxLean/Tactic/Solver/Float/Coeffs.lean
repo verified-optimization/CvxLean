@@ -14,12 +14,18 @@ open Lean.Elab.Tactic
 /- Generate Float expression from natural number.
 TODO: Duplicate? Move? -/
 def mkFloat (n : Nat) : Expr :=
-  mkApp3 (mkConst ``OfNat.ofNat ([levelZero] : List Level))
+  mkApp3 (mkConst ``OfNat.ofNat [levelZero])
     (mkConst ``Float) (mkNatLit n) (mkApp (mkConst ``instOfNatFloat) (mkNatLit n))
 
 /- Helper function to generate (i : Fin n) as an expression. -/
 def mkFinIdxExpr (i : Nat) (n : Nat) : MetaM Expr := do
   return mkApp2 (mkConst ``Fin.ofNat) (mkNatLit n.pred) (mkNatLit i)
+
+/- Helper function to generate (i : ty) where [OfNat ty i] as an expression. -/
+def mkOfNatExpr (i : Nat) (ty : Expr) : MetaM Expr := do
+  let ie := mkNatLit i
+  let inst ← synthInstance (mkApp2 (mkConst ``OfNat [levelZero]) ty ie)
+  return mkApp3 (mkConst ``OfNat.ofNat [levelZero]) ty ie inst
 
 /- Evaluate floating point expressions. -/
 unsafe def evalFloat (e : Expr) : MetaM Float := do
@@ -221,6 +227,8 @@ unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr)
     coeffs := coeffs.push floatCoeff
   return (coeffs, const)
 
+instance {n m : ℕ} : OfNat (Fin n.succ ⊕ Fin m.succ) (x) where
+  ofNat := if x <= n then Sum.inl (Fin.ofNat x) else Sum.inr (Fin.ofNat (x - n.succ))
 
 unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
   : MetaM ProblemData := do
@@ -253,7 +261,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
           let res ← #[a, b, c].mapM fun e => do
             let e ← realToFloat e
             return ← determineScalarCoeffsAux e p floatDomain
-          -- Note: The order here is important. In MOSEK, x and z are swapped in
+          -- NOTE: The order here is important. In MOSEK, x and z are swapped in
           -- the definition of the EXP cone.
           data := data.addExpConstraint res[2]!.1 res[2]!.2
           data := data.addExpConstraint res[1]!.1 res[1]!.2
@@ -269,7 +277,9 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
             let e ← realToFloat e
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
             data := data.addRotatedSOConstraint ea eb
-      | Expr.app (Expr.app (Expr.app (Expr.const ``Real.Matrix.posOrthCone _) m) n) e => do
+      -- TODO: Unroll?
+      | Expr.app (Expr.app (Expr.app
+          (Expr.const ``Real.Matrix.posOrthCone _) m) n) e => do
           let m : Nat ← evalExpr Nat (mkConst ``Nat) m
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n
           for i in [:m] do
@@ -279,13 +289,25 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
               let eij ← realToFloat eij
               let res ← determineScalarCoeffsAux eij p floatDomain
               data := data.addPosOrthConstraint res.1 res.2
-      | Expr.app (Expr.app (Expr.app (Expr.const ``Real.Matrix.PSDCone _) m) mi) e => do
-          trace[Meta.debug] "PSD constraint 1 {e}"
+      | Expr.app (Expr.app (Expr.app
+          (Expr.const ``Real.Matrix.PSDCone _) mty) _) e => do
           let e ← realToFloat e
-          trace[Meta.debug] "PSD constraint 2 {e}"
           let res ← determineMatrixCoeffsAux e p floatDomain
-          trace[Meta.debug] "PSD constraint 3 {res}"
+          -- The size of the matrix can be inferred from number of coefficients.
+          let m := res.2.size
           data := data.addMatrixAffineConstraint res.1 res.2
+          -- Enforce symmetry.
+          for i in [:m] do
+            for j in [i+1:m] do
+              let ei := mkApp e (← mkOfNatExpr i mty)
+              let ej := mkApp e (← mkOfNatExpr j mty)
+              let eij := mkApp ei (← mkOfNatExpr j mty)
+              let eji := mkApp ej (← mkOfNatExpr i mty)
+              let e ← mkAppM ``Sub.sub #[eij, eji]
+              let e ← realToFloat e
+              let (a, b) ← determineScalarCoeffsAux e p floatDomain
+              data := data.addZeroConstraint a b
+
       | _ => throwError "No match: {c}."
     return data
 
