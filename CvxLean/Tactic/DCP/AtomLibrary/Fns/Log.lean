@@ -1,5 +1,6 @@
 import CvxLean.Tactic.DCP.Atoms
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
+import CvxLean.Lib.Math.Data.Vec
 
 namespace CvxLean
 
@@ -31,11 +32,13 @@ vconditionElimination
     have hxpos := lt_of_lt_of_le hexppos c_exp
     exact lt_of_lt_of_le hxpos hy)
 
+open Vec
+
 declare_atom Vec.log [concave] (n : Nat)& (x : (Fin n) → ℝ)+ : log x :=
 vconditions (cond : ∀ i, 0 < x i)
 implementationVars (t : (Fin n) → ℝ)
 implementationObjective t
-implementationConstraints (c_exp : Real.Vec.expCone t 1 x)
+implementationConstraints (c_exp : expCone t 1 x)
 solution (t := log x)
 solutionEqualsAtom rfl
 feasibility

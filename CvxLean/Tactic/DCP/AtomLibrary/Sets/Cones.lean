@@ -28,11 +28,10 @@ optimality by
   simp [Vec.posOrthCone]
 
 declare_atom Matrix.posOrthCone [cone]
-  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ :
+  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
   Real.Matrix.posOrthCone M :=
 optimality by
-  intros x' hx hx0 i j
-  exact (hx0 i j).trans (hx i j)
+  simp [Matrix.posOrthCone]
 
 end PosOrthCone
 
@@ -61,14 +60,11 @@ optimality by
       apply And.intro hy;
       exact ⟨le_trans h0z hz, le_trans hx hx0⟩ }
 
-declare_atom Vec.expCone [cone]
-  (n : Nat)& (x : (Fin n) → ℝ)- (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
+declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)?
+  (z : (Fin n) → ℝ)+ : Vec.expCone x 1 z :=
 optimality by
   intros x' z' hx hz hexp i
-  unfold Vec.expCone at *
-  apply (exp_iff_expCone _ _).1
-  have hexpleexp := exp_le_exp.2 (hx i)
-  exact (hexpleexp.trans ((exp_iff_expCone _ _).2 (hexp i))).trans (hz i)
+  exact expCone.optimality (hx := hx i) (hz := hz i) (hexp := hexp i)
 
 end ExpCone
 
@@ -81,8 +77,14 @@ optimality by
   intros t' ht h
   exact le_trans h ht
 
-declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+ (x : (Fin n) → ℝ)? :
-  rotatedSoCone v w x :=
+declare_atom Vec.soCone [cone] (n : Nat)& (m : Nat)& (t : Fin m → Real)+
+  (X : Matrix.{0,0,0} (Fin m) (Fin n) Real)? : Vec.soCone t X :=
+optimality by
+  intros t' ht h i
+  exact soCone.optimality (ht := ht i) (h := h i)
+
+declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)+ (w : ℝ)+
+  (x : (Fin n) → ℝ)? : rotatedSoCone v w x :=
 optimality by
   intros v' w' hv hw h
   unfold rotatedSoCone at *
@@ -93,20 +95,19 @@ optimality by
     norm_num
   · exact ⟨h.2.1.trans hv, h.2.2.trans hw⟩
 
-declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+ (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? :
-  Vec.rotatedSoCone v w x :=
+declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)+
+  (w : (Fin n) → ℝ)+ (x : (Fin n) → (Fin m) → ℝ)? : Vec.rotatedSoCone v w x :=
 optimality by
-  unfold Vec.rotatedSoCone
   intros v' w' hv hw h i
-  apply rotatedSoCone.optimality _ _ _ _ _ _ (hv i) (hw i) (h i)
+  exact rotatedSoCone.optimality (hv := hv i) (hw := hw i) (h := h i)
 
 end SOCone
 
 /- Positive semi-definite cone atom. -/
 section PSDCone
 
-declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)? :
-  Matrix.PSDCone A :=
+declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)&
+  (A : Matrix.{0,0,0} m m ℝ)? : Matrix.PSDCone A :=
 optimality fun h => h
 
 end PSDCone

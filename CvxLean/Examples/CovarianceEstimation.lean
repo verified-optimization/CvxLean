@@ -2,7 +2,7 @@ import CvxLean.Lib.Math.Data.Vec
 import CvxLean.Lib.Math.CovarianceEstimation
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 import CvxLean.Syntax.Minimization
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.DCP.AtomLibrary.All
 import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Command.Reduction
 import CvxLean.Command.Solve

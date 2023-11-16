@@ -1,6 +1,6 @@
 import CvxLean.Syntax.Minimization
 import CvxLean.Syntax.Prod
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.DCP.AtomLibrary.All
 import CvxLean.Tactic.Basic.Rename
 import CvxLean.Tactic.Basic.RenameConstr
 import CvxLean.Tactic.Basic.RemoveConstr
@@ -13,9 +13,9 @@ set_option trace.Meta.debug true
 noncomputable def testVCondInference : Solution <|
   optimization (x : ℝ)
     minimize (x)
-    subject to   
+    subject to
       h1 : 0.001 ≤ x
-      h2 : 1 ≤ sqrt x := by 
+      h2 : 1 ≤ sqrt x := by
   dcp
   sorry
 
@@ -59,14 +59,14 @@ noncomputable def test000 : Solution $
     --     [
     --       (node:Real.exp _uniq.7820 * Real.exp _uniq.7821
     --         [
-    --           (node:Real.exp _uniq.7820[leaf:_uniq.7820]), 
+    --           (node:Real.exp _uniq.7820[leaf:_uniq.7820]),
     --           (node:Real.exp _uniq.7821[leaf:_uniq.7821])
     --         ]
-    --       ), 
+    --       ),
     --       (node:3 * _uniq.7820[leaf:3, leaf:_uniq.7820])
     --     ]
     --   )
-    -- ] 
+    -- ]
 
 noncomputable def test001'' (h : 0 ≤ (2 : ℝ)) (h : 0 ≤ (3 : ℝ)) : Solution $
   optimization (x y : ℝ)
@@ -178,7 +178,7 @@ noncomputable def test_log_det : Solution $
 --       (cmain : exp y ≤ log (a * sqrt x + b))
 --       (clin  : a * x + b * y = d)
 --       (csqrt : 0 ≤ x)
---       (clog  : 0 < a * sqrt x + b) 
+--       (clog  : 0 < a * sqrt x + b)
 -- := by
 --   dcp
 --   sorry

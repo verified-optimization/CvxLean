@@ -8,8 +8,8 @@ import CvxLean.Tactic.Solver.Float.Cones
 import CvxLean.Tactic.Solver.Float.OptimizationParam
 import CvxLean.Tactic.Solver.Float.RealToFloatExt
 
-import CvxLean.Lib.Optlib.CovarianceEstimation
-import CvxLean.Lib.Optlib.LogDet
+import CvxLean.Lib.Math.CovarianceEstimation
+import CvxLean.Lib.Math.LogDet
 
 namespace CvxLean
 

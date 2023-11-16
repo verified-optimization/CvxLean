@@ -1,5 +1,6 @@
 import CvxLean.Tactic.DCP.Atoms
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
+import CvxLean.Lib.Math.Data.Vec
 
 namespace CvxLean
 
@@ -22,17 +23,19 @@ optimality by
   exact hexpleexp.trans c_exp
 vconditionElimination
 
+open Vec
+
 declare_atom Vec.exp [convex] (n : Nat)& (x : (Fin n) → ℝ)+ : exp x :=
 vconditions
 implementationVars (t : Fin n → ℝ)
 implementationObjective t
-implementationConstraints (c_exp : Real.Vec.expCone x 1 t)
+implementationConstraints (c_exp : expCone x 1 t)
 solution (t := exp x)
 solutionEqualsAtom
   rfl
 feasibility
   (c_exp: by
-    intros _ _
+    intros _ i
     apply exp.feasibility0)
 optimality by
   intros x' hx i
