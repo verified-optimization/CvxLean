@@ -25,7 +25,6 @@ noncomputable def sdp1 :=
     subject to
       h₁ : Matrix.trace (A1 * X) <= b1
       h₂ : Matrix.PosSemidef X
-      h' : X 0 1 = X 1 0 -- TODO: Enforce symmetric! (at the solve stage)
 
 solve sdp1
 
