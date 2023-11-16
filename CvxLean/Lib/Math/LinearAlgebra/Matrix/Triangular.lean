@@ -5,7 +5,7 @@ Authors: Alexander Bentkamp
 -/
 import Mathlib.LinearAlgebra.Matrix.Block
 
-import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.Block
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.Block
 
 /-
 # Triangular Matrices

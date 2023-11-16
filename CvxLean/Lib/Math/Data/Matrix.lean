@@ -3,7 +3,8 @@ import Mathlib.Data.Matrix.Basic
 import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Data.Array.Defs
-import CvxLean.Lib.Missing.List
+
+import CvxLean.Lib.Math.Data.List
 
 namespace Matrix
 

@@ -1,9 +1,9 @@
 import CvxLean.Tactic.DCP.Atoms
 import CvxLean.Lib.Cones
-import CvxLean.Lib.Missing.Real
-import CvxLean.Lib.Missing.Vec
-import CvxLean.Lib.Missing.Matrix
-import CvxLean.Lib.Optlib.LogDet
+import CvxLean.Lib.Math.Data.Real
+import CvxLean.Lib.Math.Data.Vec
+import CvxLean.Lib.Math.Data.Matrix
+import CvxLean.Lib.Math.LogDet
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.LDL
 import CvxLean.Syntax.Minimization

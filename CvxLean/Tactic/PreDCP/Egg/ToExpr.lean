@@ -1,4 +1,4 @@
-import CvxLean.Lib.Missing.Real
+import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.PreDCP.Egg.Sexp
 import CvxLean.Tactic.DCP.Tree
@@ -81,7 +81,7 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
     return mkAppN
       (mkConst ``Neg.neg [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instNegReal), t]
-  -- Square root. 
+  -- Square root.
   | Tree.node "sqrt" #[t] => do
     let t ← toExpr vars t
     return mkAppN (mkConst ``Real.sqrt) #[t]

@@ -3,11 +3,11 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Linarith
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
-import CvxLean.Meta.Missing.Meta
-import CvxLean.Lib.Missing.Array
+import CvxLean.Meta.Util.Meta
+import CvxLean.Lib.Math.Data.Array
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
-import CvxLean.Meta.Missing.Expr
+import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.Solver.Float.OptimizationParam
 
 namespace CvxLean

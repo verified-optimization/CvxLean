@@ -1,6 +1,6 @@
 import Mathlib.LinearAlgebra.Matrix.Spectrum
 
-import CvxLean.Lib.Optlib.Missing.Analysis.InnerProductSpace.Spectrum
+import CvxLean.Lib.Math.Analysis.InnerProductSpace.Spectrum
 
 namespace Matrix
 
@@ -26,7 +26,7 @@ noncomputable instance : InnerProductSpace 𝕜 (n → 𝕜) :=
 lemma IsHermitian.hasEigenvector_eigenvectorBasis (hA : A.IsHermitian) (i : n) :
   Module.End.HasEigenvector (Matrix.toLin' A) (hA.eigenvalues i) (hA.eigenvectorBasis i) := by
   simp only [IsHermitian.eigenvectorBasis, OrthonormalBasis.coe_reindex]
-  apply LinearMap.IsSymmetric.hasEigenvector_eigenvectorBasis 
+  apply LinearMap.IsSymmetric.hasEigenvector_eigenvectorBasis
 
 -- TODO: can be used to prove `spectral_theorem`.
 /-- *Diagonalization theorem*, *spectral theorem* for matrices; A hermitian matrix can be
@@ -37,13 +37,13 @@ theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n)) 
     diagonal (IsROrC.ofReal ∘ as) * xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) := by
   rw [basis_toMatrix_basisFun_mul]
   ext i j
-  let xs' := xs.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm 
+  let xs' := xs.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
   let as' : Fin (Fintype.card n) → ℝ := fun i => as $ (Fintype.equivOfCardEq (Fintype.card_fin _)) i
   have hxs' : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as' j) (xs' j) := by
     simp only [OrthonormalBasis.coe_reindex, Equiv.symm_symm]
-    intros j 
+    intros j
     exact (hxs ((Fintype.equivOfCardEq (Fintype.card_fin _)) j))
-  convert @LinearMap.spectral_theorem' 𝕜 _ 
+  convert @LinearMap.spectral_theorem' 𝕜 _
     (PiLp 2 (fun (_ : n) => 𝕜)) _ _ (Fintype.card n) (Matrix.toLin' A)
     (EuclideanSpace.single j 1)
     ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm i)

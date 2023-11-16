@@ -1,9 +1,10 @@
 import CvxLean.Tactic.DCP.Atoms
-import CvxLean.Lib.Missing.Matrix
+import CvxLean.Lib.Math.Data.Matrix
 
 namespace CvxLean
 
-declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)& (A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
+declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)&
+(A : Matrix.{0,0,0} m m ℝ)+ : Matrix.trace A:=
 bconditions
 homogenity by
   rw [Matrix.trace_zero, add_zero, smul_zero, add_zero, Matrix.trace_smul]

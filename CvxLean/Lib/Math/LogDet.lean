@@ -1,10 +1,9 @@
 import Mathlib.LinearAlgebra.Matrix.LDL
 
-import CvxLean.Lib.Optlib.SchurComplement
-import CvxLean.Lib.Optlib.Subadditivity
-
-import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.Triangular
-import CvxLean.Lib.Optlib.Missing.LinearAlgebra.Matrix.LDL
+import CvxLean.Lib.Math.SchurComplement
+import CvxLean.Lib.Math.Subadditivity
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.Triangular
+import CvxLean.Lib.Math.LinearAlgebra.Matrix.LDL
 
 /- In this file we prove properties needed for the log-det-atom.
 We follow the proof in the Mosek documentation:

@@ -1,8 +1,8 @@
-import CvxLean.Lib.Missing.Real
-import CvxLean.Lib.Missing.Vec
-import CvxLean.Lib.Missing.Matrix
-import CvxLean.Lib.Cones
-import CvxLean.Meta.Missing.Expr
+import CvxLean.Lib.Math.Data.Real
+import CvxLean.Lib.Math.Data.Vec
+import CvxLean.Lib.Math.Data.Matrix
+import CvxLean.Lib.Cones.All
+import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Solver.Float.Cones
 import CvxLean.Tactic.Solver.Float.OptimizationParam
