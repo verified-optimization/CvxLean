@@ -8,51 +8,34 @@ import CvxLean.Lib.Math.Data.List
 
 namespace Matrix
 
+-- Order
+
 instance [Preorder α] : Preorder (Matrix m n α) :=
 { le := fun A B => ∀ i j, A i j ≤ B i j
   le_refl := fun _ _ _ => le_refl _
   le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
   lt_iff_le_not_le := fun _ _ => refl _ }
 
+-- Abs
+
 def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
   fun i j => Abs.abs (A i j)
 
-instance : Abs (Matrix m n ℝ) := ⟨Matrix.abs⟩
+instance : Abs (Matrix m n ℝ) := ⟨abs⟩
 
+-- Vec cons
 
+theorem vecCons_zero_zero {n}
+  : vecCons (0 : ℝ) (0 : Fin n → ℝ) = 0 := by
+  ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-def toUpperTri {m α : Type _} [LinearOrder m] [Zero α] (A : Matrix m m α) : Matrix m m α :=
-  fun i j => if i ≤ j then A i j else 0
+theorem smul_vecCons {n} (x : ℝ) (y : ℝ) (v : Fin n → ℝ)
+  : x • vecCons y v = vecCons (x • y) (x • v) := by
+  ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem toUpperTri_zero {m : Type _} [LinearOrder m]
-  : Matrix.toUpperTri (0 : Matrix m m ℝ) = 0 := by
-  funext i j ; simp [Matrix.toUpperTri]
-
-theorem toUpperTri_smul {m : Type _} [LinearOrder m]
-  (A : Matrix m m ℝ) (κ : ℝ)
-  : κ • Matrix.toUpperTri A = Matrix.toUpperTri (κ • A) := by
-  funext i j ; rw [Pi.smul_apply, Pi.smul_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h]
-
-theorem toUpperTri_add {m : Type _} [LinearOrder m]
-  (A B : Matrix m m ℝ)
-  : Matrix.toUpperTri (A + B) = Matrix.toUpperTri A + Matrix.toUpperTri B := by
-  funext i j ; rw [Pi.add_apply, Pi.add_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h]
-
-lemma upperTriangular_toUpperTri {m : Type _} [LinearOrder m] (A : Matrix m m ℝ) :
-  A.toUpperTri.upperTriangular := by
-  intros i j hij
-  unfold toUpperTri
-  rw [if_neg]
-  simpa using hij
-
-lemma upperTriangular.toUpperTri_eq {A : Matrix n n ℝ} (hA : upperTriangular A) :
-  A.toUpperTri = A := by
-  ext i j
-  by_cases i ≤ j
-  simp [toUpperTri, h]
-  simp [toUpperTri, h, hA (lt_of_not_ge h)]
+theorem add_vecCons {n} (x : ℝ) (v : Fin n → ℝ) (y : ℝ) (w : Fin n → ℝ)
+  : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
+  ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 -- open BigOperators
 

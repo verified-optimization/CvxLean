@@ -1,8 +1,7 @@
 import CvxLean.Tactic.DCP.Atoms
+import CvxLean.Lib.Math.Data.Matrix
 
 namespace CvxLean
-
-open Real
 
 declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
 bconditions
@@ -22,5 +21,17 @@ additivity by
 optimality by
   intros x' y' hx hy i
   apply add_le_add (hx i) (hy i)
+
+declare_atom Matrix.add [affine] (m : Type)& (n : Type)&
+(A : Matrix.{0,0,0} m n ℝ)+ (B : Matrix.{0,0,0} m n ℝ)+ : A + B :=
+bconditions
+homogenity by
+  rw [add_zero, add_zero, smul_zero, add_zero, smul_add]
+additivity by
+  rw [add_zero, add_zero, add_assoc, add_comm B, add_assoc A', add_comm B']
+  simp only [add_assoc]
+optimality by
+  intros A' B' hA hB i j
+  apply add_le_add (hA i j) (hB i j)
 
 end CvxLean

@@ -6,7 +6,7 @@ namespace CvxLean
 open BigOperators
 
 -- TODO: Do I need Vec.sum from missing?
-declare_atom Vec.sum [affine] (m : Nat)& (x : Fin m → ℝ)+ : ∑ i, x i :=
+declare_atom Vec.sum [affine] (m : Nat)& (x : Fin m → ℝ)+ : ∑ i, (fun j => x j) i :=
 bconditions
 homogenity by
   simp only [Pi.zero_apply]
