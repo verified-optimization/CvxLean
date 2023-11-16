@@ -25,7 +25,7 @@ noncomputable instance LDL.invertible_diag : Invertible (LDL.diag hA) := by
 
 open scoped Matrix ComplexOrder
 
-@[simp] 
+@[simp]
 lemma PosSemidef_zero : PosSemidef (0 : Matrix n n 𝕜) :=
 by simp [PosSemidef]
 
@@ -33,53 +33,21 @@ lemma LogDetAtom.feasibility_PosDef {D Z : Matrix n n ℝ}
   (hD : D = LDL.diag hA)
   (hZ : Z = LDL.diag hA * (LDL.lower hA)ᵀ) :
   (fromBlocks D Z Zᵀ A).PosSemidef := by
-  have h_D_eq : D = Z * A⁻¹ * Zᴴ := 
-    calc D 
-      = D * D⁻¹ * D := by 
+  have h_D_eq : D = Z * A⁻¹ * Zᴴ :=
+    calc D
+      = D * D⁻¹ * D := by
           rw [hD, Matrix.mul_inv_of_invertible, Matrix.one_mul]
-    _ = D * (LDL.lowerInv hA * A * (LDL.lowerInv hA)ᵀ)⁻¹ * Dᵀ := by 
+    _ = D * (LDL.lowerInv hA * A * (LDL.lowerInv hA)ᵀ)⁻¹ * Dᵀ := by
           erw [hD, LDL.diag, diagonal_transpose, ← LDL.diag, LDL.diag_eq_lowerInv_conj]
           rfl
-    _ = D * (LDL.lower hA)ᵀ * A⁻¹ * (D * (LDL.lower hA)ᵀ)ᵀ := by 
+    _ = D * (LDL.lower hA)ᵀ * A⁻¹ * (D * (LDL.lower hA)ᵀ)ᵀ := by
           simp only [hD, LDL.lower, transpose_mul, transpose_transpose, transpose_nonsing_inv,
             Matrix.mul_assoc, Matrix.mul_inv_rev]
-    _ = Z * A⁻¹ * Zᴴ := by 
+    _ = Z * A⁻¹ * Zᴴ := by
           rw [hZ, hD]; rfl
   haveI := hA.Invertible
   erw [PosSemidef.fromBlocks₂₂ _ _ hA]
   simp [h_D_eq]
-
-def toUpperTri {m α : Type _} [LinearOrder m] [Zero α] (A : Matrix m m α) : Matrix m m α :=
-  fun i j => if i ≤ j then A i j else 0
-
-theorem toUpperTri_zero {m : Type _} [LinearOrder m]
-  : Matrix.toUpperTri (0 : Matrix m m ℝ) = 0 := by
-  funext i j ; simp [Matrix.toUpperTri] 
-
-theorem toUpperTri_smul {m : Type _} [LinearOrder m]
-  (A : Matrix m m ℝ) (κ : ℝ)
-  : κ • Matrix.toUpperTri A = Matrix.toUpperTri (κ • A) := by
-  funext i j ; rw [Pi.smul_apply, Pi.smul_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h]
-
-theorem toUpperTri_add {m : Type _} [LinearOrder m]
-  (A B : Matrix m m ℝ)
-  : Matrix.toUpperTri (A + B) = Matrix.toUpperTri A + Matrix.toUpperTri B := by
-  funext i j ; rw [Pi.add_apply, Pi.add_apply] ; simp only [Matrix.toUpperTri]
-  by_cases h : i ≤ j <;> simp [h]
-
-lemma upperTriangular_toUpperTri (A : Matrix n n ℝ) : A.toUpperTri.upperTriangular := by
-  intros i j hij
-  unfold toUpperTri
-  rw [if_neg]
-  simpa using hij
-
-lemma upperTriangular.toUpperTri_eq {A : Matrix n n ℝ} (hA : upperTriangular A) :
-  A.toUpperTri = A := by
-  ext i j
-  by_cases i ≤ j
-  simp [toUpperTri, h]
-  simp [toUpperTri, h, hA (lt_of_not_ge h)]
 
 lemma LogDetAtom.feasibility_PosDef' {D Z Y : Matrix n n ℝ}
   (hY : Y = LDL.diag hA * (LDL.lower hA)ᵀ)
@@ -98,32 +66,32 @@ lemma LogDetAtom.feasibility_PosDef' {D Z Y : Matrix n n ℝ}
   simp [hD, hY, LDL.diag]
 
 lemma LDL.diagEntries_pos {A : Matrix n n ℝ} (hA: A.PosDef) (i : n) :
-  0 < LDL.diagEntries hA i := by 
-  have : (LDL.lowerInv hA).det ≠ 0 := by 
+  0 < LDL.diagEntries hA i := by
+  have : (LDL.lowerInv hA).det ≠ 0 := by
     simp [LDL.det_lowerInv hA]
-  have : LDL.lowerInv hA i ≠ 0 := fun h => 
+  have : LDL.lowerInv hA i ≠ 0 := fun h =>
     this (Matrix.det_eq_zero_of_row_eq_zero i (λ j => congr_fun h j))
   exact hA.2 (LDL.lowerInv hA i) this
 
 lemma LogDetAtom.solution_eq_atom {A : Matrix n n ℝ} (hA: A.PosDef) :
   (∑ i, Real.log (LDL.diagEntries hA i)) = Real.log (A.det) := by
   conv => rhs; rw [(LDL.lower_conj_diag hA).symm]
-  have := Real.log_prod Finset.univ (LDL.diagEntries hA) 
+  have := Real.log_prod Finset.univ (LDL.diagEntries hA)
     (λ i _ => ne_of_gt (LDL.diagEntries_pos hA i))
   simp [LDL.diag, this.symm]
 
 lemma LogDetAtom.feasibility_exp {A : Matrix n n ℝ} (hA: A.PosDef) (i : n) :
-  LDL.diagEntries hA i ≤ ((LDL.diag hA) * ((LDL.lower hA)ᵀ)).diag i := by 
+  LDL.diagEntries hA i ≤ ((LDL.diag hA) * ((LDL.lower hA)ᵀ)).diag i := by
   simp [LDL.diag]
 
 lemma IsHermitian₁₁_of_IsHermitian_toBlock
   {A B C D : Matrix n n ℝ} (h : (fromBlocks A B C D).IsHermitian) :
-  IsHermitian A := by 
+  IsHermitian A := by
   ext i j; simpa using congr_fun (congr_fun h (Sum.inl i)) (Sum.inl j)
 
 lemma IsHermitian₂₂_of_IsHermitian_toBlock
   {A B C D : Matrix n n ℝ} (h : (fromBlocks A B C D).IsHermitian) :
-  IsHermitian D := by 
+  IsHermitian D := by
   ext i j; simpa using congr_fun (congr_fun h (Sum.inr i)) (Sum.inr j)
 
 lemma PosSemidef₁₁_of_PosSemidef_toBlock
@@ -159,7 +127,7 @@ lemma LogDetAtom.optimality_Ddet_le_Adet {t : n → ℝ} {Y Z D : Matrix n n ℝ
     have h_Zdet : Z.det = D.det
     { rw [hZ, det_of_upperTriangular (upperTriangular_toUpperTri Y), hD, det_diagonal]
       simp [toUpperTri] }
-    have h_ZDZ_semidef : (Zᴴ * D⁻¹ * Z).PosSemidef := 
+    have h_ZDZ_semidef : (Zᴴ * D⁻¹ * Z).PosSemidef :=
       PosSemidef.conjTranspose_mul_mul D⁻¹ Z h_D_pd.nonsingular_inv.posSemidef
     have h_AZDZ_semidef : (A - Zᴴ * D⁻¹ * Z).PosSemidef :=
       (PosSemidef.fromBlocks₁₁ Z A h_D_pd).1 h_posdef

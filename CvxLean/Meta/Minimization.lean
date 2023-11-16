@@ -1,5 +1,5 @@
 import CvxLean.Syntax.Label
-import CvxLean.Meta.Missing.Meta
+import CvxLean.Meta.Util.Meta
 
 namespace CvxLean
 
