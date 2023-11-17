@@ -33,8 +33,8 @@ noncomputable def log : m → Real :=
 noncomputable def entr : m → Real :=
   fun i => Real.entr (x i)
 
-noncomputable def huber [Fintype m] (x : m → Real) : m → Real :=
-  fun i => Real.huber (x i)
+noncomputable def huber (M : m → Real) : m → Real :=
+  fun i => Real.huber (x i) (M i)
 
 noncomputable def klDiv : m → Real :=
   fun i => Real.klDiv (x i) (y i)

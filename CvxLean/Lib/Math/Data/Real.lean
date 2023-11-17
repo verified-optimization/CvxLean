@@ -7,10 +7,10 @@ namespace Real
 noncomputable def entr (x : Real) :=
   -(x * Real.log x)
 
-noncomputable def huber (x : Real) :=
-  if abs x ≤ 1
+noncomputable def huber (x : Real) (M : Real) :=
+  if abs x ≤ M
   then x ^ 2
-  else 2 * abs x - 1
+  else 2 * M * abs x - M ^ 2
 
 noncomputable def klDiv (x y : Real) :=
   x * log (x / y) - x + y
