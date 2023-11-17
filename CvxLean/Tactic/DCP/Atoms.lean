@@ -91,11 +91,9 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             let constraints := atomData.impConstrs.map
               fun c => (`_, mkAppNBeta (mkAppNBeta c xs) vs)
             return (objFun, constraints, originalVarsDecls)
-      trace[Meta.debug] "BEFORE PAT"
+
       let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
       -- `pat` is the atom tree resulting from the DCP procedure.
-
-      trace[Meta.debug] "AFTER PAT"
 
       -- Temporary check until using atoms in graph implementations is supported.
       -- if pat.newVarDecls.length ≠ 0 ∨ pat.newConstrs.size ≠ 0 then
@@ -433,10 +431,10 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     }
     return atomData
 
-  let objCurv :=
-    match atomData.curvature with
-    | Curvature.ConvexSet => Curvature.ConvexSet
-    | _ => Curvature.Affine
+  let objCurv := atomData.curvature
+    -- match atomData.curvature with
+    -- | Curvature.ConvexSet => Curvature.ConvexSet
+    -- | _ => Curvature.Affine
 
   let atomData ← reduceAtomData objCurv atomData
   let atomData ← addAtomDataDecls id.getId atomData
@@ -493,7 +491,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     }
     return atomData
 
-  let atomData ← reduceAtomData Curvature.Affine atomData
+  let atomData ← reduceAtomData atomData.curvature atomData--Curvature.Affine atomData
   let atomData ← addAtomDataDecls id.getId atomData
 
   liftTermElabM do
