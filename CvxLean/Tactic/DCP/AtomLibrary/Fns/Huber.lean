@@ -13,36 +13,68 @@ namespace CvxLean
 
 open Real
 
-set_option trace.Meta.debug true in
-declare_atom huber1 [convex] (x : ℝ)+ (M : ℝ)& : huber x M :=
-bconditions
-  (hM : 0 ≤ M)
+-- def huberF (x : Float) : Float :=
+-- if x.abs ≤ 1 then x^2 else 2*x.abs - 1
+
+-- def vW (x : Float) : Float :=
+-- if x.abs ≤ 1 then 0 else x.abs - 1
+
+-- def vV (x : Float) : Float :=
+-- if x.abs ≤ 1 then x else 1
+
+-- #eval (huberF 8) - (2 * (vW 8) + (vV 8)^2)
+-- #eval (huberF 0.1) - (2 * (vW 0.1) + (vV 0.1)^2)
+
+-- #eval 8 ≤ (vW 8) + (vV 8)
+-- #eval 8 ≤ (vW (-8)) + (vV (-8))
+-- #eval 0.1 ≤ (vW 0.1) + (vV 0.1)
+-- #eval 0.1 ≤ (vW (-0.1)) + (vV (-0.1))
+
+declare_atom huber1 [convex] (x : ℝ)? : huber x 1 :=
 vconditions
-  (hx : 0 ≤ x)
-implementationVars (n : ℝ) (s : ℝ)
-implementationObjective (n ^ 2 + 2 * s)
+implementationVars (v : ℝ) (w : ℝ) -- (z : ℝ)
+implementationObjective (2 * v + w ^ 2)
 implementationConstraints
-  (c1 : 0 ≤ s)
-  (c2 : x = s + n)
+  -- (c1 : rotatedSoCone z (1/2) ![w])
+  (c2 : |x| ≤ v + w)
+  (c3 : w ≤ 1)
+  (c4 : 0 ≤ v)
 solution
-  (n := if |x| ≤ M then 2 * M - x else M)
-  (s := if |x| ≤ M then 2 * x - 2 * M else x - M)
+  -- (v := if |x| ≤ 1 then 0 else |x| - 1)
+  -- (w := if |x| ≤ 1 then |x| else 1)
+  (v := if |x| ≤ 1 then 0 else |x| - 1)
+  (w := if |x| ≤ 1 then |x| else 1)
+  -- (z := if |x| ≤ 1 then x ^ 2 else 1)
 solutionEqualsAtom by
   simp [huber]
-  split_ifs
-  { field_simp
-
-  }
-  . sorry
+  split_ifs <;> ring
 feasibility
-  (c1 : sorry)
-  (c2 : sorry)
-  (c3 : sorry)
+  -- (c1 : sorry)
+  (c2 : by
+    split_ifs <;> linarith)
+  (c3 : by
+    split_ifs <;> linarith)
+  (c4 : by
+    split_ifs <;> linarith)
 optimality by
-  sorry
+  -- intros y hy
+  simp [huber]
+  split_ifs with h
+  { have hx : 0 ≤ x := sorry
+  
+    -- rw [←abs_eq_self.mpr (le_of_lt one_pos)] at h
+    -- replace h := sq_le_sq.mpr h
+    -- apply le_trans h
+    -- simp
+    -- have hvw := le_trans (abs_nonneg _) c2
+    -- rw [abs_le] at c2
+    -- rw [←abs_eq_self.mpr hvw] at c2
+    -- replace c2 := sq_le_sq.mpr c2
+    -- apply le_trans c2
+    -- simp [rotatedSoCone] at c1
+   }
+  { sorry }
 vconditionElimination
-  (hx : by
-    sorry)
 
 -- declare_atom Vec.klDiv [convex] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)? :
 --   Vec.klDiv x y :=
