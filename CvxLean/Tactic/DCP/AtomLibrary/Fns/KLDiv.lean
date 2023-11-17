@@ -10,7 +10,6 @@ namespace CvxLean
 
 open Real
 
-set_option trace.Meta.debug true in
 declare_atom klDiv [convex] (x : ℝ)? (y : ℝ)? : x * log (x / y) - x + y  :=
 vconditions
   (hx : 0 ≤ x)
