@@ -126,66 +126,42 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             let newConstrProofs := pat.feasibility.fold #[] fun acc fs =>
               fs.fold acc Array.append
 
-            for ncp in newConstrProofs do
-              trace[Meta.debug] "new constr proof: {← inferType ncp}"
-
-            -- let constraintsEq := pat.solEqAtom.constr.map Tree.val
-            -- for ce in constraintsEq do
-            --   trace[Meta.debug] "constraintsEq: {← inferType ce}"
-
-
-            -- [Meta.debug] optimData: (0 < x ∧ x * rexp (t / x) ≤ y ∨ x = 0 ∧ 0 ≤ y ∧ t ≤ 0) ≤
-            --       (0 < x ∧ x * rexp (t / x) ≤ y ∨ x = 0 ∧ 0 ≤ y ∧ t ≤ 0)
-
-            -- [Meta.debug] optimData: Real.posOrthCone (y - t.0) → rexp y' ≤ y
-
-            -- [Meta.debug] constraints : [(_, Real.expCone t x y), (_, rexp y' ≤ y)]
-
-            -- [Meta.debug] reducedConstrs : [Real.expCone t x y, Real.posOrthCone (y - t.0)]
-
-            -- [Meta.debug] pat.newConstrs : [Real.expCone y' 1 t.0]
-
             let vconds := atomData.vconds.map fun (n,c) => (n, mkAppNBeta c xs)
             let newFeasibility ← newConstrProofs.mapM (fun e =>
               withLocalDeclsDNondep vconds fun cs => do
                 mkLambdaFVars xs <| ← mkLambdaFVars cs (e.replaceFVars vs1 vs1Sol))
 
-            -- let impConstrs ← (reducedConstrs ++ pat.newConstrs).mapM (fun c => do
-            --   return ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $ c)
-
-            let newOptimality := mkAppN atomData.optimality (xs ++ vs1)
-
-            trace[Meta.debug] "constraints : {constraints}"
-            trace[Meta.debug] "reducedConstrs : {reducedConstrs}"
-            trace[Meta.debug] "pat.newConstrs : {pat.newConstrs}"
-
             let constraintsFromReducedConstraints :=
               pat.optimality.constr.map Tree.val
 
-            trace[Meta.debug] "constraintsFromReducedConstraints : {constraintsFromReducedConstraints}"
-
             if reducedConstrs.size != constraintsFromReducedConstraints.size then
-              throwError "Expected same length: {reducedConstrs} and {constraintsFromReducedConstraints}"
+              throwError ("Expected same length: {reducedConstrs} and " ++
+                "{constraintsFromReducedConstraints}")
 
+            let newOptimality := mkAppN atomData.optimality (xs ++ vs1)
             let newOptimality ←
               withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
                 let mut newOptimality := newOptimality
                 for i in [:reducedConstrs.size] do
                   let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
-                  trace[Meta.debug] "c : {c}"
-                  trace[Meta.debug] "cty : {← inferType c}"
-                  check c
                   newOptimality := mkApp newOptimality c
-                trace[Meta.debug] "HERE"
-                check newOptimality
-                trace[Meta.debug] "HERE2 {← inferType newOptimality}"
-                -- withLocalDeclsDNondep (pat.newConstrs.map (fun d => (`_, d)))
-                --   fun ds => do
                 let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
-                mkLambdaFVars (xs ++ vs1 ++ vs2) <|
-                  ← mkLambdaFVars (cs ++ ds) newOptimality
+                mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newOptimality
 
-            let atomData' : GraphAtomData := {atomData with
+            let mut newVCondElims := #[]
+            for vcondElim in atomData.vcondElim do
+              let newVCondElim := mkAppN vcondElim (xs ++ vs1)
+              let newVCondElim ←
+                withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
+                  let mut newVCondElim := newVCondElim
+                  for i in [:reducedConstrs.size] do
+                    let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
+                    newVCondElim := mkApp newVCondElim c
+                  let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
+                  mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newVCondElim
+              newVCondElims := newVCondElims.push newVCondElim
+
+            let atomData' : GraphAtomData := {  atomData with
               impVars := atomData.impVars.append
                 (← pat.newVarDecls.toArray.mapM fun decl => do
                   return (decl.userName, ← mkLambdaFVars xs decl.type))
@@ -196,23 +172,13 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               solution := atomData.solution.append
                 (← pat.forwardImagesNewVars.mapM (fun e => mkLambdaFVars xs
                     (e.replaceFVars vs1 vs1Sol)))
-              -- TODO: solEqAtom := sorry. ?????????
               feasibility := atomData.feasibility ++ newFeasibility
               optimality := newOptimality
-                    }
+              vcondElim := newVCondElims
 
-              trace[Meta.debug] "vs1 : {vs1}"
-              trace[Meta.debug] "vs1Sol : {vs1Sol}"
-              trace[Meta.debug] "vs2 : {vs2}"
-              trace[Meta.debug] "xs : {xs}"
+              }
 
-              trace[Meta.debug] "atomData.optimality: {← inferType atomData.optimality}"
-
-              trace[Meta.debug] "new opt : {← inferType newOptimality}"
-              check newOptimality
-
-              trace[Meta.debug] "new opt checked "
-
+              -- TODO: solEqAtom := sorry. ?????????
               -- TODO: vcondElim := sorry. ???????
 
             return atomData'
