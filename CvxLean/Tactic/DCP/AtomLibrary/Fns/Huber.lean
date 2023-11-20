@@ -6,6 +6,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sq
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Abs
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Add
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.SMul
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 
@@ -13,7 +14,7 @@ namespace CvxLean
 
 open Real
 
-declare_atom huber1 [convex] (x : ℝ)? : huber x 1 :=
+declare_atom huber [convex] (x : ℝ)? : huber x :=
 vconditions
 implementationVars (v : ℝ) (w : ℝ)
 implementationObjective (2 * v + w ^ 2)
@@ -61,6 +62,38 @@ optimality by
     have hwsub12 : w * w - (2 * w - 1) = (w - 1) * (w - 1) := by ring_nf
     rw [pow_two, hwsub12]
     exact mul_self_nonneg _ }
+vconditionElimination
+
+declare_atom Vec.huber [convex] (m : Nat)& (x : Fin m → ℝ)? : Vec.huber x :=
+vconditions
+implementationVars (v : Fin m → ℝ) (w : Fin m → ℝ)
+implementationObjective (2 • v + w ^ 2)
+implementationConstraints
+  (c1 : |x| ≤ v + w)
+  (c2 : 0 ≤ w)
+  (c3 : w ≤ 1)
+  (c4 : 0 ≤ v)
+solution
+  (v := fun i => if |x i| ≤ 1 then 0 else |x i| - 1)
+  (w := fun i => if |x i| ≤ 1 then |x i| else 1)
+solutionEqualsAtom by
+  ext i
+  simp [Vec.huber, ←huber.solEqAtom (x i)]
+feasibility
+  (c1 : by
+    simpa using (fun i => huber.feasibility0 (x i)))
+  (c2 : by
+    simpa using (fun i => huber.feasibility1 (x i)))
+  (c3 : by
+    simpa using (fun i => huber.feasibility2 (x i)))
+  (c4 : by
+    simpa using (fun i => huber.feasibility3 (x i)))
+optimality by
+    intros i
+    simp [Vec.huber]
+    have := huber.optimality (x i) (v i) (w i) (c1 i) (c2 i) (c3 i) (c4 i)
+    convert this
+    simp
 vconditionElimination
 
 end CvxLean
