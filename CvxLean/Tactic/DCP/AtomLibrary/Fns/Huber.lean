@@ -40,45 +40,27 @@ feasibility
 optimality by
   simp [huber]
   split_ifs with h
-  { by_cases hca : w ≤ |x|
-    {
-      rw [←sub_le_iff_le_add]
-      have : |x| ^ 2 - w ^ 2 = (|x| + w) * (|x| - w) := by ring_nf; simp
-      rw [←sq_abs]
-      rw [←rpow_two, ←rpow_two, this]
-      apply mul_le_mul
-      { linarith }
-      { linarith }
-      { linarith }
-      { norm_num }
-    }
-    {
-      replace hca := not_le.mp hca
+  { by_cases hwx : w ≤ |x|
+    { have hsq : |x| ^ 2 - w ^ 2 = (|x| + w) * (|x| - w) := by ring_nf; simp
+      rw [←sub_le_iff_le_add, ←sq_abs, ←rpow_two, ←rpow_two, hsq]
+      apply mul_le_mul <;> linarith }
+    { replace hwx := not_le.mp hwx
       by_cases hxz : x = 0
-      {
-        rw [hxz]
-        simp
-        apply add_nonneg <;> norm_num [c2, c4]
-      }
+      { simp [hxz]
+        apply add_nonneg <;> norm_num [c2, c4] }
       have hcx : 0 < |x| := abs_pos.mpr hxz
-      have hx2 := mul_lt_mul hca (le_of_lt hca) hcx c2
-      rw [←pow_two, sq_abs, ←pow_two] at hx2
+      have hx2w2 := mul_lt_mul hwx (le_of_lt hwx) hcx c2
+      rw [←pow_two, sq_abs, ←pow_two] at hx2w2
       have hv : 0 ≤ 2 * v := by linarith
-      have := add_le_add (le_of_lt hx2) hv
-      linarith
-    }
-   }
-  { replace h := not_le.mp h
-    have h1 : 2 * |x| - 1  ≤ 2 * v + (2 * w - 1) := by linarith
-    apply le_trans h1
+      have hx2w22v := add_le_add (le_of_lt hx2w2) hv
+      linarith } }
+  { have h2xsub1 : 2 * |x| - 1  ≤ 2 * v + (2 * w - 1) := by linarith
+    apply le_trans h2xsub1
     apply add_le_add (le_refl _)
-    rw [←zero_add (_ - _)]
-    rw [←le_sub_iff_add_le ]
-    have h2 : w * w - (2 * w - 1) = (w - 1) * (w - 1) := by ring_nf
-    rw [pow_two]
-    rw [h2]
-    exact mul_self_nonneg _
-  }
+    rw [←zero_add (_ - _), ←le_sub_iff_add_le]
+    have hwsub12 : w * w - (2 * w - 1) = (w - 1) * (w - 1) := by ring_nf
+    rw [pow_two, hwsub12]
+    exact mul_self_nonneg _ }
 vconditionElimination
 
 end CvxLean
