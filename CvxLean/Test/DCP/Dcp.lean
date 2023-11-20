@@ -5,11 +5,8 @@ import CvxLean.Tactic.Basic.Rename
 import CvxLean.Tactic.Basic.RenameConstr
 import CvxLean.Tactic.Basic.RemoveConstr
 
-open CvxLean
-open Minimization
-open Real
+open CvxLean Minimization Real
 
-set_option trace.Meta.debug true
 noncomputable def testVCondInference : Solution <|
   optimization (x : ℝ)
     minimize (x)
@@ -19,16 +16,57 @@ noncomputable def testVCondInference : Solution <|
   dcp
   sorry
 
--- noncomputable def test004 : Solution $
---   optimization (v w : ℝ)
---     minimize exp v
---     subject to
---       cv : 0 ≤ v
---       cw : 0 ≤ w
---       c0 :kl_div v w ≤ 1
--- := by
---   dcp
---   sorry
+#check klDiv2.feasibility2
+#check klDiv2.optimality
+#check klDiv2.vcondElim0
+#check klDiv2.vcondElim1
+
+
+def p1 (p : ℝ × ℝ):=
+    0 ≤ 1 - (p.2 - p.1 - -(p.1 * log (p.1 / p.2))) ∧
+      (0 < 1 ∧ 1 * rexp (p.1 / 1) ≤ rexp p.1 ∨ 1 = 0 ∧ 0 ≤ rexp p.1 ∧ p.1 ≤ 0) ∧
+        (let t := -(p.1 * log (p.1 / p.2));
+          let y' := log p.2;
+          expCone t p.1 p.2) ∧
+          p.2 ≥ rexp (log p.2) ∧
+            (0 < 1 ∧ 1 * rexp (log p.2 / 1) ≤ rexp (log p.2) ∨ 1 = 0 ∧ 0 ≤ rexp (log p.2) ∧ log p.2 ≤ 0)
+
+#check p1
+
+def p2 (x : ℝ × ℝ) :=
+  constraints
+    (optimization (v : ℝ) (w : ℝ) (t0 : ℝ) (t1 : ℝ) (y'2 : ℝ) (t03 : ℝ)
+      minimize t0
+      subject to
+        _ : posOrthCone (1 - (w - v - t1))
+        _ : expCone v 1 t0
+        _ : expCone t1 v w
+        _ : posOrthCone (w - t03)
+        _ : expCone y'2 1 t03
+      )
+    (x.1, x.2, rexp x.1, -(x.1 * log (x.1 / x.2)), log x.2, rexp (log x.2))
+
+example : p1 = p2 := by
+  ext x
+  unfold p1
+  unfold p2
+  unfold expCone
+  unfold posOrthCone
+  simp
+
+-- TODO: We unfold tooo much in declare_atom!!!! Start with elabFeas for some
+-- simple atom.
+set_option trace.Meta.debug true
+noncomputable def test004 : Solution $
+  optimization (v w : ℝ)
+    minimize exp v
+    subject to
+      cv : 0 ≤ v
+      cw : 0 < w
+      c0 : klDiv v w ≤ 1
+:= by
+  dcp
+  sorry
 
 -- #print test004
 

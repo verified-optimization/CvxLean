@@ -661,6 +661,7 @@ def makeConstrBackward (vcondElimMap : Std.HashMap Nat Expr) (newDomain : Expr) 
       let constrBackward ← mkLambdaFVars #[p, h] constrBackwardBody
       trace[Meta.debug] "constrBackward: {constrBackward}"
       check constrBackward
+      trace[Meta.debug] "constrBackward checked"
       return constrBackward
 
 /-- Extract objective and constraints in terms of the optimization variables. -/
@@ -949,18 +950,20 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
         let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinimizationExpr.toExpr, newProblem.toMinimizationExpr.toExpr]
         check res
+        trace[Meta.debug] "res: {res}"
 
         let res := mkApp res (mkBVar 0) -- Insert new goal here later.
         let res := mkApp6 res
           forwardMap
-          backwardMap
+          (← zetaReduce backwardMap)
           objFunForward
           objFunBackward
           constrForward
-          constrBackward
+          (← zetaReduce constrBackward)
         let res := mkLambda `sol Lean.BinderInfo.default newProblemExpr res
 
         check res
+        trace[Meta.debug] "second check passed"
         let res ← instantiateMVars res
         return (forwardMap, backwardMap, res)
 
