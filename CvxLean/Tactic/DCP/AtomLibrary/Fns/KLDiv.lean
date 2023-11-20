@@ -110,7 +110,9 @@ feasibility
 optimality by
     simp [Vec.klDiv, klDiv]
     intros i
-    exact klDiv.optimality (x i) (y i) (t i) (y' i) (c1 i) (c2 i)
+    refine klDiv.optimality (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) ?_ ?_
+    { simpa [posOrthCone] using c2 i }
+    { simp [expCone] }
 vconditionElimination
   (hx : fun i => klDiv.vcondElim0 (x i) (y i) (t i) (y' i) (c1 i) (c2 i))
   (hy : fun i => klDiv.vcondElim1 (x i) (y i) (t i) (y' i) (c1 i) (c2 i))
