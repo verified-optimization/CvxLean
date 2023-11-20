@@ -38,8 +38,8 @@ def log : m → Real :=
 def entr : m → Real :=
   fun i => Real.entr (x i)
 
-def huber (M : m → Real) : m → Real :=
-  fun i => Real.huber (x i) (M i)
+def huber : m → Real :=
+  fun i => Real.huber (x i)
 
 def klDiv : m → Real :=
   fun i => Real.klDiv (x i) (y i)

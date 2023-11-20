@@ -25,4 +25,23 @@ optimality by
   exact h
 vconditionElimination
 
+declare_atom Vec.sq [convex] (n : ℕ)& (x : Fin n → ℝ)? : x ^ 2 :=
+vconditions
+implementationVars (t : Fin n → ℝ)
+implementationObjective (t)
+implementationConstraints
+  (c1 : Vec.rotatedSoCone t (fun _ => 1/2) (fun i => ![x i]))
+solution
+  (t := x ^ 2)
+solutionEqualsAtom rfl
+feasibility
+  (c1 : by
+    dsimp [Vec.rotatedSoCone]
+    intros i
+    convert sq.feasibility0 (x i); simp)
+optimality by
+  intros i
+  convert sq.optimality (x i) (t i) (c1 i); simp
+vconditionElimination
+
 end CvxLean
