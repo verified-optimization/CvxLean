@@ -20,23 +20,28 @@ def sum {m : Type} [Fintype m] (x : m → α) : α :=
 
 end AddCommMonoid
 
-section Real
+noncomputable section Real
+
+open Real BigOperators
+
+instance : Norm (m → ℝ) where
+  norm x := sqrt (∑ i, (x i) ^ 2)
 
 variable (x y : m → Real)
 
-noncomputable def exp : m → Real :=
+def exp : m → Real :=
   fun i => Real.exp (x i)
 
-noncomputable def log : m → Real :=
+def log : m → Real :=
   fun i => Real.log (x i)
 
-noncomputable def entr : m → Real :=
+def entr : m → Real :=
   fun i => Real.entr (x i)
 
-noncomputable def huber (M : m → Real) : m → Real :=
+def huber (M : m → Real) : m → Real :=
   fun i => Real.huber (x i) (M i)
 
-noncomputable def klDiv : m → Real :=
+def klDiv : m → Real :=
   fun i => Real.klDiv (x i) (y i)
 
 end Real
