@@ -1,3 +1,8 @@
+import CvxLean.Tactic.DCP.Atoms
+import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
+
+namespace CvxLean
+
 -- -- Convex
 -- class IsRealAtom (f : ℝ → ℝ) where
 --   (impObj : ℝ × ℝ → ℝ)
@@ -56,3 +61,29 @@
 --   }
 -- vconditionElimination
 --   (cond : cs)
+
+-- declare_atom perspective [convex] (f : ℝ → ℝ)? (x : ℝ)? (s : ℝ)? : s * f (x / s) :=
+-- vconditions (cond : 0 < s)
+-- implementationVars (t : ℝ)
+-- implementationObjective t + 34
+-- implementationConstraints
+--   (cs : 0 < s)
+-- solution (t := 0)
+-- solutionEqualsAtom by
+--   sorry
+-- feasibility
+--   (cs : cond)
+-- optimality by
+--   sorry
+-- vconditionElimination
+--   (cond : cs)
+
+
+-- example : Minimization.Solution <|
+--   optimization (x : ℝ)
+--     minimize (2 * Real.exp (x / 2))
+--     subject to
+--       h : Real.posOrthCone x := by
+--     dcp
+
+end CvxLean
