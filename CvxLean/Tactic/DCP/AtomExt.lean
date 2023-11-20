@@ -22,8 +22,9 @@ def curvatureInArg : Curvature → ArgKind → Curvature
   | Curvature.Concave, ArgKind.Decreasing => Curvature.Convex
   | Curvature.Convex, ArgKind.Increasing => Curvature.Convex
   | Curvature.Convex, ArgKind.Decreasing => Curvature.Concave
-  | Curvature.ConvexSet, ArgKind.Increasing => Curvature.Convex
-  | Curvature.ConvexSet, ArgKind.Decreasing => Curvature.Concave
+  -- TODO: Explain this.
+  | Curvature.ConvexSet, ArgKind.Increasing => Curvature.Concave
+  | Curvature.ConvexSet, ArgKind.Decreasing => Curvature.Convex
   | _, _ => Curvature.Affine
 
 instance : ToMessageData Curvature where

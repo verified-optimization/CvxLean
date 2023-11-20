@@ -4,7 +4,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 
 namespace CvxLean
 
-declare_atom le [convex_set] (x : ℝ)+ (y : ℝ)- : x ≤ y :=
+declare_atom le [convex_set] (x : ℝ)- (y : ℝ)+ : x ≤ y :=
 vconditions
 implementationVars
 implementationObjective Real.posOrthCone (y - x)
@@ -19,7 +19,7 @@ optimality by
   exact (hx.trans h).trans hy
 vconditionElimination
 
-declare_atom Vec.le [convex_set] (n : Nat)& (x : (Fin n) → ℝ)+ (y : (Fin n) → ℝ)- : x ≤ y :=
+declare_atom Vec.le [convex_set] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ : x ≤ y :=
 vconditions
 implementationVars
 implementationObjective Real.Vec.posOrthCone (y - x : (Fin n) → ℝ)
