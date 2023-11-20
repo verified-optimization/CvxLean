@@ -91,9 +91,13 @@ feasibility
 optimality by
     intros i
     simp [Vec.huber]
-    have := huber.optimality (x i) (v i) (w i) (c1 i) (c2 i) (c3 i) (c4 i)
-    convert this
-    simp
+    rw [←rpow_two]
+    apply huber.optimality (x i) (v i) (w i) ((w i) ^ 2)
+    { simpa [posOrthCone] using c1 i }
+    { simpa [posOrthCone] using c2 i }
+    { simpa [posOrthCone] using c3 i }
+    { simpa [posOrthCone] using c4 i }
+    { simp [rotatedSoCone]; norm_num [sq_nonneg] }
 vconditionElimination
 
 end CvxLean

@@ -80,7 +80,10 @@ solutionEqualsAtom by
 feasibility
   (c1 : klDiv.feasibility0 x y hx hy)
   (c2 : klDiv.feasibility1 x y hx hy)
-optimality klDiv.optimality x y t y' c1 c2
+optimality by
+  apply klDiv.optimality x y t y' (exp y') c1
+  { simpa [posOrthCone] }
+  { simp [expCone] }
 vconditionElimination
   (hx : klDiv.vcondElim0 x y t y' c1 c2)
   (hy : klDiv.vcondElim1 x y t y' c1 c2)
