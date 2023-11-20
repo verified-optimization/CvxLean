@@ -81,12 +81,12 @@ feasibility
   (c1 : klDiv.feasibility0 x y hx hy)
   (c2 : klDiv.feasibility1 x y hx hy)
 optimality by
-  apply klDiv.optimality x y t y' (exp y') c1
-  { simpa [posOrthCone] }
-  { simp [expCone] }
+  apply klDiv.optimality x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone]
 vconditionElimination
-  (hx : klDiv.vcondElim0 x y t y' c1 c2)
-  (hy : klDiv.vcondElim1 x y t y' c1 c2)
+  (hx : by
+    apply klDiv.vcondElim0 x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone])
+  (hy : by
+    apply klDiv.vcondElim1 x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone])
 
 declare_atom Vec.klDiv [convex] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)? :
   Vec.klDiv x y :=
@@ -110,14 +110,15 @@ feasibility
     simp [Vec.klDiv, klDiv]
     intros i
     exact klDiv.feasibility1 (x i) (y i) (hx i) (hy i))
-optimality by
-    simp [Vec.klDiv, klDiv]
-    intros i
-    refine klDiv.optimality (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) ?_ ?_
-    { simpa [posOrthCone] using c2 i }
-    { simp [expCone] }
+optimality fun i => by
+    apply klDiv.optimality (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
+    simpa [posOrthCone, expCone] using c2 i
 vconditionElimination
-  (hx : fun i => klDiv.vcondElim0 (x i) (y i) (t i) (y' i) (c1 i) (c2 i))
-  (hy : fun i => klDiv.vcondElim1 (x i) (y i) (t i) (y' i) (c1 i) (c2 i))
+  (hx : fun i => by
+    apply klDiv.vcondElim0 (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
+    simpa [posOrthCone, expCone] using (c2 i))
+  (hy : fun i => by
+    apply klDiv.vcondElim1 (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
+    simpa [posOrthCone, expCone] using (c2 i))
 
 end CvxLean

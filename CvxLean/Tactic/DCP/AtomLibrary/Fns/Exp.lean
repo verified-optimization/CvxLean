@@ -6,6 +6,7 @@ namespace CvxLean
 
 open Real
 
+set_option trace.Meta.debug true
 declare_atom exp [convex] (x : ℝ)+ : Real.exp x :=
 vconditions
 implementationVars (t : ℝ)
