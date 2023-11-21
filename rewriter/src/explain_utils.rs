@@ -113,7 +113,7 @@ pub fn flat_term_check_rewrite_no_failure<'a>(
     if let Some(lhs) = rewrite.searcher.get_pattern_ast() {
         if let Some(rhs) = rewrite.applier.get_pattern_ast() {
             if let Some(rewritten) = flat_term_rewrite_no_failure(current, lhs, rhs) {
-                return &rewritten == next;
+                return rewritten.eq(next);
             }
         }
     }
