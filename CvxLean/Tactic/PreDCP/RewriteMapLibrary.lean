@@ -42,9 +42,9 @@ macro_rules
   match rule.raw[1] with
   | `(term| $e:term) =>
     if symm then
-      `(tactic| (first | simp only [←$e:term] | repeat { rw [←$e:term] }))
+      `(tactic| (first | simp only [←$e:term] | repeat (rw [←$e:term])))
     else
-      `(tactic| (first | simp only [$e:term] | repeat { rw [$e:term] }))
+      `(tactic| (first | simp only [$e:term] | repeat (rw [$e:term])))
 
 /-- Extended positivity. -/
 syntax "positivity_ext" : tactic
