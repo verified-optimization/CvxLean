@@ -38,32 +38,6 @@ noncomputable def test000 : Solution $
   dcp
   sorry
 
--- TODO: This worked, but there are issues with the new multiplication atoms.
--- noncomputable def test001' (h : 0 ≤ (2 : ℝ)) (h : 0 ≤ (3 : ℝ)) : Solution $
---   optimization (x y : ℝ)
---     minimize y * (2 : ℝ)
---     subject to
---       c1 : (exp x) * (exp y) ≤ 3 * x
--- := by
---   dcp
---   sorry
-
--- ObjFun:(node:_uniq.7821 * 2[leaf:_uniq.7821, leaf:2])
---     Constr:
---     [
---      (node:Real.exp _uniq.7820 * Real.exp _uniq.7821 ≤ 3 * _uniq.7820
-    --     [
-    --       (node:Real.exp _uniq.7820 * Real.exp _uniq.7821
-    --         [
-    --           (node:Real.exp _uniq.7820[leaf:_uniq.7820]),
-    --           (node:Real.exp _uniq.7821[leaf:_uniq.7821])
-    --         ]
-    --       ),
-    --       (node:3 * _uniq.7820[leaf:3, leaf:_uniq.7820])
-    --     ]
-    --   )
-    -- ]
-
 noncomputable def test001'' (h : 0 ≤ (2 : ℝ)) (h : 0 ≤ (3 : ℝ)) : Solution $
   optimization (x y : ℝ)
     minimize y * (2 : ℝ)
@@ -84,63 +58,61 @@ noncomputable def test001 : Solution $
   dcp
   sorry
 
--- noncomputable def test002 : Solution $
---   optimization (x y : ℝ)
---     minimize exp (huber y)
---     subject to
---       c0 : exp (exp (huber x)) ≤ y
--- := by
---   dcp
---   sorry
+noncomputable def test002 : Solution $
+  optimization (x y : ℝ)
+    minimize exp (huber y)
+    subject to
+      c0 : exp (exp (huber x)) ≤ y
+:= by
+  dcp
+  sorry
 
--- noncomputable def test003 (h : (0 : ℝ) ≤ 2): Solution $
---   optimization (x y : ℝ)
---     minimize (2 : ℝ) * (huber (y + x))
---     subject to
---       c0 : x ≤ y
--- := by
---   dcp
---   sorry
+noncomputable def test003 : Solution $
+  optimization (x y : ℝ)
+    minimize (2 : ℝ) * (huber (y + x))
+    subject to
+      c0 : x ≤ y
+:= by
+  dcp
+  sorry
 
--- noncomputable def testVec0 [Fintype m] : Solution $
---   optimization (x y : m → ℝ)
---     minimize (0 : ℝ)
---     subject to
---       c0 : Vec.exp y ≤ x
--- := by
---   dcp
---   sorry
+noncomputable def testVec0 [Fintype m] : Solution $
+  optimization (x y : m → ℝ)
+    minimize (0 : ℝ)
+    subject to
+      c0 : Vec.exp y ≤ x
+:= by
+  dcp
+  sorry
 
--- noncomputable def testVec [Fintype m] : Solution $
---   optimization (x y : m → ℝ)
---     minimize (0 : ℝ)
---     subject to
---       c0 : Vec.exp (Vec.exp x) ≤ x
--- := by
---   dcp
-  -- sorry
+noncomputable def testVec [Fintype m] : Solution $
+  optimization (x y : m → ℝ)
+    minimize (0 : ℝ)
+    subject to
+      c0 : Vec.exp (Vec.exp x) ≤ x
+:= by
+  dcp
+  sorry
 
--- noncomputable def test_Vec_huber [Fintype m] : Solution $
--- optimization (x y : m → ℝ)
---   minimize (0 : ℝ)
---   subject to
---     c0 : Vec.huber x ≤ x
--- := by
---   dcp
---   sorry
+noncomputable def test_Vec_huber {n : ℕ} : Solution $
+optimization (x y : Fin n → ℝ)
+  minimize (0 : ℝ)
+  subject to
+    c0 : Vec.huber x ≤ x
+:= by
+  dcp
+  sorry
 
-set_option trace.Meta.debug true
-
--- noncomputable def test_Vec_kl_div [Fintype m] : Solution $
--- optimization (x y : m → ℝ)
---   minimize (0 : ℝ)
---   subject to
---     cx : 0 < x
---     cy : 0 < y
---     c0 : Vec.kl_div x y ≤ x
--- := by
---   dcp
---   sorry
+noncomputable def test_Vec_kl_div {n : ℕ} : Solution $
+optimization (x y : Fin n → ℝ)
+  minimize (0 : ℝ)
+  subject to
+    cx : 0 ≤ x
+    cy : ∀ i, 0 < y i
+    c0 : Vec.klDiv x y ≤ x
+:= by
+  dcp
+  sorry
 
 noncomputable def test2 : Solution $
   optimization (x y : ℝ)
@@ -164,20 +136,20 @@ noncomputable def test_log_det : Solution $
   sorry
 
 
-
--- Example from Grant's thesis
-
--- noncomputable example (a : ℝ) (h : 0 ≤ a) : Solution $
---   minimization! (x y : ℝ) :
---     objective (c * x)
---     constraints
---       (cmain : exp y ≤ log (a * sqrt x + b))
---       (clin  : a * x + b * y = d)
---       (csqrt : 0 ≤ x)
---       (clog  : 0 < a * sqrt x + b)
--- := by
---   dcp
---   sorry
+noncomputable example
+  (a : ℝ) (ha : 0 ≤ a)
+  (b : ℝ) (hb : 0 ≤ b)
+  (c : ℝ) (hc : 0 ≤ c) : Solution $
+  optimization (x y : ℝ)
+    minimize (c * x)
+    subject to
+      cmain : exp y ≤ log (a * sqrt x + b)
+      clin  : a * x + b * y = d
+      csqrt : 0 ≤ x
+      clog  : 0 < a * sqrt x + b
+:= by
+  dcp
+  sorry
 
 
 
