@@ -49,11 +49,49 @@ macro_rules
 /-- Extended positivity. -/
 syntax "positivity_ext" : tactic
 
+namespace Tactic
+
+open Lean Meta Elab Tactic Qq
+
+elab (name := cases_and) "cases_and" : tactic => do
+  let mvarId ← getMainGoal
+  let mvarId' ← mvarId.casesAnd
+  replaceMainGoal [mvarId']
+
+def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
+  mvarId.withContext do
+    let mut hyps := #[]
+    let mut lctx ← getLCtx
+    for localDecl in lctx do
+      let ty := localDecl.type
+      let le_lemma := ``sub_nonneg_of_le
+      let lt_lemma := ``sub_pos_of_lt
+      for (le_or_lt, le_or_lt_lemma) in [(``LE.le, le_lemma), (``LT.lt, lt_lemma)] do
+        match ty.app4? le_or_lt with
+        | some (R, _, lhs, _rhs) =>
+            if ← isDefEq R q(ℝ) then
+              if ← isDefEq lhs q(0 : ℝ) then
+                continue
+              -- If LHS is not zero, add new hypothesis.
+              let val ← mkAppM le_or_lt_lemma #[localDecl.toExpr]
+              let ty ← inferType val
+              let n := localDecl.userName
+              hyps := hyps.push (Hypothesis.mk n ty val)
+        | none => continue
+
+    let (_, newMVarId) ← mvarId.assertHypotheses hyps
+    return newMVarId
+
+elab (name := prepare_positivity) "prepare_positivity" : tactic => do
+  let mvarId ← getMainGoal
+  let mvarId' ← preparePositivity mvarId
+  replaceMainGoal [mvarId']
+
+end Tactic
+
 macro_rules
   | `(tactic| positivity_ext) =>
-    -- `(tactic| (first | positivity | field_simp <;> positivity))
-    `(tactic| positivity)
-
+    `(tactic| cases_and; prepare_positivity; positivity)
 
 namespace CvxLean
 
@@ -69,7 +107,7 @@ register_objFun_rewrite_map "map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob 
 /- Equality rules. -/
 
 register_rewrite_map "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
-  rewrite [Real.log_eq_log (by positivity) (by positivity)];
+  rewrite [Real.log_eq_log (by positivity_ext) (by positivity_ext)];
 
 
 /- Less than or equal rules. -/
@@ -87,25 +125,25 @@ register_rewrite_map "sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub
   rewrite [←sub_le_iff_le_add];
 
 register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" :=
-  rewrite [div_le_iff (by positivity)];
+  rewrite [div_le_iff (by positivity_ext)];
 
 register_rewrite_map "div_le_iff-rev" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" :=
-  rewrite [←div_le_iff (by positivity)];
+  rewrite [←div_le_iff (by positivity_ext)];
 
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
-  rewrite [←div_le_one (by positivity)];
+  rewrite [←div_le_one (by positivity_ext)];
 
 register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" => "(le ?a ?b)" :=
-  rewrite [Real.log_le_log (by positivity) (by positivity)];
+  rewrite [Real.log_le_log (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
-  rewrite [←Real.log_le_log (by positivity) (by positivity)];
+  rewrite [←Real.log_le_log (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "pow_two_le_pow_two"; "(le (pow ?a 2) (pow ?b 2))" => "(le ?a ?b)":=
-  rewrite [Real.pow_two_le_pow_two (by positivity) (by positivity)];
+  rewrite [Real.pow_two_le_pow_two (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" :=
-  rewrite [←Real.pow_two_le_pow_two (by positivity) (by positivity)];
+  rewrite [←Real.pow_two_le_pow_two (by positivity_ext) (by positivity_ext)];
 
 
 /- Field rules. -/
@@ -184,55 +222,55 @@ register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b 
   simp_or_rw [←mul_div (G := ℝ)];
 
 register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
-  simp_or_rw [div_self (G₀ := ℝ) (by positivity)];
+  simp_or_rw [div_self (G₀ := ℝ) (by positivity_ext)];
 
 
 /- Power and square root rules. -/
 
 register_rewrite_map "pow_add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))" :=
-  simp_or_rw [Real.rpow_add (by positivity)];
+  simp_or_rw [Real.rpow_add (by positivity_ext)];
 
 register_rewrite_map "pow_add-rev"; "(mul (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (add ?b ?c))" :=
-  simp_or_rw [←Real.rpow_add (by positivity)];
+  simp_or_rw [←Real.rpow_add (by positivity_ext)];
 
 register_rewrite_map "mul_pow"; "(mul (pow ?a ?n) (pow ?b ?n))" => "(pow (mul ?a ?b) ?n)" :=
-  simp_or_rw [Real.mul_rpow (by positivity) (by positivity)];
+  simp_or_rw [Real.mul_rpow (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "mul_pow-rev"; "(mul (pow ?a ?n) (pow ?b ?n))" => "(pow (mul ?a ?b) ?n)" :=
-  simp_or_rw [←Real.mul_rpow (by positivity) (by positivity)];
+  simp_or_rw [←Real.mul_rpow (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "pow_mul"; "(pow ?a (mul ?n ?m))" => "(pow (pow ?a ?n) ?m)" :=
-  simp_or_rw [Real.rpow_mul (by positivity)];
+  simp_or_rw [Real.rpow_mul (by positivity_ext)];
 
 register_rewrite_map "pow_mul-rev"; "(pow (pow ?a ?n) ?m)" => "(pow ?a (mul ?n ?m))" :=
-  simp_or_rw [←Real.rpow_mul (by positivity)];
+  simp_or_rw [←Real.rpow_mul (by positivity_ext)];
 
 register_rewrite_map "div_pow"; "(pow (div ?a ?b) ?n)" => "(div (pow ?a ?n) (pow ?b ?n))" :=
-  simp_or_rw [Real.div_rpow (by positivity) (by positivity)];
+  simp_or_rw [Real.div_rpow (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "div_pow-rev"; "(div (pow ?a ?n) (pow ?b ?n))" => "(pow (div ?a ?b) ?n)" :=
-  simp_or_rw [←Real.div_rpow (by positivity) (by positivity)];
+  simp_or_rw [←Real.div_rpow (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "pow_sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow ?a ?c))" :=
-  simp_or_rw [Real.rpow_sub (by positivity)];
+  simp_or_rw [Real.rpow_sub (by positivity_ext)];
 
 register_rewrite_map "pow_sub-rev"; "(div (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (sub ?b ?c))" :=
-  simp_or_rw [←Real.rpow_sub (by positivity)];
+  simp_or_rw [←Real.rpow_sub (by positivity_ext)];
 
 register_rewrite_map "div_pow_eq_mul_pow_neg" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
-  simp_or_rw [Real.div_pow_eq_mul_pow_neg (by positivity)];
+  simp_or_rw [Real.div_pow_eq_mul_pow_neg (by positivity_ext)];
 
 register_rewrite_map "div_pow_eq_mul_pow_neg-rev" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
-  simp_or_rw [←Real.div_pow_eq_mul_pow_neg (by positivity)];
+  simp_or_rw [←Real.div_pow_eq_mul_pow_neg (by positivity_ext)];
 
 register_rewrite_map "one_div_eq_pow_neg_one"; "(div 1 ?a)" => "(pow ?a (neg 1))" :=
-  simp_or_rw [Real.one_div_eq_pow_neg_one (by positivity)];
+  simp_or_rw [Real.one_div_eq_pow_neg_one (by positivity_ext)];
 
 register_rewrite_map "sqrt_eq_rpow" ; "(sqrt ?a)" => "(pow ?a 0.5)" :=
   simp_or_rw [Real.sqrt_eq_rpow];
 
 register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
-  simp_or_rw [Real.pow_half_two (by positivity)];
+  simp_or_rw [Real.pow_half_two (by positivity_ext)];
 
 
 /- Exponential and logarithm rules. -/
@@ -262,19 +300,19 @@ register_rewrite_map "exp_neg_eq_one_div-rev" ; "(div 1 (exp ?a))" => "(exp (neg
   simp_or_rw [←Real.exp_neg_eq_one_div];
 
 register_rewrite_map "log_mul" ; "(log (mul ?a ?b))" => "(add (log ?a) (log ?b))" :=
-  simp_or_rw [Real.log_mul (by positivity) (by positivity)];
+  simp_or_rw [Real.log_mul (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "log_mul-rev"; "(add (log ?a) (log ?b))" => "(log (mul ?a ?b))" :=
-  simp_or_rw [←Real.log_mul (by positivity) (by positivity)];
+  simp_or_rw [←Real.log_mul (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "log_div" ; "(log (div ?a ?b))" => "(sub (log ?a) (log ?b))" :=
-  simp_or_rw [Real.log_div (by positivity) (by positivity)];
+  simp_or_rw [Real.log_div (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "log_div-rev"; "(sub (log ?a) (log ?b))" => "(log (div ?a ?b))" :=
-  simp_or_rw [←Real.log_div (by positivity) (by positivity)];
+  simp_or_rw [←Real.log_div (by positivity_ext) (by positivity_ext)];
 
 register_rewrite_map "exp_log" ; "(exp (log ?a))" => "?a" :=
-  simp_or_rw [Real.exp_log (by positivity)];
+  simp_or_rw [Real.exp_log (by positivity_ext)];
 
 register_rewrite_map "log_exp" ; "(log (exp ?a))" => "?a" :=
   simp_or_rw [Real.log_exp];
