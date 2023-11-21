@@ -13,12 +13,12 @@ partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC (Name
     oc.mapM (fun (n, e) => do
       let uncheckedAtomTree ← findUncheckedAtoms e (xs.map (·.fvarId!))
       return (n.toString, uncheckedAtomTree))
-where 
+where
   findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
-    if DCP.isConstant e vars then
-      -- NOTE: There are special cases for constants with negation and 
+    if DCP.isRelativelyConstant e vars then
+      -- NOTE: There are special cases for constants with negation and
       -- division, but what about something like 2 * 3?
-      if ← isOptimizationParam e.constName then 
+      if ← isOptimizationParam e.constName then
         return Tree.node "param" #[Tree.leaf (toString e.constName)]
       let mut e := e
       let mut res := Tree.leaf "unknown"
@@ -38,8 +38,8 @@ where
       return res
     if e.isFVar ∧ vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
-      return Tree.leaf (toString n) 
-    
+      return Tree.leaf (toString n)
+
     -- Special support for less-than.
     if e.getAppFn.constName == `LT.lt then
       let a ← findUncheckedAtoms (e.getArg! 2) vars
@@ -48,17 +48,17 @@ where
 
     -- No filter after this, we just take any atoms that are registered.
     let potentialAtoms ← DCP.findRegisteredAtoms e
-    
+
     -- Just get the first one for now.
     let mut res := Tree.leaf "unknown"
     trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
     for (args, atom) in potentialAtoms do
-      res ← processUncheckedAtom e vars atom args 
+      res ← processUncheckedAtom e vars atom args
       break
-    
+
     return res
- 
-  processUncheckedAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr) 
+
+  processUncheckedAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr)
   : MetaM (Tree String String) := do
     let mut childTrees := #[]
     for i in [:args.size] do
@@ -69,22 +69,22 @@ where
     return Tree.node (toString atom.id) childTrees
 
 
-def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) : 
+def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   MetaM (OC (String × Tree String String)) := do
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
     let pr := (← Meta.mkProjections goalExprs.domain p).toArray
     let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty)) 
+      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
         fun xs => do
           return ← xs.mapM fun x => x.fvarId!.getDecl
     withExistingLocalDecls originalVarsDecls.toList do
       let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
       let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ← 
+      let constraints : List (Lean.Name × Expr) ←
         Meta.decomposeConstraints constraints
-      let constraints ← 
-        constraints.mapM (fun ((n : Lean.Name), e) => do 
+      let constraints ←
+        constraints.mapM (fun ((n : Lean.Name), e) => do
           return (n, ← Expr.removeMData e))
       let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
       let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
@@ -94,8 +94,8 @@ def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   let tree ← mkUncheckedTree originalVarsDecls oc
   return tree
 
-def uncheckedTreeFromExpr (goalExpr : Expr) : 
-  MetaM (OC (String × Tree String String)) := do 
+def uncheckedTreeFromExpr (goalExpr : Expr) :
+  MetaM (OC (String × Tree String String)) := do
   let goalExprs ← Meta.MinimizationExpr.fromExpr goalExpr
   uncheckedTreeFromMinimizationExpr goalExprs
 
@@ -109,11 +109,11 @@ namespace Tactic
 
 open Lean.Elab Lean.Elab.Tactic
 
-syntax (name := uncheckedTree) "unchecked_tree" : tactic 
+syntax (name := uncheckedTree) "unchecked_tree" : tactic
 
 @[tactic uncheckedTree]
-def evalPreDcpTree : Tactic 
-  | `(tactic| unchecked_tree) => do 
+def evalPreDcpTree : Tactic
+  | `(tactic| unchecked_tree) => do
     let goal ← Elab.Tactic.getMainGoal
     let _ ← UncheckedDCP.uncheckedTree goal
     pure ()
