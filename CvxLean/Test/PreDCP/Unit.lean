@@ -858,7 +858,7 @@ def divSelfConstr :=
       h : (x / x) * y ≤ 1
 
 time_cmd equivalence divSelfConstrRed/divSelfConstrAuto : divSelfConstr := by
-  convexify -- ERROR: No output
+  convexify
 
 #print divSelfConstrAuto
 
@@ -917,7 +917,7 @@ def mulPowConstr :=
       h : ((x * (sqrt x)) ^ 2 / x) ≤ 1
 
 time_cmd equivalence mulPowConstrRed/mulPowConstrAuto : mulPowConstr := by
-  convexify -- ERROR with div_le_iff-rev
+  convexify
 
 #print mulPowConstrAuto
 
@@ -1023,7 +1023,7 @@ def divPowRevConstr :=
       h : ((x + x) ^ 2 / x ^ 2) ≤ x
 
 time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
-  convexify -- ERROR with div_le_iff-rev
+  convexify
 
 #print divPowRevConstrAuto
 
@@ -1337,7 +1337,7 @@ def expNegEqOneDivConstr :=
       h : x * exp (-(log x)) ≤ x
 
 time_cmd equivalence expNegEqOneDivConstrRed/expNegEqOneDivConstrAuto : expNegEqOneDivConstr := by
-  convexify -- ERROR with div_le_iff-rev
+  convexify
 
 #print expNegEqOneDivConstrAuto
 
@@ -1411,7 +1411,7 @@ def logMulRevConstr :=
       h : exp (log x + log (x + 1)) ≤ 1
 
 time_cmd equivalence logMulRevConstrRed/logMulRevConstrAuto : logMulRevConstr := by
-  convexify -- ERROR with pow_add-rev
+  convexify
 
 #print logMulRevConstrAuto
 
