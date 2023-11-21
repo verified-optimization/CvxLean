@@ -2,7 +2,7 @@ import Lean
 import CvxLean.Lib.Minimization
 import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.Conv.ConvOpt
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.DCP.AtomLibrary.All
 
 namespace CvxLean
 
@@ -10,23 +10,23 @@ namespace CvxLean
 class ExpMap (α : Type u) :=
   (exp : α → α)
 
-noncomputable instance : ExpMap ℝ := 
+noncomputable instance : ExpMap ℝ :=
   ⟨Real.exp⟩
 
-noncomputable instance : ExpMap (Fin n → ℝ) := 
+noncomputable instance : ExpMap (Fin n → ℝ) :=
   ⟨fun x i => Real.exp (x i)⟩
 
-instance [ExpMap α] [ExpMap β] : ExpMap (α × β) := 
+instance [ExpMap α] [ExpMap β] : ExpMap (α × β) :=
   ⟨fun x => ⟨ExpMap.exp x.1, ExpMap.exp x.2⟩⟩
 
 /-- Domains with fine-grained exponentials. -/
-class ExpMapAt (α : Type u) := 
+class ExpMapAt (α : Type u) :=
   (exp : ℕ → α → α)
 
-noncomputable instance : ExpMapAt ℝ := 
+noncomputable instance : ExpMapAt ℝ :=
   ⟨fun _ => Real.exp⟩
 
-instance [ExpMapAt α] [ExpMapAt β] : ExpMapAt (α × β) where 
+instance [ExpMapAt α] [ExpMapAt β] : ExpMapAt (α × β) where
   exp
     | 0, x => ⟨ExpMapAt.exp 0 x.1, x.2⟩
     | n + 1, x => ⟨x.1, ExpMapAt.exp n x.2⟩
@@ -78,7 +78,7 @@ noncomputable instance : LogExp (Fin n → ℝ) where
   exp_log_cond := fun x => ∀ i, 0 < x i
   exp_log := fun x => funext <| fun i => Real.exp_log (x i)
 
-noncomputable instance [LogExp α] [LogExp β] : LogExp (α × β) where 
+noncomputable instance [LogExp α] [LogExp β] : LogExp (α × β) where
   log := fun x => ⟨LogExp.log x.1, LogExp.log x.2⟩
   exp := fun x => ⟨LogExp.exp x.1, LogExp.exp x.2⟩
   log_exp := fun x => by simp [LogExp.log_exp]
@@ -100,46 +100,46 @@ elab (name := prove_log_le_log) "prove_log_le_log" : tactic => do
   let mvarId ← getMainGoal
   let (_, mvarId) ← mvarId.intros
   let mvarId ← mvarId.casesAnd
-  let mvarIds ← evalTacticAt (← 
-    `(tactic| 
+  let mvarIds ← evalTacticAt (←
+    `(tactic|
         try { simp only [maximizeNeg] };
         refine' (log_le_log _ _).1 _ <;>
         try { assumption } <;> try { field_simp } <;> try { positivity })) mvarId
   replaceMainGoal mvarIds
 
-macro "map_objFun_log" : tactic => 
-  `(tactic| 
-      apply map_objective (g := Real.log) (hg := by prove_log_le_log) <;> 
+macro "map_objFun_log" : tactic =>
+  `(tactic|
+      apply map_objective (g := Real.log) (hg := by prove_log_le_log) <;>
       dsimp only [Function.comp])
 
 /-- Machinery to perform the change of variables x ↦ e^u. -/
 
 elab "prove_exp_log" : tactic => do
-  let g ← getMainGoal 
+  let g ← getMainGoal
   let (_, g) ← g.intros
   let g ← g.casesAnd
-  let gs ← evalTacticAt (← 
-    `(tactic| 
+  let gs ← evalTacticAt (←
+    `(tactic|
         simp [LogMap.log, ExpMap.exp];
         congr <;> funext <;> rw [exp_log (by simp [*] <;> positivity)])) g
   replaceMainGoal gs
 
-macro "make_positive_constraints_true" : tactic => 
+macro "make_positive_constraints_true" : tactic =>
   `(tactic|
       conv_constr => repeat { try { rw [eq_true (by positivity : _ < _)] } })
 
-macro "remove_trues" : tactic => 
+macro "remove_trues" : tactic =>
   `(tactic|
       repeat' conv in (True ∧ _) => rw [true_and])
 
-macro "remove_positive_constraints" : tactic => 
+macro "remove_positive_constraints" : tactic =>
   `(tactic|
       make_positive_constraints_true <;>
       remove_trues)
 
 macro "map_exp" : tactic =>
-  `(tactic| 
-      apply map_domain 
+  `(tactic|
+      apply map_domain
         (g := fun x => ExpMap.exp x)
         (f := fun x => LogMap.log x)
         (hfg := by prove_exp_log) <;>
@@ -149,25 +149,25 @@ macro "map_exp" : tactic =>
 /-- Same as `map_exp` but at a particular position in the domain product. -/
 
 elab "prove_exp_log_at" : tactic => do
-  let g ← getMainGoal 
+  let g ← getMainGoal
   let (_, g) ← g.intros
   let g ← g.casesAnd
-  let gs ← evalTacticAt (← 
-    `(tactic| 
+  let gs ← evalTacticAt (←
+    `(tactic|
         simp [LogMapAt.log, ExpMapAt.exp];
         congr <;> rw [exp_log (by assumption)])) g
   replaceMainGoal gs
 
 macro "map_exp_at " i:num : tactic =>
-  `(tactic| 
-      apply map_domain 
+  `(tactic|
+      apply map_domain
         (g := fun x => ExpMapAt.exp $i x)
         (f := fun x => LogMapAt.log $i x)
         (hfg := by prove_exp_log_at) <;>
       dsimp only [Function.comp, ExpMapAt.exp, LogMapAt.log] <;>
       remove_positive_constraints)
 
-/-- Tactic `map_objFun_sq` used to square the objective function attempting to 
+/-- Tactic `map_objFun_sq` used to square the objective function attempting to
 prove all the side conditions with simple tactics. -/
 
 -- TODO: Move.
@@ -178,15 +178,15 @@ elab (name := prove_pow_two_le_pow_two) "prove_pow_two_le_pow_two" : tactic => d
   let mvarId ← getMainGoal
   let (_, mvarId) ← mvarId.intros
   let mvarId ← mvarId.casesAnd
-  let mvarIds ← evalTacticAt (← 
-    `(tactic| 
-        rw [← Real.pow_two_le_pow_two (by positivity) (by positivity)] <;> 
+  let mvarIds ← evalTacticAt (←
+    `(tactic|
+        rw [← Real.pow_two_le_pow_two (by positivity) (by positivity)] <;>
         try { assumption } <;> try { field_simp } <;> try { positivity })) mvarId
   replaceMainGoal mvarIds
 
-macro "map_objFun_sq" : tactic => 
-  `(tactic| 
-      apply map_objective (g := fun x => x ^ (2 : ℝ)) (hg := by prove_pow_two_le_pow_two) <;> 
+macro "map_objFun_sq" : tactic =>
+  `(tactic|
+      apply map_objective (g := fun x => x ^ (2 : ℝ)) (hg := by prove_pow_two_le_pow_two) <;>
       dsimp only [Function.comp])
 
 end Tactic
