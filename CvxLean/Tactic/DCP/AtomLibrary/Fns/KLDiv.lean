@@ -10,6 +10,7 @@ namespace CvxLean
 
 open Real
 
+set_option trace.Meta.debug true in
 declare_atom klDiv [convex] (x : ℝ)? (y : ℝ)? : x * log (x / y) - x + y  :=
 vconditions
   (hx : 0 ≤ x)
@@ -79,7 +80,7 @@ solutionEqualsAtom by
   ring
 feasibility
   (c1 : klDiv.feasibility0 x y hx hy)
-  (c2 : klDiv.feasibility1 x y hx hy)
+  (c2 : by simpa [*] using klDiv.feasibility1 x y hx hy)
 optimality by
   apply klDiv.optimality x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone]
 vconditionElimination
@@ -109,7 +110,7 @@ feasibility
   (c2 : by
     simp [Vec.klDiv, klDiv]
     intros i
-    exact klDiv.feasibility1 (x i) (y i) (hx i) (hy i))
+    simpa [*] using klDiv.feasibility1 (x i) (y i) (hx i) (hy i))
 optimality fun i => by
     apply klDiv.optimality (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
     simpa [posOrthCone, expCone] using c2 i

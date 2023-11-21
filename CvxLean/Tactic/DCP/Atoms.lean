@@ -126,13 +126,57 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             let newConstrProofs := pat.feasibility.fold #[] fun acc fs =>
               fs.fold acc Array.append
 
+            -- for sc in solEqAtomProofs do
+            --   trace[Meta.debug] "solEqAtomProofs: {← inferType sc}"
+
+            for ncp in newConstrProofs do
+              trace[Meta.debug] "newConstrProofs: {← inferType ncp}"
+
+
+            -- let test := ← atomData.feasibility.mapM (fun e =>
+            --   Meta.forallTelescope e (fun xs a => do
+            --     trace[Meta.debug] "a: {←inferType a}"))
+
             let vconds := atomData.vconds.map fun (n,c) => (n, mkAppNBeta c xs)
+
+            let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
+
+            if atomData.feasibility.size != solEqAtomProofs.size then
+              throwError ("Expected same length: {atomData.feasibility} and " ++
+                "{solEqAtomProofs}")
+
+            let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
+            let mut oldFeasibilityAdjusted := #[]
+
+            for i in [:atomData.feasibility.size] do
+              let feas := atomData.feasibility[i]!
+              let feasXs := mkAppNBeta feas xs
+              let adjustedFeas ←
+                withLocalDeclsDNondep vconds fun cs => do
+                  let feasXsVconds := mkAppNBeta feasXs cs
+                  let proofAdjusted := solEqAtomProofs[i]!.replaceFVars vs1 vs1Sol
+                  let adjustedFeas ← mkAppM ``Eq.mpr #[proofAdjusted, feasXsVconds]
+                  mkLambdaFVars xs <| ← mkLambdaFVars cs adjustedFeas
+              oldFeasibilityAdjusted := oldFeasibilityAdjusted.push adjustedFeas
+
+            for feas in oldFeasibilityAdjusted do
+              trace[Meta.debug] "oldFeasibilityAdjusted: {← inferType feas}"
+
             let newFeasibility ← newConstrProofs.mapM (fun e =>
               withLocalDeclsDNondep vconds fun cs => do
                 mkLambdaFVars xs <| ← mkLambdaFVars cs (e.replaceFVars vs1 vs1Sol))
 
+            for f in atomData.feasibility do
+              trace[Meta.debug] "feasibility: {← inferType f}"
+
+            for nf in newFeasibility do
+              trace[Meta.debug] "newFeasibility: {← inferType nf}"
+
             let constraintsFromReducedConstraints :=
               pat.optimality.constr.map Tree.val
+
+            for cfrc in constraintsFromReducedConstraints do
+              trace[Meta.debug] "constraintsFromReducedConstraints: {← inferType cfrc}"
 
             if reducedConstrs.size != constraintsFromReducedConstraints.size then
               throwError ("Expected same length: {reducedConstrs} and " ++
@@ -172,14 +216,13 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               solution := atomData.solution.append
                 (← pat.forwardImagesNewVars.mapM (fun e => mkLambdaFVars xs
                     (e.replaceFVars vs1 vs1Sol)))
-              feasibility := atomData.feasibility ++ newFeasibility
+              feasibility := oldFeasibilityAdjusted ++ newFeasibility
               optimality := newOptimality
               vcondElim := newVCondElims
 
               }
 
               -- TODO: solEqAtom := sorry. ?????????
-              -- TODO: vcondElim := sorry. ???????
 
             return atomData'
 
@@ -485,9 +528,9 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     -- | _ => Curvature.Affine
 
   let atomData ← reduceAtomData objCurv atomData
-  trace[Meta.debug] "HERE Reduced atom: {atomData}"
+  -- trace[Meta.debug] "HERE Reduced atom: {atomData}"
   let atomData ← addAtomDataDecls id.getId atomData
-  trace[Meta.debug] "HERE Added atom"
+  -- trace[Meta.debug] "HERE Added atom"
 
   liftTermElabM do
     trace[Meta.debug] "Add atom: {atomData}"
