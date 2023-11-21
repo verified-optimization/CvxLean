@@ -221,6 +221,8 @@ def evalStep (g : MVarId) (step : EggRewrite)
       dbg_trace s!"Failed to rewrite {step.rewriteName} after rewriting constraint / objective function (equiv {isEquiv})."
       for g in gs do
         dbg_trace s!"Could not prove {← Meta.ppGoal g}."
+
+      dbg_trace s!"tactic : {Syntax.prettyPrint fullTac}"
       return gs
   else
     -- No equality case. This only happens under the `reduction` command, when
