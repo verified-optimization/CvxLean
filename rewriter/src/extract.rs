@@ -87,6 +87,10 @@ fn get_step_aux(
     }
 
     if let Some(rule_name) = &next.forward_rule {
+        // let curr_s_t: String = current.get_recexpr().to_string();
+        // let next_s_t = next.get_recexpr().to_string();
+        // println!("curr {} : {}", rule_name, curr_s_t);
+        // println!("next {} : {}", rule_name, next_s_t);
         if location.is_some() && expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 
@@ -146,13 +150,28 @@ impl ToString for Minimization {
 
 /// Return the rewrite steps if egg successfully found a chain of rewrites to
 /// transform the term into DCP form. Return `None` if it didn't.
-pub fn get_steps(prob: Minimization, domains: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
+pub fn get_steps(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
     let prob_s = prob.to_string();
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
 
+    // Process domains, intersecting domains assigned to the same variable.
+    let mut domains: HashMap<String, Domain> = HashMap::new();
+    for (x, dom) in domains_vec {
+        if domains.contains_key(&x) {
+            match domains.get_mut(&x) {
+                Some(saved_dom) => {
+                    *saved_dom = dom.intersection(saved_dom);
+                }
+                None => { }
+            }
+        } else {
+            domains.insert(x, dom);
+        }
+    }
+
     for node_limit in [2500, 5000, 7500, 10000] {
         let analysis = Meta {
-            domains : domains.clone().into_iter().collect()
+            domains : domains.clone()
         };
         
         let iter_limit = node_limit / 250;
