@@ -31,7 +31,8 @@ jobs:
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
       - name: Install Rust and Cargo
         run: |
-          curl https://sh.rustup.rs -sSf | sh
+          curl --proto '=https' -sSf https://sh.rustup.rs > rustup-init.sh
+          sh rustup-init.sh -y --default-toolchain none
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build CvxLean
