@@ -1,6 +1,7 @@
-import CvxLean.Lib.Missing.Real
-import CvxLean.Meta.Missing.Expr
-import CvxLean.Meta.Missing.Meta
+import CvxLean.Lib.Math.Data.Real
+import CvxLean.Lib.Math.Data.Matrix
+import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Util.Meta
 
 namespace CvxLean
 
@@ -8,24 +9,24 @@ open Lean Lean.Meta
 
 unsafe def inferDimension (ty : Expr) : MetaM (List (Nat × Nat)) :=
   match ty.consumeMData with
-  | Expr.const ``Real _ => 
+  | Expr.const ``Real _ =>
       return [(1, 1)]
-  | Expr.forallE _ (Expr.app (Expr.const ``Finₓ _) nExpr) e _ => 
-    match e with 
+  | Expr.forallE _ (Expr.app (Expr.const ``Fin _) nExpr) e _ =>
+    match e with
     | Expr.const ``Real _  => do
         let n : Nat ← evalExpr Nat (mkConst ``Nat) nExpr
         return [(n, 1)]
-    | Expr.forallE _ (Expr.app (Expr.const ``Finₓ _) mExpr) (Expr.const ``Real _) _ => do 
+    | Expr.forallE _ (Expr.app (Expr.const ``Fin _) mExpr) (Expr.const ``Real _) _ => do
         let n : Nat ← evalExpr Nat (mkConst ``Nat) nExpr
         let m : Nat ← evalExpr Nat (mkConst ``Nat) mExpr
         return [(n, m)]
     | _ => throwError "Unsupported type: {ty}"
-  | Expr.app (Expr.app (Expr.app M FinN) FinM) R => do 
-    match (M, FinM, FinM, R) with 
-    | (Expr.const ``Matrix _, 
-      Expr.app (Expr.const ``Finₓ _) nExpr, 
-      Expr.app (Expr.const ``Finₓ _) mExpr,
-      Expr.const ``Real _) => 
+  | Expr.app (Expr.app (Expr.app M FinN) FinM) R => do
+    match (M, FinN, FinM, R) with
+    | (Expr.const ``Matrix _,
+      Expr.app (Expr.const ``Fin _) nExpr,
+      Expr.app (Expr.const ``Fin _) mExpr,
+      Expr.const ``Real _) =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) nExpr
         let m : Nat ← evalExpr Nat (mkConst ``Nat) mExpr
         return [(n, m)]

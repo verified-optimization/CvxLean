@@ -1,12 +1,9 @@
-import CvxLean.Meta.Missing.Expr
+import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Tactic.DCP.AtomSyntax
-import CvxLean.Lib.Missing.Real
+import CvxLean.Lib.Math.Data.Real
 import CvxLean.Tactic.DCP.Dcp
-import CvxLean.Lib.Cones
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 
@@ -48,7 +45,7 @@ def mkLetFVarsWith (e : Expr) (xs : Array Expr) (ts : Array Expr) : MetaM Expr :
 /-- Introduce new names for the proofs in the atom to speed up proof building later. -/
 def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   if atomData.solEqAtom.hasMVar then
-    throwError "has mvar {(toString atomData.solEqAtom)}"
+    throwError "has mvar {atomData.solEqAtom}"
   let solEqAtom ← addAtomDataDecl (id.mkStr "solEqAtom") atomData.solEqAtom
   let optimality ← addAtomDataDecl (id.mkStr "optimality") atomData.optimality
   let mut feasibility := #[]
@@ -59,15 +56,15 @@ def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM 
   for i in [:atomData.vcondElim.size] do
     vcondElim := vcondElim.push $
       ← addAtomDataDecl (id.mkStr (s!"vcondElim{i}")) atomData.vcondElim[i]!
-  return {atomData with 
+  return {atomData with
     solEqAtom := solEqAtom
     feasibility := feasibility
     vcondElim := vcondElim
     optimality := optimality
   }
-where 
+where
   addAtomDataDecl (name : Lean.Name) (expr : Expr) : CommandElabM Expr := do
-    addDecl <| .defnDecl {
+    liftCoreM <| addDecl <| .defnDecl {
       name := name
       levelParams := []
       type := ← liftTermElabM (do return ← inferType expr)
@@ -79,63 +76,155 @@ where
 
 /-- Use the DCP procedure to reduce the graph implementation to a problem that
 uses only cone constraints and affine atoms. -/
-def reduceAtomData (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
+def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   liftTermElabM do
     -- `xs` are the arguments of the atom.
     lambdaTelescope atomData.expr fun xs _ => do
 
       -- Call DCP on graph implementation.
       let (objFun, constraints, originalVarsDecls) ←
-        withLocalDeclsD 
+        withLocalDeclsD
           (atomData.impVars.map fun (n, ty) => (n, fun _ => return mkAppNBeta ty xs))
           fun vs => do
             let originalVarsDecls ← vs.mapM fun v => v.fvarId!.getDecl
             let objFun := mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
-            let constraints := atomData.impConstrs.map 
+            let constraints := atomData.impConstrs.map
               fun c => (`_, mkAppNBeta (mkAppNBeta c xs) vs)
             return (objFun, constraints, originalVarsDecls)
-      let pat ← DCP.mkProcessedAtomTree objFun constraints.toList originalVarsDecls
+
+      trace[Meta.debug] "before PAT "
+      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
+      trace[Meta.debug] "after PAT "
       -- `pat` is the atom tree resulting from the DCP procedure.
 
       -- Temporary check until using atoms in graph implementations is supported.
-      if pat.newVarDecls.length ≠ 0 ∨ pat.newConstrs.size ≠ 0 then
-        throwError "Using nontrivial atoms in graph implementations is not yet supported"
-      
-      withExistingLocalDecls pat.newVarDecls do
-        withExistingLocalDecls pat.originalVarsDecls.toList do
-          -- `vs1` are the variables already present in the unreduced graph implementation.
-          let vs1 := pat.originalVarsDecls.map (mkFVar ·.fvarId)
-          -- `vs2` are the variables to be added to the graph implementation.
-          let vs2 := pat.newVarDecls.toArray.map (mkFVar ·.fvarId)
-          let vs1Sol := atomData.solution.map fun s => mkAppNBeta s xs
+      -- if pat.newVarDecls.length ≠ 0 ∨ pat.newConstrs.size ≠ 0 then
+      --   throwError "Using nontrivial atoms in graph implementations is not yet supported"
 
-          -- TODO: move because copied from DCP tactic.
-          let reducedConstrs := pat.reducedExprs.constr.map Tree.val
-          let reducedConstrs := reducedConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
+      trace[Meta.debug] "pat.originalVarsDecls : {pat.originalVarsDecls.map (·.userName)}"
+      trace[Meta.debug] "pat.newVarDecls : {pat.newVarDecls.map (·.userName)}"
+      trace[Meta.debug] "pat.newConstrVarsArray : {pat.newConstrVarsArray.map (·.userName)}"
 
-          -- TODO: move because copied from DCP tactic.
-          let newConstrProofs := pat.feasibility.fold #[] fun acc fs => 
-            fs.fold acc Array.append
+      withExistingLocalDecls pat.originalVarsDecls.toList do
+        withExistingLocalDecls pat.newVarDecls do
+          withExistingLocalDecls pat.newConstrVarsArray.toList do
+            trace[Meta.debug] "pat opt: {pat.optimality}"
+            for c in pat.optimality.constr.map Tree.val do
+              trace[Meta.debug] "pat opt constr: {c}"
+              check c
+            -- `vs1` are the variables already present in the unreduced graph implementation.
+            let vs1 := pat.originalVarsDecls.map (mkFVar ·.fvarId)
+            -- `vs2` are the variables to be added to the graph implementation.
+            let vs2 := pat.newVarDecls.toArray.map (mkFVar ·.fvarId)
+            let vs1Sol := atomData.solution.map fun s => mkAppNBeta s xs
 
-          let atomData' : GraphAtomData := {atomData with
-            impVars := atomData.impVars.append 
-              (← pat.newVarDecls.toArray.mapM fun decl => do
-                return (decl.userName, ← mkLambdaFVars xs decl.type))
-            impObjFun := ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $
-              pat.reducedExprs.objFun.val
-            impConstrs := ← (reducedConstrs ++ pat.newConstrs).mapM
-              (fun c => do return ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $ c)
-            solution := atomData.solution.append 
-              (← pat.forwardImagesNewVars.mapM (fun e => mkLambdaFVars xs 
-                  (e.replaceFVars vs1 vs1Sol))) 
-            -- TODO: solEqAtom := sorry.
-            feasibility := atomData.feasibility ++ 
-              (← newConstrProofs.mapM (fun e => mkLambdaFVars xs 
-                  (e.replaceFVars vs1 vs1Sol)))}
-            -- TODO: optimality := sorry.
-            -- TODO: vcondElim := sorry.
-      
-          return atomData'
+            -- TODO: move because copied from DCP tactic.
+            let reducedConstrs := pat.reducedExprs.constr.map Tree.val
+            let reducedConstrs := reducedConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
+
+            -- TODO: move because copied from DCP tactic.
+            let newConstrProofs := pat.feasibility.fold #[] fun acc fs =>
+              fs.fold acc Array.append
+
+            -- for sc in solEqAtomProofs do
+            --   trace[Meta.debug] "solEqAtomProofs: {← inferType sc}"
+
+            for ncp in newConstrProofs do
+              trace[Meta.debug] "newConstrProofs: {← inferType ncp}"
+
+
+            -- let test := ← atomData.feasibility.mapM (fun e =>
+            --   Meta.forallTelescope e (fun xs a => do
+            --     trace[Meta.debug] "a: {←inferType a}"))
+
+            let vconds := atomData.vconds.map fun (n,c) => (n, mkAppNBeta c xs)
+
+            let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
+
+            if atomData.feasibility.size != solEqAtomProofs.size then
+              throwError ("Expected same length: {atomData.feasibility} and " ++
+                "{solEqAtomProofs}")
+
+            let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
+            let mut oldFeasibilityAdjusted := #[]
+
+            for i in [:atomData.feasibility.size] do
+              let feas := atomData.feasibility[i]!
+              let feasXs := mkAppNBeta feas xs
+              let adjustedFeas ←
+                withLocalDeclsDNondep vconds fun cs => do
+                  let feasXsVconds := mkAppNBeta feasXs cs
+                  let proofAdjusted := solEqAtomProofs[i]!.replaceFVars vs1 vs1Sol
+                  let adjustedFeas ← mkAppM ``Eq.mpr #[proofAdjusted, feasXsVconds]
+                  mkLambdaFVars xs <| ← mkLambdaFVars cs adjustedFeas
+              oldFeasibilityAdjusted := oldFeasibilityAdjusted.push adjustedFeas
+
+            for feas in oldFeasibilityAdjusted do
+              trace[Meta.debug] "oldFeasibilityAdjusted: {← inferType feas}"
+
+            let newFeasibility ← newConstrProofs.mapM (fun e =>
+              withLocalDeclsDNondep vconds fun cs => do
+                mkLambdaFVars xs <| ← mkLambdaFVars cs (e.replaceFVars vs1 vs1Sol))
+
+            for f in atomData.feasibility do
+              trace[Meta.debug] "feasibility: {← inferType f}"
+
+            for nf in newFeasibility do
+              trace[Meta.debug] "newFeasibility: {← inferType nf}"
+
+            let constraintsFromReducedConstraints :=
+              pat.optimality.constr.map Tree.val
+
+            for cfrc in constraintsFromReducedConstraints do
+              trace[Meta.debug] "constraintsFromReducedConstraints: {← inferType cfrc}"
+
+            if reducedConstrs.size != constraintsFromReducedConstraints.size then
+              throwError ("Expected same length: {reducedConstrs} and " ++
+                "{constraintsFromReducedConstraints}")
+
+            let newOptimality := mkAppN atomData.optimality (xs ++ vs1)
+            let newOptimality ←
+              withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
+                let mut newOptimality := newOptimality
+                for i in [:reducedConstrs.size] do
+                  let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
+                  newOptimality := mkApp newOptimality c
+                let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
+                mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newOptimality
+
+            let mut newVCondElims := #[]
+            for vcondElim in atomData.vcondElim do
+              let newVCondElim := mkAppN vcondElim (xs ++ vs1)
+              let newVCondElim ←
+                withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
+                  let mut newVCondElim := newVCondElim
+                  for i in [:reducedConstrs.size] do
+                    let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
+                    newVCondElim := mkApp newVCondElim c
+                  let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
+                  mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newVCondElim
+              newVCondElims := newVCondElims.push newVCondElim
+
+            let atomData' : GraphAtomData := {  atomData with
+              impVars := atomData.impVars.append
+                (← pat.newVarDecls.toArray.mapM fun decl => do
+                  return (decl.userName, ← mkLambdaFVars xs decl.type))
+              impObjFun := ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $
+                pat.reducedExprs.objFun.val
+              impConstrs := ← (reducedConstrs ++ pat.newConstrs).mapM
+                (fun c => do return ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $ c)
+              solution := atomData.solution.append
+                (← pat.forwardImagesNewVars.mapM (fun e => mkLambdaFVars xs
+                    (e.replaceFVars vs1 vs1Sol)))
+              feasibility := oldFeasibilityAdjusted ++ newFeasibility
+              optimality := newOptimality
+              vcondElim := newVCondElims
+
+              }
+
+              -- TODO: solEqAtom := sorry. ?????????
+
+            return atomData'
 
 /-- -/
 def elabCurvature (curv : Syntax) : TermElabM Curvature := do
@@ -143,6 +232,7 @@ def elabCurvature (curv : Syntax) : TermElabM Curvature := do
   | `«convex» => return Curvature.Convex
   | `«concave» => return Curvature.Concave
   | `«affine» => return Curvature.Affine
+  | `«convex_set» => return Curvature.ConvexSet
   | _ => throwError "Unknown curvature : {curv.getId}"
 
 /-- -/
@@ -152,7 +242,7 @@ def elabExpr (expr : Syntax) (argDecls : Array LocalDecl) (ty : Option Expr := n
     let body ← Elab.Term.elabTermAndSynthesizeEnsuringType expr ty
     let bodyTy ← inferType body
     return (← mkLambdaFVars xs body, bodyTy)
-  
+
 /-- -/
 def elabArgKindsAux : List Syntax → TermElabM (List LocalDecl × List ArgKind)
 | [] => pure ([], [])
@@ -179,7 +269,7 @@ def elabArgKinds (args : Array Syntax) : TermElabM (Array LocalDecl × Array Arg
   return (argDecls.toArray, argKinds.toArray)
 
 /-- -/
-def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) : 
+def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) :
   TermElabM (Array (Lean.Name × Expr) × Std.HashMap Lean.Name Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -192,8 +282,11 @@ def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) :
       vconds := vconds.push (stx[1].getId, vcond)
     return (vconds, vcondMap)
 
+/-- Assumtions can be elaborated exactly like vconditions. -/
+def elabBConds := elabVConditions
+
 /-- -/
-def elabImpVars (argDecls : Array LocalDecl) (impVarsStx : Array Syntax) : 
+def elabImpVars (argDecls : Array LocalDecl) (impVarsStx : Array Syntax) :
   TermElabM (Array (Lean.Name × Expr) × Std.HashMap Lean.Name Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -207,7 +300,7 @@ def elabImpVars (argDecls : Array LocalDecl) (impVarsStx : Array Syntax) :
     return (impVars, impVarMap)
 
 /-- -/
-def elabImpObj (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr)) 
+def elabImpObj (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
     (impObjStx : Syntax) (bodyTy : Expr) : TermElabM Expr := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -216,7 +309,7 @@ def elabImpObj (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars ts impObj
 
 /-- -/
-def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr)) 
+def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
    (impConstrStx : Array Syntax) : TermElabM (Array (Lean.Name × Expr)) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -226,10 +319,10 @@ def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × E
         let impConstr ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some $ mkSort levelZero)
         let impConstr ← mkLambdaFVars xs $ ← mkLambdaFVars vs impConstr
         impConstrs := impConstrs.push (stx[1].getId, impConstr)
-      return impConstrs 
+      return impConstrs
 
 /-- -/
-def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr)) 
+def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
     (impVarMap : Std.HashMap Lean.Name Expr) (solStx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -241,7 +334,7 @@ def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
       | none => throwError "Unknown variable: {stx[1].getId}"
       let ty := mkAppNBeta id xs
       solMap := solMap.insert stx[1].getId $ ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some ty)
-    let sols ← impVarNames.mapM 
+    let sols ← impVarNames.mapM
       fun n => match solMap.find? n with
         | some sol => pure sol
         | none => throwError "solution not found {n}"
@@ -249,8 +342,8 @@ def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
     return sols
 
 /-- -/
-def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr)) 
-    (impObj : Expr) (sols : Array Expr) 
+def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr))
+    (impObj : Expr) (sols : Array Expr)
     (expr : Expr) (stx : Syntax) : TermElabM Expr := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -265,7 +358,7 @@ def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Exp
       return ← mkLambdaFVars xs $ ← mkLambdaFVars cs solEqAtom
 
 /-- -/
-def elabFeas (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr)) 
+def elabFeas (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr))
     (impConstrs : Array (Lean.Name × Expr)) (sols : Array Expr) (stx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
@@ -284,14 +377,14 @@ def elabFeas (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr))
       return feas
 
 /-- -/
-def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → TermElabM Expr) : 
+def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → TermElabM Expr) :
   TermElabM Expr := do
   -- Determine subset of non-constant arguments.
   let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
   for i in [:xs.size] do
     if argKinds[i]! != ArgKind.Constant then
       let ty := ← inferType xs[i]!
-      let name := Name.mkSimple ((toString (← getLocalDecl xs[i]!.fvarId!).userName) ++ "'")
+      let name := Name.mkSimple ((ToString.toString (← FVarId.getDecl xs[i]!.fvarId!).userName) ++ "'")
       argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
 
   withLocalDeclsD argDeclInfo fun ys => do
@@ -315,7 +408,7 @@ def withCopyOfMonoXs (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Exp
   for i in [:xs.size] do
     if argKinds[i]! != ArgKind.Constant ∧ argKinds[i]! != ArgKind.Neither then
       let ty := ← inferType xs[i]!
-      let name := (← getLocalDecl xs[i]!.fvarId!).userName
+      let name := (← FVarId.getDecl xs[i]!.fvarId!).userName
       argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
       monoXs := monoXs.push xs[i]!
       monoArgKind := monoArgKind.push argKinds[i]!
@@ -332,7 +425,7 @@ def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind)
       ty ← match curvatureInArg curv monoArgKind[i]! with
       | Curvature.Concave => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
       | Curvature.Convex => mkArrow (← mkLe ys[i]! monoXs[i]!) ty
-      | Curvature.Affine => throwError "invalid curvature"
+      | _ => throwError "invalid curvature"
     return ← mkForallFVars ys ty
 
 /-- -/
@@ -384,7 +477,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
             | none => throwError "vcondition not found: {n}"
 
 /-- -/
-@[commandElab atomCommand] def elabAtomCommand : CommandElab
+@[command_elab atomCommand] unsafe def elabAtomCommand : CommandElab
 | `(declare_atom $id [ $curv ] $args* : $expr :=
     vconditions $vconds*
     implementationVars $impVars*
@@ -395,22 +488,25 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     feasibility $feas*
     optimality $opt
     vconditionElimination $vcondElim*) => do
-  let atomData ← liftTermElabM do 
-    let curv ← elabCurvature curv.raw
-    let (argDecls, argKinds) ← elabArgKinds args
+  let atomData ← liftTermElabM do
+    -- TODO: check if trating convexset as convex makes sense.
+    let curvTag ← elabCurvature curv.raw
+    let curv := if curvTag == Curvature.ConvexSet then Curvature.Concave else curvTag
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls
-    let (vconds, vcondMap) ← elabVConditions argDecls vconds
-    let (impVars, impVarMap) ← elabImpVars argDecls impVars
+    let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
+    let (impVars, impVarMap) ← elabImpVars argDecls impVars.rawImpl
     let impObj ← elabImpObj argDecls impVars impObj.raw bodyTy
-    let impConstrs ← elabImpConstrs argDecls impVars impConstrs
-    let sols ← elabSols argDecls impVars impVarMap sols
+    let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
+    let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
     let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
-    let feas ← elabFeas argDecls vconds impConstrs sols feas
+    let feas ← elabFeas argDecls vconds impConstrs sols feas.rawImpl
     let opt ← elabOpt curv argDecls expr #[] impVars impObj impConstrs argKinds opt.raw
-    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim
+    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
     let atomData := {
-      curvature := curv
+      id := id.getId
+      curvature := curvTag
       expr := expr
       argKinds := argKinds
       bconds := #[]
@@ -425,21 +521,83 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
       vcondElim := vcondElim
     }
     return atomData
-  
-  let atomData ← reduceAtomData atomData
+
+  let objCurv := atomData.curvature
+    -- match atomData.curvature with
+    -- | Curvature.ConvexSet => Curvature.ConvexSet
+    -- | _ => Curvature.Affine
+
+  let atomData ← reduceAtomData objCurv atomData
+  -- trace[Meta.debug] "HERE Reduced atom: {atomData}"
+  let atomData ← addAtomDataDecls id.getId atomData
+  -- trace[Meta.debug] "HERE Added atom"
+
+  liftTermElabM do
+    trace[Meta.debug] "Add atom: {atomData}"
+    addAtom $ AtomData.graph atomData
+| _ => throwUnsupportedSyntax
+
+
+/-- -/
+@[command_elab atomWithBCondsCommand] unsafe def elabAtomWithBCondsCommand : CommandElab
+| `(declare_atom $id [ $curv ] $args* : $expr :=
+    bconditions $bconds*
+    vconditions $vconds*
+    implementationVars $impVars*
+    implementationObjective $impObj
+    implementationConstraints $impConstrs*
+    solution $sols*
+    solutionEqualsAtom $solEqAtom
+    feasibility $feas*
+    optimality $opt
+    vconditionElimination $vcondElim*) => do
+  let atomData ← liftTermElabM do
+    let curv ← elabCurvature curv.raw
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
+    let (expr, bodyTy) ← elabExpr expr.raw argDecls
+    let (bconds, _) ← elabBConds argDecls bconds.rawImpl
+    let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
+    let (impVars, impVarMap) ← elabImpVars argDecls impVars.rawImpl
+    let impObj ← elabImpObj argDecls impVars impObj.raw bodyTy
+    let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
+    let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
+    let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
+    let feas ← elabFeas argDecls vconds impConstrs sols feas.rawImpl
+    let opt ← elabOpt curv argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
+    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
+
+    let atomData := {
+      id := id.getId
+      curvature := curv
+      expr := expr
+      argKinds := argKinds
+      bconds := bconds
+      vconds := vconds
+      impVars := impVars
+      impObjFun := impObj
+      impConstrs := impConstrs.map (·.snd)
+      solution := sols
+      solEqAtom := solEqAtom
+      feasibility := feas
+      optimality := opt
+      vcondElim := vcondElim
+    }
+    return atomData
+
+  let atomData ← reduceAtomData atomData.curvature atomData--Curvature.Affine atomData
   let atomData ← addAtomDataDecls id.getId atomData
 
-  liftTermElabM do 
+  liftTermElabM do
     trace[Meta.debug] "Add atom: {atomData}"
     addAtom $ AtomData.graph atomData
 | _ => throwUnsupportedSyntax
 
 /-- -/
-def mapNonConstant (xs : Array Expr) (argKinds : Array ArgKind) (f : Expr → TermElabM Expr) : 
+def mapNonConstant (xs : Array Expr) (argKinds : Array ArgKind) (f : Expr → TermElabM Expr) :
   TermElabM (Array Expr) :=
     (Array.zip xs argKinds).mapM fun (x, kind) => do
-      if kind == ArgKind.Constant 
-      then return x 
+      if kind == ArgKind.Constant
+      then return x
       else return ← f x
 
 /-- -/
@@ -447,15 +605,15 @@ def elabHom (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
   withExistingLocalDecls argDecls.toList do
     withLocalDeclD `κ (mkConst ``Real) fun κ => do
       let xs := argDecls.map (mkFVar ·.fvarId)
-      let zero := mkAppNBeta expr $ ← mapNonConstant xs argKinds 
+      let zero := mkAppNBeta expr $ ← mapNonConstant xs argKinds
         fun x => do return ← mkNumeral (← inferType x) 0
-      let lhs ← mkAdd 
-        (← mkAppM ``HasSmul.smul #[κ, mkAppNBeta expr xs])
+      let lhs ← mkAdd
+        (← mkAppM ``HSMul.hSMul #[κ, mkAppNBeta expr xs])
         zero
-      let rhs ← mkAdd 
-        (mkAppNBeta expr $ ← mapNonConstant xs argKinds 
-          fun x => mkAppM ``HasSmul.smul #[κ, x])
-        (← mkAppM ``HasSmul.smul #[κ, zero])
+      let rhs ← mkAdd
+        (mkAppNBeta expr $ ← mapNonConstant xs argKinds
+          fun x => mkAppM ``HSMul.hSMul #[κ, x])
+        (← mkAppM ``HSMul.hSMul #[κ, zero])
       let ty ← mkEq lhs rhs
       let hom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars #[κ] hom
@@ -464,32 +622,29 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
     withCopyOfNonConstVars xs argKinds fun newYs ys => do
-      let zero := mkAppNBeta expr $ ← mapNonConstant xs argKinds 
+      let zero := mkAppNBeta expr $ ← mapNonConstant xs argKinds
         fun x => do return ← mkNumeral (← inferType x) 0
       let lhs ← mkAdd (mkAppNBeta expr xs) (mkAppNBeta expr ys)
-      let rhs ← mkAdd 
-        (mkAppNBeta expr $ 
+      let rhs ← mkAdd
+        (mkAppNBeta expr $
           ← (Array.zip argKinds (Array.zip xs ys)).mapM fun (kind, x, y) => do
-            if kind == ArgKind.Constant 
-            then return x 
+            if kind == ArgKind.Constant
+            then return x
             else mkAdd x y)
         (zero)
       let ty ← mkEq lhs rhs
       let add ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars newYs add
 
-/-- Assumtions can be elaborated exactly like vconditions. -/
-def elabBConds := elabVConditions
-
 /-- -/
-@[commandElab affineAtomCommand] def elabAffineAtomCommand : CommandElab
-| `(declare_atom $id [ affine ] $args* : $expr := 
+@[command_elab affineAtomCommand] unsafe def elabAffineAtomCommand : CommandElab
+| `(declare_atom $id [ affine ] $args* : $expr :=
     bconditions $bconds*
     homogenity $hom
     additivity $add
     optimality $opt) => do
-  let atomData ← liftTermElabM do 
-    let (argDecls, argKinds) ← elabArgKinds args
+  let atomData ← liftTermElabM do
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls
     let vconds := #[]
     let impVars := #[]
@@ -498,7 +653,7 @@ def elabBConds := elabVConditions
     let sols := #[]
     let solEqAtom ← lambdaTelescope expr fun xs body => do return ← mkLambdaFVars xs $ ← mkEqRefl body
     let feas := #[]
-    let (bconds, _) ← elabBConds argDecls bconds
+    let (bconds, _) ← elabBConds argDecls bconds.rawImpl
     let hom ← elabHom argDecls expr argKinds hom.raw
     check hom -- Property is not saved. This is just a sanity check.
     let add ← elabAdd argDecls expr argKinds add.raw
@@ -527,6 +682,7 @@ def elabBConds := elabVConditions
     let vcondElim := #[]
 
     let atomData := {
+      id := id.getId
       curvature := Curvature.Affine
       expr := expr
       argKinds := argKinds
@@ -542,20 +698,20 @@ def elabBConds := elabVConditions
       vcondElim := vcondElim
     }
     return atomData
-  
+
   let atomData ← addAtomDataDecls id.getId atomData
 
-  liftTermElabM do 
+  liftTermElabM do
     trace[Meta.debug] "Add atom: {atomData}"
     addAtom $ AtomData.graph atomData
 | _ => throwUnsupportedSyntax
 
 /-- -/
-@[commandElab coneAtomCommand] def elabConeAtomCommand : CommandElab
+@[command_elab coneAtomCommand] unsafe def elabConeAtomCommand : CommandElab
 | `(declare_atom $id [ cone ] $args* : $expr :=
       optimality $opt) => do
-  let atomData ← liftTermElabM do 
-    let (argDecls, argKinds) ← elabArgKinds args
+  let atomData ← liftTermElabM do
+    let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls (ty := some (mkSort levelZero))
     let vconds := #[]
     let impVars := #[]
@@ -566,11 +722,13 @@ def elabBConds := elabVConditions
       do return ← mkLambdaFVars xs $ ← mkEqRefl body
     let feas := #[]
     let bconds := #[]
+    -- TODO: Not concave....
     let opt ← elabOpt Curvature.Concave argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
     let vcondElim := #[]
 
     let atomData := {
-      curvature := Curvature.Concave
+      id := id.getId
+      curvature := Curvature.ConvexSet --Curvature.Concave
       expr := expr
       argKinds := argKinds
       vconds := vconds
@@ -585,10 +743,10 @@ def elabBConds := elabVConditions
       vcondElim := vcondElim
     }
     return atomData
-  
+
   let atomData ← addAtomDataDecls id.getId atomData
 
-  liftTermElabM do 
+  liftTermElabM do
     trace[Meta.debug] "Add atom: {atomData}"
     addAtom $ AtomData.graph atomData
 | _ => throwUnsupportedSyntax

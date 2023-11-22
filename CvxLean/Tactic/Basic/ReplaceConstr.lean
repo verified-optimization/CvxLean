@@ -1,8 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
 
-attribute [-instance] coeDecidableEq
-
 namespace CvxLean
 
 namespace Meta
@@ -11,7 +9,7 @@ open Lean Lean.Meta
 
 /-- -/
 def replaceConstr (goal : MVarId) : MetaM (MVarId × MVarId × MVarId) := MVarId.withContext goal do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
     
   -- New Constraints.
   let newConstr ← mkFreshExprMVar (some $ ← mkArrow goalExprs.domain' (mkSort levelZero))
@@ -54,7 +52,7 @@ partial def evalReplaceConstrCore : Tactic := fun stx => match stx with
   replaceMainGoal [g1, g2, g3]
 | _ => throwUnsupportedSyntax
 
-macro "replace_constr" t:term : tactic => do return Lean.TSyntax.raw $ ← `(tactic| replace_constr_core; exact $t)
+macro "replace_constr" t:term : tactic => `(tactic| { replace_constr_core; exact $t })
 
 end Tactic
 

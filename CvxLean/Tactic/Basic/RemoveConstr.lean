@@ -2,10 +2,6 @@ import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Basic.ReplaceConstr
 import CvxLean.Tactic.Basic.ShowVars
-import CvxLean.Lib.Missing.List
-import CvxLean.Lib.Missing.Mathlib
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 
@@ -13,7 +9,7 @@ namespace Meta
 
 open Lean Lean.Meta
 
-/-- Given a proof of `a₀ ∧ a₁ ∧ ... ∧ aₙ`, return a proof of `aᵢ`, where 
+/-- Given a proof of `a₀ ∧ a₁ ∧ ... ∧ aₙ`, return a proof of `aᵢ`, where
 `total = n - 1`. -/
 def mkAndProj (e : Expr) (i : Nat) (total : Nat) : MetaM Expr := do
   match total, i with
@@ -32,14 +28,14 @@ def removeConstr (goal : MVarId) (id : Syntax) : MetaM (MVarId × MVarId) := do
 
   -- Assign `newConstrMVar`.
   let target := (← goal.getDecl).type
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let oldConstr := goalExprs.constraints
-  let (i, total, erasedConstr) ← 
+  let (i, total, erasedConstr) ←
     withLambdaBody goalExprs.constraints fun p oldConstrBody => do
       let cs ← decomposeConstraints oldConstrBody
-      let i ← match cs.findIdx' fun c => c.1 == id.getId with
-      | some i => pure i
-      | none => throwError "constraint {id.getId} not found"
+      let i := cs.findIdx fun c => c.1 == id.getId
+      if i == cs.length then
+        throwError "constraint {id.getId} not found"
       let cs' := cs.eraseIdx i
       let newConstr := composeAnd $ cs'.map Prod.snd
       let newConstr ← mkLambdaFVars #[p] newConstr

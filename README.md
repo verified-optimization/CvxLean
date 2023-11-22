@@ -84,6 +84,6 @@ The transformation is done in a verified way using the lemma `Real.exp_add` [fro
 If `./build.sh` fails:
 1. Make sure that the version in `lean-toolchain` matches the output of `lean --version`.
 2. Try running `./build.sh` again.
-3. Remove `lean_packages` and try again.
+3. Remove `lake-packages` and try again.
 
 If MOSEK outputs code 255 in VSCode, try restarting VSCode.

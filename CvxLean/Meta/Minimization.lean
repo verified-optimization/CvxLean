@@ -1,5 +1,5 @@
 import CvxLean.Syntax.Label
-import CvxLean.Meta.Missing.Meta
+import CvxLean.Meta.Util.Meta
 
 namespace CvxLean
 
@@ -9,7 +9,32 @@ open Lean Lean.Meta
 
 variable [MonadControlT MetaM m] [Monad m]
 
-/-- Structure holding all the components in an optimization problem. -/
+
+/-- Structure holding all the components in the `Minimization` type. -/
+structure MinimizationExpr where
+  domain : Expr
+  codomain : Expr
+  objFun : Expr
+  constraints : Expr
+
+namespace MinimizationExpr
+
+/-- Build a `Minimization` type from `MinimizationExpr`. -/
+def toExpr (minExpr : MinimizationExpr) : Expr :=
+  mkApp4 (mkConst `Minimization.mk)
+    minExpr.domain minExpr.codomain minExpr.objFun minExpr.constraints
+
+/-- Decompose `Minimization` type into its components. -/
+def fromExpr (prob : Expr) : MetaM MinimizationExpr :=
+  match prob with
+  | .app (.app (.app (.app (.const `Minimization.mk _)
+      domain) codomain) objFun) constraints => do
+    return MinimizationExpr.mk domain codomain objFun constraints
+  | _ => throwError "Expr not of the form `Minimization.mk ...`."
+
+end MinimizationExpr
+
+/-- Structure holding all the components in the `Solution` type. -/
 structure SolutionExpr where
   domain : Expr
   codomain : Expr
@@ -21,34 +46,53 @@ structure SolutionExpr where
 
 namespace SolutionExpr
 
-/-- Build a `Minimization` type from `SolutionExpr`. -/
-def toMinExpr (solExpr : SolutionExpr) : Expr :=
-  mkApp4 (mkConst `Minimization.mk) 
-    solExpr.domain' solExpr.codomain' solExpr.objFun solExpr.constraints
+/-- Build `MinimizationExpr` from `SolutionExpr`. -/
+def toMinimizationExpr (solExpr : SolutionExpr) : MinimizationExpr :=
+  { domain := solExpr.domain'
+    codomain := solExpr.codomain'
+    objFun := solExpr.objFun
+    constraints := solExpr.constraints }
 
 /-- Build a `Solution` type from `SolutionExpr`. -/
 def toExpr (solExpr : SolutionExpr) : Expr :=
-  mkApp4 (mkConst `Minimization.Solution) 
+  mkApp4 (mkConst `Minimization.Solution)
     solExpr.domain solExpr.codomain solExpr.codomainPreorder
-    (solExpr.toMinExpr)
+    (solExpr.toMinimizationExpr.toExpr)
 
-end SolutionExpr
-
-/-- Decompose solution type into its components. -/
-def matchSolutionExprFromExpr (goalType : Expr) : MetaM SolutionExpr := do 
+/-- Decompose `Solution` type into its components. -/
+def fromExpr (goalType : Expr) : MetaM SolutionExpr := do
   match goalType with
   | Expr.app (Expr.app (Expr.app (Expr.app (Expr.const `Minimization.Solution _ )
         domain) codomain) codomainPreorder)
           (Expr.app (Expr.app (Expr.app (Expr.app (Expr.const `Minimization.mk _)
             domain') codomain') objFun) constraints) => do
-    return SolutionExpr.mk domain codomain codomainPreorder 
-      domain' codomain' objFun constraints 
-  | _ => throwError "goal not of the form 'Minimization.Solution (...)'"
+    return SolutionExpr.mk domain codomain codomainPreorder
+      domain' codomain' objFun constraints
+  | _ => throwError "Goal not of the form `Minimization.Solution ...`."
 
-/-- Applies `matchSolutionExprFromExpr` to goal. -/
-def matchSolutionExpr (goal : MVarId) : MetaM SolutionExpr := do
+/-- Applies `SolutionExpr.fromExpr` to goal. -/
+def fromGoal (goal : MVarId) : MetaM SolutionExpr := do
   let goalType ← whnf (← MVarId.getDecl goal).type
-  matchSolutionExprFromExpr goalType
+  fromExpr goalType
+
+end SolutionExpr
+
+/-- Helper function used in to read the goal handling the `reduction` and
+`equivalence` cases. -/
+def getExprRawFromGoal (isEquiv : Bool) (e : Expr) : MetaM Expr := do
+  if isEquiv then
+    if e.isAppOf `Minimization.Equivalence then
+      -- NOTE(RFM): Equivalence 0:R 1:D 2:E 3:RPreorder 4:p 5:q
+      let lhs := e.getArg! 4
+      return lhs
+    else
+      throwError "convexify expected an equivalence, got {e}."
+  else
+    if e.isAppOf `Minimization.Solution then
+      -- Get `p` From `Solution p`.
+      return e.getArg! 3
+    else
+      throwError "convexify expected an Expr of the form `Solution ...`."
 
 /-- Replaces projections of an FVar `p` in an expression `e` by the expressions `rs`.
   For example, `p.2.2.1` will be replaced by `rs[2]`. If `p` is not fully projected,
@@ -59,22 +103,22 @@ def replaceProjections (e : Expr) (p : FVarId) (rs : Array Expr) : MetaM Expr :=
     | some r => return TransformStep.done r
     | none => return TransformStep.continue
   transform e (pre := pre)
-where 
-  decomposeProj (e : Expr) (p : FVarId) (rs : List Expr) (first : Option Bool := none) : 
+where
+  decomposeProj (e : Expr) (p : FVarId) (rs : List Expr) (first : Option Bool := none) :
       MetaM (Option Expr) := do
     /- `first` tells us whether the outermost projection was `.1` (`some true`) or
        `.2` (`some false`). If this is not a recursive call, `first` is `none`. -/
     match first, e, rs with
-    | _, Expr.fvar fVarId, [r] => 
+    | _, Expr.fvar fVarId, [r] =>
       if fVarId == p then return r else return none
-    | some true, Expr.fvar fVarId, r :: _ :: _ => 
+    | some true, Expr.fvar fVarId, r :: _ :: _ =>
       if fVarId == p then return r else return none
-    | none, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.fst _) α) β) e, r :: rs => do
+    | none, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.fst _) _) _) e, r :: rs => do
       return ← decomposeProj e p (r :: rs) (first := true)
-    | _, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.snd _) α) β) e, r :: rs => do
+    | _, Expr.app (Expr.app (Expr.app (Expr.const ``Prod.snd _) _) _) e, _ :: rs => do
       return ← decomposeProj e p rs (first := first == some true)
     | _, _, [] => return none
-    | _, _, r :: rs => return none
+    | _, _, _ :: _ => return none
 
 /-- Determine a list of variables described by a `domain`.
   Returns a list of variables, consisting of their name and type. -/
@@ -85,8 +129,8 @@ def decomposeDomain (domain : Expr) : m (List (Name × Expr)) := do
   | _ => do return [← decomposeLabel domain]
 
 /-- Get a HashSet of variable names in a given domain -/
-def getVariableNameSet (domain : Expr) : m (Std.HashSet Name) := do
-  let mut res : Std.HashSet Name := {}
+def getVariableNameSet (domain : Expr) : m (HashSet Name) := do
+  let mut res : HashSet Name := {}
   for (name, _) in ← decomposeDomain domain do
     res := res.insert name
   return res
@@ -112,17 +156,17 @@ partial def mkProjections (domain : Expr) (p : Expr) : m (List (Name × Expr × 
     return (v, ty1, d) :: r
   | _ => do return [(← getLabelName domain, domain, p)]
 
-/-- Introduce let declarations into the context, corresponding to the projections of `p`. 
+/-- Introduce let declarations into the context, corresponding to the projections of `p`.
     The argument `domain` specifies the type of `p`. CvxLeanLabels in the `domain` are used to
     determine the names of the new variables. -/
 def withDomainLocalDecls [Inhabited α] (domain : Expr) (p : Expr)
     (x : Array Expr → Array Expr → m α) : m α  := do
   let pr := (← mkProjections domain p).toArray
-  withLetDecls (pr.map fun (n, ty, val) => (n, fun _ => return ty, fun _ => return val)) fun xs => do
+  withLetDecls' (pr.map fun (n, ty, val) => (n, fun _ => return ty, fun _ => return val)) fun xs => do
     let mut xs := xs
     -- Use projections instead of variables named "_" :
     for i in [:pr.size] do
-      if pr[i]!.1 == `_ then 
+      if pr[i]!.1 == `_ then
         xs := xs.set! i pr[i]!.2.2
     x xs (pr.map (fun a => a.2.2))
 
@@ -139,8 +183,8 @@ def decomposeConstraints (e : Expr) : MetaM (List (Name × Expr)) := do
     return (← getLabelName e, e)
 
 /-- Get a HashSet of constraint names in a given domain -/
-def getConstraintNameSet (e : Expr) : MetaM (Std.HashSet Name) := do
-  let mut res : Std.HashSet Name := {}
+def getConstraintNameSet (e : Expr) : MetaM (HashSet Name) := do
+  let mut res : HashSet Name := {}
   for (name, _) in ← decomposeConstraints e do
     res := res.insert name
   return res
@@ -158,17 +202,17 @@ def composeAndWithProj : List Expr → (Expr × (Expr → List Expr))
   | c :: cs =>
     let (cs, prs) := composeAndWithProj cs
     let res := mkApp2 (mkConst ``And) c cs
-    let prs := fun e => mkApp3 (mkConst ``And.left) c cs e 
+    let prs := fun e => mkApp3 (mkConst ``And.left) c cs e
                     :: prs (mkApp3 (mkConst ``And.right) c cs e)
     (res, prs)
 
 /-- Generates a name that is not yet contained in `set` -/
-partial def generateNewName (base : String) (set : Std.HashSet Name) : MetaM Name := do
+partial def generateNewName (base : String) (set : HashSet Name) : MetaM Name := do
   tryNumber 1 set
 where
   tryNumber (i : Nat) vars : MetaM Name := do
     let name := s!"{base}{i}"
-    if vars.contains name 
+    if vars.contains name
     then tryNumber (i+1) vars
     else return name
 

@@ -1,9 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Basic.ReplaceConstr
-import CvxLean.Lib.Missing.Mathlib
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 open Lean
@@ -14,23 +11,25 @@ open Std Lean.Meta
 
 /-- -/
 def reorderConstrsExpr (ids : Array Lean.Name) (e : Expr) : MetaM Expr := do
-  let mut constrs : HashMap Lean.Name Expr := {}
+  let mut constrs : Std.HashMap Lean.Name Expr := {}
   for c in ← decomposeConstraints e do
-    if constrs.contains c.1 then throwError "Constraint names are not unique: {c.1}"
+    if constrs.contains c.1 then 
+      throwError "reorder_constrs error: Constraint names are not unique: {c.1}"
     constrs := constrs.insert c.1 c.2
   let newConstrs ← ids.mapM fun id => do 
     match constrs.find? id with
-    | none => throwError "Unknown constraint: {id}"
+    | none => throwError "reorder_constrs error: Unknown constraint: {id}"
     | some c => return c
-  -- TODO: use <.
-  if @LT.lt ℕ instLTNat constrs.size ids.size then throwError "Too many Constraints"
-  if @LT.lt ℕ instLTNat ids.size constrs.size then throwError "Not enough Constraints"
+  if constrs.size < ids.size then 
+    throwError "reorder_constrs error: Too many constraints"
+  if ids.size < constrs.size then 
+    throwError "reorder_constrs error: Not enough constraints"
   let res := composeAnd newConstrs.data
   return res
 
 /-- -/
 def reorderConstrs (goal : MVarId) (ids : Array Lean.Name) : MetaM MVarId := do
-  let goalExprs ← matchSolutionExpr goal
+  let goalExprs ← SolutionExpr.fromGoal goal
   let (newConstrMVar, eqGoal, newGoal) ← replaceConstr goal
   let newConstr ← 
     withLambdaBody goalExprs.constraints fun p constrBody => do
@@ -47,7 +46,8 @@ def reorderConstrs (goal : MVarId) (ids : Array Lean.Name) : MetaM MVarId := do
   let simpRes ← simpTarget eqGoal
     {← Simp.Context.mkDefault 
       with simpTheorems := #[simpTheorems]}
-  if simpRes.isSome then throwError "Failed to prove reordering correct: {mkMVar eqGoal}"
+  if simpRes.1.isSome then 
+    throwError "reorder_constrs error: Failed to prove reordering correct: {mkMVar eqGoal}"
   return newGoal
 
 end Meta

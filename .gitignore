@@ -4,4 +4,12 @@
 /solver/build
 /solver/test.cbf
 /solver/test.sol
-/lean_packages
+/rewriter/*.dot 
+/rewriter/*.svg
+/ffi/build
+/ffi/lake-packages 
+/lake-packages
+*.olean
+
+/playground
+/CvxLean/Tactic/Solver/Mosek/Path.lean

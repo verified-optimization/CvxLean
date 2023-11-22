@@ -6,7 +6,7 @@ section OptimizationParam
 open Lean
 
 initialize optimizationParamAttr : TagAttribute ← 
-  registerTagAttribute `optimizationParam "Optimization parameter."
+  registerTagAttribute `optimization_param "Optimization parameter."
 
 def isOptimizationParam (n : Name) : MetaM Bool := do 
   return optimizationParamAttr.hasTag (← getEnv) n

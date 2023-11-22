@@ -1,8 +1,6 @@
-import CvxLean.Tactic.DCP.AtomLibrary
+import CvxLean.Tactic.DCP.AtomLibrary.All
 import CvxLean.Tactic.Solver.Conic
 import CvxLean.Command.Reduction
-
-attribute [-instance] coeDecidableEq
 
 namespace CvxLean
 
@@ -12,8 +10,8 @@ open Minimization
 
 /-- Equivalent to the `#reduce` command. TODO: Move. -/
 def reduceExpr (e : Expr) : MetaM Expr :=
-  withTransparency (mode := TransparencyMode.all) <| 
-    reduce e (skipProofs := false) (skipTypes := false)
+  withTransparency (mode := TransparencyMode.all) <|
+    reduce e (skipProofs := true) (skipTypes := true)
 
 /-- Reduce like `Meta.DiscrTree.whnfDT`. -/
 partial def whnfUntilValue (e : Expr) : MetaM Expr := do
@@ -36,171 +34,121 @@ where
     | Expr.forallE _ _ b _ => b.hasLooseBVars
     | _ => true
 
-/-- Get problem name. Used to add information about the solution to the 
+/-- Get problem name. Used to add information about the solution to the
 environment. -/
-def getProblemName (term : Syntax) : MetaM Lean.Name := do 
+def getProblemName (term : Syntax) : MetaM Lean.Name := do
   -- TODO: Full name with paraemters.
-  let idStx := match term with 
+  let idStx := match term with
     | Syntax.ident _ _ _ _ => term
     | Syntax.node _ _ args => args.getD 0 Syntax.missing
     | _ => Syntax.missing
-  if ¬ idStx.getId.isStr then 
+  if ¬ idStx.getId.isStr then
     throwError "Invalid name for minimization problem: {idStx}."
 
   return idStx.getId
 
-#check Meta.SolutionExpr
-
-/-- Get solution expression and reduction expression from optimization problem. 
+/-- Get solution expression and reduction expression from optimization problem.
 -/
-def getReducedProblemAndReduction (prob : Expr) 
-: MetaM (Meta.SolutionExpr × Expr) := do
+-- NOTE: Also send backwardMap.
+def getReducedProblemAndReduction (prob : Expr)
+: MetaM (Meta.SolutionExpr × Expr × Expr) := do
   let probTy ← inferType prob
-  if ¬ probTy.isAppOf ``Minimization then 
+  if ¬ probTy.isAppOf ``Minimization then
     throwError "The command `solve` expects a minimization."
-  
-  let domain := probTy.getArg! 0 
-  let codomain := probTy.getArg! 1
-  
-  let codomainPreorderInst ← mkFreshExprMVar
-    (some $ mkAppN (Lean.mkConst ``Preorderₓ [levelZero]) #[codomain])
 
-  let probSol := mkAppN 
-    (mkConst ``Minimization.Solution) 
+  let domain := probTy.getArg! 0
+  let codomain := probTy.getArg! 1
+
+  let codomainPreorderInst ← mkFreshExprMVar
+    (some $ mkAppN (Lean.mkConst ``Preorder ([levelZero] : List Level)) #[codomain])
+
+  let probSol := mkAppN
+    (mkConst ``Minimization.Solution)
     #[domain, codomain, codomainPreorderInst, prob]
 
-  let (_, probReduction) ← DCP.canonizeGoalFromExpr probSol
-  
-  let probReducedSol := match (← inferType probReduction) with 
-  | Expr.forallE _ r _ _ => r 
+  let probOpt ← Meta.SolutionExpr.fromExpr probSol
+  trace[Meta.debug] "probOpt: {probOpt.objFun}"
+  -- NOTE: We should get the value from this applied to the float sol point.
+
+  let (_, (forwardMap, backwardMap, probReduction)) ← DCP.canonizeGoalFromExpr probSol
+
+  let probReducedSol := match (← inferType probReduction) with
+  | Expr.forallE _ r _ _ => r
   | _ => default
 
-  return (← Meta.matchSolutionExprFromExpr probReducedSol, probReduction)
+  return (← Meta.SolutionExpr.fromExpr probReducedSol, probReduction, backwardMap)
 
 /-- Add problem declaration inferring type. -/
-def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool) 
+def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool)
 : MetaM Unit := do
-  let ty ← inferType e 
+  let ty ← inferType e
   let reducibility := Lean.ReducibilityHints.regular 0
   let safety := DefinitionSafety.safe
-  let defVal := mkDefinitionValEx n [] ty e reducibility safety []
+  let defVal := mkDefinitionValEx n ([] : List Lean.Name) ty e reducibility safety ([n] : List Lean.Name)
   let decl := Declaration.defnDecl defVal
   if compile then
-    Lean.addAndCompile decl 
-  else 
+    Lean.addAndCompile decl
+  else
     Lean.addDecl decl
 
 syntax (name := solve) "solve " term : command
 
 set_option maxHeartbeats 1000000
 
-@[commandElab «solve»]
+@[command_elab «solve»]
 unsafe def evalSolve : CommandElab := fun stx =>
   match stx with
   | `(solve $probInstance) =>
-    liftTermElabM <| do 
+    liftTermElabM <| do
       let probTerm ← elabTerm probInstance.raw none
       let probTerm ← whnf probTerm
+      let probTerm ← instantiateMVars probTerm
+
+      -- NOTE: Needed to solve the "OfNat" mvar bug.
+      for mvarId in ← getMVars probTerm do
+        try {
+          let mvarVal ← synthInstance (← mvarId.getDecl).type
+          mvarId.assign mvarVal }
+        catch _ => pure ()
 
       -- Create prob.reduced.
-      let (probReducedExpr, probReduction) ← 
+      let (probReducedExpr, probReduction, backwardMap) ←
         getReducedProblemAndReduction probTerm
 
       -- Expression of type Minimization.
-      let probReducedOpt := probReducedExpr.toMinExpr
-
-      -- Domain, codomain and optimization problem (useful to build terms).
-      let probReducedSignature := 
-        #[probReducedExpr.domain, probReducedExpr.codomain, probReducedOpt]
+      let probReducedOpt := probReducedExpr.toMinimizationExpr.toExpr
 
       let probName ← getProblemName probInstance.raw
-      
+
       addProblemDeclaration (probName ++ `reduced) probReducedOpt false
 
       -- Call the solver on prob.reduced and get a point in E.
       let coeffsData ← determineCoeffsFromExpr probReducedExpr
       trace[Meta.debug] "coeffsData: {coeffsData}"
-      let solPointResult ← Meta.conicSolverFromValues probReducedExpr coeffsData
-      trace[Meta.debug] "solPointResult: {solPointResult}"
-      
-      match solPointResult with 
-      | Sol.Result.failure code => 
+      let solPointResponse ← Meta.conicSolverFromValues probReducedExpr coeffsData
+      trace[Meta.debug] "solPointResponse: {solPointResponse}"
+
+      match solPointResponse with
+      | Sol.Response.failure code =>
         trace[Meta.debug] "MOSEK failed with code {code}"
         pure ()
 
       -- Mosek finished successfully.
-      | Sol.Result.success solPoint =>
+      | Sol.Response.success solPoint =>
         trace[Meta.debug] "solPoint.summary: {solPoint.summary}"
 
-        -- Add status to the environment. 
-        addProblemDeclaration 
+        -- Add status to the environment.
+        addProblemDeclaration
           (probName ++ `status) (mkStrLit solPoint.summary.problemStatus) true
-        
-        -- TODO: For now, we are only handling this case. 
-        if solPoint.summary.problemStatus != "PRIMAL_AND_DUAL_FEASIBLE" then 
+
+        -- TODO: For now, we are only handling this case.
+        if solPoint.summary.problemStatus != "PRIMAL_AND_DUAL_FEASIBLE" then
           pure ()
 
         -- Solution makes sense, handle the numerical solution.
         let solPointExpr ← Meta.exprFromSol probReducedExpr solPoint
 
-        -- Define prob.reduced.fakeSolution : Solution probReduced.
-
-        -- Create sorry'd feasibility proof.
-        let fakeFeasibility ← mkSyntheticSorry $ mkAppN (mkConst ``constraints) 
-          (probReducedSignature ++ #[solPointExpr])
-
-        -- Create sorry'd optimality proof.
-        let feasPointTy := mkAppN (mkConst ``FeasPoint) probReducedSignature
-        let objFunFeasPointVal := mkAppN (mkConst ``objFun)
-          (probReducedSignature ++ #[solPointExpr])
-        let fakeOptimality ← mkSyntheticSorry $ ← withLocalDeclD `y feasPointTy 
-          fun y => do
-            let hasLe := mkAppN (mkConst ``Preorderₓ.toHasLe [levelZero]) 
-              #[probReducedExpr.codomain, probReducedExpr.codomainPreorder]
-            let le := mkAppN (mkConst ``LE.le [levelZero]) 
-              #[probReducedExpr.codomain, hasLe]
-            let pointVal := mkAppN (mkConst ``FeasPoint.point)
-              (probReducedSignature ++ #[y])
-            let objFunPointVal := mkAppN (mkConst ``objFun)
-              (probReducedSignature ++ #[pointVal])
-            mkForallFVars #[y] (mkAppN le #[objFunFeasPointVal, objFunPointVal])
-        
-        -- Put everything together in a `Solution`.
-        let probReducedFakeSol := mkAppN (mkConst ``Solution.mk)
-          #[probReducedExpr.domain,
-            probReducedExpr.codomain,
-            probReducedExpr.codomainPreorder,
-            probReducedOpt,
-            solPointExpr, 
-            fakeFeasibility, 
-            fakeOptimality]
-        check probReducedFakeSol
-
-        -- Define `prob.fakeSolution` of type `Solution prob` by applying the
-        -- reduction, i.e. `probReduction probReduced.fakeSolution`.
-        let probFakeSol := mkApp probReduction probReducedFakeSol
-        check probFakeSol
-
-        -- Apply `realToFloat` to `prob.fakeSolution.point` and (hopefully) 
-        -- obtain a point `y` in `float(D)`.
-        let probFakeSolPoint := mkAppN (mkConst ``Solution.point)
-          #[probReducedExpr.domain,
-            probReducedExpr.codomain,
-            probReducedExpr.codomainPreorder,
-            probReducedOpt,
-            probFakeSol]
-        
-        -- NOTE: Cannot use whnf here because it introduces _Privates...
-        let probFakeSolPoint ← whnfUntilValue probFakeSolPoint
-        trace[Meta.debug] "probFakeSolPoint reduced: {probFakeSolPoint}."
-        let probSolPointFloat ← realToFloat probFakeSolPoint
-        let probSolPointFloat ← reduceExpr probSolPointFloat
-        trace[Meta.debug] "probSolPointFloat: {probSolPointFloat}."
-        check probSolPointFloat
-        -- NOTE: This last reduction is only needed if we want the resulting
-        -- term to be nice. But can lead to timeouts.
-        -- let probSolPointFloat ← reduceExpr probSolPointFloat
-        -- trace[Meta.debug] "probSolPointFloat reduced: {probSolPointFloat}."
+        let probSolPointFloat ← whnf <| ← realToFloat <| mkAppN backwardMap #[solPointExpr]
 
         -- Add the solution point to the environment.
         addProblemDeclaration (probName ++ `solution) probSolPointFloat true
@@ -213,7 +161,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
         check probSolValueFloat
         let mut probSolValueFloat := Expr.headBeta probSolValueFloat
         trace[Meta.debug] "probSolValueFloat reduced: {probSolValueFloat}"
-        if probSolValueFloat.getAppFn.isConstOf `CvxLean.maximizeNeg then 
+        if probSolValueFloat.getAppFn.isConstOf `CvxLean.maximizeNeg then
           probSolValueFloat := probSolValueFloat.getAppArgs[2]!
         addProblemDeclaration (probName ++ `value) probSolValueFloat true
 
