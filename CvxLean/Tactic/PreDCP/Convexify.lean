@@ -221,9 +221,9 @@ def evalStep (g : MVarId) (step : EggRewrite)
       dbg_trace s!"Failed to rewrite {step.rewriteName} after rewriting constraint / objective function (equiv {isEquiv})."
       for g in gs do
         dbg_trace s!"Could not prove {← Meta.ppGoal g}."
+      dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
 
-      dbg_trace s!"tactic : {Syntax.prettyPrint fullTac}"
-      return gs
+      return [gSol] ++ gsAfterRw
   else
     -- No equality case. This only happens under the `reduction` command, when
     -- the step involves mapping the objectiver function.
@@ -297,11 +297,15 @@ def evalConvexify : Tactic := fun stx => match stx with
       dbg_trace s!"Number of steps: {steps.size}."
 
       -- Apply steps.
+      let mut failed := false
       let mut g ← getMainGoal
       for step in steps do
         let gs ← evalStep g step vars fvars domain numConstrTags tagsMap isEquiv
         if gs.length != 1 then
           dbg_trace s!"Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
+          failed := true
+          setGoals gs
+          break
         else
           dbg_trace s!"Rewrote {step.rewriteName}."
           g := gs[0]!
@@ -311,7 +315,7 @@ def evalConvexify : Tactic := fun stx => match stx with
 
       saveTacticInfoForToken stx
 
-      if isEquiv then
+      if isEquiv && !failed then
         -- `rfl` closes the goal in equivalence mode.
         evalTactic (← `(tactic| exact Minimization.Equivalence.refl _))
     catch e =>
