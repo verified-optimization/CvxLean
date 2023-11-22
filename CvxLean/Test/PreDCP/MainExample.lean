@@ -9,10 +9,10 @@ noncomputable section
 
 open CvxLean Minimization Real
 
-def p := 
+def p :=
   optimization (x : ℝ)
     minimize (x)
-    subject to   
+    subject to
       h1 : 0.001 ≤ x
       h2 : 1 / (sqrt x) ≤ (exp x)
 
@@ -21,7 +21,7 @@ time_cmd equivalence eq/q : p := by
 
 #print q
 -- def q : Minimization ℝ ℝ :=
--- optimization (x : ℝ) 
+-- optimization (x : ℝ)
 --   minimize x
 --   subject to
 --     h1 : 1 / 1000 ≤ x
@@ -31,7 +31,7 @@ solve q
 
 #print q.reduced
 -- def q.reduced : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (t.0 : ℝ) (t.1 : ℝ) 
+-- optimization (x : ℝ) (t.0 : ℝ) (t.1 : ℝ)
 --   minimize x
 --   subject to
 --     _ : posOrthCone (t.1 - t.0)
@@ -43,4 +43,4 @@ solve q
 
 end
 
-end MainExample 
+end MainExample
