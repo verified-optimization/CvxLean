@@ -20,6 +20,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Norm
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Nth
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Perspective
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.PosSemidef
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.Power
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.SMul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sq
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sqrt
