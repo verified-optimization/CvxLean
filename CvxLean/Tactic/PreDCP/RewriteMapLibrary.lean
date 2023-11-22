@@ -47,7 +47,44 @@ macro_rules
       `(tactic| (first | simp only [$e:term] | repeat' (rw [$e:term])))
 
 /-- Extended positivity. -/
-syntax "positivity_ext" : tactic
+
+-- TODO: Move?
+lemma Real.one_sub_one_div_sq_nonneg_of_one_le {x : ℝ} :
+  0 < x → 0 ≤ 1 - x → 0 ≤ (1 / x ^ 2) - 1 :=
+  fun h1 h2 => by
+    have hx1 : x ≤ 1 := by linarith
+    have h0x : 0 ≤ x := by positivity
+    have h0x2 : 0 < x ^ 2 := by positivity
+    rw [le_sub_iff_add_le, zero_add, le_div_iff h0x2, one_mul]
+    simpa [abs_eq_self.mpr h0x]
+
+namespace Mathlib.Meta.Positivity
+
+open Lean.Meta Qq
+
+@[positivity ((1 / (_ : ℝ) ^ 2) - 1)]
+def evalOneSubOneDivSq : PositivityExt where eval {_ _α} zα pα e := do
+  let (.app (.app _sub (.app (.app _div _one) (.app (.app _pow (x : Q(ℝ))) _two))) _one') ←
+    withReducible (whnf e) | throwError "not ((1 / x ^ 2) - 1)"
+  -- 0 < x ?
+  let h1 :=
+    match ← core zα pα x with
+    | .positive pa => some pa
+    | _ => none
+  -- 0 ≤ 1 - x ?
+  let h2 :=
+    match ← core zα pα (q((1 : ℝ) - $x) : Q(ℝ)) with
+    | .nonnegative pa => some pa
+    | _ => none
+  -- If 0 < x and 0 ≤ 1 - x, then 0 ≤ (1 / x ^ 2) - 1
+  match h1, h2 with
+  | some h1', some h2' =>
+      let pa' ← mkAppM ``Real.one_sub_one_div_sq_nonneg_of_one_le #[h1', h2']
+      pure (.nonnegative pa')
+  | _, _ =>
+      pure .none
+
+end Mathlib.Meta.Positivity
 
 namespace Tactic
 
@@ -67,6 +104,7 @@ def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
       let le_lemma := ``sub_nonneg_of_le
       let lt_lemma := ``sub_pos_of_lt
       for (le_or_lt, le_or_lt_lemma) in [(``LE.le, le_lemma), (``LT.lt, lt_lemma)] do
+        let ty := Expr.consumeMData ty
         match ty.app4? le_or_lt with
         | some (R, _, lhs, _rhs) =>
             if ← isDefEq R q(ℝ) then
@@ -88,6 +126,8 @@ elab (name := prepare_positivity) "prepare_positivity" : tactic => do
   replaceMainGoal [mvarId']
 
 end Tactic
+
+syntax "positivity_ext" : tactic
 
 macro_rules
   | `(tactic| positivity_ext) =>
