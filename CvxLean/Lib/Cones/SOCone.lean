@@ -1,5 +1,6 @@
 import Mathlib.Data.Real.Sqrt
 import Mathlib.Data.Matrix.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-
 https://docs.mosek.com/modeling-cookbook/cqo.html#sec-cqo-rquadcone
@@ -38,11 +39,17 @@ section Lemmas
 /-- To handle powers, a common trick is to consider for x, y ≥ 0, z ∈ ℝ,
       ((x + y), (x - y, 2 * z)^T) ∈ SO,
 which is equivalent to z ^ 2 ≤ x * y. -/
-lemma soCone_add_sub_two_mul_of_nonneg (x y z : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
-  soCone (x + y) ![x - y, 2 * z] ↔ z ^ 2 ≤ x * y := by
+lemma soCone_add_sub_two_mul_of_nonneg {x y : ℝ} (z : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
+  soCone (x + y) ![x - y, 2 * z] ↔ z ^ (2 : ℝ) ≤ x * y := by
   have hxy := add_nonneg hx hy
   conv => lhs; simp [soCone, sqrt_le_left hxy, ←le_sub_iff_add_le']
   ring_nf; simp
+
+lemma soCone_add_sub_two_of_nonneg {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+  soCone (x + y) ![x - y, 2] ↔ 1 ≤ x * y := by
+  have h := soCone_add_sub_two_mul_of_nonneg 1 hx hy
+  rw [mul_one, one_rpow] at h
+  exact h
 
 end Lemmas
 
