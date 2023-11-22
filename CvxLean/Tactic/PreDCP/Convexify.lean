@@ -297,13 +297,11 @@ def evalConvexify : Tactic := fun stx => match stx with
       dbg_trace s!"Number of steps: {steps.size}."
 
       -- Apply steps.
-      let mut failed := false
       let mut g ← getMainGoal
       for step in steps do
         let gs ← evalStep g step vars fvars domain numConstrTags tagsMap isEquiv
         if gs.length != 1 then
           dbg_trace s!"Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
-          failed := true
           setGoals gs
           break
         else
@@ -314,10 +312,6 @@ def evalConvexify : Tactic := fun stx => match stx with
       normNumCleanUp (useSimp := false)
 
       saveTacticInfoForToken stx
-
-      if isEquiv && !failed then
-        -- `rfl` closes the goal in equivalence mode.
-        evalTactic (← `(tactic| exact Minimization.Equivalence.refl _))
     catch e =>
       let eStr ← e.toMessageData.toString
       throwError "convexify failed with error: {eStr}"

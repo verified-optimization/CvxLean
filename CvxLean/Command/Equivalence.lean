@@ -7,10 +7,14 @@ namespace CvxLean
 open Lean Lean.Elab Lean.Meta Lean.Elab.Tactic Lean.Elab.Term Lean.Elab.Command
 open Minimization
 
+macro "equivalence_rfl" : tactic =>
+  `(tactic| exact Minimization.Equivalence.refl _)
+
 /-- Simply run `tacticCode` in `mvarId`. -/
 partial def runEquivalenceTactic (mvarId : MVarId) (tacticCode : Syntax) :
   TermElabM Unit := do
-  let code := tacticCode[1]
+  let tacStx := ⟨tacticCode[1]⟩
+  let code ← `(tactic| $tacStx <;> try { equivalence_rfl })
   instantiateMVarDeclMVars mvarId
 
   withInfoHole mvarId do
@@ -85,7 +89,7 @@ def evalEquivalence : CommandElab := fun stx => match stx with
       let R ← Meta.mkFreshTypeMVar
       let prob₁Ty := mkApp2 (Lean.mkConst ``Minimization) D R
       let prob₁ ← elabTermAndSynthesizeEnsuringType prob (some prob₁Ty)
-      -- let probQ₁ := mkAppN (Lean.mkConst ``Minimization.mk) #[D, R, prob₁]
+
       -- NOTE: `instantiateMVars` does not infer the preorder instance.
       for mvarId in ← getMVars prob₁ do
         try {
@@ -123,7 +127,5 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           [probId.getId])
   | _ => throwUnsupportedSyntax
 
-macro "equivalence_rfl" : tactic =>
-  `(tactic| exact Minimization.Equivalence.refl _)
 
 end CvxLean
