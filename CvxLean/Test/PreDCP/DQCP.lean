@@ -4,8 +4,6 @@ import CvxLean.Tactic.PreDCP.Basic
 import CvxLean.Tactic.PreDCP.Convexify
 import CvxLean.Test.Util.TimeCmd
 
-
-
 namespace DQCP
 
 noncomputable section
@@ -24,11 +22,11 @@ def qcp1 :=
       h3 : 0 ≤ y
       h4 : sqrt ((2 * y) / (x + y)) ≤ 1
 
-time_cmd reduction redqcp1/dcp1 : qcp1 := by
+time_cmd reduction redqcp1/dqcp1 : qcp1 := by
   convexify
 
-#print dcp1
--- def dcp1 : Minimization (ℝ × ℝ) ℝ :=
+#print dqcp1
+-- def dqcp1 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize y
 --   subject to
@@ -37,9 +35,9 @@ time_cmd reduction redqcp1/dcp1 : qcp1 := by
 --     h3 : 0 ≤ y
 --     h4 : y * 2 - x ≤ y
 
-solve dcp1
+solve dqcp1
 
-#eval dcp1.value -- -2.000000
+#eval dqcp1.value -- -2.000000
 
 end QCP1
 
@@ -54,11 +52,12 @@ def hypersonicShapeDesign (a b : ℝ) :=
       h2 : Δx ≤ 1
       h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 
-time_cmd equivalence redqcp2/dcp2 : hypersonicShapeDesign 0.35 0.65 := by
+time_cmd reduction redqcp2/dqcp2 : hypersonicShapeDesign 0.35 0.65 := by
   unfold hypersonicShapeDesign;
-  convexify;
+  convexify
+  dcp
 
-#print dcp2
+#print dqcp2
 
 end QCP2
 

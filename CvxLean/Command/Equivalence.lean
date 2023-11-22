@@ -127,5 +127,4 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           [probId.getId])
   | _ => throwUnsupportedSyntax
 
-
 end CvxLean
