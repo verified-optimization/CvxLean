@@ -9,6 +9,7 @@ import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.Solver.Float.OptimizationParam
+import CvxLean.Tactic.Util.PositivityExt
 
 namespace CvxLean
 
@@ -262,7 +263,7 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
         let vcondProofTy ← mkForallFVars args vcondProofTyBody
 
         let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { norm_num <;> positivity <;> linarith })
+            let tac ← `(by intros; try { positivity_ext <;> linarith <;> norm_num })
             let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
             Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
             instantiateMVars v
