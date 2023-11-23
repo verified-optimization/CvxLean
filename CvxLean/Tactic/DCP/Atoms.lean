@@ -87,15 +87,22 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
           (atomData.impVars.map fun (n, ty) => (n, fun _ => return mkAppNBeta ty xs))
           fun vs => do
             let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
-            let originalVarsDecls := vsDecls --++ xsDecs
+
+            let originalVarsDecls := vsDecls
             let objFun := mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
             let constraints := atomData.impConstrs.map
               fun c => (`_, mkAppNBeta (mkAppNBeta c xs) vs)
             return (objFun, constraints, originalVarsDecls)
 
-      let xsDecls ← xs.mapM fun x => x.fvarId!.getDecl
+      let xsDeclsPre ← xs.mapM fun x => x.fvarId!.getDecl
+      let mut xsDecls := #[]
+      for i in [:xs.size] do
+        if atomData.argKinds[i]! != ArgKind.Constant then
+          xsDecls := xsDecls.push xsDeclsPre[i]!
+      trace[Meta.debug] "xsDecls: {xsDecls.map (·.userName)}"
+
       trace[Meta.debug] "before PAT "
-      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
+      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList (xsDecls ++ originalVarsDecls)
       trace[Meta.debug] "after PAT "
       -- `pat` is the atom tree resulting from the DCP procedure.
 
@@ -107,7 +114,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
       trace[Meta.debug] "pat.newVarDecls : {pat.newVarDecls.map (·.userName)}"
       trace[Meta.debug] "pat.newConstrVarsArray : {pat.newConstrVarsArray.map (·.userName)}"
 
-      withExistingLocalDecls pat.originalVarsDecls.toList do
+      withExistingLocalDecls originalVarsDecls.toList do
         withExistingLocalDecls pat.newVarDecls do
           withExistingLocalDecls pat.newConstrVarsArray.toList do
             trace[Meta.debug] "pat opt: {pat.optimality}"
@@ -115,7 +122,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               trace[Meta.debug] "pat opt constr: {c}"
               check c
             -- `vs1` are the variables already present in the unreduced graph implementation.
-            let vs1 := pat.originalVarsDecls.map (mkFVar ·.fvarId)
+            let vs1 := originalVarsDecls.map (mkFVar ·.fvarId)
             -- `vs2` are the variables to be added to the graph implementation.
             let vs2 := pat.newVarDecls.toArray.map (mkFVar ·.fvarId)
             let vs1Sol := atomData.solution.map fun s => mkAppNBeta s xs

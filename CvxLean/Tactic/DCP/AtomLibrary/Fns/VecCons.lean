@@ -5,7 +5,7 @@ namespace CvxLean
 
 open Matrix
 
-declare_atom vec_cons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ :
+declare_atom vecCons [affine] (n : Nat)& (x : ℝ)+ (y : (Fin n) → ℝ)+ :
   vecCons x y :=
 bconditions
 homogenity by
