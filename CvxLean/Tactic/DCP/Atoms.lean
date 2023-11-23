@@ -159,6 +159,9 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                   mkLambdaFVars xs <| ← mkLambdaFVars cs adjustedFeas
               oldFeasibilityAdjusted := oldFeasibilityAdjusted.push adjustedFeas
 
+            for proof in solEqAtomProofs do
+              trace[Meta.debug] "solEqAtomProofs: {← inferType proof}"
+
             for feas in oldFeasibilityAdjusted do
               trace[Meta.debug] "oldFeasibilityAdjusted: {← inferType feas}"
 
@@ -354,6 +357,7 @@ def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Exp
       let sols := sols.map (mkAppNBeta · xs)
       let impObj' := convertLambdasToLets impObj sols
       let ty ← mkEq impObj' body
+      trace[Meta.debug] "ensuring type {ty}"
       let solEqAtom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars cs solEqAtom
 
@@ -526,6 +530,8 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     -- match atomData.curvature with
     -- | Curvature.ConvexSet => Curvature.ConvexSet
     -- | _ => Curvature.Affine
+
+  trace[Meta.debug] "before reduce sol eq atom: {atomData.solEqAtom}"
 
   let atomData ← reduceAtomData objCurv atomData
   -- trace[Meta.debug] "HERE Reduced atom: {atomData}"

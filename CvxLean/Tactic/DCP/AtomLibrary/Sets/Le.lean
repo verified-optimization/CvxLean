@@ -4,6 +4,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 
 namespace CvxLean
 
+set_option trace.Meta.debug true in
 declare_atom le [convex_set] (x : ℝ)- (y : ℝ)+ : x ≤ y :=
 vconditions
 implementationVars
@@ -11,11 +12,13 @@ implementationObjective Real.posOrthCone (y - x)
 implementationConstraints
 solution
 solutionEqualsAtom by
-  simp [Real.posOrthCone]
+  unfold Real.posOrthCone
+  simp
 feasibility
 optimality by
   intros x' y' hx hy h
-  simp [Real.posOrthCone] at h
+  unfold Real.posOrthCone at h
+  simp at h
   exact (hx.trans h).trans hy
 vconditionElimination
 
@@ -32,10 +35,10 @@ solutionEqualsAtom by
   constructor
   · intros h i
     rw [← le.solEqAtom]
+    unfold Real.posOrthCone
     apply h
-  · intros h i
-    erw [le.solEqAtom]
-    apply h
+  · intros hy i
+    simp [hy i]
 feasibility
 optimality by
   intros x' y' hx hy h i

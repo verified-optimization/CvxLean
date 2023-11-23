@@ -55,6 +55,7 @@ vconditionElimination
 
 -- NOTE(RFM): It is not straightforward to express it in terms of x ^ (-1) and
 -- x ^ 2 because of vconditions.
+set_option trace.Meta.debug true in
 declare_atom powNegTwo [convex] (x : ℝ)- : x ^ (-2) :=
 vconditions
   (hx : 0 < x)

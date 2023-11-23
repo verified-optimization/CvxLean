@@ -133,6 +133,8 @@ time_cmd reduction redqcp2/dqcp2 : hypersonicShapeDesign 0.35 0.65 := by
   convexify
   dcp --TODO: This has 0 ≤ Δx ?????
 
+-- solve dqcp2
+
 end QCP2
 
 end
