@@ -29,6 +29,7 @@ feasibility
 optimality by
   apply abs_le.2
   rw [←sub_nonneg, sub_neg_eq_add, add_comm, ←sub_nonneg (b := x)]
+  unfold posOrthCone at c_pos c_neg
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
 
@@ -43,13 +44,16 @@ solution (t := abs x)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by
-    intros _ _
+    unfold Real.Vec.posOrthCone
+    intros
     apply abs.feasibility0)
   (c_neg : by
-    intros _ _
+    unfold Real.Vec.posOrthCone
+    intros
     apply abs.feasibility1)
 optimality by
   intros i
+  unfold Real.Vec.posOrthCone at c_pos c_neg
   apply abs.optimality _ _ (c_pos i) (c_neg i)
 vconditionElimination
 
@@ -66,13 +70,16 @@ solution (T := M.abs)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by
+    unfold Real.Matrix.posOrthCone
     intros _ _ _
     apply abs.feasibility0)
   (c_neg :  by
+    unfold Real.Matrix.posOrthCone
     intros _ _ _
     apply abs.feasibility1)
 optimality by
   intros i j
+  unfold Real.Matrix.posOrthCone at c_pos c_neg
   apply abs.optimality _ _ (c_pos i j) (c_neg i j)
 vconditionElimination
 

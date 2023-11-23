@@ -11,9 +11,9 @@ implementationVars
 implementationObjective Real.Matrix.PSDCone A
 implementationConstraints
 solution
-solutionEqualsAtom by simp [Real.Matrix.PSDCone]
+solutionEqualsAtom by rw [Real.Matrix.PSDCone]
 feasibility
-optimality by simp [Real.Matrix.PSDCone]
+optimality by rw [Real.Matrix.PSDCone]
 vconditionElimination
 
 end CvxLean

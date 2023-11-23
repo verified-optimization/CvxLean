@@ -41,7 +41,8 @@ solutionEqualsAtom by
   congr
 feasibility
   (c_exp : by
-    simp only [Real.Vec.expCone, dif_pos hA]
+    unfold Real.Vec.expCone
+    simp only [dif_pos hA]
     intro i
     show Real.expCone ((Real.log (LDL.diagEntries hA i))) 1
       (Matrix.diag ((LDL.diag hA) * (LDL.lower hA)ᵀ) i)
@@ -55,6 +56,7 @@ optimality by
   have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by
     intro i
     rw [Real.exp_iff_expCone]
+    unfold Real.Vec.expCone at c_exp
     apply c_exp
   dsimp at c_posdef
   -- NOTE: Not matching instances, hence `convert` not `exact`.
@@ -66,6 +68,7 @@ vconditionElimination
     have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by
       intro i
       rw [Real.exp_iff_expCone]
+      unfold Real.Vec.expCone at c_exp
       apply c_exp
     exact Matrix.LogDetAtom.cond_elim
       (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef))

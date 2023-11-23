@@ -15,11 +15,13 @@ solution (t := log x)
 solutionEqualsAtom by
   rfl;
 feasibility (c_exp : by
-  simp [expCone]
+  unfold expCone
+  simp
   rw [Real.exp_log cond])
 optimality by
   intros y hy
-  simp [expCone] at c_exp
+  unfold expCone at c_exp
+  simp at c_exp
   have hxpos := lt_of_lt_of_le (exp_pos t) c_exp
   have hypos := lt_of_lt_of_le hxpos hy
   have hexptley := le_trans c_exp hy
@@ -27,7 +29,8 @@ optimality by
 vconditionElimination
   (cond : by
     intros y hy
-    simp [expCone] at c_exp
+    unfold expCone at c_exp
+    simp at c_exp
     have hexppos := exp_pos t
     have hxpos := lt_of_lt_of_le hexppos c_exp
     exact lt_of_lt_of_le hxpos hy)
@@ -43,14 +46,18 @@ solution (t := log x)
 solutionEqualsAtom rfl
 feasibility
   (c_exp: by
-    intros _ i
+    dsimp
+    unfold Vec.expCone
+    intros i
     apply log.feasibility0
     apply cond)
 optimality by
   intros x' hx i
+  unfold Vec.expCone at c_exp
   apply log.optimality _ _ (c_exp i) _ (hx i)
 vconditionElimination (cond : by
   intros x' hx i
+  unfold Vec.expCone at c_exp
   apply log.vcondElim0 _ _ (c_exp i) _ (hx i))
 
 end CvxLean

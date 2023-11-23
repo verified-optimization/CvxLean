@@ -10,7 +10,6 @@ namespace CvxLean
 
 open Real
 
-set_option trace.Meta.debug true in
 declare_atom klDiv [convex] (x : ℝ)? (y : ℝ)? : x * log (x / y) - x + y  :=
 vconditions
   (hx : 0 ≤ x)
@@ -26,6 +25,8 @@ solutionEqualsAtom by
   ring
 feasibility
   (c1 : by
+    dsimp
+    unfold expCone
     cases (lt_or_eq_of_le hx) with
     | inl hx =>
         left
@@ -40,6 +41,7 @@ feasibility
   (c2 : by
       simp [exp_log hy])
 optimality by
+  unfold expCone at c1
   cases c1 with
   | inl c =>
       have hxpos := c.1
@@ -58,7 +60,7 @@ optimality by
       simp [c.1, c.2.2]
 vconditionElimination
   (hx : by
-    simp [expCone] at c1
+    unfold expCone at c1
     cases c1 with
     | inl c => exact le_of_lt c.1
     | inr c => rw [c.1])
@@ -80,14 +82,30 @@ solutionEqualsAtom by
   ring
 feasibility
   (c1 : klDiv.feasibility0 x y hx hy)
-  (c2 : by simpa [*] using klDiv.feasibility1 x y hx hy)
+  (c2 : by
+    dsimp
+    have h := klDiv.feasibility1 x y hx hy
+    unfold posOrthCone at h
+    simpa using h)
 optimality by
-  apply klDiv.optimality x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone]
+  apply klDiv.optimality x y t y' (exp y') c1
+  { unfold posOrthCone expCone at *
+    simpa using c2 }
+  { unfold expCone at *
+    simp }
 vconditionElimination
   (hx : by
-    apply klDiv.vcondElim0 x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone])
+    apply klDiv.vcondElim0 x y t y' (exp y') c1
+    { unfold posOrthCone expCone at *
+      simpa using c2 }
+    { unfold expCone at *
+      simp })
   (hy : by
-    apply klDiv.vcondElim1 x y t y' (exp y') c1 <;> simpa [expCone, posOrthCone])
+    apply klDiv.vcondElim1 x y t y' (exp y') c1
+    { unfold posOrthCone expCone at *
+      simpa using c2 }
+    { unfold expCone at *
+      simp })
 
 declare_atom Vec.klDiv [convex] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)? :
   Vec.klDiv x y :=
@@ -105,21 +123,36 @@ solutionEqualsAtom by
 feasibility
   (c1 : by
     simp [Vec.klDiv, klDiv]
+    unfold Vec.expCone
     intros i
     exact (klDiv.feasibility0 (x i) (y i) (hx i) (hy i)))
   (c2 : by
     simp [Vec.klDiv, klDiv]
     intros i
-    simpa [*] using klDiv.feasibility1 (x i) (y i) (hx i) (hy i))
+    have h := klDiv.feasibility1 (x i) (y i) (hx i) (hy i)
+    unfold posOrthCone at h
+    simpa using h)
 optimality fun i => by
-    apply klDiv.optimality (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
-    simpa [posOrthCone, expCone] using c2 i
+    unfold Vec.expCone at c1
+    apply klDiv.optimality (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i)
+    { unfold posOrthCone expCone at *
+      simpa using (c2 i) }
+    { unfold expCone at *
+      simp }
 vconditionElimination
   (hx : fun i => by
-    apply klDiv.vcondElim0 (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
-    simpa [posOrthCone, expCone] using (c2 i))
+    unfold Vec.expCone at c1
+    apply klDiv.vcondElim0 (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i)
+    { unfold posOrthCone expCone at *
+      simpa using (c2 i) }
+    { unfold expCone at *
+      simp })
   (hy : fun i => by
-    apply klDiv.vcondElim1 (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i) <;>
-    simpa [posOrthCone, expCone] using (c2 i))
+    unfold Vec.expCone at c1
+    apply klDiv.vcondElim1 (x i) (y i) (t i) (y' i) (exp (y' i)) (c1 i)
+    { unfold posOrthCone expCone at *
+      simpa using (c2 i) }
+    { unfold expCone at *
+      simp })
 
 end CvxLean

@@ -6,7 +6,6 @@ namespace CvxLean
 
 open Real
 
-set_option trace.Meta.debug true
 declare_atom exp [convex] (x : ℝ)+ : Real.exp x :=
 vconditions
 implementationVars (t : ℝ)
@@ -16,7 +15,8 @@ solution (t := exp x)
 solutionEqualsAtom by
   rfl;
 feasibility
-  (c_exp : by simp [expCone])
+  (c_exp : by
+    unfold expCone; simp)
 optimality by
   intros x' hx
   rw [←exp_iff_expCone] at c_exp
@@ -36,10 +36,12 @@ solutionEqualsAtom
   rfl
 feasibility
   (c_exp: by
+    unfold Vec.exp Vec.expCone
     intros _ i
     apply exp.feasibility0)
 optimality by
   intros x' hx i
+  unfold Vec.expCone at c_exp
   apply exp.optimality _ _ (c_exp i) _ (hx i)
 vconditionElimination
 

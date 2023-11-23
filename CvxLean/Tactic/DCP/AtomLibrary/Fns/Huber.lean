@@ -81,23 +81,39 @@ solutionEqualsAtom by
   simp [Vec.huber, ←huber.solEqAtom (x i)]
 feasibility
   (c1 : by
-    simpa using (fun i => huber.feasibility0 (x i)))
+    dsimp
+    intros i
+    have h := huber.feasibility0 (x i)
+    unfold Real.posOrthCone at h
+    simpa using h)
   (c2 : by
-    simpa using (fun i => huber.feasibility1 (x i)))
+    dsimp
+    intros i
+    have h := huber.feasibility1 (x i)
+    unfold Real.posOrthCone at h
+    simpa using h)
   (c3 : by
-    simpa using (fun i => huber.feasibility2 (x i)))
+    dsimp
+    intros i
+    have h := huber.feasibility2 (x i)
+    unfold Real.posOrthCone at h
+    simpa using h)
   (c4 : by
-    simpa using (fun i => huber.feasibility3 (x i)))
+    dsimp
+    intros i
+    have h := huber.feasibility3 (x i)
+    unfold Real.posOrthCone at h
+    simpa using h)
 optimality by
     intros i
     simp [Vec.huber]
     rw [←rpow_two]
     apply huber.optimality (x i) (v i) (w i) ((w i) ^ 2)
-    { simpa [posOrthCone] using c1 i }
-    { simpa [posOrthCone] using c2 i }
-    { simpa [posOrthCone] using c3 i }
-    { simpa [posOrthCone] using c4 i }
-    { simp [rotatedSoCone]; norm_num [sq_nonneg] }
+    { unfold posOrthCone; simpa using c1 i }
+    { unfold posOrthCone; simpa using c2 i }
+    { unfold posOrthCone; simpa using c3 i }
+    { unfold posOrthCone; simpa using c4 i }
+    { unfold rotatedSoCone; simp [sq_nonneg]; norm_num }
 vconditionElimination
 
 end CvxLean

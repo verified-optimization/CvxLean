@@ -10,6 +10,7 @@ namespace CvxLean
 
 open Real
 
+set_option trace.Meta.debug true in
 declare_atom powNegOne [convex] (x : ℝ)- : x ^ (-1) :=
 vconditions
   (hx : 0 < x)
@@ -18,7 +19,7 @@ implementationObjective (t)
 implementationConstraints
   (c1 : soCone (t + x) ![t - x, 2])
   (c2 : 0 ≤ t)
-  (c3 : 0 ≤ x)
+  (c3 : 0 ≤ x) -- TODO: This is not reduced.
 solution
   (t := x ^ (-1))
 solutionEqualsAtom rfl
@@ -55,7 +56,6 @@ vconditionElimination
 
 -- NOTE(RFM): It is not straightforward to express it in terms of x ^ (-1) and
 -- x ^ 2 because of vconditions.
-set_option trace.Meta.debug true in
 declare_atom powNegTwo [convex] (x : ℝ)- : x ^ (-2) :=
 vconditions
   (hx : 0 < x)
@@ -66,7 +66,7 @@ implementationConstraints
   (c2 : soCone (t₀ + 1) ![t₀ - 1, 2 * t₁])
   (c3 : 0 ≤ t₀)
   (c4 : 0 ≤ t₁)
-  (c5 : 0 ≤ x)
+  (c5 : 0 ≤ x) -- TODO: This is not reduced.
 solution
   (t₀ := x ^ (-2)) (t₁ := x ^ (-1))
 solutionEqualsAtom rfl

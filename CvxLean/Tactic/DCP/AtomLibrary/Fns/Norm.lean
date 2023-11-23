@@ -16,9 +16,11 @@ solution (t := ‖x‖)
 solutionEqualsAtom by rfl
 feasibility
   (c : by
-    simp [soCone, Norm.norm])
+    unfold soCone
+    simp [Norm.norm])
 optimality by
-  simp [soCone, Norm.norm] at c ⊢
+  unfold soCone at c
+  simp [Norm.norm] at c ⊢
   exact c
 vconditionElimination
 

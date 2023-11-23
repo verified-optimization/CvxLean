@@ -86,12 +86,14 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
         withLocalDeclsD
           (atomData.impVars.map fun (n, ty) => (n, fun _ => return mkAppNBeta ty xs))
           fun vs => do
-            let originalVarsDecls ← vs.mapM fun v => v.fvarId!.getDecl
+            let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
+            let originalVarsDecls := vsDecls --++ xsDecs
             let objFun := mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
             let constraints := atomData.impConstrs.map
               fun c => (`_, mkAppNBeta (mkAppNBeta c xs) vs)
             return (objFun, constraints, originalVarsDecls)
 
+      let xsDecls ← xs.mapM fun x => x.fvarId!.getDecl
       trace[Meta.debug] "before PAT "
       let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
       trace[Meta.debug] "after PAT "

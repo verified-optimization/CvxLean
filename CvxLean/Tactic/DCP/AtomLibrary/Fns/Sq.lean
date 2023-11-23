@@ -17,9 +17,11 @@ solution
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
-    simp [rotatedSoCone]
+    unfold rotatedSoCone
+    simp
     exact ⟨sq_nonneg x, zero_le_two⟩)
 optimality by
+  unfold rotatedSoCone at c1
   have h := c1.1
   simp at h ⊢
   exact h
@@ -36,11 +38,12 @@ solution
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
-    dsimp [Vec.rotatedSoCone]
-    intros i
+    unfold Vec.rotatedSoCone
+    intros t i
     convert sq.feasibility0 (x i); simp)
 optimality by
   intros i
+  unfold Vec.rotatedSoCone at c1
   convert sq.optimality (x i) (t i) (c1 i); simp
 vconditionElimination
 
