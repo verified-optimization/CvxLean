@@ -11,11 +11,13 @@ implementationObjective Real.zeroCone (y - x)
 implementationConstraints
 solution
 solutionEqualsAtom by
-  simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
-  exact Iff.intro Eq.symm Eq.symm;
+  unfold Real.zeroCone
+  simp [sub_eq_iff_eq_add, zero_add]
+  exact Iff.intro Eq.symm Eq.symm
 feasibility
 optimality by
-  simp [Real.zeroCone, sub_eq_iff_eq_add, zero_add]
+  unfold Real.zeroCone
+  simp [sub_eq_iff_eq_add, zero_add]
   exact Eq.symm
 vconditionElimination
 
