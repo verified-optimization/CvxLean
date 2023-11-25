@@ -16,10 +16,9 @@ solutionEqualsAtom by
   exact Iff.intro Eq.symm Eq.symm
 feasibility
 optimality by
-  intros h
-  unfold Real.zeroCone at h
-  simp [sub_eq_iff_eq_add, zero_add] at h
-  exact h.symm
+  unfold Real.zeroCone
+  simp [sub_eq_iff_eq_add, zero_add]
+  exact Eq.symm
 vconditionElimination
 
 end CvxLean

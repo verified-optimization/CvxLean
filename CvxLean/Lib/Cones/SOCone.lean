@@ -14,19 +14,15 @@ open BigOperators
 
 variable [Fintype m] [Fintype n]
 
-@[irreducible]
 def soCone (t : Real) (x : n → Real) : Prop :=
   sqrt (∑ i, x i ^ 2) ≤ t
 
-@[irreducible]
 def rotatedSoCone (v w : Real) (x : n → Real) : Prop :=
   (∑ i, x i ^ 2) ≤ (v * w) * 2 ∧ 0 ≤ v ∧ 0 ≤ w
 
-@[irreducible]
 def Vec.soCone (t : m → Real) (X : Matrix m n Real) : Prop :=
   ∀ i, Real.soCone (t i) (X i)
 
-@[irreducible]
 def Vec.rotatedSoCone (v w : m → Real) (X : Matrix m n Real) : Prop :=
   ∀ i, Real.rotatedSoCone (v i) (w i) (X i)
 

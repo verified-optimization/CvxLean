@@ -2,15 +2,12 @@ import Mathlib.Data.Complex.Exponential
 
 namespace Real
 
-@[irreducible]
 def expCone (x y z : Real) : Prop :=
   (0 < y ∧ y * exp (x / y) ≤ z) ∨ (y = 0 ∧ 0 ≤ z ∧ x ≤ 0)
 
-@[irreducible]
 def Vec.expCone (x y z : Fin n → Real) : Prop :=
   ∀ i, Real.expCone (x i) (y i) (z i)
 
-@[irreducible]
 theorem exp_iff_expCone (t x : Real) : exp x ≤ t ↔ expCone x 1 t := by
   unfold expCone
   rw [iff_def]
