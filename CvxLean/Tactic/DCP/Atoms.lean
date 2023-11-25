@@ -74,6 +74,44 @@ where
     }
     return mkConst name
 
+
+/-- -/
+def withCopyOfMonoXs [Inhabited α] (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → Array ArgKind → TermElabM α) : TermElabM α := do
+  -- Determine subset of monotone arguments and their behavior.
+  let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
+  let mut monoXs := #[]
+  let mut monoArgKind := #[]
+  for i in [:xs.size] do
+    if argKinds[i]! != ArgKind.Constant ∧ argKinds[i]! != ArgKind.Neither then
+      let ty := ← inferType xs[i]!
+      let name := (← FVarId.getDecl xs[i]!.fvarId!).userName
+      argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
+      monoXs := monoXs.push xs[i]!
+      monoArgKind := monoArgKind.push argKinds[i]!
+
+  withLocalDeclsD argDeclInfo fun ys => do
+    return ← f monoXs ys monoArgKind
+
+/-- -/
+def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind) (mkConcl : Array Expr → Array Expr → TermElabM Expr) : TermElabM Expr :=
+  withCopyOfMonoXs xs argKinds fun monoXs ys monoArgKind => do
+    let mut ty := ← mkConcl monoXs ys
+    for i' in [:monoXs.size] do
+      let i := monoXs.size - 1 - i'
+      ty ← match curvatureInArg curv monoArgKind[i]! with
+      | Curvature.Concave => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
+      | Curvature.Convex => mkArrow (← mkLe ys[i]! monoXs[i]!) ty
+      | _ => throwError "invalid curvature"
+    return ← mkForallFVars ys ty
+
+/-- TODO: just the number of relevant opt args. -/
+def getMonoArgsCount (curv : Curvature) (argKinds : Array ArgKind) : ℕ :=
+  argKinds.foldl (fun acc argKind =>
+    match curvatureInArg curv argKind with
+      | Curvature.Concave => 1 + acc
+      | Curvature.Convex => 1 + acc
+      | _ => acc) 0
+
 /-- Use the DCP procedure to reduce the graph implementation to a problem that
 uses only cone constraints and affine atoms. -/
 def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
@@ -126,6 +164,10 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             -- `vs2` are the variables to be added to the graph implementation.
             let vs2 := pat.newVarDecls.toArray.map (mkFVar ·.fvarId)
             let vs1Sol := atomData.solution.map fun s => mkAppNBeta s xs
+            trace[Meta.debug] "vs1: {vs1}"
+            trace[Meta.debug] "vs2: {vs2}"
+            trace[Meta.debug] "vs1Sol: {vs1Sol}"
+            trace[Meta.debug] "xs: {xs}"
 
             -- TODO: move because copied from DCP tactic.
             let reducedConstrs := pat.reducedExprs.constr.map Tree.val
@@ -140,7 +182,6 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
 
             for ncp in newConstrProofs do
               trace[Meta.debug] "newConstrProofs: {← inferType ncp}"
-
 
             -- let test := ← atomData.feasibility.mapM (fun e =>
             --   Meta.forallTelescope e (fun xs a => do
@@ -194,16 +235,65 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               throwError ("Expected same length: {reducedConstrs} and " ++
                 "{constraintsFromReducedConstraints}")
 
-            let newOptimality := mkAppN atomData.optimality (xs ++ vs1)
+            let objFunFromReducedObjFun := pat.optimality.objFun.val
+            trace[Meta.debug] "objFunFromReducedObjFun: {← inferType objFunFromReducedObjFun}"
+
+            trace[Meta.debug] "pat.optimality.objFun: {← inferType atomData.optimality}"
+            let optimalityXs := mkAppN atomData.optimality (xs ++ vs1)
+            trace[Meta.debug] "newOptimality: {← inferType optimalityXs}"
             let newOptimality ←
               withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
-                let mut newOptimality := newOptimality
+                -- First, apply all constraints.
+                let mut optimalityAfterReduced := optimalityXs
                 for i in [:reducedConstrs.size] do
                   let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
-                  newOptimality := mkApp newOptimality c
-                let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
-                mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newOptimality
+                  optimalityAfterReduced := mkApp optimalityAfterReduced c
+                -- Then, adjust the condition using `objFunFromReducedObjFun`.
+                let (condTy, condY, condZ) ← ((do
+                  match (← inferType objFunFromReducedObjFun).le? with
+                  | some (t, y, z) => return (t, y, z)
+                  | none => throwError "Cannot build optimality proof") : MetaM _)
 
+                let monoArgsCount := getMonoArgsCount objCurv atomData.argKinds
+                let optimalityAfterApplyWithConditionAdjusted ←
+                  lambdaTelescope (← whnf optimalityAfterReduced) <| fun xs e => do
+                  -- Every extra argument has an extra condition, e.g. x', x ≤ x.
+                  let monoArgs := xs[:2 * monoArgsCount]
+                  let optCondition ← mkLambdaFVars xs[2 * monoArgsCount:] e
+                  let newCond ←
+                    if atomData.curvature == Curvature.Convex then
+                      mkAppOptM ``le_trans #[
+                        condTy, none, none, condY, condZ,
+                        optCondition, objFunFromReducedObjFun]
+                    else
+                      -- TODO: concave. but convex_set too?
+                      mkAppOptM ``le_trans #[
+                        condTy, none, condY, condZ, none,
+                        objFunFromReducedObjFun, optCondition]
+                  mkLambdaFVars monoArgs newCond
+
+                trace[Meta.debug] "optimalityAfterApplyWithConditionAdjusted: {← inferType optimalityAfterApplyWithConditionAdjusted}"
+                trace[Meta.debug] "newOptimality applied: {← inferType optimalityAfterReduced}"
+                let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
+                mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) optimalityAfterApplyWithConditionAdjusted
+                -- trace[Meta.debug] "newOptimality2: {← inferType newOptimality2}"
+
+                -- -- NOTE: new optimality might be of the form ∀ i. x i ≤ y i, so
+                -- -- we cannot apply le_trans directly.
+                -- let x ← lambdaTelescope (← whnf newOptimality2) (fun xs a => do
+                --   trace[Meta.debug] "a: {← inferType a}"
+                --   trace[Meta.debug] "xs: {xs}"
+                --   return ())
+                -- match (← inferType objFunFromReducedObjFun).le? with
+                -- | some (t, y, z) =>
+                --   trace[Meta.debug] "atomData.argKinds: {atomData.argKinds}"
+                --   let x ← getOptArgs objCurv xs atomData.argKinds
+                --   trace[Meta.debug] "x: {x}"
+                --   -- mkAppOptM ``le_trans #[
+                --   --   t, none, none, y, z,
+                --   --   newOptimality2, objFunFromReducedObjFun]
+                --   let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
+                --   mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newOptimality2 --optimalityAdjusted
             let mut newVCondElims := #[]
             for vcondElim in atomData.vcondElim do
               let newVCondElim := mkAppN vcondElim (xs ++ vs1)
@@ -222,7 +312,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                 (← pat.newVarDecls.toArray.mapM fun decl => do
                   return (decl.userName, ← mkLambdaFVars xs decl.type))
               impObjFun := ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $
-                pat.reducedExprs.objFun.val
+                  pat.reducedExprs.objFun.val
               impConstrs := ← (reducedConstrs ++ pat.newConstrs).mapM
                 (fun c => do return ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $ c)
               solution := atomData.solution.append
@@ -412,34 +502,7 @@ def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind) (f : Arr
         j := j + 1
     return ← f ys allYs
 
-/-- -/
-def withCopyOfMonoXs (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → Array ArgKind → TermElabM Expr) : TermElabM Expr := do
-  -- Determine subset of monotone arguments and their behavior.
-  let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
-  let mut monoXs := #[]
-  let mut monoArgKind := #[]
-  for i in [:xs.size] do
-    if argKinds[i]! != ArgKind.Constant ∧ argKinds[i]! != ArgKind.Neither then
-      let ty := ← inferType xs[i]!
-      let name := (← FVarId.getDecl xs[i]!.fvarId!).userName
-      argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
-      monoXs := monoXs.push xs[i]!
-      monoArgKind := monoArgKind.push argKinds[i]!
 
-  withLocalDeclsD argDeclInfo fun ys => do
-    return ← f monoXs ys monoArgKind
-
-/-- -/
-def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind) (mkConcl : Array Expr → Array Expr → TermElabM Expr) : TermElabM Expr :=
-  withCopyOfMonoXs xs argKinds fun monoXs ys monoArgKind => do
-    let mut ty := ← mkConcl monoXs ys
-    for i' in [:monoXs.size] do
-      let i := monoXs.size - 1 - i'
-      ty ← match curvatureInArg curv monoArgKind[i]! with
-      | Curvature.Concave => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
-      | Curvature.Convex => mkArrow (← mkLe ys[i]! monoXs[i]!) ty
-      | _ => throwError "invalid curvature"
-    return ← mkForallFVars ys ty
 
 /-- -/
 def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bconds : Array (Lean.Name × Expr))
@@ -460,8 +523,9 @@ def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bcond
             | Curvature.Concave => return ← mkLe impObj body
             | Curvature.Convex => return ← mkLe body impObj
             | _ => throwError "invalid curvature: {curv}"
-          trace[Meta.debug] "{ty}"
+          trace[Meta.debug] "elabOpt ensuring {ty}"
           let opt ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
+          trace[Meta.debug] "elabOpt opt: {← inferType opt}"
           return ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars vs $ ← mkLambdaFVars is opt
 
 /-- -/
