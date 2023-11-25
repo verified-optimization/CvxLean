@@ -117,7 +117,8 @@ uses only cone constraints and affine atoms. -/
 def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   liftTermElabM do
     -- `xs` are the arguments of the atom.
-    lambdaTelescope atomData.expr fun xs _ => do
+    lambdaTelescope atomData.expr fun xs atomExpr => do
+      let atomRange ← inferType atomExpr
 
       -- Call DCP on graph implementation.
       let (objFun, constraints, originalVarsDecls) ←
@@ -249,11 +250,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                   let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
                   optimalityAfterReduced := mkApp optimalityAfterReduced c
                 -- Then, adjust the condition using `objFunFromReducedObjFun`.
-                let (condTy, condY, condZ) ← ((do
-                  match (← inferType objFunFromReducedObjFun).le? with
-                  | some (t, y, z) => return (t, y, z)
-                  | none => throwError "Cannot build optimality proof") : MetaM _)
-
+                trace[Meta.debug] "optimalityAfterReduced: {← inferType optimalityAfterReduced}"
                 let monoArgsCount := getMonoArgsCount objCurv atomData.argKinds
                 let optimalityAfterApplyWithConditionAdjusted ←
                   lambdaTelescope (← whnf optimalityAfterReduced) <| fun xs e => do
@@ -263,12 +260,12 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                   let newCond ←
                     if atomData.curvature == Curvature.Convex then
                       mkAppOptM ``le_trans #[
-                        condTy, none, none, condY, condZ,
+                        atomRange, none, none, none, none,
                         optCondition, objFunFromReducedObjFun]
                     else
                       -- TODO: concave. but convex_set too?
                       mkAppOptM ``le_trans #[
-                        condTy, none, condY, condZ, none,
+                        atomRange, none, none, none, none,
                         objFunFromReducedObjFun, optCondition]
                   mkLambdaFVars monoArgs newCond
 
