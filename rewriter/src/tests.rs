@@ -242,10 +242,28 @@ fn test_log_div_rev_obj() {
 // More 
 
 #[test]
+fn test_geo_mean() {
+    assert_steps_with_domain(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
+        "(sqrt (mul (var x) (var y)))", 
+        vec![
+        ]);
+}
+
+#[test]
+fn test_quad_over_lin() {
+    assert_steps_with_domain(
+        vec![("x", domain::free_dom()), ("y", domain::pos_dom())], 
+        "(div (pow (var x) 2) (var y))", 
+        vec![
+        ]);
+}
+
+#[test]
 fn test_3_32() {
     assert_steps_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
-        "(neg (div 1 (mul (var x) (var y))))", 
+        "(div 1 (mul (var x) (var y)))", 
         vec![
         ]);
 }
