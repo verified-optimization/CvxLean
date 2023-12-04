@@ -239,4 +239,24 @@ fn test_log_div_rev_obj() {
         ]);
 }
 
+// More 
+
+#[test]
+fn test_3_32() {
+    assert_steps_with_domain(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
+        "(neg (div 1 (mul (var x) (var y))))", 
+        vec![
+        ]);
+}
+
+#[test]
+fn test_3_33() {
+    assert_steps_with_domain(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
+        "(sqrt (add 1 (div (pow (var x) 4) (var y))))", 
+        vec![
+        ]);
+}
+
 }
