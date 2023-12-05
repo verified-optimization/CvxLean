@@ -236,7 +236,7 @@ register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
   simp_or_rw [Real.pow_half_two (by positivity_ext)];
 
 register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
-  simp_or_rw [←Real.pow_half_two (by positivity_ext)];
+  simp_or_rw [Real.pow_half_two (by positivity_ext)];
 
 
 /- Exponential and logarithm rules. -/
