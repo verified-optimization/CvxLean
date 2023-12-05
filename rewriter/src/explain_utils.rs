@@ -39,6 +39,7 @@ pub fn make_rule_table(rules: &Vec<Rewrite>) -> HashMap<Symbol, &Rewrite> {
 
 // These are functions taken from `explain.rs` removing the assertions.
 
+#[allow(unused)]
 fn flat_term_make_bindings_no_failure<'a>(
     term: &'a FlatTerm<Optimization>,
     pattern: &[ENodeOrVar<Optimization>],
@@ -70,6 +71,7 @@ fn flat_term_make_bindings_no_failure<'a>(
     }
 }
 
+#[allow(unused)]
 fn flat_term_from_pattern(
     pattern: &[ENodeOrVar<Optimization>],
     location: usize,
@@ -91,6 +93,7 @@ fn flat_term_from_pattern(
     }
 }
 
+#[allow(unused)]
 fn flat_term_rewrite_no_failure(
     term: &FlatTerm<Optimization>, 
     lhs: &PatternAst<Optimization>, 
@@ -105,6 +108,7 @@ fn flat_term_rewrite_no_failure(
     return Some(flat_term_from_pattern(rhs_nodes, rhs_nodes.len() - 1, &bindings));
 }
 
+#[allow(unused)]
 pub fn flat_term_check_rewrite_no_failure<'a>(
     current: &'a FlatTerm<Optimization>,
     next: &'a FlatTerm<Optimization>,
