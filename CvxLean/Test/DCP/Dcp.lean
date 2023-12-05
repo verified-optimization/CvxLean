@@ -174,3 +174,51 @@ noncomputable example : Solution $
       hsqrt : 0 ≤ x := by
   dcp -- TODO: first constraint not reduced. We need to handle constant constraints.
   sorry
+
+noncomputable def testXExp : Solution $
+  optimization (x : ℝ)
+    minimize x * exp x
+    subject to
+      c0 : 0 ≤ x
+:= by
+  dcp
+  sorry
+
+noncomputable def testEntr : Solution $
+  optimization (x : ℝ)
+    minimize -(-(x * log x))
+    subject to
+      c0 : 0 ≤ x
+:= by
+  dcp
+  sorry
+
+noncomputable def testQuadOverLin : Solution $
+  optimization (x y : ℝ)
+    minimize x ^ 2 / y
+    subject to
+      c0 : 0 ≤ x
+      c0 : 0.001 ≤ y
+:= by
+  dcp
+  sorry
+
+noncomputable def testGeoMean : Solution $
+  optimization (x y : ℝ)
+    minimize - (sqrt (x * y))
+    subject to
+      c0 : 0 ≤ x
+      c0 : 0 ≤ y
+:= by
+  dcp
+  sorry
+
+noncomputable def testNorm2 : Solution $
+  optimization (x y : ℝ)
+    minimize ‖![x, y]‖
+    subject to
+      c0 : 0 ≤ x
+      c0 : 0 ≤ y
+:= by
+  dcp
+  sorry

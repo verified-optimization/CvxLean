@@ -7,6 +7,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.DotProduct
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Entr
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Exp
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.FromBlocks
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.GeoMean
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Huber
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.KLDiv
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Log
@@ -21,6 +22,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Nth
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Perspective
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.PosSemidef
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Power
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.QuadOverLin
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.SMul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sq
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sqrt
