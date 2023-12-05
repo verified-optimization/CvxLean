@@ -48,16 +48,17 @@ def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("le",          ("le", 2, #[])),
     ("lt",          ("lt", 2, #[])),
     ("neg",         ("neg", 1, #[])),
+    ("sqrt'",       ("sqrt", 1, #[])),
+    ("log",         ("log", 1, #[])),
+    ("exp",         ("exp", 1, #[])),
     ("add",         ("add", 2, #[])),
     ("sub",         ("sub", 2, #[])),
     ("mul1",        ("mul", 2, #[])),
     ("mul2",        ("mul", 2, #[])),
     ("sq",          ("pow", 1, #["2"])),
     ("sqrt",        ("sqrt", 1, #[])),
-    ("sqrt'",       ("sqrt", 1, #[])),
     ("div",         ("div", 2, #[])),
-    ("log",         ("log", 1, #[])),
-    ("exp",         ("exp", 1, #[]))
+    ("quadOverLin", ("qol", 2, #[]))
   ]
 
 /-- Traverse the tree and use `EggTree.opMap` to align the names of the

@@ -1,4 +1,4 @@
-]import CvxLean.Lib.Math.Data.Real
+import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Convexify.Egg.Sexp
 import CvxLean.Tactic.DCP.Tree
@@ -133,7 +133,7 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
   -- Norm2.
   | Tree.node "norm2" #[t1, t2] =>
     EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "add" #[
-      Tree.node "pow" #[t1, Tree.leaf "2"], 
+      Tree.node "pow" #[t1, Tree.leaf "2"],
       Tree.node "pow" #[t2, Tree.leaf "2"]]])
   -- Constr.
   | Tree.node "constr" #[Tree.leaf s, t] => do
