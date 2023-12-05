@@ -301,4 +301,10 @@ register_rewrite_map "geo_folding"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)" :=
 register_rewrite_map "norm2_folding"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)" :=
   rfl;
 
+
+/- Constant folding. -/
+
+register_rewrite_map "constant_fold"; "?" => "?" :=
+  norm_num;
+
 end CvxLean
