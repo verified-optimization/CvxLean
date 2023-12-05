@@ -63,7 +63,6 @@ fn get_step_aux(
                 // Out-of-context extraction. Useful for testing.
                 let c_s = next.get_recexpr().to_string();
                 *expected_term = Some(c_s);
-                println!("ASdasd");
             }
         }
     }

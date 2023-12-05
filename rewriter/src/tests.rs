@@ -309,4 +309,11 @@ fn test_3_33() {
     );
 }
 
+// Constant folding.
+
+#[test]
+fn test_constant_folding() {
+    assert_steps_from_string("(add 2 2)");
+}
+
 }
