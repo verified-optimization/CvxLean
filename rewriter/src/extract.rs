@@ -172,7 +172,7 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
         }
     }
 
-    for node_limit in [2500, 5000, 7500, 10000] {
+    for node_limit in [2500, 5000, 10000, 20000] {
         let analysis = Meta {
             domains : domains.clone()
         };
