@@ -22,10 +22,7 @@ use cost::DCPCost as DCPCost;
 
 use crate::explain_utils;
 use explain_utils::Direction as Direction;
-use explain_utils::make_rule_table as make_rule_table;
 use explain_utils::get_rewrite_name_and_direction as get_rewrite_name_and_direction;
-
-pub type Rewrite = egg::Rewrite<Optimization, Meta>;
 
 #[derive(Serialize, Debug)]
 pub struct Step {

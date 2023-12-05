@@ -29,6 +29,7 @@ pub fn get_rewrite_name_and_direction(t : &FlatTerm<Optimization>) -> Option<(Sy
     return None;
 }
 
+#[allow(unused)]
 pub fn make_rule_table(rules: &Vec<Rewrite>) -> HashMap<Symbol, &Rewrite> {
     let mut table: HashMap<Symbol, &Rewrite> = Default::default();
     for r in rules {
