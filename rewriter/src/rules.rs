@@ -203,7 +203,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)"
         if is_gt_zero("?b")),
 
-    rw!("norm2"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
+    rw!("geo_folding"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)"
+        if is_gt_zero("?a") if is_gt_zero("?b")),
+
+    rw!("norm2_folding"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
 ] }
 
 #[allow(unused)]

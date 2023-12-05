@@ -231,6 +231,13 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
+            Optimization::Geo([a, b]) => {
+                let curvature_a = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
+                let curvature_b = curvature::of_convex_nondecreasing_fn(get_curvature!(b));
+                curvature = curvature::join(curvature_a, curvature_b);
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+            }
             Optimization::Norm2([a, b]) => {
                 let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
                 let curvature_a = 
