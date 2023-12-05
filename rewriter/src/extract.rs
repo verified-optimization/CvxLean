@@ -175,6 +175,7 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
         let runner: Runner<Optimization, Meta> = 
             Runner::new(analysis)
             .with_explanations_enabled()
+            .with_explanation_length_optimization()
             .with_node_limit(node_limit)
             .with_iter_limit(iter_limit)
             .with_time_limit(Duration::from_secs(5))
