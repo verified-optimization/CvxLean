@@ -139,7 +139,41 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                     }
                     _ => {}
                 }
-                if is_geo_mean {
+                // TODO: Temporary. norm2.
+                let mut is_norm2 = false; 
+                match get_node!(a).0 {
+                    Optimization::Add([b, c]) => {
+                        match (get_node!(&b).0, get_node!(&c).0) {
+                            (Optimization::Pow([d, e]), Optimization::Pow([f, g])) => {
+                                let curvature_check = 
+                                    get_curvature!(&d) <= Curvature::Convex && 
+                                    get_curvature!(&f) <= Curvature::Convex;
+                                let pow_two_first = 
+                                    match get_domain(&e) {
+                                        Some(de) => 
+                                            match domain::Domain::get_constant(&de) {
+                                                Some (de_f) => de_f == 2.0,
+                                                _ => false
+                                            }
+                                        _ => false 
+                                    };
+                                let pow_two_second =
+                                    match get_domain(&g) {
+                                        Some(dg) => 
+                                            match domain::Domain::get_constant(&dg) {
+                                                Some (dg_f) => dg_f == 2.0,
+                                                _ => false
+                                            }
+                                        _ => false 
+                                    };
+                                is_norm2 = curvature_check && pow_two_first && pow_two_second;
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
+                }
+                if is_geo_mean || is_norm2 {
                     curvature = Curvature::Convex;
                 } else {
                     curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
@@ -191,8 +225,8 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 match get_node!(a).0 {
                     Optimization::Pow([c, d]) => {
                         let curvature_check = 
-                            get_curvature!(b) == Curvature::Affine && 
-                            get_curvature!(&c) == Curvature::Affine && 
+                            get_curvature!(b) <= Curvature::Concave && 
+                            get_curvature!(&c) <= Curvature::Affine && 
                             get_curvature!(&d) == Curvature::Constant;
                         let pos_check =
                             domain::option_is_pos(get_domain(&b).as_ref());

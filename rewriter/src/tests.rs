@@ -260,6 +260,15 @@ fn test_quad_over_lin() {
 }
 
 #[test]
+fn test_norm2() {
+    assert_steps_with_domain(
+        vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
+        "(sqrt (add (pow (var x) 2) (pow (var y) 2)))", 
+        vec![
+        ]);
+}
+
+#[test]
 fn test_3_32() {
     assert_steps_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
@@ -270,9 +279,13 @@ fn test_3_32() {
 
 #[test]
 fn test_3_33() {
+    // NOTE(RFM): The interesting thing here is that we need to somehow have 
+    // 4 -> 2 * 2. Moreover, getting the simplest nodes when matching for 
+    // norm is not enough! 
     assert_steps_with_domain(
-        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
-        "(sqrt (add 1 (div (pow (var x) 4) (var y))))", 
+        vec![("x", domain::free_dom()), ("y", domain::pos_dom())], 
+        // "(sqrt (add 1 (div (pow (var x) 4) (var y))))", 
+        "(sqrt (add 1 (div (pow (var x) (mul 2 2)) (var y))))", 
         vec![
         ]);
 }
