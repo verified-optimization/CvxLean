@@ -36,7 +36,6 @@ pub struct Step {
 }
 
 fn get_step_aux(
-    rewrite: &Rewrite,
     direction: Direction, 
     current: &FlatTerm<Optimization>, 
     next: &FlatTerm<Optimization>, 
@@ -64,6 +63,7 @@ fn get_step_aux(
                 // Out-of-context extraction. Useful for testing.
                 let c_s = next.get_recexpr().to_string();
                 *expected_term = Some(c_s);
+                println!("ASdasd");
             }
         }
     }
@@ -105,7 +105,7 @@ fn get_step_aux(
         let children = current.children.iter().zip(next.children.iter());
         for (left, right) in children {
             let child_res = 
-                get_step_aux(rewrite, direction, left, right, location, expected_term);
+                get_step_aux(direction, left, right, location, expected_term);
             if child_res.is_some() {
                 return child_res;
             }
@@ -115,13 +115,11 @@ fn get_step_aux(
     return None;
 }
 
-fn get_step(rule_table: &HashMap<Symbol, &Rewrite>, current: &FlatTerm<Optimization>, next: &FlatTerm<Optimization>) -> Option<Step> {
-    if let Some((rewrite_name, direction)) = get_rewrite_name_and_direction(next) {
-        if let Some(rewrite) = rule_table.get(&rewrite_name) {
-            let location = &mut None;
-            let expected_term = &mut None;
-            return get_step_aux(rewrite, direction, current, next, location, expected_term);
-        }
+fn get_step(current: &FlatTerm<Optimization>, next: &FlatTerm<Optimization>) -> Option<Step> {
+    if let Some((_rewrite_name, direction)) = get_rewrite_name_and_direction(next) {
+        let location = &mut None;
+        let expected_term = &mut None;
+        return get_step_aux(direction, current, next, location, expected_term);
     }
     return None;
 }
@@ -217,17 +215,17 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
         let flat_explanation : &FlatExplanation<Optimization> =
             explanation.make_flat_explanation();
         
-        let rules_copy = rules().clone();
-        let rule_table = make_rule_table(&rules_copy);
-        
         let mut res = Vec::new();
         if best_cost.0 <= Curvature::Convex {
             for i in 0..flat_explanation.len() - 1 {
                 let current = &flat_explanation[i];
                 let next = &flat_explanation[i + 1];
-                match get_step(&rule_table, current, next) {
+                match get_step(current, next) {
                     Some(step) => { res.push(step); }
-                    None => { }
+                    None => { 
+                        // Should not get here.
+                        println!("Failed to extract step.");
+                    }
                 }
             }
         } else {
