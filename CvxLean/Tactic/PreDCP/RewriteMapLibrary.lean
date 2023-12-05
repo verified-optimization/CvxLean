@@ -181,6 +181,12 @@ register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
 
 /- Power and square root rules. -/
 
+register_rewrite_map "one_pow"; "(pow 1 ?a)" => "1" :=
+  simp_or_rw [Real.one_rpow];
+
+register_rewrite_map "pow_one"; "(pow ?a 1)" => "?a" :=
+  simp_or_rw [Real.rpow_one];
+
 register_rewrite_map "pow_add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))" :=
   simp_or_rw [Real.rpow_add (by positivity_ext)];
 
@@ -223,8 +229,14 @@ register_rewrite_map "one_div_eq_pow_neg_one"; "(div 1 ?a)" => "(pow ?a (neg 1))
 register_rewrite_map "sqrt_eq_rpow" ; "(sqrt ?a)" => "(pow ?a 0.5)" :=
   simp_or_rw [Real.sqrt_eq_rpow];
 
+register_rewrite_map "sqrt_eq_rpow-rev" ; "(pow ?a 0.5)" => "(sqrt ?a)" :=
+  simp_or_rw [←Real.sqrt_eq_rpow];
+
 register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
   simp_or_rw [Real.pow_half_two (by positivity_ext)];
+
+register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
+  simp_or_rw [←Real.pow_half_two (by positivity_ext)];
 
 
 /- Exponential and logarithm rules. -/
