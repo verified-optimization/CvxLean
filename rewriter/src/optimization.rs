@@ -27,6 +27,7 @@ define_language! {
         "div" = Div([Id; 2]),
         "pow" = Pow([Id; 2]),
         "qol" = QOL([Id; 2]),
+        "geo" = Geo([Id; 2]),
         "norm2" = Norm2([Id; 2]),
         "var" = Var(Id),
         "param" = Param(Id),
@@ -112,6 +113,22 @@ impl Analysis<Optimization> for Meta {
                 domain = domain::option_sqrt(get_domain(a));
                 is_constant = get_is_constant(a);
             }
+            Optimization::Log(a) => {
+                domain = domain::option_log(get_domain(a));
+                is_constant = get_is_constant(a);
+            }
+            Optimization::Exp(a) => {
+                domain = domain::option_exp(get_domain(a));
+                is_constant = get_is_constant(a);
+            }
+            Optimization::XExp(a) => {
+                domain = domain::option_xexp(get_domain(a));
+                is_constant = get_is_constant(a);
+            }
+            Optimization::Entr(a) => {
+                domain = domain::option_entr(get_domain(a));
+                is_constant = get_is_constant(a);
+            }
             Optimization::Add([a, b]) => {
                 domain = domain::option_add(
                     get_domain(a), get_domain(b));
@@ -133,13 +150,17 @@ impl Analysis<Optimization> for Meta {
                 domain = domain::option_pow(get_domain(a), get_domain(b));
                 is_constant = get_is_constant(a) && get_is_constant(b);
             }
-            Optimization::Log(a) => {
-                domain = domain::option_log(get_domain(a));
-                is_constant = get_is_constant(a);
+            Optimization::QOL([a, b]) => {
+                domain = domain::option_quad_over_lin(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
-            Optimization::Exp(a) => {
-                domain = domain::option_exp(get_domain(a));
-                is_constant = get_is_constant(a);
+            Optimization::Geo([a, b]) => {
+                domain = domain::option_geo_mean(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
+            }
+            Optimization::Norm2([a, b]) => {
+                domain = domain::option_norm2(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Var(a) => {
                 // Assume that after var there is always a symbol.

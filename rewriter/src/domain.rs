@@ -482,6 +482,22 @@ pub fn option_exp(d_o: Option<Domain>) -> Option<Domain> {
     }
 }
 
+pub fn xexp(d: &Domain) -> Domain {
+    mul(d, &exp(d))
+}
+
+pub fn option_xexp(d_o: Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, xexp)
+}
+
+pub fn entr(d: &Domain) -> Domain {
+    neg(&mul(d, &log(d)))
+}
+
+pub fn option_entr(d_o: Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, entr)
+}
+
 pub fn add(d1: &Domain, d2: &Domain) -> Domain {
     let l1 = d1.lo_open;
     let r1 = d1.hi_open;
@@ -494,8 +510,8 @@ pub fn add(d1: &Domain, d2: &Domain) -> Domain {
     )
 }
 
-pub fn option_add(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
-    execute_binary(d_o_a, d_o_b, add)
+pub fn option_add(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, add)
 }
 
 pub fn sub(d1: &Domain, d2: &Domain) -> Domain {
@@ -510,8 +526,8 @@ pub fn sub(d1: &Domain, d2: &Domain) -> Domain {
     )
 }
 
-pub fn option_sub(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
-    execute_binary(d_o_a, d_o_b, sub)
+pub fn option_sub(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, sub)
 }
 
 // The idea is that open "beats" closed.
@@ -617,8 +633,8 @@ pub fn mul(d1: &Domain, d2: &Domain) -> Domain {
 
 }
 
-pub fn option_mul(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
-    execute_binary(d_o_a, d_o_b, mul)
+pub fn option_mul(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, mul)
 }
 
 // Copied from intervals-good. Again, zero divided by anything is zero, with the
@@ -702,8 +718,8 @@ pub fn div(d1: &Domain, d2: &Domain) -> Domain {
     }
 }
 
-pub fn option_div(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
-    execute_binary(d_o_a, d_o_b, div)
+pub fn option_div(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, div)
 }
 
 // Same reasoning as in `perform_pow`
@@ -809,6 +825,30 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
     }
 }
 
-pub fn option_pow(d_o_a: Option<Domain>, d_o_b: Option<Domain>) -> Option<Domain> {
-    execute_binary(d_o_a, d_o_b, pow)
+pub fn option_pow(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, pow)
+}
+
+pub fn quad_over_lin(d1: &Domain, d2: &Domain) -> Domain {
+    div(&pow(d1, &Domain::make_singleton(2.0)), d2)
+}
+
+pub fn option_quad_over_lin(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, quad_over_lin)
+}
+
+pub fn geo_mean(d1: &Domain, d2: &Domain) -> Domain {
+    sqrt(&mul(d1, d2))
+}
+
+pub fn option_geo_mean(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, geo_mean)
+}
+
+pub fn norm2(d1: &Domain, d2: &Domain) -> Domain {
+    sqrt(&add(&pow(d1, &Domain::make_singleton(2.0)), &pow(d2, &Domain::make_singleton(2.0))))
+}
+
+pub fn option_norm2(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, norm2)
 }
