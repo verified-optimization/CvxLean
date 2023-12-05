@@ -148,12 +148,13 @@ impl ToString for Minimization {
     }
 }
 
-/// Return the rewrite steps if egg successfully found a chain of rewrites to
-/// transform the term into DCP form. Return `None` if it didn't.
+// Return the rewrite steps if egg successfully found a chain of rewrites to
+// transform the term into DCP form. Return `None` if it didn't.
 pub fn get_steps(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
-    let prob_s = prob.to_string();
-    let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
+    get_steps_from_string(&prob.to_string(), domains_vec, debug)
+}
 
+pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
     // Process domains, intersecting domains assigned to the same variable.
     let mut domains: HashMap<String, Domain> = HashMap::new();
     for (x, dom) in domains_vec {
