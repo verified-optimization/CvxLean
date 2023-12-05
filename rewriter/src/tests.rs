@@ -44,6 +44,7 @@ fn assert_steps_from_string_with_domain(domains : Vec<(&str, Domain)>, s: &str) 
     assert!(steps.is_some());
 }
 
+#[allow(unused)]
 fn assert_steps_from_string(s: &str) {
     assert_steps_from_string_with_domain(vec![], s);
 }
@@ -254,33 +255,34 @@ fn test_log_div_rev_obj() {
         ]);
 }
 
-// More 
+// Folding atoms. 
 
 #[test]
 fn test_geo_mean() {
-    assert_steps_with_domain(
+    assert_steps_from_string_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
-        "(sqrt (mul (var x) (var y)))", 
-        vec![
-        ]);
+        "(neg (sqrt (mul (var x) (var y))))");
 }
 
 #[test]
 fn test_quad_over_lin() {
-    assert_steps_with_domain(
+    assert_steps_from_string_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::pos_dom())], 
-        "(div (pow (var x) 2) (var y))", 
-        vec![
-        ]);
+        "(div (pow (var x) 2) (var y))");
 }
 
 #[test]
 fn test_norm2() {
-    assert_steps_with_domain(
+    assert_steps_from_string_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
-        "(sqrt (add (pow (var x) 2) (pow (var y) 2)))", 
-        vec![
-        ]);
+        "(sqrt (add (pow (var x) 2) (pow (var y) 2)))");
+}
+
+#[test]
+fn test_norm2_with_one() {
+    assert_steps_from_string_with_domain(
+        vec![("x", domain::free_dom())], 
+        "(sqrt (add (pow (var x) 2) 1))");
 }
 
 #[test]
@@ -291,17 +293,20 @@ fn test_3_32() {
 }
 
 #[test]
+fn test_sqrt_pow4() {
+    assert_steps_from_string_with_domain(
+        vec![("x", domain::nonneg_dom())], 
+        "(sqrt (pow (var x) 4))");
+}
+
+#[test]
 fn test_3_33() {
-    // NOTE(RFM): The interesting thing here is that we need to somehow have 
-    // 4 -> 2 * 2. Moreover, getting the simplest nodes when matching for 
-    // norm is not enough! 
-    assert_steps_with_domain(
-        vec![("x", domain::free_dom()), ("y", domain::pos_dom())], 
-        // "(sqrt (add 1 (div (pow (var x) 4) (var y))))", 
-        // "(sqrt (add 1 (div (pow (var x) (mul 2 2)) (var y))))", 
-        "(div (pow (var x) 2) (sqrt (var y)) )",
-        vec![
-        ]);
+    // NOTE(RFM): x cannot be in the free domain as otherwise we cannot convert
+    // x^4 to (x^2)^2.
+    assert_steps_from_string_with_domain(
+        vec![("x", domain::nonneg_dom()), ("y", domain::pos_dom())], 
+        "(sqrt (add 1 (div (pow (var x) 4) (var y))))"
+    );
 }
 
 }
