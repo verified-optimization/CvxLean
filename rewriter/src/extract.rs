@@ -44,6 +44,8 @@ fn get_step_aux(
     expected_term: &mut Option<String>) -> 
     Option<Step> {
     match next.node {
+        Optimization::Prob(_) => { },
+        Optimization::Constrs(_) => { },
         Optimization::ObjFun(_) => {
             *location = Some("objFun".to_string());
 
@@ -57,7 +59,11 @@ fn get_step_aux(
             let c_s = next.children[1].get_recexpr().to_string();
             *expected_term = Some(c_s);
         }
-        _ => ()
+        _ => {
+            // Out-of-context extraction. Useful for testing.
+            let c_s = next.get_recexpr().to_string();
+            *expected_term = Some(c_s);
+        }
     }
 
     if let Some(rule_name) = &next.backward_rule {
@@ -74,6 +80,7 @@ fn get_step_aux(
     }
 
     if let Some(rule_name) = &next.forward_rule {
+        // NOTE: Could be useful for more targetted rewrites.
         // let curr_s_t: String = current.get_recexpr().to_string();
         // let next_s_t = next.get_recexpr().to_string();
         // println!("curr {} : {}", rule_name, curr_s_t);
