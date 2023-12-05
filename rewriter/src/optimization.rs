@@ -199,6 +199,31 @@ impl Analysis<Optimization> for Meta {
 
         Data { domain, is_constant }
     }
+
+    fn modify(egraph: &mut egg::EGraph<Optimization, Self>, id: Id) {
+        let data = egraph[id].data.clone();
+        if data.is_constant {
+            match data.domain {
+                Some(d) => {
+                    match d.get_constant() {
+                        Some(c) => {
+                            // Only fold if constant is .0 or .5.
+                            if ((2.0 * c) as u32) as f64 == (2.0 * c) {
+                                let nn_c = NotNan::new(c).unwrap();
+                                let node = Optimization::Constant(nn_c);
+                                let added = egraph.add(node);
+                                egraph.union(id, added);
+
+                                egraph[id].assert_unique_leaves();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 pub fn is_gt_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
