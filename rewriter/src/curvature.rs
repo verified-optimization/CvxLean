@@ -148,7 +148,6 @@ pub fn of_convex_nondecreasing_fn(c: Curvature) -> Curvature {
 }
 
 // Composition rule for nonincreasing (or decreasing) convex functions.
-#[allow(unused)]
 pub fn of_convex_nonincreasing_fn(c: Curvature) -> Curvature {
     match c {
         Concave  => { return Convex;   }
