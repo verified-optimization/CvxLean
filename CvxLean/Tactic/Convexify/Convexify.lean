@@ -2,10 +2,10 @@ import Lean
 import Mathlib.Tactic.NormNum
 import CvxLean.Meta.Minimization
 import CvxLean.Lib.Equivalence
-import CvxLean.Tactic.PreDCP.Basic
-import CvxLean.Tactic.PreDCP.RewriteMapExt
-import CvxLean.Tactic.PreDCP.RewriteMapLibrary
-import CvxLean.Tactic.PreDCP.Egg.All
+import CvxLean.Tactic.Convexify.Basic
+import CvxLean.Tactic.Convexify.RewriteMapExt
+import CvxLean.Tactic.Convexify.RewriteMapLibrary
+import CvxLean.Tactic.Convexify.Egg.All
 
 namespace CvxLean
 

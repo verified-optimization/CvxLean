@@ -1,6 +1,6 @@
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Minimization
-import CvxLean.Tactic.PreDCP.Egg.Sexp
+import CvxLean.Tactic.Convexify.Egg.Sexp
 import CvxLean.Tactic.DCP.Tree
 
 namespace CvxLean

@@ -1,5 +1,5 @@
-import CvxLean.Tactic.PreDCP.RewriteMapCmd
-import CvxLean.Tactic.PreDCP.Basic
+import CvxLean.Tactic.Convexify.RewriteMapCmd
+import CvxLean.Tactic.Convexify.Basic
 import CvxLean.Tactic.Util.PositivityExt
 
 -- TODO: Move.

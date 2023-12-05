@@ -1,5 +1,5 @@
 import CvxLean.Command.Solve
-import CvxLean.Tactic.PreDCP.Convexify
+import CvxLean.Tactic.Convexify.Convexify
 import CvxLean.Test.Util.TimeCmd
 
 namespace AlmostGP
@@ -24,7 +24,7 @@ time_cmd reduction reda1/dcpa1 : agp1 := by
 
 #print dcpa1
 -- def dcpa1 : Minimization ℝ ℝ :=
--- optimization (x : ℝ) 
+-- optimization (x : ℝ)
 --   minimize x
 --   subject to
 --     h2 : exp (x * 2) - 10123 / 1000 ≤ 0
@@ -42,7 +42,7 @@ def agp2 :=
       subject to
         h1 : 0 < x
         h2 : 0 < y
-        h3 : x * y - 5.382 ≤ 0 
+        h3 : x * y - 5.382 ≤ 0
 
 time_cmd reduction reda2/dcpa2 : agp2 := by
   map_exp
@@ -50,7 +50,7 @@ time_cmd reduction reda2/dcpa2 : agp2 := by
 
 #print dcpa2
 -- def dcpa2 : Minimization (ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) 
+-- optimization (x : ℝ) (y : ℝ)
 --   minimize x
 --   subject to
 --     h3 : exp (x + y) - 2691 / 500 ≤ 0
@@ -80,14 +80,14 @@ time_cmd reduction reda3/dcpa3 : agp3 := by
 
 #print dcpa3
 -- def dcpa3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) (z : ℝ) 
+-- optimization (x : ℝ) (y : ℝ) (z : ℝ)
 --   minimize exp y + (exp x + exp z)
 --   subject to
 --     h4 : log 2 ≤ x
 --     h5 : x ≤ log 3
 --     h6 : 6 * exp (y - z - x * 2) ≤ 1 - exp (x * -(3 / 2))
 --     h7 : x + y = z
-  
+
 solve dcpa3
 
 end AlmostDGP3
@@ -109,14 +109,14 @@ time_cmd reduction reda4/dcpa4 : agp4 := by
 
 #print dcpa4
 -- def dcpa4 : Minimization (ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) 
+-- optimization (x : ℝ) (y : ℝ)
 --   minimize -(x + y)
 --   subject to
 --     h3 : exp x ≤ 2 - exp (x + y) - exp y
 
 solve dcpa4
 
-end AlmostDGP4 
+end AlmostDGP4
 
 -- /- This problem is not convex. -/
 -- section AlmostDGP5
