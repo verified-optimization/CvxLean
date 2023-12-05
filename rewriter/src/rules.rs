@@ -198,7 +198,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("entr_folding"; "(neg (mul ?a (log ?a)))" => "(entr ?a)"),
 
-    rw!("qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ? b)"),
+    rw!("qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)"),
 
     rw!("norm2"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
 ] }
