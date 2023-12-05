@@ -1,4 +1,4 @@
-import CvxLean.Lib.Math.Data.Real
+]import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.Convexify.Egg.Sexp
 import CvxLean.Tactic.DCP.Tree
@@ -85,6 +85,20 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
   | Tree.node "sqrt" #[t] => do
     let t ← toExpr vars t
     return mkAppN (mkConst ``Real.sqrt) #[t]
+  -- Log.
+  | Tree.node "log" #[t] => do
+    let t ← toExpr vars t
+    return mkAppN (mkConst ``Real.log) #[t]
+  -- Exp.
+  | Tree.node "exp" #[t] => do
+    let t ← toExpr vars t
+    return mkAppN (mkConst ``Real.exp) #[t]
+  -- XExp.
+  | Tree.node "xexp" #[t] =>
+      EggTree.toExpr vars (Tree.node "mul" #[t, Tree.node "exp" #[t]])
+  -- Entr.
+  | Tree.node "entr" #[t] =>
+      EggTree.toExpr vars (Tree.node "neg" #[Tree.node "mul" #[t, Tree.node "log" #[t]]])
   -- Addition.
   | Tree.node "add" #[t1, t2] => do
     let t1 ← toExpr vars t1
@@ -105,19 +119,22 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
     let t1 ← toExpr vars t1
     let t2 ← toExpr vars t2
     return mkRealHBinAppExpr ``HDiv.hDiv ``instHDiv 1 ``Real.instDivReal t1 t2
-  -- Log.
-  | Tree.node "log" #[t] => do
-    let t ← toExpr vars t
-    return mkAppN (mkConst ``Real.log) #[t]
-  -- Exp.
-  | Tree.node "exp" #[t] => do
-    let t ← toExpr vars t
-    return mkAppN (mkConst ``Real.exp) #[t]
   -- Pow.
   | Tree.node "pow" #[t1, t2] => do
     let t1 ← toExpr vars t1
     let t2 ← toExpr vars t2
     return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
+  -- Quad over Lin.
+  | Tree.node "qol" #[t1, t2] =>
+    EggTree.toExpr vars (Tree.node "div" #[Tree.node "pow" #[t1, Tree.leaf "2"], t2])
+  -- Geo mean.
+  | Tree.node "geo" #[t1, t2] =>
+    EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "mul" #[t1, t2]])
+  -- Norm2.
+  | Tree.node "norm2" #[t1, t2] =>
+    EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "add" #[
+      Tree.node "pow" #[t1, Tree.leaf "2"], 
+      Tree.node "pow" #[t2, Tree.leaf "2"]]])
   -- Constr.
   | Tree.node "constr" #[Tree.leaf s, t] => do
     let t ← toExpr vars t
