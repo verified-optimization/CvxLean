@@ -376,6 +376,10 @@ pub fn is_nonpos(d: &Domain) -> bool {
     d.subseteq(&nonpos_dom())
 }
 
+pub fn option_is_nonpos(d: Option<&Domain>) -> bool {
+    d.map_or(false, is_nonpos)
+}
+
 pub fn pos_dom() -> Domain { 
     Domain::make(nonneg_ival(), true, false)
 }
@@ -757,9 +761,30 @@ fn perform_pow(
 pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
     let d1_nonneg = is_nonneg(d1);
     if !d1_nonneg {
-        // We only define it for nonnegative bases. Otherwise, return the 
-        // free domain.
-        return free_dom();
+        // We only define rules for nonnegative bases.
+        // However, if the exponent is a constant, we consider some special 
+        // cases: 0, 1, and even integers.
+        match d2.get_constant() {
+            Some(f) => {
+                if ((f as u32) as f64) == f {
+                    let n = f as u32;
+                    if n == 0 && does_not_contain_zero(d1) {
+                        return Domain::make_singleton(1.0);
+                    } else if n == 1 {
+                        return d1.clone();
+                    } else if n % 2 == 0 {
+                        return nonneg_dom();
+                    } else {
+                        return free_dom();
+                    }
+                } else {
+                    return free_dom();
+                }
+            }
+            _ => {
+                return free_dom();
+            }
+        }
     }
 
     let d1_lrg = d1.subseteq(&Domain::make_oi(one()));
