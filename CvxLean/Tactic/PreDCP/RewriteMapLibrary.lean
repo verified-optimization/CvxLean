@@ -4,7 +4,7 @@ import CvxLean.Tactic.Util.PositivityExt
 
 -- TODO: Move.
 lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
-  ⟨fun h => by {
+  ⟨fun h => by
     have hxmem := Set.mem_Ioi.2 hx
     have hymem := Set.mem_Ioi.2 hy
     have heq : Set.restrict (Set.Ioi 0) log ⟨x, hxmem⟩ =
@@ -12,8 +12,8 @@ lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.
       simp [h]
     have h := Real.log_injOn_pos.injective heq
     simp [Subtype.eq] at h
-    exact h
-  }, fun h => by rw [h]⟩
+    exact h,
+  fun h => by rw [h]⟩
 
 -- TODO: Move.
 lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) : a / (b ^ c) = a * b ^ (-c) := by
@@ -282,5 +282,23 @@ register_rewrite_map "exp_log" ; "(exp (log ?a))" => "?a" :=
 
 register_rewrite_map "log_exp" ; "(log (exp ?a))" => "?a" :=
   simp_or_rw [Real.log_exp];
+
+
+/- Atom folding. -/
+
+register_rewrite_map "xexp_folding"; "(mul ?a (exp ?a))" => "(xexp ?a)" :=
+  rfl;
+
+register_rewrite_map "entr_folding"; "(neg (mul ?a (log ?a)))" => "(entr ?a)" :=
+  rfl;
+
+register_rewrite_map "qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)" :=
+  rfl;
+
+register_rewrite_map "geo_folding"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)" :=
+  rfl;
+
+register_rewrite_map "norm2_folding"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)" :=
+  rfl;
 
 end CvxLean
