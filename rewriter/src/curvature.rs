@@ -78,6 +78,10 @@ impl fmt::Display for Curvature {
     }
 }
 
+pub fn join(c1: Curvature, c2: Curvature) -> Curvature {
+    if c1 <= c2 { c2 } else if c2 <= c1 { c1 } else { Unknown }
+}
+
 pub fn of_le(c1: Curvature, c2: Curvature) -> Curvature {
     match (c1, c2) {
         (Convex,   Concave ) => { return Convex;   }
@@ -103,7 +107,8 @@ pub fn of_neg(c: Curvature) -> Curvature {
     }
 }
 
-pub fn of_concave_increasing_fn(c: Curvature) -> Curvature {
+// Composition rule for nondecreasing (or increasing) concave functions.
+pub fn of_concave_nondecreasing_fn(c: Curvature) -> Curvature {
     match c {
         Concave  => { return Concave;  }
         Affine   => { return Concave;  }
@@ -112,10 +117,52 @@ pub fn of_concave_increasing_fn(c: Curvature) -> Curvature {
     }
 }
 
-pub fn of_convex_increasing_fn(c: Curvature) -> Curvature {
+// Composition rule for nonincreasing (or decreasing) concave functions.
+#[allow(unused)]
+pub fn of_concave_nonincreasing_fn(c: Curvature) -> Curvature {
+    match c {
+        Convex   => { return Concave;  }
+        Affine   => { return Concave;  }
+        Constant => { return Constant; }
+        _        => { return Unknown;  }
+    }
+}
+
+// Composition rule for concave functions with unknown monotonocity.
+pub fn of_concave_none_fn(c: Curvature) -> Curvature {
+    match c {
+        Affine   => { return Concave;  }
+        Constant => { return Constant; }
+        _        => { return Unknown;  }
+    }
+}
+
+// Composition rule for nondecreasing (or increasing) convex functions.
+pub fn of_convex_nondecreasing_fn(c: Curvature) -> Curvature {
     match c {
         Convex   => { return Convex;   }
         Affine   => { return Convex;   }
+        Constant => { return Constant; }
+        _        => { return Unknown;  }
+    }
+}
+
+// Composition rule for nonincreasing (or decreasing) convex functions.
+#[allow(unused)]
+pub fn of_convex_nonincreasing_fn(c: Curvature) -> Curvature {
+    match c {
+        Concave  => { return Convex;   }
+        Affine   => { return Convex;   }
+        Constant => { return Constant; }
+        _        => { return Unknown;  }
+    }
+}
+
+// Composition rule for concave functions with unknown monotonocity.
+#[allow(unused)]
+pub fn of_convex_none_fn(c: Curvature) -> Curvature {
+    match c {
+        Affine   => { return Convex;  }
         Constant => { return Constant; }
         _        => { return Unknown;  }
     }
