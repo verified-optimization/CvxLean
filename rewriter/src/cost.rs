@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 use egg::{*};
 
 use crate::domain;
@@ -113,29 +111,27 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Sqrt(a) => {
-                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
+                curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Log(a) => {
-                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
+                curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Exp(a) => {
-                curvature = curvature::of_convex_increasing_fn(get_curvature!(a));
+                curvature = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::XExp(a) => {
-                // TODO
-                curvature = curvature::of_convex_increasing_fn(get_curvature!(a));
+                curvature = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Entr(a) => {
-                // TODO
-                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
+                curvature = curvature::of_concave_none_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
@@ -223,14 +219,34 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::QOL([a, b]) => {
-                // TODO
-                curvature = Curvature::Affine;
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                let curvature_num = 
+                    if da_nonneg {
+                        curvature::of_convex_nondecreasing_fn(get_curvature!(a))
+                    } else {
+                        curvature::of_convex_nonincreasing_fn(get_curvature!(a))
+                    };
+                let curvature_den = curvature::of_convex_nonincreasing_fn(get_curvature!(b));
+                curvature = curvature::join(curvature_num, curvature_den);
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Norm2([a, b]) => {
-                // TODO
-                curvature = Curvature::Affine;
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                let curvature_a = 
+                    if da_nonneg {
+                        curvature::of_convex_nondecreasing_fn(get_curvature!(a))
+                    } else {
+                        curvature::of_convex_nonincreasing_fn(get_curvature!(a))
+                    };
+                let db_nonneg = domain::option_is_nonneg(get_domain(b).as_ref());
+                let curvature_b = 
+                    if db_nonneg {
+                        curvature::of_convex_nondecreasing_fn(get_curvature!(b))
+                    } else {
+                        curvature::of_convex_nonincreasing_fn(get_curvature!(b))
+                    };
+                curvature = curvature::join(curvature_a, curvature_b);
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
