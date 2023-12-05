@@ -60,9 +60,11 @@ fn get_step_aux(
             *expected_term = Some(c_s);
         }
         _ => {
-            // Out-of-context extraction. Useful for testing.
-            let c_s = next.get_recexpr().to_string();
-            *expected_term = Some(c_s);
+            if expected_term.is_none() {
+                // Out-of-context extraction. Useful for testing.
+                let c_s = next.get_recexpr().to_string();
+                *expected_term = Some(c_s);
+            }
         }
     }
 
