@@ -171,6 +171,12 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
             domains.insert(x, dom);
         }
     }
+    for (_, d) in domains.clone() {
+        if d.is_empty() {
+            println!("Unfeasible problem.");
+            return None;
+        }
+    }
 
     for node_limit in [2500, 5000, 10000, 20000] {
         let analysis = Meta {
