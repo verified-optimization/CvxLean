@@ -388,7 +388,7 @@ time_cmd equivalence mulZeroConstrRed/mulZeroConstrAuto : mulZeroConstr := by
 #print mulZeroConstrAuto
 
 -- mul_comm (obj)
-
+-- NOTE(RFM): Empty domain here. Why?
 def mulCommObj :=
   optimization (x y : ℝ)
     minimize (x * (y * (1 / x)) : ℝ)
