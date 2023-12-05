@@ -20,9 +20,6 @@ package CvxLean
 lean_lib CvxLeanTest
 
 @[default_target]
-lean_lib CvxLeanPreDCPTest
-
-@[default_target]
 lean_lib CvxLean
 
 def compileCargo (name : String) (manifestFile : FilePath)
