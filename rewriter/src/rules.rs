@@ -198,21 +198,35 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("log_exp"; "(log (exp ?a))" => "?a"),  
 
 
-    /* Atom folding rules. */
+    /* Atom folding and unfolding rules. */
 
-    rw!("xexp_folding"; "(mul ?a (exp ?a))" => "(xexp ?a)" 
+    rw!("xexp_fold"; "(mul ?a (exp ?a))" => "(xexp ?a)" 
+        if is_ge_zero("?a")),
+    
+    rw!("xexp_unfold"; "(xexp ?a)" => "(mul ?a (exp ?a))" 
         if is_ge_zero("?a")),
 
-    rw!("entr_folding"; "(neg (mul ?a (log ?a)))" => "(entr ?a)"
+    rw!("entr_fold"; "(neg (mul ?a (log ?a)))" => "(entr ?a)"
+        if is_gt_zero("?a")),
+    
+    rw!("entr_unfold"; "(entr ?a)" => "(neg (mul ?a (log ?a)))"
         if is_gt_zero("?a")),
 
-    rw!("qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)"
+    rw!("qol_fold"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)"
+        if is_gt_zero("?b")),
+    
+    rw!("qol_unfold"; "(qol ?a ?b)" => "(div (pow ?a 2) ?b)"
         if is_gt_zero("?b")),
 
-    rw!("geo_folding"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)"
+    rw!("geo_fold"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)"
+        if is_gt_zero("?a") if is_gt_zero("?b")),
+    
+    rw!("geo_unfold"; "(geo ?a ?b)" => "(sqrt (mul ?a ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b")),
 
-    rw!("norm2_folding"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
+    rw!("norm2_fold"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
+
+    rw!("norm2_unfold"; "(norm2 ?a ?b)" => "(sqrt (add (pow ?a 2) (pow ?b 2)))"),
 ] }
 
 #[allow(unused)]

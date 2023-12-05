@@ -286,19 +286,34 @@ register_rewrite_map "log_exp" ; "(log (exp ?a))" => "?a" :=
 
 /- Atom folding. -/
 
-register_rewrite_map "xexp_folding"; "(mul ?a (exp ?a))" => "(xexp ?a)" :=
+register_rewrite_map "xexp_fold"; "(mul ?a (exp ?a))" => "(xexp ?a)" :=
   rfl;
 
-register_rewrite_map "entr_folding"; "(neg (mul ?a (log ?a)))" => "(entr ?a)" :=
+register_rewrite_map "xexp_unfold"; "(xexp ?a)" => "(mul ?a (exp ?a))" :=
   rfl;
 
-register_rewrite_map "qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)" :=
+register_rewrite_map "entr_fold"; "(neg (mul ?a (log ?a)))" => "(entr ?a)" :=
   rfl;
 
-register_rewrite_map "geo_folding"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)" :=
+register_rewrite_map "entr_unfold"; "(entr ?a)" => "(neg (mul ?a (log ?a)))" :=
   rfl;
 
-register_rewrite_map "norm2_folding"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)" :=
+register_rewrite_map "qol_fold"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)" :=
+  rfl;
+
+register_rewrite_map "qol_unfold"; "(qol ?a ?b)" => "(div (pow ?a 2) ?b)" :=
+  rfl;
+
+register_rewrite_map "geo_fold"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)" :=
+  rfl;
+
+register_rewrite_map "geo_unfold"; "(geo ?a ?b)" => "(sqrt (mul ?a ?b))" :=
+  rfl;
+
+register_rewrite_map "norm2_fold"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)" :=
+  rfl;
+
+register_rewrite_map "norm2_unfold"; "(norm2 ?a ?b)" => "(sqrt (add (pow ?a 2) (pow ?b 2)))" :=
   rfl;
 
 end CvxLean
