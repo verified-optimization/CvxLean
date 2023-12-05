@@ -111,6 +111,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Power and square root rules. */
 
+    rw!("one_pow"; "(pow 1 ?a)" => "1"),
+
     rw!("pow_add"; "(pow ?a (add ?b ?c))" => "(mul (pow ?a ?b) (pow ?a ?c))"
         if is_gt_zero("?a")),
 
@@ -152,9 +154,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
 
-    // NOTE: Needed since constant folding is disabled.
-    // TODO: Activate constant folding but only for rationals?
     rw!("pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" if is_ge_zero("?a")),
+
+    rw!("pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" if is_ge_zero("?a")),
 
 
     /* Exponential and logarithm rules. */
