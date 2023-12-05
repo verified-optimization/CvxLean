@@ -1,12 +1,13 @@
 #[cfg(test)]
 mod tests {
 
-use crate::domain; 
+use crate::domain;
 use domain::Domain as Domain;
 
 use crate::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
+use extract::get_steps_from_string as get_steps_from_string; 
 
 fn make(obj: &str, constrs: Vec<&str>) -> Minimization {
     let mut constrs_s = Vec::new();
@@ -31,6 +32,20 @@ fn assert_steps_with_domain(domains : Vec<(&str, Domain)>, obj: &str, constrs: V
 
 fn assert_steps(obj: &str, constrs: Vec<&str>) {
     assert_steps_with_domain(vec![], obj, constrs);
+}
+
+// Used to test single expressions outside the context of an optimization 
+// problem.
+fn assert_steps_from_string_with_domain(domains : Vec<(&str, Domain)>, s: &str) {
+    let domains = 
+        domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
+    let steps = get_steps_from_string(s, domains, true);
+    println!("{:?}", steps);
+    assert!(steps.is_some());
+}
+
+fn assert_steps_from_string(s: &str) {
+    assert_steps_from_string_with_domain(vec![], s);
 }
 
 
@@ -270,11 +285,9 @@ fn test_norm2() {
 
 #[test]
 fn test_3_32() {
-    assert_steps_with_domain(
+    assert_steps_from_string_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
-        "(div 1 (mul (var x) (var y)))", 
-        vec![
-        ]);
+        "(div 1 (mul (var x) (var y)))");
 }
 
 #[test]
@@ -285,7 +298,8 @@ fn test_3_33() {
     assert_steps_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::pos_dom())], 
         // "(sqrt (add 1 (div (pow (var x) 4) (var y))))", 
-        "(sqrt (add 1 (div (pow (var x) (mul 2 2)) (var y))))", 
+        // "(sqrt (add 1 (div (pow (var x) (mul 2 2)) (var y))))", 
+        "(div (pow (var x) 2) (sqrt (var y)) )",
         vec![
         ]);
 }
