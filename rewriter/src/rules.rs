@@ -194,11 +194,14 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     /* Atom folding rules. */
 
-    rw!("xexp_folding"; "(mul ?a (exp ?a))" => "(xexp ?a)"),
+    rw!("xexp_folding"; "(mul ?a (exp ?a))" => "(xexp ?a)" 
+        if is_ge_zero("?a")),
 
-    rw!("entr_folding"; "(neg (mul ?a (log ?a)))" => "(entr ?a)"),
+    rw!("entr_folding"; "(neg (mul ?a (log ?a)))" => "(entr ?a)"
+        if is_gt_zero("?a")),
 
-    rw!("qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)"),
+    rw!("qol_folding"; "(div (pow ?a 2) ?b)" => "(qol ?a ?b)"
+        if is_gt_zero("?b")),
 
     rw!("norm2"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
 ] }
