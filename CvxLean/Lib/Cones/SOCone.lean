@@ -49,11 +49,20 @@ lemma soCone_add_sub_two_mul_of_nonneg {x y : ℝ} (z : ℝ) (hx : 0 ≤ x) (hy 
   conv => lhs; unfold soCone; simp [sqrt_le_left hxy, ←le_sub_iff_add_le']
   ring_nf; simp
 
+/-- Same as `soCone_add_sub_two_mul_of_nonneg` with z = 1. -/
 lemma soCone_add_sub_two_of_nonneg {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
   soCone (x + y) ![x - y, 2] ↔ 1 ≤ x * y := by
   have h := soCone_add_sub_two_mul_of_nonneg 1 hx hy
   rw [mul_one, one_rpow] at h
   exact h
+
+/-- Similar trick. -/
+lemma soCone_sub_add_two_mul_of_nonneg {x y : ℝ} (z : ℝ) :
+  soCone (x - y) ![x + y, 2 * z] ↔ y ≤ x ∧ z ^ (2 : ℝ) ≤ -(x * y) := by
+  conv => lhs; unfold soCone; simp [sqrt_le_iff, ←le_sub_iff_add_le']
+  apply Iff.and
+  { rfl }
+  { ring_nf!; rw [←neg_mul, ←div_le_iff (by norm_num)]; simp }
 
 end Lemmas
 
