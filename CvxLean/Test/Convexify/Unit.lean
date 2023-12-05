@@ -13,7 +13,7 @@ open CvxLean Minimization Real
 /- Objective function rules. -/
 
 -- map_objFun_log (obj)
--- NOTE: This works because an affine objective is prefered.
+-- NOTE(RFM): This works because an affine objective is prefered.
 def mapObjFunLogObj :=
   optimization (x : ℝ)
     minimize (exp x)
@@ -56,7 +56,7 @@ time_cmd equivalence logEqLogConstrRed/logEqLogConstrAuto : logEqLogConstr := by
 /- Less than or equal rules. -/
 
 -- le_sub_iff_add_le (constr)
--- NOTE: This uses le_sub_iff_add_le because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses le_sub_iff_add_le because 2 * x is preferred over x + x.
 def leSubIffAddLeConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
@@ -81,7 +81,7 @@ time_cmd equivalence leSubIffAddLeConstrRevRed/leSubIffAddLeConstrRevAuto : leSu
 #print leSubIffAddLeConstrRevAuto
 
 -- sub_le_iff_le_add (constr)
--- NOTE: same reasoning as le_sub_iff_add_le.
+-- NOTE(RFM): same reasoning as le_sub_iff_add_le.
 def subLeIffLeAddConstr :=
   optimization (x y : ℝ)
     minimize (0 : ℝ)
@@ -237,7 +237,7 @@ time_cmd equivalence addZeroConstrRed/addZeroConstrAuto : addZeroConstr := by
 #print addZeroConstrAuto
 
 -- add_comm (obj)
--- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
 def addCommObj :=
   optimization (x : ℝ)
     minimize (x + (1 + x) : ℝ)
@@ -250,7 +250,7 @@ time_cmd equivalence addCommObjRed/addCommObjAuto : addCommObj := by
 #print addCommObjAuto
 
 -- add_comm (constr)
--- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
 def addCommConstr :=
   optimization (x : ℝ)
     minimize (0 : ℝ)
@@ -264,7 +264,7 @@ time_cmd equivalence addCommConstrRed/addCommConstrAuto : addCommConstr := by
 #print addCommConstrAuto
 
 -- add_assoc (obj)
--- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
 def addAssocObj :=
   optimization (x : ℝ)
     minimize (x + (x + 1) : ℝ)
@@ -277,7 +277,7 @@ time_cmd equivalence addAssocObjRed/addAssocObjAuto : addAssocObj := by
 #print addAssocObjAuto
 
 -- add_assoc (constr)
--- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
 def addAssocConstr :=
   optimization (x : ℝ)
     minimize (0 : ℝ)
@@ -338,7 +338,7 @@ time_cmd equivalence oneMulConstrRed/oneMulConstrAuto : oneMulConstr := by
 #print oneMulConstrAuto
 
 -- one_mul-rev (obj)
--- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
 def oneMulRevObj :=
   optimization (x : ℝ)
     minimize (x + x : ℝ)
@@ -351,7 +351,7 @@ time_cmd equivalence oneMulRevObjRed/oneMulRevObjAuto : oneMulRevObj := by
 #print oneMulRevObjAuto
 
 -- one_mul-rev (constr)
--- NOTE: This uses one_mul-rev because 2 * x is preferred over x + x.
+-- NOTE(RFM): This uses one_mul-rev because 2 * x is preferred over x + x.
 def oneMulRevConstr :=
   optimization (x : ℝ)
     minimize (0 : ℝ)
@@ -866,10 +866,10 @@ time_cmd equivalence divSelfConstrRed/divSelfConstrAuto : divSelfConstr := by
 /- Power and square root rules. -/
 
 -- pow_add (obj)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- pow_add (constr)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- pow_add-rev (obj)
 def powAddRevObj :=
@@ -947,10 +947,10 @@ time_cmd equivalence mulPowRevConstrRed/mulPowRevConstrAuto : mulPowRevConstr :=
 #print mulPowRevConstrAuto
 
 -- pow_mul (obj)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- pow_mul (constr)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- pow_mul-rev (obj)
 def powMulRevObj :=
@@ -1009,10 +1009,11 @@ def divPowRevObj :=
     subject to
       hx : 0 < x
 
-time_cmd equivalence divPowRevObjRed/divPowRevObjAuto : divPowRevObj := by
-  convexify
+-- time_cmd equivalence divPowRevObjRed/divPowRevObjAuto : divPowRevObj := by
+  -- convexify
+-- TODO(RFM): does not rewrite the correct term.
 
-#print divPowRevObjAuto
+-- #print divPowRevObjAuto
 
 -- div_pow-rev (constr)
 def divPowRevConstr :=
@@ -1022,16 +1023,17 @@ def divPowRevConstr :=
       hx : 0 < x
       h : ((x + x) ^ 2 / x ^ 2) ≤ x
 
-time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
-  convexify
+-- time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
+--   convexify
+-- TODO(RFM): does not rewrite the correct term.
 
-#print divPowRevConstrAuto
+-- #print divPowRevConstrAuto
 
 -- pow_sub (obj)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- pow_sub (constr)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- pow_sub-rev (obj)
 def powSubRevObj :=
@@ -1084,10 +1086,10 @@ time_cmd equivalence divPowEqMulPowNegConstrRed/divPowEqMulPowNegConstrAuto : di
 #print divPowEqMulPowNegConstrAuto
 
 -- div_pow_eq_mul_pow_neg-rev (obj)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- div_pow_eq_mul_pow_neg-rev (constr)
--- TODO: Implement power atom.
+-- TODO(RFM): Implement power atom.
 
 -- one_div_eq_pow_neg_one (obj)
 def oneDivEqPowNegOneObj :=
