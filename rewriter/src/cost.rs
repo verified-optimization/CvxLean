@@ -15,19 +15,10 @@ pub struct DCPCost<'a> {
     pub egraph: &'a optimization::EGraph,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct OptimizationWrapper(Optimization);
-
-impl PartialOrd for OptimizationWrapper {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(Ordering::Equal)
-    }
-}
-
 impl<'a> CostFunction<Optimization> for DCPCost<'a> {
     // Curvature + number of variables (with repetition) + term size.
     // In lexicographic order.
-    type Cost = (Curvature, u32, u32, OptimizationWrapper);
+    type Cost = (Curvature, u32, u32);
     fn cost<C>(&mut self, enode: &Optimization, mut costs: C) -> Self::Cost
     where
         C: FnMut(Id) -> Self::Cost
@@ -40,9 +31,6 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
         }
         macro_rules! get_term_size {
             ($i:expr) => { costs(*$i).2 }
-        }
-        macro_rules! get_node {
-            ($i:expr) => { costs(*$i).3 }
         }
         
         let get_domain = 
@@ -125,59 +113,29 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Sqrt(a) => {
-                // TODO: Temporary. geo_mean.
-                let mut is_geo_mean = false;
-                match get_node!(a).0 {
-                    Optimization::Mul([b, c]) => {
-                        let affine = 
-                            get_curvature!(&b) == Curvature::Affine && 
-                            get_curvature!(&c) == Curvature::Affine;
-                        let pos =
-                            domain::option_is_pos(get_domain(&b).as_ref()) && 
-                            domain::option_is_pos(get_domain(&c).as_ref());
-                        is_geo_mean = affine && pos;
-                    }
-                    _ => {}
-                }
-                // TODO: Temporary. norm2.
-                let mut is_norm2 = false; 
-                match get_node!(a).0 {
-                    Optimization::Add([b, c]) => {
-                        match (get_node!(&b).0, get_node!(&c).0) {
-                            (Optimization::Pow([d, e]), Optimization::Pow([f, g])) => {
-                                let curvature_check = 
-                                    get_curvature!(&d) <= Curvature::Convex && 
-                                    get_curvature!(&f) <= Curvature::Convex;
-                                let pow_two_first = 
-                                    match get_domain(&e) {
-                                        Some(de) => 
-                                            match domain::Domain::get_constant(&de) {
-                                                Some (de_f) => de_f == 2.0,
-                                                _ => false
-                                            }
-                                        _ => false 
-                                    };
-                                let pow_two_second =
-                                    match get_domain(&g) {
-                                        Some(dg) => 
-                                            match domain::Domain::get_constant(&dg) {
-                                                Some (dg_f) => dg_f == 2.0,
-                                                _ => false
-                                            }
-                                        _ => false 
-                                    };
-                                is_norm2 = curvature_check && pow_two_first && pow_two_second;
-                            }
-                            _ => {}
-                        }
-                    }
-                    _ => {}
-                }
-                if is_geo_mean || is_norm2 {
-                    curvature = Curvature::Convex;
-                } else {
-                    curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
-                }
+                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
+                num_vars = get_num_vars!(a);
+                term_size = 1 + get_term_size!(a);
+            }
+            Optimization::Log(a) => {
+                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
+                num_vars = get_num_vars!(a);
+                term_size = 1 + get_term_size!(a);
+            }
+            Optimization::Exp(a) => {
+                curvature = curvature::of_convex_increasing_fn(get_curvature!(a));
+                num_vars = get_num_vars!(a);
+                term_size = 1 + get_term_size!(a);
+            }
+            Optimization::XExp(a) => {
+                // TODO
+                curvature = curvature::of_convex_increasing_fn(get_curvature!(a));
+                num_vars = get_num_vars!(a);
+                term_size = 1 + get_term_size!(a);
+            }
+            Optimization::Entr(a) => {
+                // TODO
+                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
@@ -220,64 +178,35 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Div([a, b]) => {
-                // TODO: Temporary. quad_over_lin.
-                let mut is_quad_over_lin = false;
-                match get_node!(a).0 {
-                    Optimization::Pow([c, d]) => {
-                        let curvature_check = 
-                            get_curvature!(b) <= Curvature::Concave && 
-                            get_curvature!(&c) <= Curvature::Affine && 
-                            get_curvature!(&d) == Curvature::Constant;
-                        let pos_check =
-                            domain::option_is_pos(get_domain(&b).as_ref());
-                        let pow_two_check = 
-                            match get_domain(&d) {
-                                Some(dd) => 
-                                    match domain::Domain::get_constant(&dd) {
-                                        Some (dd_f) => dd_f == 2.0,
-                                        _ => false
-                                    }
-                                _ => false 
-                            };
-                        is_quad_over_lin = curvature_check && pos_check && pow_two_check;
+                let db_o = get_domain(b);
+                curvature = match (get_is_constant(a), get_is_constant(b)) {
+                    (true, true) => {
+                        match db_o {
+                            Some(db) => {
+                                if domain::does_not_contain_zero(&db) {
+                                    Curvature::Constant
+                                } else {
+                                    Curvature::Unknown
+                                }
+                                
+                            }
+                            None => { Curvature::Unknown }
+                        }
                     }
-                    _ => {}
-                }
-
-                if is_quad_over_lin {
-                    println!("quad_over_lin");
-                    curvature = Curvature::Convex;
-                } else {
-                    let db_o = get_domain(b);
-                    curvature = match (get_is_constant(a), get_is_constant(b)) {
-                        (true, true) => {
-                            match db_o {
-                                Some(db) => {
-                                    if domain::does_not_contain_zero(&db) {
-                                        Curvature::Constant
-                                    } else {
-                                        Curvature::Unknown
-                                    }
-                                    
+                    (false, true) => {
+                        match db_o {
+                            Some(db) => {
+                                if domain::does_not_contain_zero(&db) {
+                                    curvature::of_mul_by_const(get_curvature!(a), db)
+                                } else {
+                                    Curvature::Unknown
                                 }
-                                None => { Curvature::Unknown }
                             }
+                            None => { Curvature::Unknown }
                         }
-                        (false, true) => {
-                            match db_o {
-                                Some(db) => {
-                                    if domain::does_not_contain_zero(&db) {
-                                        curvature::of_mul_by_const(get_curvature!(a), db)
-                                    } else {
-                                        Curvature::Unknown
-                                    }
-                                }
-                                None => { Curvature::Unknown }
-                            }
-                        }
-                        _ => { Curvature::Unknown }
-                    };   
-                }
+                    }
+                    _ => { Curvature::Unknown }
+                };   
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
@@ -293,15 +222,17 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
-            Optimization::Log(a) => {
-                curvature = curvature::of_concave_increasing_fn(get_curvature!(a));
-                num_vars = get_num_vars!(a);
-                term_size = 1 + get_term_size!(a);
+            Optimization::QOL([a, b]) => {
+                // TODO
+                curvature = Curvature::Affine;
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
-            Optimization::Exp(a) => {
-                curvature = curvature::of_convex_increasing_fn(get_curvature!(a));
-                num_vars = get_num_vars!(a);
-                term_size = 1 + get_term_size!(a);
+            Optimization::Norm2([a, b]) => {
+                // TODO
+                curvature = Curvature::Affine;
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Var(_a) => {
                 curvature = Curvature::Affine;
@@ -325,7 +256,7 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
             }
         }
 
-        return (curvature, num_vars, term_size, OptimizationWrapper(enode.clone()));
+        return (curvature, num_vars, term_size);
     }
 
 }
