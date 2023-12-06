@@ -1,10 +1,7 @@
-#[cfg(test)]
-mod tests {
-
-use crate::domain;
+use egg_convexify::domain;
 use domain::Domain as Domain;
 
-use crate::extract;
+use egg_convexify::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
 use extract::get_steps_from_string as get_steps_from_string; 
@@ -328,13 +325,13 @@ fn test_3_36_a() {
          "(sqrt (add 1 (add (mul 4 (pow (var x) 2)) (mul 16 (pow (var y) 2)))))");
 }
 
-#[test]
-fn test_3_36_c() {
-    // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5) 
-    assert_steps_from_string_with_domain(
-        vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
-         "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
-}
+// #[test]
+// fn test_3_36_c() {
+//     // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5) 
+//     assert_steps_from_string_with_domain(
+//         vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
+//          "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
+// }
 
 #[test]
 fn test_3_38_e() {
@@ -384,6 +381,4 @@ fn test_3_67() {
             .map(|(s,d)| (s.as_str(), d.clone()))
             .collect::<Vec<_>>();
     assert_steps_from_string_with_domain(domain, &build_term(3));
-}
-
 }

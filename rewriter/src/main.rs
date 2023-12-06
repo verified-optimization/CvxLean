@@ -20,10 +20,6 @@ use extract::Minimization as Minimization;
 use extract::Step as Step;
 use extract::get_steps as get_steps;
 
-mod tests;
-
-mod tests_domain;
-
 // NOTE: Taken from https://github.com/opencompl/egg-tactic-code
 
 #[derive(Deserialize, Debug)]

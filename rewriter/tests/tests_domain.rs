@@ -1,7 +1,6 @@
-#[cfg(test)]
-mod tests_domain {
+use egg_convexify;
 
-use crate::domain;
+use egg_convexify::domain;
 use domain::Domain as Domain; 
 
 
@@ -682,6 +681,4 @@ fn exp_neg() {
     let result = domain::exp(&domain::neg_dom());
     let expected = Domain::make_oo(domain::zero(), domain::one());
     assert!(result.eq(&expected));
-}
-
 }
