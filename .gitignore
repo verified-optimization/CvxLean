@@ -1,9 +1,8 @@
 .DS_Store
 
 /build
-/solver/build
-/solver/test.cbf
-/solver/test.sol
+/solver/*.cbf
+/solver/*.sol
 /rewriter/*.dot 
 /rewriter/*.svg
 /ffi/build

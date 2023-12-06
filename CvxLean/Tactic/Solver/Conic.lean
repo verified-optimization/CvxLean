@@ -92,7 +92,7 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
     (CBF.ConeProduct.mk n fixedCones.length fixedCones)
 
   -- Write input.
-  let inputPath := "solver/test.cbf"
+  let inputPath := "solver/input.cbf"
   IO.FS.writeFile inputPath (ToString.toString cbf)
 
   -- Adjust path to MOSEK.
@@ -105,9 +105,10 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
     mosekBinPath
 
   -- Run solver.
+  let outputPath := "solver/output.sol"
   let out ← IO.Process.output {
     cmd := "mosek",
-    args := #[inputPath],
+    args := #[inputPath, "-out", outputPath],
     env := #[("PATH", p)] }
   if out.exitCode != 0 then
     dbg_trace ("MOSEK exited with code " ++ ToString.toString out.exitCode)
@@ -117,7 +118,6 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
   IO.println res
 
   -- Read output.
-  let outputPath := "solver/test.sol"
   let handle ← IO.FS.Handle.mk outputPath IO.FS.Mode.read
   let output ← IO.FS.Handle.readToEnd handle
 
@@ -139,7 +139,7 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
   -- Vectors and matrices as functions.
   let mut solPointExprArray : Array Expr := #[]
 
-  -- TODO: This won't work in general, need to take into account the
+  -- TODO(RFM): This won't work in general, need to take into account the
   -- associativity of the variables if there are products. Infer dimension might
   -- need to return a tree.
   let mut i : ℕ := 0
