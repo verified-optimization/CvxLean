@@ -21,9 +21,9 @@ use rules::rules as rules;
 use crate::cost;
 use cost::DCPCost as DCPCost;
 
-use crate::explain_utils;
-use explain_utils::Direction as Direction;
-use explain_utils::get_rewrite_name_and_direction as get_rewrite_name_and_direction;
+use crate::explain_util;
+use explain_util::Direction as Direction;
+use explain_util::get_rewrite_name_and_direction as get_rewrite_name_and_direction;
 
 #[derive(Serialize, Debug)]
 pub struct Step {

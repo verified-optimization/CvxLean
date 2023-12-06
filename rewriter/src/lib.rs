@@ -9,7 +9,7 @@ pub mod rules;
 
 pub mod cost;
 
-pub mod explain_utils;
+pub mod explain_util;
 
 pub mod extract;
 

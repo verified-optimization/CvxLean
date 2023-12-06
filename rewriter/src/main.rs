@@ -13,7 +13,7 @@ mod rules;
 
 mod cost;
 
-mod explain_utils;
+mod explain_util;
 
 mod extract;
 use extract::Minimization as Minimization;
