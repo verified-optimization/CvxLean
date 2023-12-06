@@ -23,6 +23,7 @@ def translateCone : ScalarConeType → CBF.ConeType
   | ScalarConeType.Zero => CBF.ConeType.LEq
   | ScalarConeType.PosOrth => CBF.ConeType.LPos
   | ScalarConeType.Exp => CBF.ConeType.EXP
+  | ScalarConeType.Q => CBF.ConeType.Q
   | ScalarConeType.QR => CBF.ConeType.QR
 
 -- TOOD: Change. This is hacky.
