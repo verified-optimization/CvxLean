@@ -165,6 +165,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" if is_ge_zero("?a")),
 
     rw!("pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" if is_ge_zero("?a")),
+    
+    rw!("binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
 
 
     /* Exponential and logarithm rules. */

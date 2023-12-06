@@ -30,6 +30,10 @@ lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
   norm_num
 
 -- TODO: Move.
+lemma Real.binomial_two (x y : ℝ) : (x + y) ^ 2 = x ^ 2 + (2 * (x * y) + y ^ 2) := by
+  simp only [rpow_two]; ring
+
+-- TODO: Move.
 lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
   rw [exp_neg, inv_eq_one_div]
 
@@ -245,6 +249,8 @@ register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
 register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
   simp_or_rw [Real.pow_half_two (by positivity_ext)];
 
+register_rewrite_map "binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=
+  simp_or_rw [Real.binomial_two];
 
 /- Exponential and logarithm rules. -/
 
