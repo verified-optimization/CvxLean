@@ -773,7 +773,6 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
                     } else if n == 1 {
                         return d1.clone();
                     } else if n % 2 == 0 {
-                        println!("here {}", n);
                         return nonneg_dom();
                     } else {
                         return free_dom();
