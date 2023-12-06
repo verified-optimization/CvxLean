@@ -1,4 +1,5 @@
 use egg::{*};
+use std::convert::TryInto;
 use std::fs;
 use std::time::Duration;
 use std::collections::HashMap;
@@ -165,20 +166,21 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
             return None;
         }
     }
-
-    for node_limit in [2500, 5000, 10000, 20000] {
+    
+    for node_limit in [2500, 5000, 10000, 25000, 50000]  {
         let analysis = Meta {
             domains : domains.clone()
         };
         
         let iter_limit = node_limit / 250;
+        let time_limit = (node_limit / 500).try_into().unwrap();
         let runner: Runner<Optimization, Meta> = 
             Runner::new(analysis)
             .with_explanations_enabled()
             .with_explanation_length_optimization()
             .with_node_limit(node_limit)
             .with_iter_limit(iter_limit)
-            .with_time_limit(Duration::from_secs(5))
+            .with_time_limit(Duration::from_secs(time_limit))
             .with_expr(&expr)
             .run(&rules());
         
