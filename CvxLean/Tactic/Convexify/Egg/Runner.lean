@@ -84,6 +84,8 @@ structure EggRewrite where
   rewriteName : String
   direction : EggRewriteDirection
   location : String
+  subexprFrom : String
+  subexprTo : String
   expectedTerm : String
 
 def EggRewrite.toString (e : EggRewrite) : String :=
@@ -91,6 +93,8 @@ def EggRewrite.toString (e : EggRewrite) : String :=
   surroundQuotes "rewrite_name" ++ " : " ++ surroundQuotes e.rewriteName ++ ", " ++
   surroundQuotes "direction" ++ " : " ++ surroundQuotes (e.direction.toString) ++ ", " ++
   surroundQuotes "location" ++ " : " ++ surroundQuotes e.location ++ ", " ++
+  surroundQuotes "subexpr_from" ++ " : " ++ surroundQuotes e.subexprFrom ++ ", " ++
+  surroundQuotes "subexpr_to" ++ " : " ++ surroundQuotes e.subexprTo ++ ", " ++
   surroundQuotes "expected_term" ++ " : " ++ surroundQuotes e.expectedTerm ++
   "}"
 
@@ -142,10 +146,14 @@ def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
         | "Backward" => EggRewriteDirection.Backward
         | _ => panic! "Unexpected rewrite direction."
       let location := (step.getObjValD "location").getStr!
+      let subexprFrom := (step.getObjValD "subexpr_from").getStr!
+      let subexprTo := (step.getObjValD "subexpr_to").getStr!
       let expectedTerm := (step.getObjValD "expected_term").getStr!
       { rewriteName  := rewriteName,
         direction    := direction,
         location     := location,
+        subexprFrom  := subexprFrom,
+        subexprTo    := subexprTo,
         expectedTerm := expectedTerm }
 
     return res

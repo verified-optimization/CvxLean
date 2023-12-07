@@ -30,6 +30,8 @@ pub struct Step {
     rewrite_name : String,
     direction : Direction,
     location : String,
+    subexpr_from : String,
+    subexpr_to : String,
     expected_term : String,
 }
 
@@ -66,11 +68,15 @@ fn get_step_aux(
     }
 
     if let Some(rule_name) = &next.backward_rule {
+        let subexpr_from = current.get_recexpr().to_string();
+        let subexpr_to = next.get_recexpr().to_string();
         if expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 
                 direction: Direction::Backward,
                 location: location.clone().unwrap_or_default(),
+                subexpr_from: subexpr_from,
+                subexpr_to: subexpr_to,
                 expected_term: expected_term.clone().unwrap(),
             });
         } else {
@@ -79,16 +85,15 @@ fn get_step_aux(
     }
 
     if let Some(rule_name) = &next.forward_rule {
-        // NOTE: Could be useful for more targetted rewrites.
-        // let curr_s_t: String = current.get_recexpr().to_string();
-        // let next_s_t = next.get_recexpr().to_string();
-        // println!("curr {} : {}", rule_name, curr_s_t);
-        // println!("next {} : {}", rule_name, next_s_t);
+        let subexpr_from = current.get_recexpr().to_string();
+        let subexpr_to = next.get_recexpr().to_string();
         if expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 
                 direction: Direction::Forward,
                 location: location.clone().unwrap_or_default(),
+                subexpr_from: subexpr_from,
+                subexpr_to: subexpr_to,
                 expected_term: expected_term.clone().unwrap(),
             });
         } else {
