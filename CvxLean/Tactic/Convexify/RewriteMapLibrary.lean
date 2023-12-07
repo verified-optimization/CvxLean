@@ -2,41 +2,6 @@ import CvxLean.Tactic.Convexify.RewriteMapCmd
 import CvxLean.Tactic.Convexify.Basic
 import CvxLean.Tactic.Arith.Arith
 
--- TODO: Move.
-lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
-  ⟨fun h => by
-    have hxmem := Set.mem_Ioi.2 hx
-    have hymem := Set.mem_Ioi.2 hy
-    have heq : Set.restrict (Set.Ioi 0) log ⟨x, hxmem⟩ =
-      Set.restrict (Set.Ioi 0) log ⟨y, hymem⟩ := by
-      simp [h]
-    have h := Real.log_injOn_pos.injective heq
-    simp [Subtype.eq] at h
-    exact h,
-  fun h => by rw [h]⟩
-
--- TODO: Move.
-lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) : a / (b ^ c) = a * b ^ (-c) := by
-  rw [div_eq_mul_inv, ←rpow_neg hb]
-
--- TODO: Move.
-lemma Real.one_div_eq_pow_neg_one {a : ℝ} (ha : 0 < a) : 1 / a = a ^ (-1) := by
-  rw [Real.rpow_neg (le_of_lt ha), rpow_one, div_eq_mul_inv, one_mul]
-
--- TODO: Move.
-lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
-  show Real.rpow (Real.rpow _ _) _ = _
-  rw [rpow_eq_pow, rpow_eq_pow, ← rpow_mul hx]
-  norm_num
-
--- TODO: Move.
-lemma Real.binomial_two (x y : ℝ) : (x + y) ^ 2 = x ^ 2 + (2 * (x * y) + y ^ 2) := by
-  simp only [rpow_two]; ring
-
--- TODO: Move.
-lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
-  rw [exp_neg, inv_eq_one_div]
-
 /-- Attempt to close the goal using the lemma specified with a combination of
 `simp` and `rw`. -/
 syntax "simp_or_rw" "[" Lean.Parser.Tactic.rwRule "]" : tactic
@@ -252,6 +217,7 @@ register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
 register_rewrite_map "binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=
   simp_or_rw [Real.binomial_two];
 
+
 /- Exponential and logarithm rules. -/
 
 register_rewrite_map "exp_add" ; "(exp (add ?a ?b))" => "(mul (exp ?a) (exp ?b))" :=
@@ -297,6 +263,15 @@ register_rewrite_map "log_exp" ; "(log (exp ?a))" => "?a" :=
   simp_or_rw [Real.log_exp];
 
 
+/- Absolute value rules. -/
+
+register_rewrite_map "abs_nonneg" ; "(abs ?a)" => "?a" :=
+  simp_or_rw [abs_eq_self.mpr (by arith)];
+
+register_rewrite_map "abs_nonpos" ; "(abs ?a)" => "(neg ?a)" :=
+  simp_or_rw [abs_eq_neg_self.mpr (by arith)];
+
+
 /- Atom folding. -/
 
 register_rewrite_map "xexp_fold"; "(mul ?a (exp ?a))" => "(xexp ?a)" :=
@@ -321,6 +296,12 @@ register_rewrite_map "geo_fold"; "(sqrt (mul ?a ?b))" => "(geo ?a ?b)" :=
   rfl;
 
 register_rewrite_map "geo_unfold"; "(geo ?a ?b)" => "(sqrt (mul ?a ?b))" :=
+  rfl;
+
+register_rewrite_map "lse_fold"; "(log (add (exp ?a) (exp ?b)))" => "(lse ?a ?b)" :=
+  rfl;
+
+register_rewrite_map "lse_unfold"; "(lse ?a ?b)" => "(log (add (exp ?a) (exp ?b)))" :=
   rfl;
 
 register_rewrite_map "norm2_fold"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)" :=
