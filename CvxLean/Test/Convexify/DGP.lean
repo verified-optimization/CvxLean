@@ -1,4 +1,5 @@
 import CvxLean.Command.Solve
+import CvxLean.Tactic.ChangeOfVariables.Basic
 import CvxLean.Tactic.Convexify.Convexify
 import CvxLean.Test.Util.TimeCmd
 
