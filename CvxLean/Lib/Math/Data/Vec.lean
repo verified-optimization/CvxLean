@@ -27,21 +27,24 @@ open Real BigOperators
 instance : Norm (m → ℝ) where
   norm x := sqrt (∑ i, (x i) ^ 2)
 
-variable (x y : m → Real)
+variable (x y : m → ℝ)
 
-def exp : m → Real :=
+def const (n : ℕ) (k : ℝ) : Fin n → ℝ :=
+  fun _ => k
+
+def exp : m → ℝ :=
   fun i => Real.exp (x i)
 
-def log : m → Real :=
+def log : m → ℝ :=
   fun i => Real.log (x i)
 
-def entr : m → Real :=
+def entr : m → ℝ :=
   fun i => Real.entr (x i)
 
-def huber : m → Real :=
+def huber : m → ℝ :=
   fun i => Real.huber (x i)
 
-def klDiv : m → Real :=
+def klDiv : m → ℝ :=
   fun i => Real.klDiv (x i) (y i)
 
 end Real
