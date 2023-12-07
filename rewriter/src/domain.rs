@@ -541,8 +541,8 @@ pub fn min(d1: &Domain, d2: &Domain) -> Domain {
     let r1 = d1.hi_open;
     let l2 = d2.lo_open;
     let r2 = d2.hi_open; 
-    let lo = a1.min(a2);
-    let hi = b1.min(b2);
+    let lo = a1.clone().min(a2);
+    let hi = b1.clone().min(b2);
     let lo_open = if a1 < a2 { l1 } else if a2 < a1 { l2 } else { l1 && l2 };
     let hi_open = if b1 < b2 { r1 } else if b2 < b1 { r2 } else { r1 || r2 };
     Domain::make_from_endpoints(lo, hi, lo_open, hi_open)
@@ -561,8 +561,8 @@ pub fn max(d1: &Domain, d2: &Domain) -> Domain {
     let r1 = d1.hi_open;
     let l2 = d2.lo_open;
     let r2 = d2.hi_open; 
-    let lo = a1.max(a2);
-    let hi = b1.max(b2);
+    let lo = a1.clone().max(a2);
+    let hi = b1.clone().max(b2);
     let lo_open = if a1 > a2 { l1 } else if a2 > a1 { l2 } else { l1 || l2 };
     let hi_open = if b1 > b2 { r1 } else if b2 > b1 { r2 } else { r1 && r2 };
     Domain::make_from_endpoints(lo, hi, lo_open, hi_open)
