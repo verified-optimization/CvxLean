@@ -50,7 +50,7 @@ def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("neg",         ("neg", 1, #[])),
     ("inv",         ("inv", 1, #[])),
     ("abs",         ("abs", 1, #[])),
-    ("sqrt'",       ("sqrt", 1, #[])),
+    ("sqrt",        ("sqrt", 1, #[])),
     ("sq",          ("pow", 1, #["2"])),
     ("powNegOne",   ("pow", 1, #["-1"])),
     ("powNegTwo",   ("pow", 1, #["-2"])),
