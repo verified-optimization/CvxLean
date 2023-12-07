@@ -276,3 +276,15 @@ pub fn is_not_zero(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
         return false;
     }
 }
+
+pub fn is_nat(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var = var.parse().unwrap();
+    move |egraph, _, subst| {
+        if let Some(d) = &egraph[subst[var]].data.domain {
+            if let Some(c) = Domain::get_constant(d) {
+                return ((c as u32) as f64) == c;
+            }
+        }
+        return false;
+    }
+}
