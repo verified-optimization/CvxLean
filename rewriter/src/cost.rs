@@ -134,7 +134,6 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 if da_nonneg {
                     curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
                 }
-                curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
