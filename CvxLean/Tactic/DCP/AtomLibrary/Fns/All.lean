@@ -12,8 +12,11 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Huber
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.KLDiv
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Log
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.LogDet
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.LogSumExp
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.MatrixMul
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.Max
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.MaximizeNeg
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.Min
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.MulVec
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Neg
@@ -31,4 +34,5 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.ToUpperTri
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Trace
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Transpose
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecConst
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.XExp
