@@ -195,7 +195,6 @@ pub fn of_sub(c1: Curvature, c2: Curvature) -> Curvature {
     return of_add(c1, of_neg(c2));
 }
 
-// NOTE: we know that it is constant but we only have an interval.
 pub fn of_mul_by_const(c: Curvature, k: Domain) -> Curvature {
     if domain::is_neg(&k) {
         return of_neg(c);
@@ -208,7 +207,8 @@ pub fn of_mul_by_const(c: Curvature, k: Domain) -> Curvature {
     }
 }
 
-// NOTE: we know that it is constant but we only have an interval.
+// This is a simplified version of `of_mul_by_const_full` that aligns with 
+// the existing power atoms.
 pub fn of_pow_by_const(c: Curvature, k: Domain, d_o: Option<Domain>) -> Curvature {
     match c {
         Constant => { 
@@ -219,7 +219,45 @@ pub fn of_pow_by_const(c: Curvature, k: Domain, d_o: Option<Domain>) -> Curvatur
             if domain::is_zero(&k) {
                 return Constant;
             // Case x^1.
-            } else if k.subseteq(&Domain::make_cc(domain::one(), domain::one())) {
+            } else if domain::is_one(&k) {
+                return Affine;
+            // Case x^2.
+            } else if k.subseteq(&Domain::make_singleton(2.0)) {
+                return Convex;
+            // Case x^(-1).
+            } else if k.subseteq(&Domain::make_singleton(-1.0)) {
+                if domain::option_is_pos(d_o.as_ref()) {
+                    return Convex;
+                } else {
+                    return Unknown;
+                }
+            // Case x^(-2).
+            } else if k.subseteq(&Domain::make_singleton(-2.0)) {
+                if domain::option_is_pos(d_o.as_ref()) {
+                    return Convex;
+                } else {
+                    return Unknown;
+                }
+            } else {
+                return Unknown;
+            }
+        }
+        _ => { return Unknown; }
+    }
+} 
+
+#[allow(unused)]
+pub fn of_pow_by_const_full(c: Curvature, k: Domain, d_o: Option<Domain>) -> Curvature {
+    match c {
+        Constant => { 
+            return Constant;
+        }
+        Affine => {
+            // Case x^0.
+            if domain::is_zero(&k) {
+                return Constant;
+            // Case x^1.
+            } else if domain::is_one(&k) {
                 return Affine;
             // Case x^p with p < 0.
             } else if domain::is_neg(&k) {
