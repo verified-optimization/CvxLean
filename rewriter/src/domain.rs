@@ -782,7 +782,7 @@ pub fn div(d1: &Domain, d2: &Domain) -> Domain {
             b1, b2, a1, b2,
             r1, r2, l1, r2)
     } else {
-        // Division by mixed (potentially zero), so the result is [-inf, inf].
+        // Division by mixed (potentially zero), so the result is (-inf, inf).
         free_dom()
     }
 }
@@ -799,7 +799,7 @@ pub fn option_inv(d_o: Option<Domain>) -> Option<Domain> {
     execute_unary(d_o, inv)
 }
 
-// Same reasoning as in `perform_pow`
+// Same reasoning as in `perform_mul`.
 fn perform_pow(
     lo1: &Float, lo2: &Float, 
     hi1: &Float, hi2: &Float,
@@ -836,7 +836,7 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
     if !d1_nonneg {
         // We only define rules for nonnegative bases.
         // However, if the exponent is a constant, we consider some special 
-        // cases: 0, 1, and even integers.
+        // cases: 0, 1, and even natural numbers.
         match d2.get_constant() {
             Some(f) => {
                 if ((f as u32) as f64) == f {
@@ -941,6 +941,14 @@ pub fn geo_mean(d1: &Domain, d2: &Domain) -> Domain {
 
 pub fn option_geo_mean(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
     execute_binary(d1_o, d2_o, geo_mean)
+}
+
+pub fn log_sum_exp(d1: &Domain, d2: &Domain) -> Domain {
+    log(&add(&exp(d1), &exp(d2)))
+}
+
+pub fn option_log_sum_exp(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
+    execute_binary(d1_o, d2_o, log_sum_exp)
 }
 
 pub fn norm2(d1: &Domain, d2: &Domain) -> Domain {
