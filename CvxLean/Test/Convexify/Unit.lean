@@ -698,56 +698,6 @@ time_cmd equivalence addDivObjRed/addDivObjAuto : addDivObj := by
 
 #print addDivObjAuto
 
-end
-
-end Unit
-
--- NOTE(RFM): This is the only way to extend the positivity tactic.
-
-lemma Real.exp_sub_one_pos_of_pos {x : ℝ} : 0 < x → 0 < Real.exp x - 1 :=
-  fun h => by simp [h]
-
-namespace Mathlib.Meta.Positivity
-open Lean.Meta Qq
-
-@[positivity ((Real.exp (_ : ℝ)) - 1)]
-def evalExpSubOne : PositivityExt where eval {_ _α} zα pα e := do
-  let (.app (.app _sub (.app _exp (x : Q(ℝ)))) _one) ←
-    withReducible (whnf e) | throwError "not (Real.exp x - 1)"
-  match ← core zα pα x with
-  | .positive pa =>
-      let pa' ← mkAppM ``Real.exp_sub_one_pos_of_pos #[pa]
-      pure (.positive pa')
-  | _ =>
-      pure .none
-
-end Mathlib.Meta.Positivity
-
-lemma Real.one_sub_div_exp_pos_of_pos {x : ℝ} : 0 < x → 0 < 1 - 1 / Real.exp x :=
-  fun h => by field_simp; positivity
-
-namespace Mathlib.Meta.Positivity
-open Lean.Meta Qq
-
-@[positivity (1 - (1 / (Real.exp (_ : ℝ))))]
-def evalOneSubDivExp : PositivityExt where eval {_ _α} zα pα e := do
-  let (.app (.app _sub _one) (.app (.app _div _one') (.app _exp (x : Q(ℝ))))) ←
-    withReducible (whnf e) | throwError "not (1 - 1 / Real.exp x)"
-  match ← core zα pα x with
-  | .positive pa =>
-      let pa' ← mkAppM ``Real.one_sub_div_exp_pos_of_pos #[pa]
-      pure (.positive pa')
-  | _ =>
-      pure .none
-
-end Mathlib.Meta.Positivity
-
-namespace Unit
-
-noncomputable section
-
-open CvxLean Minimization Real
-
 -- add_div (constr)
 def addDivConstr :=
   optimization (x y : ℝ)

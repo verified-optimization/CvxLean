@@ -9,7 +9,7 @@ import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.Solver.Float.OptimizationParam
-import CvxLean.Tactic.Util.PositivityExt
+import CvxLean.Tactic.Arith.Arith
 
 namespace CvxLean
 
