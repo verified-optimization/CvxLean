@@ -4,6 +4,9 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 namespace Real
 
+/- New named functions. Each corresponds to an atom. -/
+section Functions
+
 noncomputable def entr (x : Real) :=
   -(x * Real.log x)
 
@@ -13,10 +16,25 @@ noncomputable def huber (x : Real) :=
 noncomputable def klDiv (x y : Real) :=
   x * log (x / y) - x + y
 
+end Functions
+
+/- Useful to construct expressions, as otherwise they are derived from other
+instances. -/
+section Instances
+
+noncomputable instance Real.instDivReal : Div ℝ :=
+  by infer_instance
+
+noncomputable instance Real.instAbsReal : Abs ℝ :=
+  by infer_instance
+
+end Instances
+
 /- Lemmas used in `RewriteMapLibrary`. -/
 section Lemmas
 
-lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=
+lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) :
+  Real.log x = Real.log y ↔ x = y :=
   ⟨fun h => by
     have hxmem := Set.mem_Ioi.2 hx
     have hymem := Set.mem_Ioi.2 hy
@@ -28,7 +46,8 @@ lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.
     exact h,
   fun h => by rw [h]⟩
 
-lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) : a / (b ^ c) = a * b ^ (-c) := by
+lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) :
+  a / (b ^ c) = a * b ^ (-c) := by
   rw [div_eq_mul_inv, ←rpow_neg hb]
 
 lemma Real.one_div_eq_pow_neg_one {a : ℝ} (ha : 0 < a) : 1 / a = a ^ (-1) := by
@@ -42,10 +61,12 @@ lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
   rw [rpow_eq_pow, rpow_eq_pow, ← rpow_mul hx]
   norm_num
 
-lemma Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
+lemma Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+  x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
   rw [rpow_two, rpow_two, sq_le_sq, abs_of_nonneg hx, abs_of_nonneg hy]
 
-lemma Real.binomial_two (x y : ℝ) : (x + y) ^ 2 = x ^ 2 + (2 * (x * y) + y ^ 2) := by
+lemma Real.binomial_two (x y : ℝ) :
+  (x + y) ^ 2 = x ^ 2 + (2 * (x * y) + y ^ 2) := by
   simp only [rpow_two]; ring
 
 lemma Real.exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
