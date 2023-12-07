@@ -367,17 +367,19 @@ abbrev FeasibilityProofsTree := Tree FeasibilityProofs Unit
 partial def mkFeasibility :
   GraphAtomDataTree →
   ReducedExprsWithSolutionTree →
+  BCondsTree →
   VCondsTree →
   SolEqAtomProofsTree →
   MetaM FeasibilityProofsTree
   | Tree.node atom childAtoms,
     Tree.node _reducedWithSolution childReducedWithSolution,
+    Tree.node bconds childBConds,
     Tree.node vcondVars childVCondVars,
     Tree.node _solEqAtom childSolEqAtom => do
       -- Recursive calls for arguments.
       let mut childFeasibility := #[]
       for i in [:childAtoms.size] do
-        let c ← mkFeasibility childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]! childSolEqAtom[i]!
+        let c ← mkFeasibility childAtoms[i]! childReducedWithSolution[i]! childBConds[i]! childVCondVars[i]! childSolEqAtom[i]!
         childFeasibility := childFeasibility.push c
       -- Use solEqAtom of children to rewrite the arguments in the vconditions.
       let mut vconds := #[]
@@ -389,12 +391,13 @@ partial def mkFeasibility :
       -- Apply feasibility property of the atom.
       let feasibility := atom.feasibility
       let feasibility := feasibility.map (mkAppN · (childReducedWithSolution.map (·.val.1)))
+      let feasibility := feasibility.map (mkAppN · bconds)
       let feasibility := feasibility.map (mkAppN · vconds)
       let _ ← feasibility.mapM check
       return Tree.node feasibility childFeasibility
-  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ =>
+  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _  =>
       return Tree.leaf ()
-  | _, _, _, _ =>
+  | _, _, _, _, _ =>
       throwError "Tree mismatch"
 
 abbrev OptimalityProof := Expr
@@ -747,12 +750,16 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkFeasibilityOC (originalVarsDecls : Array LocalDecl)
-  (atoms : OC (Tree GraphAtomData Expr)) (reducedWithSolution : OC ReducedExprsWithSolutionTree)
-  (vcondVars : OC (Tree (Array Expr) Unit)) (originalConstrVars : Array LocalDecl) (solEqAtom : OC (Tree Expr Expr)) :
-  MetaM (OC (Tree (Array Expr) Unit)) :=
+  (atoms : OC GraphAtomDataTree)
+  (reducedWithSolution : OC ReducedExprsWithSolutionTree)
+  (bconds : OC BCondsTree)
+  (vcondVars : OC VCondsTree)
+  (originalConstrVars : Array LocalDecl)
+  (solEqAtom : OC SolEqAtomProofsTree) :
+  MetaM (OC FeasibilityProofsTree) :=
 withExistingLocalDecls originalVarsDecls.toList do
   withExistingLocalDecls originalConstrVars.toList do
-    let feasibility ← OC.map4M mkFeasibility atoms reducedWithSolution vcondVars solEqAtom
+    let feasibility ← OC.map5M mkFeasibility atoms reducedWithSolution bconds vcondVars solEqAtom
     trace[Meta.debug] "feasibility {feasibility}"
     return feasibility
 /-- -/
@@ -844,7 +851,7 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
   let forwardImagesNewVars ← withExistingLocalDecls originalVarsDecls.toList do
     mkForwardImagesNewVars reducedWithSolution
   let solEqAtom ← mkSolEqAtomOC originalVarsDecls atoms reducedWithSolution vcondVars originalConstrVars
-  let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution vcondVars
+  let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution bconds vcondVars
     originalConstrVars solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
   let (newConstrs, newConstrVars, newConstrVarsArray)

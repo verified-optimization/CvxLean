@@ -458,23 +458,25 @@ def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Exp
       return ← mkLambdaFVars xs $ ← mkLambdaFVars cs solEqAtom
 
 /-- -/
-def elabFeas (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr))
+def elabFeas (argDecls : Array LocalDecl) (vconds bconds : Array (Lean.Name × Expr))
     (impConstrs : Array (Lean.Name × Expr)) (sols : Array Expr) (stx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
-    let vconds := vconds.map fun (n,c) => (n, mkAppNBeta c xs)
-    let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
-    let sols := sols.map (mkAppNBeta · xs)
-    withLocalDeclsDNondep vconds fun cs => do
-      let mut feas := #[]
-      for i in [:impConstrs.size] do
-        if (stx[i]!)[1]!.getId != impConstrs[i]!.1 then
-          throwError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
-        let ty := convertLambdasToLets impConstrs[i]!.2 sols
-        let f ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some ty)
-        let f ← mkLambdaFVars xs $ ← mkLambdaFVars cs f
-        feas := feas.push f
-      return feas
+    let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    withLocalDeclsDNondep bconds fun as => do
+      let vconds := vconds.map fun (n,c) => (n, mkAppNBeta c xs)
+      let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
+      let sols := sols.map (mkAppNBeta · xs)
+      withLocalDeclsDNondep vconds fun cs => do
+        let mut feas := #[]
+        for i in [:impConstrs.size] do
+          if (stx[i]!)[1]!.getId != impConstrs[i]!.1 then
+            throwError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
+          let ty := convertLambdasToLets impConstrs[i]!.2 sols
+          let f ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some ty)
+          let f ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars cs f
+          feas := feas.push f
+        return feas
 
 /-- -/
 def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → TermElabM Expr) :
@@ -574,7 +576,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
     let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
     let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
-    let feas ← elabFeas argDecls vconds impConstrs sols feas.rawImpl
+    let feas ← elabFeas argDecls vconds #[] impConstrs sols feas.rawImpl
     let opt ← elabOpt curv argDecls expr #[] impVars impObj impConstrs argKinds opt.raw
     let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
@@ -638,7 +640,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
     let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
     let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
-    let feas ← elabFeas argDecls vconds impConstrs sols feas.rawImpl
+    let feas ← elabFeas argDecls vconds bconds impConstrs sols feas.rawImpl
     let opt ← elabOpt curv argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
     let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
