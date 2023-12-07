@@ -265,6 +265,19 @@ register_rewrite_map "log_div" ; "(log (div ?a ?b))" => "(sub (log ?a) (log ?b))
 register_rewrite_map "log_div-rev"; "(sub (log ?a) (log ?b))" => "(log (div ?a ?b))" :=
   simp_or_rw [←Real.log_div (by arith) (by arith)];
 
+register_rewrite_map "log_pow" ; "(log (pow ?a ?b))" => "(mul ?b (log ?a))" :=
+  simp_or_rw [Real.log_rpow (by arith)];
+
+register_rewrite_map "log_pow-rev" ; "(mul ?b (log ?a))" => "(log (pow ?a ?b))" :=
+  simp_or_rw [←Real.log_rpow (by arith)];
+
+-- NOTE: Special rule that only works if the exponent is a natural number.
+register_rewrite_map "log_pow_nat" ; "(log (pow ?a ?b))" => "(mul ?b (log ?a))" :=
+  (norm_cast; simp_or_rw [Real.log_pow]);
+
+register_rewrite_map "log_pow_nat-rev" ; "(mul ?b (log ?a))" => "(log (pow ?a ?b))" :=
+  (norm_cast; simp_or_rw [←Real.log_pow]);
+
 register_rewrite_map "exp_log" ; "(exp (log ?a))" => "?a" :=
   simp_or_rw [Real.exp_log (by arith)];
 

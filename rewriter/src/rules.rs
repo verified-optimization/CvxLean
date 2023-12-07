@@ -7,6 +7,7 @@ use optimization::is_gt_zero as is_gt_zero;
 use optimization::is_ge_zero as is_ge_zero;
 use optimization::is_le_zero as is_le_zero;
 use optimization::is_not_zero as is_not_zero;
+use optimization::is_nat as is_nat;
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
@@ -205,6 +206,18 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     
     rw!("log_div-rev"; "(sub (log ?a) (log ?b))" => "(log (div ?a ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b")),
+    
+    rw!("log_pow"; "(log (pow ?a ?b))" => "(mul ?b (log ?a))" 
+        if is_gt_zero("?a")),
+
+    rw!("log_pow-rev"; "(mul ?b (log ?a))" => "(log (pow ?a ?b))"
+        if is_gt_zero("?a")),
+    
+    rw!("log_pow_nat"; "(log (pow ?a ?b))" => "(mul ?b (log ?a))" 
+        if is_nat("?b")),
+
+    rw!("log_pow_nat-rev"; "(mul ?b (log ?a))" => "(log (pow ?a ?b))"
+        if is_nat("?b")),
 
     rw!("exp_log"; "(exp (log ?a))" => "?a" if is_gt_zero("?a")),
     
