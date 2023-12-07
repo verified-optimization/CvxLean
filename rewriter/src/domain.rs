@@ -332,10 +332,8 @@ impl Serialize for Domain {
 
 /* Domain checks. */
 
-fn zero_ival() -> Interval { Interval::make(zero(), zero(), NO_ERROR) }
-
 pub fn zero_dom() -> Domain { 
-    Domain::make(zero_ival(), false, false) 
+    Domain::make_cc(zero(), zero()) 
 }
 
 pub fn is_zero(d: &Domain) -> bool {
@@ -346,16 +344,24 @@ pub fn option_is_zero(d: Option<&Domain>) -> bool {
     d.map_or(false, is_zero)
 }
 
-fn free_ival() -> Interval { Interval::make(neg_inf(), inf(), NO_ERROR) }
-
-pub fn free_dom() -> Domain { 
-    Domain::make(free_ival(), false, false)
+pub fn one_dom() -> Domain { 
+    Domain::make_cc(one(), one()) 
 }
 
-fn nonneg_ival() -> Interval { Interval::make(zero(), inf(), NO_ERROR) }
+pub fn is_one(d: &Domain) -> bool {
+    d.subseteq(&one_dom())
+}
+
+pub fn option_is_one(d: Option<&Domain>) -> bool {
+    d.map_or(false, is_one)
+}
+
+pub fn free_dom() -> Domain { 
+    Domain::make_ii()
+}
 
 pub fn nonneg_dom() -> Domain { 
-    Domain::make(nonneg_ival(), false, false)
+    Domain::make_ci(zero())
 }
 
 pub fn is_nonneg(d: &Domain) -> bool {
@@ -366,10 +372,8 @@ pub fn option_is_nonneg(d: Option<&Domain>) -> bool {
     d.map_or(false, is_nonneg)
 }
 
-fn nonpos_ival() -> Interval { Interval::make(neg_inf(), neg_zero(), NO_ERROR) }
-
 pub fn nonpos_dom() -> Domain { 
-    Domain::make(nonpos_ival(), false, false)
+    Domain::make_ic(neg_zero())
 }
 
 pub fn is_nonpos(d: &Domain) -> bool {
@@ -381,7 +385,7 @@ pub fn option_is_nonpos(d: Option<&Domain>) -> bool {
 }
 
 pub fn pos_dom() -> Domain { 
-    Domain::make(nonneg_ival(), true, false)
+    Domain::make_oi(zero())
 }
 
 pub fn is_pos(d: &Domain) -> bool {
@@ -393,7 +397,7 @@ pub fn option_is_pos(d: Option<&Domain>) -> bool {
 }
 
 pub fn neg_dom() -> Domain { 
-    Domain::make(nonpos_ival(), false, true)
+    Domain::make_io(neg_zero())
 }
 
 pub fn is_neg(d: &Domain) -> bool {
