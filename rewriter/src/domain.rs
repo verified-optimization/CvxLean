@@ -461,6 +461,34 @@ pub fn option_neg(d_o: Option<Domain>) -> Option<Domain> {
     execute_unary(d_o, neg)
 }
 
+pub fn abs(d: &Domain) -> Domain {
+    let lo = d.lo_float().clone();
+    let hi = d.hi_float().clone();
+    let lo_open = d.lo_open;
+    let hi_open = d.hi_open;
+    let (lo_abs, hi_abs, lo_open_abs, hi_open_abs) =
+        if lo.is_sign_negative() {
+            if hi.is_sign_negative() {
+                (-hi, -lo, hi_open, lo_open)
+            } else {
+                if lo.abs() < hi.abs() {
+                    (zero(), hi, false, hi_open)
+                } else if hi.abs() < lo.abs() {
+                    (zero(), lo, false, lo_open)
+                } else {
+                    (zero(), lo, false, lo_open && hi_open)
+                }
+            }
+        } else {
+            (lo, hi, lo_open, hi_open)
+        };
+    Domain::make_from_endpoints(lo_abs, hi_abs, lo_open_abs, hi_open_abs)
+}
+
+pub fn option_abs(d_o: Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, abs)
+}
+
 pub fn sqrt(d: &Domain) -> Domain {
     Domain::make(d.interval.sqrt(), d.lo_open, d.hi_open)
 }
@@ -536,11 +564,6 @@ pub fn sub(d1: &Domain, d2: &Domain) -> Domain {
 
 pub fn option_sub(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
     execute_binary(d1_o, d2_o, sub)
-}
-
-// The idea is that open "beats" closed.
-fn choose_opennes(o_a: bool, o_b: bool) -> bool {
-    o_a || o_b
 }
 
 // Copied from interval-goods, but making multiplication by zero always be zero,
@@ -728,6 +751,14 @@ pub fn div(d1: &Domain, d2: &Domain) -> Domain {
 
 pub fn option_div(d1_o: Option<Domain>, d2_o: Option<Domain>) -> Option<Domain> {
     execute_binary(d1_o, d2_o, div)
+}
+
+pub fn inv(d: &Domain) -> Domain {
+    div(&one_dom(), d)
+}
+
+pub fn option_inv(d_o: Option<Domain>) -> Option<Domain> {
+    execute_unary(d_o, inv)
 }
 
 // Same reasoning as in `perform_pow`
