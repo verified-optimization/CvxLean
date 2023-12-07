@@ -1,11 +1,14 @@
 import Lean
+import CvxLean.Syntax.Minimization
+import CvxLean.Lib.Minimization
 import CvxLean.Lib.Math.Data.Real
+import CvxLean.Tactic.Arith.Arith
 
 namespace CvxLean
 
 namespace Tactic
 
-open Real
+open Minimization Real
 
 open Lean Meta Elab Tactic Term
 
