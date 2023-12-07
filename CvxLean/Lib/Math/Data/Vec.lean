@@ -9,6 +9,12 @@ def abs [Abs α] (x : m → α) : m → α :=
 
 instance [Abs α] : Abs (m → α) := ⟨abs⟩
 
+def const (n : ℕ) (k : ℝ) : Fin n → ℝ :=
+  fun _ => k
+
+def toMatrix {n : ℕ} (x : Fin n → ℝ) : Fin n → Fin 1 → ℝ :=
+  fun i => ![x i]
+
 section AddCommMonoid
 
 variable [AddCommMonoid α] {m : Nat} {n : Nat} (x : Fin m → α) (y : Fin n → α)
@@ -28,9 +34,6 @@ instance : Norm (m → ℝ) where
   norm x := sqrt (∑ i, (x i) ^ 2)
 
 variable (x y : m → ℝ)
-
-def const (n : ℕ) (k : ℝ) : Fin n → ℝ :=
-  fun _ => k
 
 def exp : m → ℝ :=
   fun i => Real.exp (x i)
