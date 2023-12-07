@@ -1,3 +1,7 @@
+/*!
+Miscellaneous tests that do not fit in any other category.
+!*/
+
 use egg_convexify::domain;
 
 use egg_convexify::test_util::{*};

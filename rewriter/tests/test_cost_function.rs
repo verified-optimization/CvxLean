@@ -1,3 +1,7 @@
+/*!
+Tests for cost function minimization.
+!*/
+
 use egg_convexify::test_util::{*};
 
 #[test]

@@ -1,3 +1,8 @@
+/*!
+Tests from the additional exercises in the Stanford Convex Optimization course:
+https://github.com/cvxgrp/cvxbook_additional_exercises
+!*/
+
 use egg_convexify::domain;
 
 use egg_convexify::test_util::{*};

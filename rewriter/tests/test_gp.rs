@@ -1,3 +1,7 @@
+/*!
+Tests from geometric programming.
+!*/
+
 use egg_convexify::domain;
 
 use egg_convexify::test_util::{*};

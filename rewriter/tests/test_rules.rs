@@ -1,3 +1,7 @@
+/*!
+Tests for specific rewrite rules.
+!*/
+
 use egg_convexify::domain;
 use egg_convexify::domain::Domain as Domain;
 

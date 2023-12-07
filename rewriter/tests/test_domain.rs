@@ -1,10 +1,14 @@
+/*!
+Tests for extended interval arithmetic.
+!*/
+
 use egg_convexify;
 
 use egg_convexify::domain;
 use domain::Domain as Domain; 
 
 
-/* Tests for +, *, -, and / on critical intervals: 
+/* Tests for +, *, -, / and ^ on critical intervals: 
     * Positive (0, +inf),
     * Non-negative [0, +inf),
     * Non-positive (-inf, 0],
