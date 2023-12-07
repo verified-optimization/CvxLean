@@ -27,9 +27,6 @@ def EggString.toEggTree (s : String) : MetaM (Tree String String) := do
   | Except.ok sexpr => Sexpr.toEggTree sexpr
   | Except.error e => throwError s!"{e}"
 
-noncomputable instance Real.instDivReal : Div ℝ :=
-  by infer_instance
-
 /-- -/
 partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM Expr
   -- Numbers.
@@ -81,6 +78,18 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
     return mkAppN
       (mkConst ``Neg.neg [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instNegReal), t]
+  -- Inverse.
+  | Tree.node "inv" #[t] => do
+    let t ← toExpr vars t
+    return mkAppN
+      (mkConst ``Inv.inv [levelZero])
+      #[(mkConst ``Real), (mkConst ``Real.instInvReal), t]
+  -- Absolute value.
+  | Tree.node "abs" #[t] => do
+    let t ← toExpr vars t
+    return mkAppN
+      (mkConst ``Abs.abs [levelZero])
+      #[(mkConst ``Real), (mkConst ``Real.instAbsReal), t]
   -- Square root.
   | Tree.node "sqrt" #[t] => do
     let t ← toExpr vars t
@@ -99,6 +108,20 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
   -- Entr.
   | Tree.node "entr" #[t] =>
       EggTree.toExpr vars (Tree.node "neg" #[Tree.node "mul" #[t, Tree.node "log" #[t]]])
+  -- Min.
+  | Tree.node "min" #[t1, t2] => do
+    let t1 ← toExpr vars t1
+    let t2 ← toExpr vars t2
+    return mkAppN
+      (mkConst ``Min.min [levelZero])
+      #[(mkConst ``Real), (mkConst ``Real.instMinReal), t1, t2]
+  -- Max.
+  | Tree.node "max" #[t1, t2] => do
+    let t1 ← toExpr vars t1
+    let t2 ← toExpr vars t2
+    return mkAppN
+      (mkConst ``Max.max [levelZero])
+      #[(mkConst ``Real), (mkConst ``Real.instMaxReal), t1, t2]
   -- Addition.
   | Tree.node "add" #[t1, t2] => do
     let t1 ← toExpr vars t1
@@ -130,6 +153,11 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
   -- Geo mean.
   | Tree.node "geo" #[t1, t2] =>
     EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "mul" #[t1, t2]])
+  -- Log sum exp.
+  | Tree.node "lse" #[t1, t2] =>
+    EggTree.toExpr vars (Tree.node "log" #[Tree.node "add" #[
+      Tree.node "exp" #[t1],
+      Tree.node "exp" #[t2]]])
   -- Norm2.
   | Tree.node "norm2" #[t1, t2] =>
     EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "add" #[

@@ -22,11 +22,17 @@ end Functions
 instances. -/
 section Instances
 
-noncomputable instance Real.instDivReal : Div ℝ :=
-  by infer_instance
+noncomputable instance instDivReal : Div ℝ := by
+  infer_instance
 
-noncomputable instance Real.instAbsReal : Abs ℝ :=
-  by infer_instance
+noncomputable instance instAbsReal : Abs ℝ := by
+  infer_instance
+
+noncomputable instance instMinReal : Min ℝ := by
+  infer_instance
+
+noncomputable instance instMaxReal : Max ℝ := by
+  infer_instance
 
 end Instances
 

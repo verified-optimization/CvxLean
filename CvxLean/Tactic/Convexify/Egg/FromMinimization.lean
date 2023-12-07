@@ -48,20 +48,26 @@ def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
     ("le",          ("le", 2, #[])),
     ("lt",          ("lt", 2, #[])),
     ("neg",         ("neg", 1, #[])),
+    ("inv",         ("inv", 1, #[])),
+    ("abs",         ("abs", 1, #[])),
     ("sqrt'",       ("sqrt", 1, #[])),
+    ("sq",          ("pow", 1, #["2"])),
+    ("powNegOne",   ("pow", 1, #["-1"])),
+    ("powNegTwo",   ("pow", 1, #["-2"])),
     ("log",         ("log", 1, #[])),
     ("exp",         ("exp", 1, #[])),
     ("xexp",        ("xexp", 1, #[])),
     ("entr",        ("entr", 1, #[])),
+    ("min",         ("min", 2, #[])),
+    ("max",         ("max", 2, #[])),
     ("add",         ("add", 2, #[])),
     ("sub",         ("sub", 2, #[])),
     ("mul1",        ("mul", 2, #[])),
     ("mul2",        ("mul", 2, #[])),
-    ("sq",          ("pow", 1, #["2"])),
-    ("sqrt",        ("sqrt", 1, #[])),
     ("div",         ("div", 2, #[])),
     ("quadOverLin", ("qol", 2, #[])),
-    ("geoMean",     ("qol", 2, #[])),
+    ("geoMean",     ("geo", 2, #[])),
+    ("logSumExp",   ("lse", 2, #[])),
     ("norm2₂",      ("norm2", 2, #[]))
   ]
 
@@ -136,24 +142,24 @@ def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : 
     | Tree.node "le" #[(tl : EggTree), (tr : EggTree)] =>
         match (tl.getVariableName? vars, tr.getNumericalValue?) with
         | (some v, some f) =>
-            -- v ∈ [-inf, f]
-            some (h, v, ⟨"-inf", f.toString, "0", "0"⟩)
+            -- v ∈ (-inf, f]
+            some (h, v, ⟨"-inf", f.toString, "1", "0"⟩)
         | _ =>
           match (tl.getNumericalValue?, tr.getVariableName? vars) with
           | (some f, some v) =>
-              -- v ∈ [f, inf]
-              some (h, v, ⟨f.toString, "inf", "0", "0"⟩)
+              -- v ∈ [f, inf)
+              some (h, v, ⟨f.toString, "inf", "0", "1"⟩)
           | _ => none
     | Tree.node "lt" #[(tl : EggTree), (tr : EggTree)] =>
         match (tl.getVariableName? vars, tr.getNumericalValue?) with
         | (some v, some f) =>
-            -- v ∈ [-inf, f)
-            some (h, v, ⟨"-inf", f.toString, "0", "1"⟩)
+            -- v ∈ (-inf, f)
+            some (h, v, ⟨"-inf", f.toString, "1", "1"⟩)
         | _ =>
           match (tl.getNumericalValue?, tr.getVariableName? vars) with
           | (some f, some v) =>
-              -- v ∈ (f, inf]
-              some (h, v, ⟨f.toString, "inf", "1", "0"⟩)
+              -- v ∈ (f, inf)
+              some (h, v, ⟨f.toString, "inf", "1", "1"⟩)
           | _ => none
     | Tree.node "eq" #[(tl : EggTree), (tr : EggTree)] =>
         match (tl.getVariableName? vars, tr.getNumericalValue?) with
