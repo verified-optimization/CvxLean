@@ -1,6 +1,6 @@
 import CvxLean.Tactic.Convexify.RewriteMapCmd
 import CvxLean.Tactic.Convexify.Basic
-import CvxLean.Tactic.Arith.Basic
+import CvxLean.Tactic.Arith.Arith
 
 -- TODO: Move.
 lemma Real.log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : Real.log x = Real.log y ↔ x = y :=

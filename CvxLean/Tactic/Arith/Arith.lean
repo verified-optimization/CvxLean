@@ -2,6 +2,7 @@ import Lean
 import Qq
 import Mathlib.Data.Real.Basic
 import Mathlib.Tactic.Positivity
+import CvxLean.Tactic.Arith.PositivityExt
 
 namespace Tactic
 
