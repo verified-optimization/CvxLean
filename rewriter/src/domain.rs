@@ -463,16 +463,18 @@ pub fn option_neg(d_o: Option<Domain>) -> Option<Domain> {
 
 pub fn abs(d: &Domain) -> Domain {
     let a = d.lo_float().clone();
+    let a_abs = a.clone().abs();
     let b = d.hi_float().clone();
+    let b_abs = b.clone().abs();
     let l = d.lo_open;
     let r = d.hi_open;
     if a.is_sign_negative() {
         if b.is_sign_negative() {
             Domain::make_from_endpoints(-b, -a, r, l)
         } else {
-            if a.abs() < b.abs() {
+            if a_abs < b_abs {
                 Domain::make_from_endpoints(zero(), b, false, r)
-            } else if b.abs() < a.abs() {
+            } else if b_abs < a_abs {
                 Domain::make_from_endpoints(zero(), a, false, l)
             } else {
                 Domain::make_from_endpoints(zero(), a, false, l && r)
