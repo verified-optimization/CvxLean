@@ -108,6 +108,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("div_self"; "(div ?a ?a)" => "1" if is_not_zero("?a")),
 
+    rw!("inv_eq_one_div"; "(inv ?a)" => "(div 1 ?a)" if is_not_zero("?a")),
+
 
     /* Power and square root rules. */
 
@@ -168,6 +170,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     
     rw!("binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
 
+    rw!("inv_eq_pow_neg_one"; "(inv ?a)" => "(pow ?a (neg 1))" if is_not_zero("?a")),
+
 
     /* Exponential and logarithm rules. */
 
@@ -204,6 +208,13 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("log_exp"; "(log (exp ?a))" => "?a"),  
 
 
+    /* Abs rules. */
+
+    rw!("abs_nonneg"; "(abs ?a)" => "?a" if is_ge_zero("?a")),
+
+    rw!("abs_nonpos"; "(abs ?a)" => "(neg ?a)" if is_ge_zero("(neg ?a)")),
+
+
     /* Atom folding and unfolding rules. */
 
     rw!("xexp_fold"; "(mul ?a (exp ?a))" => "(xexp ?a)" 
@@ -229,6 +240,10 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     
     rw!("geo_unfold"; "(geo ?a ?b)" => "(sqrt (mul ?a ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b")),
+
+    rw!("lse_fold"; "(log (add (exp ?a) (exp ?b)))" => "(lse ?a ?b)"),
+
+    rw!("lse_unfold"; "(lse ?a ?b)" => "(log (add (exp ?a) (exp ?b)))"),
 
     rw!("norm2_fold"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(norm2 ?a ?b)"),
 

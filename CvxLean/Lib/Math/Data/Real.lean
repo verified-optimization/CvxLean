@@ -34,6 +34,9 @@ lemma Real.div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) : a / (b ^ c) = a
 lemma Real.one_div_eq_pow_neg_one {a : ℝ} (ha : 0 < a) : 1 / a = a ^ (-1) := by
   rw [Real.rpow_neg (le_of_lt ha), rpow_one, div_eq_mul_inv, one_mul]
 
+lemma Real.inv_eq_pow_neg_one {a : ℝ} (ha : 0 < a) : a⁻¹ = a ^ (-1) := by
+  rw [inv_eq_one_div, Real.one_div_eq_pow_neg_one ha]
+
 lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
   show Real.rpow (Real.rpow _ _) _ = _
   rw [rpow_eq_pow, rpow_eq_pow, ← rpow_mul hx]

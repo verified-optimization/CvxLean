@@ -147,6 +147,9 @@ register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b 
 register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
   simp_or_rw [div_self (G₀ := ℝ) (by arith)];
 
+register_rewrite_map "inv_eq_one_div" ; "(inv ?a)" => "(div 1 ?a)" :=
+  simp_or_rw [inv_eq_one_div (G := ℝ)];
+
 
 /- Power and square root rules. -/
 
@@ -216,6 +219,9 @@ register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
 
 register_rewrite_map "binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=
   simp_or_rw [Real.binomial_two];
+
+register_rewrite_map "inv_eq_pow_neg_one"; "(inv ?a)" => "(pow ?a (neg 1))" :=
+  simp_or_rw [Real.inv_eq_pow_neg_one (by arith)];
 
 
 /- Exponential and logarithm rules. -/
