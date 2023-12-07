@@ -91,12 +91,9 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 }
             }
             Optimization::Eq([a, b]) => {
-                curvature = 
-                    if get_curvature!(a) <= Curvature::Affine && get_curvature!(b) <= Curvature::Affine {
-                        Curvature::Affine
-                    } else { 
-                        Curvature::Unknown
-                    };
+                if get_curvature!(a) <= Curvature::Affine && get_curvature!(b) <= Curvature::Affine {
+                    curvature = Curvature::Affine
+                }
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
@@ -110,13 +107,41 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
+            Optimization::Inv(a) => {
+                let da_pos = domain::option_is_pos(get_domain(a).as_ref());
+                if da_pos {
+                    curvature = curvature::of_convex_nonincreasing_fn(get_curvature!(a));
+                }
+                num_vars = get_num_vars!(a);
+                term_size = 1 + get_term_size!(a);
+            }
+            Optimization::Abs(a) => {
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                let da_nonpos = domain::option_is_nonpos(get_domain(a).as_ref());
+                if da_nonneg {
+                    curvature = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
+                } else if da_nonpos {
+                    curvature = curvature::of_convex_nonincreasing_fn(get_curvature!(a));
+                } else {
+                    curvature = curvature::of_convex_none_fn(get_curvature!(a));
+                }
+                num_vars = get_num_vars!(a);
+                term_size = 1 + get_term_size!(a);
+            }
             Optimization::Sqrt(a) => {
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                if da_nonneg {
+                    curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
+                }
                 curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Log(a) => {
-                curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                if da_nonneg {
+                    curvature = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
+                }
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
@@ -126,12 +151,18 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::XExp(a) => {
-                curvature = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                if da_nonneg {
+                    curvature = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
+                }
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
             Optimization::Entr(a) => {
-                curvature = curvature::of_concave_none_fn(get_curvature!(a));
+                let da_pos = domain::option_is_pos(get_domain(a).as_ref());
+                if da_pos {
+                    curvature = curvature::of_concave_none_fn(get_curvature!(a));
+                }
                 num_vars = get_num_vars!(a);
                 term_size = 1 + get_term_size!(a);
             }
@@ -148,73 +179,54 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
             Optimization::Mul([a, b]) => {
                 let da_o = get_domain(a);
                 let db_o = get_domain(b);
-                curvature = match (get_is_constant(a), get_is_constant(b)) {
+                match (get_is_constant(a), get_is_constant(b)) {
                     (true, true) => { 
-                        Curvature::Constant
+                        curvature = Curvature::Constant
                     }
                     (true, false) => {
-                        match da_o {
-                            Some(da) => {
-                                curvature::of_mul_by_const(get_curvature!(b), da)
-                            }
-                            None => { Curvature::Unknown }
+                        if let Some(da) = da_o {
+                            curvature = curvature::of_mul_by_const(get_curvature!(b), da)
                         }
                     }
                     (false, true) => {
-                        match db_o {
-                            Some(db) => {
-                                curvature::of_mul_by_const(get_curvature!(a), db)
-                            }
-                            None => { Curvature::Unknown }
+                        if let Some(db) = db_o {
+                            curvature = curvature::of_mul_by_const(get_curvature!(a), db)
                         }
                     }
-                    _ => { Curvature::Unknown }
-                };
+                    _ => { }
+                }
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Div([a, b]) => {
                 let db_o = get_domain(b);
-                curvature = match (get_is_constant(a), get_is_constant(b)) {
+                match (get_is_constant(a), get_is_constant(b)) {
                     (true, true) => {
-                        match db_o {
-                            Some(db) => {
-                                if domain::does_not_contain_zero(&db) {
-                                    Curvature::Constant
-                                } else {
-                                    Curvature::Unknown
-                                }
-                                
+                        if let Some(db) = db_o {
+                            if domain::does_not_contain_zero(&db) {
+                                curvature = Curvature::Constant
                             }
-                            None => { Curvature::Unknown }
                         }
                     }
                     (false, true) => {
-                        match db_o {
-                            Some(db) => {
-                                if domain::does_not_contain_zero(&db) {
-                                    curvature::of_mul_by_const(get_curvature!(a), db)
-                                } else {
-                                    Curvature::Unknown
-                                }
+                        if let Some(db) = db_o {
+                            if domain::does_not_contain_zero(&db) {
+                                curvature = curvature::of_mul_by_const(get_curvature!(a), db)
                             }
-                            None => { Curvature::Unknown }
                         }
                     }
-                    _ => { Curvature::Unknown }
+                    _ => { }
                 };   
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Pow([a, b]) => {
-                curvature = if get_is_constant(b) {
-                    match get_domain(b) {
-                        Some(db) => {
-                            curvature::of_pow_by_const(get_curvature!(a), db, get_domain(a))
-                        }
-                        _ => { Curvature::Unknown }
+                if get_is_constant(b) {
+                    if let Some(db) = get_domain(b) {
+                        // Domain guards already in `of_pow_by_const`.
+                        curvature = curvature::of_pow_by_const(get_curvature!(a), db, get_domain(a))
                     }
-                } else { Curvature::Unknown };
+                } 
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
@@ -229,14 +241,28 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                     } else {
                         curvature::of_convex_none_fn(get_curvature!(a))
                     };
-                let curvature_den = curvature::of_convex_nonincreasing_fn(get_curvature!(b));
-                curvature = curvature::join(curvature_num, curvature_den);
+                let db_pos = domain::option_is_pos(get_domain(b).as_ref());
+                if db_pos {
+                    let curvature_den = curvature::of_convex_nonincreasing_fn(get_curvature!(b));
+                    curvature = curvature::join(curvature_num, curvature_den);
+                }
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Geo([a, b]) => {
-                let curvature_a = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
-                let curvature_b = curvature::of_concave_nondecreasing_fn(get_curvature!(b));
+                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                let db_nonneg = domain::option_is_nonneg(get_domain(b).as_ref());
+                if da_nonneg && db_nonneg {
+                    let curvature_a = curvature::of_concave_nondecreasing_fn(get_curvature!(a));
+                    let curvature_b = curvature::of_concave_nondecreasing_fn(get_curvature!(b));
+                    curvature = curvature::join(curvature_a, curvature_b);
+                }
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+            }
+            Optimization::LSE([a, b]) => {
+                let curvature_a = curvature::of_convex_nondecreasing_fn(get_curvature!(a));
+                let curvature_b = curvature::of_convex_nondecreasing_fn(get_curvature!(b));
                 curvature = curvature::join(curvature_a, curvature_b);
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
