@@ -263,7 +263,7 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
         let vcondProofTy ← mkForallFVars args vcondProofTyBody
 
         let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { positivity_ext <;> linarith <;> norm_num })
+            let tac ← `(by intros; try { arith <;> linarith <;> norm_num })
             let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
             Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
             instantiateMVars v
