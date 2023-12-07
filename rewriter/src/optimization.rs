@@ -16,11 +16,15 @@ define_language! {
         "eq" = Eq([Id; 2]),
         "le" = Le([Id; 2]),
         "neg" = Neg(Id),
+        "inv" = Inv(Id),
+        "abs" = Abs(Id),
         "sqrt" = Sqrt(Id),
         "log" = Log(Id),
         "exp" = Exp(Id),
         "xexp" = XExp(Id),
         "entr" = Entr(Id),
+        "min" = Min([Id; 2]),
+        "max" = Max([Id; 2]),
         "add" = Add([Id; 2]),
         "sub" = Sub([Id; 2]),
         "mul" = Mul([Id; 2]),
@@ -28,6 +32,7 @@ define_language! {
         "pow" = Pow([Id; 2]),
         "qol" = QOL([Id; 2]),
         "geo" = Geo([Id; 2]),
+        "lse" = LSE([Id; 2]),
         "norm2" = Norm2([Id; 2]),
         "var" = Var(Id),
         "param" = Param(Id),
@@ -110,6 +115,14 @@ impl Analysis<Optimization> for Meta {
                 domain = domain::option_neg(get_domain(a));
                 is_constant = get_is_constant(a);
             }
+            Optimization::Inv(a) => {
+                domain = domain::option_inv(get_domain(a));
+                is_constant = get_is_constant(a);
+            }
+            Optimization::Abs(a) => {
+                domain = domain::option_abs(get_domain(a));
+                is_constant = get_is_constant(a);
+            }
             Optimization::Sqrt(a) => {
                 domain = domain::option_sqrt(get_domain(a));
                 is_constant = get_is_constant(a);
@@ -130,9 +143,16 @@ impl Analysis<Optimization> for Meta {
                 domain = domain::option_entr(get_domain(a));
                 is_constant = get_is_constant(a);
             }
+            Optimization::Min([a, b]) => {
+                domain = domain::option_min(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
+            }
+            Optimization::Max([a, b]) => {
+                domain = domain::option_max(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
+            }
             Optimization::Add([a, b]) => {
-                domain = domain::option_add(
-                    get_domain(a), get_domain(b));
+                domain = domain::option_add(get_domain(a), get_domain(b));
                 is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Sub([a, b]) => {
@@ -157,6 +177,10 @@ impl Analysis<Optimization> for Meta {
             }
             Optimization::Geo([a, b]) => {
                 domain = domain::option_geo_mean(get_domain(a), get_domain(b));
+                is_constant = get_is_constant(a) && get_is_constant(b);
+            }
+            Optimization::LSE([a, b]) => {
+                domain = domain::option_log_sum_exp(get_domain(a), get_domain(b));
                 is_constant = get_is_constant(a) && get_is_constant(b);
             }
             Optimization::Norm2([a, b]) => {
