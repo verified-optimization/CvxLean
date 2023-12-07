@@ -189,6 +189,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             --     trace[Meta.debug] "a: {←inferType a}"))
 
             let vconds := atomData.vconds.map fun (n,c) => (n, mkAppNBeta c xs)
+            let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
 
             let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
 
@@ -204,10 +205,12 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               let feasXs := mkAppNBeta feas xs
               let adjustedFeas ←
                 withLocalDeclsDNondep vconds fun cs => do
-                  let feasXsVconds := mkAppNBeta feasXs cs
-                  let proofAdjusted := solEqAtomProofs[i]!.replaceFVars vs1 vs1Sol
-                  let adjustedFeas ← mkAppM ``Eq.mpr #[proofAdjusted, feasXsVconds]
-                  mkLambdaFVars xs <| ← mkLambdaFVars cs adjustedFeas
+                  withLocalDeclsDNondep bconds fun bs => do
+                    let feasXsVconds := mkAppNBeta feasXs cs
+                    let feasXsConds := mkAppNBeta feasXsVconds bs
+                    let proofAdjusted := solEqAtomProofs[i]!.replaceFVars vs1 vs1Sol
+                    let adjustedFeas ← mkAppM ``Eq.mpr #[proofAdjusted, feasXsConds]
+                    mkLambdaFVars (xs ++ cs ++ bs) adjustedFeas
               oldFeasibilityAdjusted := oldFeasibilityAdjusted.push adjustedFeas
 
             for proof in solEqAtomProofs do
@@ -218,7 +221,8 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
 
             let newFeasibility ← newConstrProofs.mapM (fun e =>
               withLocalDeclsDNondep vconds fun cs => do
-                mkLambdaFVars xs <| ← mkLambdaFVars cs (e.replaceFVars vs1 vs1Sol))
+                withLocalDeclsDNondep bconds fun bs => do
+                  mkLambdaFVars (xs ++ cs ++ bs) (e.replaceFVars vs1 vs1Sol))
 
             for f in atomData.feasibility do
               trace[Meta.debug] "feasibility: {← inferType f}"
@@ -240,57 +244,47 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             trace[Meta.debug] "objFunFromReducedObjFun: {← inferType objFunFromReducedObjFun}"
 
             trace[Meta.debug] "pat.optimality.objFun: {← inferType atomData.optimality}"
-            let optimalityXs := mkAppN atomData.optimality (xs ++ vs1)
-            trace[Meta.debug] "newOptimality: {← inferType optimalityXs}"
+
             let newOptimality ←
-              withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
-                -- First, apply all constraints.
-                let mut optimalityAfterReduced := optimalityXs
-                for i in [:reducedConstrs.size] do
-                  let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
-                  optimalityAfterReduced := mkApp optimalityAfterReduced c
-                -- Then, adjust the condition using `objFunFromReducedObjFun`.
-                trace[Meta.debug] "optimalityAfterReduced: {← inferType optimalityAfterReduced}"
-                let monoArgsCount := getMonoArgsCount objCurv atomData.argKinds
-                let optimalityAfterApplyWithConditionAdjusted ←
-                  lambdaTelescope (← whnf optimalityAfterReduced) <| fun xs e => do
-                  -- Every extra argument has an extra condition, e.g. x', x ≤ x.
-                  let monoArgs := xs[:2 * monoArgsCount]
-                  let optCondition ← mkLambdaFVars xs[2 * monoArgsCount:] e
-                  let newCond ←
-                    if atomData.curvature == Curvature.Convex then
-                      mkAppOptM ``le_trans #[
-                        atomRange, none, none, none, none,
-                        optCondition, objFunFromReducedObjFun]
-                    else
-                      -- TODO: concave. but convex_set too?
-                      mkAppOptM ``le_trans #[
-                        atomRange, none, none, none, none,
-                        objFunFromReducedObjFun, optCondition]
-                  mkLambdaFVars monoArgs newCond
+              withLocalDeclsDNondep bconds fun bs => do
+                let optimalityXsBConds := mkAppN atomData.optimality (xs ++ bs ++ vs1)
+                trace[Meta.debug] "newOptimality: {← inferType optimalityXsBConds}"
+                withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
+                  -- First, apply all constraints.
+                  let mut optimalityAfterReduced := optimalityXsBConds
+                  for i in [:reducedConstrs.size] do
+                    let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
+                    optimalityAfterReduced := mkApp optimalityAfterReduced c
+                  -- Then, adjust the condition using `objFunFromReducedObjFun`.
+                  trace[Meta.debug] "optimalityAfterReduced: {← inferType optimalityAfterReduced}"
+                  let monoArgsCount := getMonoArgsCount objCurv atomData.argKinds
+                  let optimalityAfterApplyWithConditionAdjusted ←
+                    lambdaTelescope (← whnf optimalityAfterReduced) <| fun xs e => do
+                    -- Every extra argument has an extra condition, e.g. x', x ≤ x.
+                    trace[Meta.debug] "xs: {xs}"
+                    let monoArgs := xs[:2 * monoArgsCount]
+                    trace[Meta.debug] "monoArgs: {monoArgs}"
+                    trace[Meta.debug] "e: {← inferType e}"
+                    let optCondition ← mkLambdaFVars xs[2 * monoArgsCount:] e
+                    let newCond ←
+                      if atomData.curvature == Curvature.Convex then
+                        mkAppOptM ``le_trans #[
+                          atomRange, none, none, none, none,
+                          optCondition, objFunFromReducedObjFun]
+                      else
+                        -- TODO: concave. but convex_set too?
+                        mkAppOptM ``le_trans #[
+                          atomRange, none, none, none, none,
+                          objFunFromReducedObjFun, optCondition]
+                    mkLambdaFVars monoArgs newCond
 
-                trace[Meta.debug] "optimalityAfterApplyWithConditionAdjusted: {← inferType optimalityAfterApplyWithConditionAdjusted}"
-                trace[Meta.debug] "newOptimality applied: {← inferType optimalityAfterReduced}"
-                let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
-                mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) optimalityAfterApplyWithConditionAdjusted
-                -- trace[Meta.debug] "newOptimality2: {← inferType newOptimality2}"
+                  trace[Meta.debug] "optimalityAfterApplyWithConditionAdjusted: {← inferType optimalityAfterApplyWithConditionAdjusted}"
+                  trace[Meta.debug] "newOptimality applied: {← inferType optimalityAfterReduced}"
+                  let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
+                  mkLambdaFVars (xs ++ bs ++ vs1 ++ vs2 ++ cs ++ ds) optimalityAfterApplyWithConditionAdjusted
 
-                -- -- NOTE: new optimality might be of the form ∀ i. x i ≤ y i, so
-                -- -- we cannot apply le_trans directly.
-                -- let x ← lambdaTelescope (← whnf newOptimality2) (fun xs a => do
-                --   trace[Meta.debug] "a: {← inferType a}"
-                --   trace[Meta.debug] "xs: {xs}"
-                --   return ())
-                -- match (← inferType objFunFromReducedObjFun).le? with
-                -- | some (t, y, z) =>
-                --   trace[Meta.debug] "atomData.argKinds: {atomData.argKinds}"
-                --   let x ← getOptArgs objCurv xs atomData.argKinds
-                --   trace[Meta.debug] "x: {x}"
-                --   -- mkAppOptM ``le_trans #[
-                --   --   t, none, none, y, z,
-                --   --   newOptimality2, objFunFromReducedObjFun]
-                --   let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
-                --   mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newOptimality2 --optimalityAdjusted
+            trace[Meta.debug] "newOptimality: {← inferType newOptimality}"
+
             let mut newVCondElims := #[]
             for vcondElim in atomData.vcondElim do
               let newVCondElim := mkAppN vcondElim (xs ++ vs1)
