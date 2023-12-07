@@ -17,6 +17,7 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
     // Curvature + number of variables (with repetition) + term size.
     // In lexicographic order.
     type Cost = (Curvature, u32, u32);
+    // Curvature analysis corresponds exactly to the DCP rules.
     fn cost<C>(&mut self, enode: &Optimization, mut costs: C) -> Self::Cost
     where
         C: FnMut(Id) -> Self::Cost
