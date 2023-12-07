@@ -213,7 +213,10 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
             egraph.explain_equivalence(&expr, &best);
         let flat_explanation : &FlatExplanation<Optimization> =
             explanation.make_flat_explanation();
-        
+        if debug {
+            println!("{} steps", flat_explanation.len() - 1);
+        }
+
         let mut res = Vec::new();
         if best_cost.0 <= Curvature::Convex {
             for i in 0..flat_explanation.len() - 1 {
