@@ -1,6 +1,5 @@
 import CvxLean.Command.Solve
 import CvxLean.Command.Equivalence
-import CvxLean.Tactic.Convexify.Basic
 import CvxLean.Tactic.Convexify.Convexify
 import CvxLean.Test.Util.TimeCmd
 

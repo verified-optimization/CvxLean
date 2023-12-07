@@ -42,6 +42,9 @@ lemma Real.pow_half_two {x : ℝ} (hx : 0 ≤ x) : (x ^ (1 / 2)) ^ 2 = x := by
   rw [rpow_eq_pow, rpow_eq_pow, ← rpow_mul hx]
   norm_num
 
+lemma Real.pow_two_le_pow_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : x ^ 2 ≤ y ^ 2 ↔ x ≤ y := by
+  rw [rpow_two, rpow_two, sq_le_sq, abs_of_nonneg hx, abs_of_nonneg hy]
+
 lemma Real.binomial_two (x y : ℝ) : (x + y) ^ 2 = x ^ 2 + (2 * (x * y) + y ^ 2) := by
   simp only [rpow_two]; ring
 

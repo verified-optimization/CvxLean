@@ -2,7 +2,6 @@ import Lean
 import Mathlib.Tactic.NormNum
 import CvxLean.Meta.Minimization
 import CvxLean.Lib.Equivalence
-import CvxLean.Tactic.Convexify.Basic
 import CvxLean.Tactic.Convexify.RewriteMapExt
 import CvxLean.Tactic.Convexify.RewriteMapLibrary
 import CvxLean.Tactic.Convexify.Egg.All

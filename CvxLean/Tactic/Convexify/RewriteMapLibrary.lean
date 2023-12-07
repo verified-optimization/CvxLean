@@ -1,5 +1,5 @@
 import CvxLean.Tactic.Convexify.RewriteMapCmd
-import CvxLean.Tactic.Convexify.Basic
+import CvxLean.Tactic.Convexify.MapObjFun
 import CvxLean.Tactic.Arith.Arith
 
 /-- Attempt to close the goal using the lemma specified with a combination of
