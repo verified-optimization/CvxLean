@@ -30,28 +30,34 @@ lemma Vec.sum_exp_eq_sum_div (x : Fin n → ℝ) (t : ℝ) :
   congr; ext i
   simp [Vec.exp, Vec.const, Real.exp_sub]
 
--- declare_atom logSumExp [convex] (n : ℕ)& (x : Fin n → ℝ)+ : log (Vec.sum (Vec.exp x)) :=
--- bconditions
---   (h : 0 < n)
--- vconditions
--- implementationVars (t : ℝ)
--- implementationObjective t
--- implementationConstraints
---   (c1 : Vec.sum (Vec.exp (x - Vec.const n t)) ≤ 1)
--- solution (t := log (Vec.sum (Vec.exp x)))
--- solutionEqualsAtom by
---   rfl;
--- feasibility
---   (c1 : by
---     dsimp
---     simp [Vec.sum_exp_eq_sum_div, div_le_iff (Real.exp_pos _)]
---     have h : 0 < Vec.sum (Vec.exp x) := by
---       apply Finset.sum_pos
---       { intros i _; simp [Vec.exp, Real.exp_pos] }
---       { existsi 0; simp }
---     rw [Real.exp_log h])
--- optimality by
---   intros y hy
---   rw [Vec.sum_exp_eq_sum_div] at c1
---   sorry
--- vconditionElimination
+lemma Vec.sum_exp_pos {n} (hn : 0 < n) (x : Fin n → ℝ) :
+  0 < Vec.sum (Vec.exp x) := by
+  apply Finset.sum_pos
+  { intros i _; simp [Vec.exp, Real.exp_pos] }
+  { existsi ⟨0, hn⟩; simp }
+
+declare_atom logSumExp [convex] (n : ℕ)& (x : Fin n → ℝ)+ : log (Vec.sum (Vec.exp x)) :=
+bconditions
+  (hn : 0 < n)
+vconditions
+implementationVars (t : ℝ)
+implementationObjective t
+implementationConstraints
+  (c1 : Vec.sum (Vec.exp (x - Vec.const n t)) ≤ 1)
+solution (t := log (Vec.sum (Vec.exp x)))
+solutionEqualsAtom by
+  rfl;
+feasibility
+  (c1 : by
+    dsimp
+    simp [Vec.sum_exp_eq_sum_div, div_le_iff (Real.exp_pos _)]
+    simp [Real.exp_log (Vec.sum_exp_pos hn x)])
+optimality by
+  intros y hy
+  simp [Vec.sum_exp_eq_sum_div, div_le_iff (exp_pos _)] at c1
+  rw [←log_exp t, log_le_log (Vec.sum_exp_pos hn y) (exp_pos _)]
+  refine le_trans ?_ c1
+  apply Finset.sum_le_sum
+  intros i _
+  simp [Vec.exp, hy i]
+vconditionElimination
