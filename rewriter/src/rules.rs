@@ -5,6 +5,7 @@ use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
 use optimization::is_gt_zero as is_gt_zero;
 use optimization::is_ge_zero as is_ge_zero;
+use optimization::is_le_zero as is_le_zero;
 use optimization::is_not_zero as is_not_zero;
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
@@ -214,7 +215,7 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("abs_nonneg"; "(abs ?a)" => "?a" if is_ge_zero("?a")),
 
-    rw!("abs_nonpos"; "(abs ?a)" => "(neg ?a)" if is_ge_zero("(neg ?a)")),
+    rw!("abs_nonpos"; "(abs ?a)" => "(neg ?a)" if is_le_zero("?a")),
 
 
     /* Atom folding and unfolding rules. */
