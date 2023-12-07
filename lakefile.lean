@@ -44,15 +44,15 @@ SchedulerM (BuildJob FilePath) :=
 
 @[default_target]
 target EggConvexify (pkg) : FilePath := do
-  let buildDir := pkg.dir / "rewriter"
+  let buildDir := pkg.dir / "egg-convexify"
   let binFile := buildDir / "target" / "release" / "egg-convexify"
   let dest := buildDir / "utils" / "egg-convexify"
   let manifestFile := buildDir / "Cargo.toml"
   buildCargo binFile manifestFile dest #[]
 
 script EggClean := do
-  let targetDir : FilePath := "." / "rewriter" / "target"
-  let utilsDir : FilePath  := "." / "rewriter" / "utils"
+  let targetDir : FilePath := "." / "egg-convexify" / "target"
+  let utilsDir : FilePath  := "." / "egg-convexify" / "utils"
   let out ←
   IO.Process.output {
     cmd := "rm"

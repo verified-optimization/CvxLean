@@ -3,8 +3,8 @@
 /build
 /solver/*.cbf
 /solver/*.sol
-/rewriter/*.dot 
-/rewriter/*.svg
+/egg-convexify/*.dot 
+/egg-convexify/*.svg
 /ffi/build
 /ffi/lake-packages 
 /lake-packages
