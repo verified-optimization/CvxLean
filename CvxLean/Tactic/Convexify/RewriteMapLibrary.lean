@@ -150,6 +150,9 @@ register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
 register_rewrite_map "inv_eq_one_div" ; "(inv ?a)" => "(div 1 ?a)" :=
   simp_or_rw [inv_eq_one_div (G := ℝ)];
 
+register_rewrite_map "inv_inv" ; "(inv (inv ?a))" => "?a" :=
+  simp_or_rw [inv_inv];
+
 
 /- Power and square root rules. -/
 

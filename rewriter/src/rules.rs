@@ -110,6 +110,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("inv_eq_one_div"; "(inv ?a)" => "(div 1 ?a)" if is_not_zero("?a")),
 
+    rw!("inv_inv"; "(inv (inv ?a))" => "?a" if is_not_zero("?a")),
+
 
     /* Power and square root rules. */
 
