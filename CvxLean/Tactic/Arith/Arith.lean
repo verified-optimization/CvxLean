@@ -2,6 +2,7 @@ import Lean
 import Qq
 import Mathlib.Data.Real.Basic
 import Mathlib.Tactic.Positivity
+import CvxLean.Tactic.Arith.NormNumVariants
 import CvxLean.Tactic.Arith.PositivityExt
 
 namespace Tactic
@@ -76,12 +77,6 @@ syntax "positivity!" : tactic
 macro_rules
   | `(tactic| positivity!) =>
     `(tactic| cases_and; prepare_positivity; positivity)
-
-syntax "norm_num_simp_pow" : tactic
-
-macro_rules
-  | `(tactic| norm_num_simp_pow) =>
-    `(tactic| norm_num [Real.rpow_neg])
 
 syntax "arith" : tactic
 

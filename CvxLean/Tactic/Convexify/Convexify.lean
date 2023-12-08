@@ -1,7 +1,7 @@
 import Lean
-import Mathlib.Tactic.NormNum
 import CvxLean.Meta.Minimization
 import CvxLean.Lib.Equivalence
+import CvxLean.Tactic.Arith.NormNumVariants
 import CvxLean.Tactic.Convexify.RewriteMapExt
 import CvxLean.Tactic.Convexify.RewriteMapLibrary
 import CvxLean.Tactic.Convexify.Egg.All
@@ -88,19 +88,6 @@ def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) 
       #[← mkFreshExprMVar none, Lean.mkConst `Real, ← mkFreshExprMVar none]
   let args ← Array.range numArgs |>.mapM fun _ => mkFreshExprMVar none
   return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
-
-/-- Version of `norm_num` used to get rid of the `OfScientific`s. -/
-def normNumCleanUp (useSimp : Bool) : TacticM Unit :=
-  Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (useSimp := useSimp)
-
-syntax (name := norm_num_clean_up) "norm_num_clean_up" : tactic
-
-@[tactic norm_num_clean_up]
-def evalNormNumCleanUp : Tactic := fun stx => match stx with
-  | `(tactic| norm_num_clean_up) => do
-    normNumCleanUp (useSimp := false)
-    saveTacticInfoForToken stx
-  | _ => throwUnsupportedSyntax
 
 /-- Given an egg rewrite and a current goal with all the necessary information
 about the minimization problem, we find the appropriate rewrite to apply, and
