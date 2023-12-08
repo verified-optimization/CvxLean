@@ -108,7 +108,7 @@ output the remaining goals. -/
 def evalStep (g : MVarId) (step : EggRewrite)
   (vars : List Name) (fvars : Array Expr) (domain : Expr)
   (numConstrTags : ℕ) (tagsMap : HashMap String ℕ) (isEquiv : Bool) :
-  TacticM (List MVarId) := do
+  TacticM (List MVarId) := withMainContext <| do
   let tag := step.location
   let tagNum := tagsMap.find! tag
   let atObjFun := tagNum == 0
@@ -207,9 +207,9 @@ def evalStep (g : MVarId) (step : EggRewrite)
     -- of approaches using `norm_num` in combination with the tactic provided
     -- by the user for this particular rewrite.
     let fullTac : Syntax ← `(tactic| intros;
-      try { norm_num_clean_up; $tacStx <;> norm_num } <;>
-      try { $tacStx <;> norm_num } <;>
-      try { norm_num })
+      try { norm_num_clean_up; $tacStx <;> norm_num_simp_pow } <;>
+      try { $tacStx <;> norm_num_simp_pow } <;>
+      try { norm_num_simp_pow })
     let gsAfterRw ← evalTacticAt fullTac gToRw
 
     if gsAfterRw.length == 0 then
@@ -305,6 +305,11 @@ def evalConvexify : Tactic := fun stx => match stx with
           dbg_trace s!"Rewrote {step.rewriteName}."
           g := gs[0]!
         replaceMainGoal [g]
+
+      let gs ← getUnsolvedGoals
+      if gs.length != 1 then
+        replaceMainGoal gs
+        throwError "Failed to close subgoals."
 
       normNumCleanUp (useSimp := false)
 
