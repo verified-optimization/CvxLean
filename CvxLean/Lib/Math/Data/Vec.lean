@@ -9,10 +9,10 @@ def abs [Abs α] (x : m → α) : m → α :=
 
 instance [Abs α] : Abs (m → α) := ⟨abs⟩
 
-def const (n : ℕ) (k : ℝ) : Fin n → ℝ :=
+def const (n : ℕ) (k : α) : Fin n → α  :=
   fun _ => k
 
-def toMatrix {n : ℕ} (x : Fin n → ℝ) : Fin n → Fin 1 → ℝ :=
+def toMatrix {n : ℕ} (x : Fin n → α) : Fin n → Fin 1 → α :=
   fun i => ![x i]
 
 section AddCommMonoid
