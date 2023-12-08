@@ -1,6 +1,4 @@
 import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Linarith
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Meta
@@ -128,9 +126,9 @@ where
       | some fvarId =>
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- Try to prove simple bconditions by norm_num.
+        -- Try to prove simple bconditions by arith.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
-          let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
+          let v ← Lean.Elab.Term.elabTerm (← `(by arith)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
           let v ← instantiateMVars v
           return v
@@ -263,7 +261,7 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
         let vcondProofTy ← mkForallFVars args vcondProofTyBody
 
         let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { arith <;> linarith <;> norm_num })
+            let tac ← `(by intros; try { arith })
             let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
             Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
             instantiateMVars v
