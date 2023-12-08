@@ -48,7 +48,7 @@ def _root_.EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
     ("maximizeNeg", ("neg",     #[.arg])),
     ("var",         ("var",     #[.arg])),
     ("param",       ("param",   #[.arg])),
-    ("eq",          ("eq",      #[.arg])),
+    ("eq",          ("eq",      #[.arg, .arg])),
     ("le",          ("le",      #[.arg, .arg])),
     ("lt",          ("lt",      #[.arg, .arg])),
     ("neg",         ("neg",     #[.arg])),
@@ -85,6 +85,7 @@ partial def _root_.EggTree.adjustOps (t : Tree String String) :
   | Tree.node op children =>
       if let some (newOp, argTags) := EggTree.opMap.find? op then
         let mut children ← children.mapM adjustOps
+        let argsGiven := children.size
         let mut newChildren := #[]
         let mut arityError := false
         for argTag in argTags do
@@ -100,7 +101,7 @@ partial def _root_.EggTree.adjustOps (t : Tree String String) :
               newChildren := newChildren.push (Tree.leaf s)
         arityError := arityError || children.size > 0
         if arityError then
-          throwError s!"The op {op} was passed {children.size} arguments."
+          throwError s!"The op {op} was passed {argsGiven} arguments."
         else
         return Tree.node newOp newChildren
       else
