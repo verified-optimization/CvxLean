@@ -905,7 +905,7 @@ time_cmd equivalence mulPowRevConstrRed/mulPowRevConstrAuto : mulPowRevConstr :=
 -- pow_mul-rev (obj)
 def powMulRevObj :=
   optimization (x : ℝ)
-    minimize ((x ^ 2) ^ 2 : ℝ)
+    minimize ((x ^ 1) ^ 2 : ℝ)
     subject to
       hx : 0 < x
 
@@ -973,8 +973,8 @@ def divPowRevConstr :=
       hx : 0 < x
       h : ((x + x) ^ 2 / x ^ 2) ≤ x
 
--- time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
---   convexify
+time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
+  convexify
 -- TODO(RFM): does not rewrite the correct term.
 
 -- #print divPowRevConstrAuto

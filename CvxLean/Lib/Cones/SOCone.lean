@@ -43,7 +43,8 @@ section Lemmas
 /-- To handle powers, a common trick is to consider for x, y ≥ 0, z ∈ ℝ,
       ((x + y), (x - y, 2 * z)^T) ∈ SO,
 which is equivalent to z ^ 2 ≤ x * y. -/
-lemma soCone_add_sub_two_mul_of_nonneg {x y : ℝ} (z : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
+lemma soCone_add_sub_two_mul_of_nonneg {x y : ℝ} (z : ℝ)
+  (hx : 0 ≤ x) (hy : 0 ≤ y) :
   soCone (x + y) ![x - y, 2 * z] ↔ z ^ (2 : ℝ) ≤ x * y := by
   have hxy := add_nonneg hx hy
   conv => lhs; unfold soCone; simp [sqrt_le_left hxy, ←le_sub_iff_add_le']

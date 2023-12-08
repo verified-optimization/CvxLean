@@ -19,19 +19,17 @@ def EggMinimization.ofOCTree (oc : OC (String × EggTree)) :
 
 /-- Given the rewrite name and direction from egg's output, find the appropriate
 tactic in the environment. It also returns a bool to indicate if the proof needs
-an intermediate equality step. Otherwise, the tactic will be applied directly. -/
-def findTactic (isEquiv atObjFun : Bool) (rewriteName : String) (direction : EggRewriteDirection) :
+an intermediate equality step. Otherwise, the tactic will be applied directly.
+-/
+def findTactic (isEquiv atObjFun : Bool) (rewriteName : String)
+  (direction : EggRewriteDirection) :
   MetaM (Bool × TSyntax `tactic) := do
   match ← getTacticFromRewriteName rewriteName with
   | some (tac, mapObjFun) =>
     if mapObjFun then
       if isEquiv then
-        -- NOTE: The proof obligations of our only two maps right now (log and
-        -- square) are solved by positivity.
-        return (true, ← `(tactic| positivity))
+        return (true, ← `(tactic| arith))
       else
-        -- NOTE: Only instance of a rewriting without proving an intermediate
-        -- equality.
         return (false, tac)
     else
       match direction with

@@ -10,6 +10,16 @@ namespace CvxLean
 
 open Real
 
+declare_atom powOne [affine] (x : ℝ)+ : x ^ (1 : ℝ) :=
+bconditions
+homogenity by
+  simp
+additivity by
+  simp
+optimality by
+  intros _ h
+  simp [h]
+
 declare_atom powNegOne [convex] (x : ℝ)- : x ^ (-1) :=
 vconditions
   (hx : 0 < x)
