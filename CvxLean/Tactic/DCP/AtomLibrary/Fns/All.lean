@@ -9,6 +9,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Exp
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.FromBlocks
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.GeoMean
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Huber
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.Inv
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.KLDiv
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Log
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.LogDet
