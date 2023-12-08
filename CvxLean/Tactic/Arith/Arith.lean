@@ -77,8 +77,14 @@ macro_rules
   | `(tactic| positivity!) =>
     `(tactic| cases_and; prepare_positivity; positivity)
 
+syntax "norm_num_simp_pow" : tactic
+
+macro_rules
+  | `(tactic| norm_num_simp_pow) =>
+    `(tactic| norm_num [Real.rpow_neg])
+
 syntax "arith" : tactic
 
 macro_rules
   | `(tactic| arith) =>
-    `(tactic| (first | linarith | positivity!))
+    `(tactic| (first | linarith | positivity! | norm_num_simp_pow))
