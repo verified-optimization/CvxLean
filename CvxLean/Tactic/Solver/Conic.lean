@@ -26,18 +26,26 @@ def translateCone : ScalarConeType → CBF.ConeType
   | ScalarConeType.Q => CBF.ConeType.Q
   | ScalarConeType.QR => CBF.ConeType.QR
 
--- TOOD: Change. This is hacky.
-def fixCones : List CBF.Cone → List CBF.Cone
-  | [] => []
-  | List.cons c1 $ List.cons c2 $ List.cons c3 cs =>
-      match c1.type, c2.type, c3.type with
-      | CBF.ConeType.EXP, CBF.ConeType.EXP, CBF.ConeType.EXP =>
-          (CBF.Cone.mk CBF.ConeType.EXP 3) :: fixCones cs
-      -- TODO: Generalize to n ≥ 2.
-      | CBF.ConeType.QR, CBF.ConeType.QR, CBF.ConeType.QR =>
-          (CBF.Cone.mk CBF.ConeType.QR 3) :: fixCones cs
-      | _, _, _ => c1 :: (fixCones (c2 :: c3 :: cs))
-  | List.cons c cs => c :: fixCones cs
+def groupCones (sections : ScalarAffineSections) (l : List CBF.Cone) :
+  MetaM (List CBF.Cone) := do
+  let l := l.toArray
+  let mut res := []
+  let mut currIdx := 0
+  for idx in sections.data do
+    let group := l[currIdx:idx]
+    if h : group.size > 0 then
+      let c := group.get ⟨0, h⟩
+      let coneType := c.type
+      for c' in group do
+        if !(c'.type = coneType) then
+          throwError "Only cones of the same type can be grouped."
+      let totalDim := group.foldl (fun acc c => acc + c.dim) 0
+      currIdx := idx
+      res := res ++ [CBF.Cone.mk coneType totalDim]
+    else
+      throwError "Incorrect sections, could not group cones."
+
+  return res
 
 /-- -/
 def getVars (goalExprs : SolutionExpr) : MetaM (List (Lean.Name × Expr)) := do
@@ -56,7 +64,8 @@ unsafe def getTotalDim (goalExprs : SolutionExpr) : MetaM Nat := do
   return totalDim
 
 /-- -/
-unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
+unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
+  (data : ProblemData) (sections : ScalarAffineSections)
   : MetaM Sol.Response := do
   let totalDim ← getTotalDim goalExprs
 
@@ -85,12 +94,12 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr) (data : ProblemData)
     let DEnc := CBF.EncodedMatrix.fromArray ma.D
     cbf := cbf.addMatrixValuedAffineConstraint ma.n HEnc DEnc
 
-  -- Fix exponentials.
+  -- Group cones appropriately, adjusting their dimensions.
   let n := cbf.scalarConstraints.n
   let cones := cbf.scalarConstraints.cones
-  let fixedCones := fixCones cones
+  let groupedCones ← groupCones sections cones
   cbf := cbf.setScalarConstraints
-    (CBF.ConeProduct.mk n fixedCones.length fixedCones)
+    (CBF.ConeProduct.mk n groupedCones.length groupedCones)
 
   -- Write input.
   let inputPath := "solver/problem.cbf"
@@ -132,8 +141,7 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
 
   -- Generate solution of the correct shape.
   let solPointExprArrayRaw : Array Expr :=
-    Array.mk $ sol.vars.map (fun v => floatToRealExpr v.activity)
-  trace[Meta.debug] "raw sol points: {solPointExprArrayRaw}"
+    Array.mk <| sol.vars.map (fun v => floatToRealExpr v.activity)
 
   -- Vectors and matrices as functions.
   let mut solPointExprArray : Array Expr := #[]
@@ -163,7 +171,6 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
           let r ← mkAppM ``List.get! #[arrayList, i'']
           mkLambdaFVars #[i'] r
 
-        trace[Meta.debug] "v: {v}"
         solPointExprArray := solPointExprArray.push v
         i := i + n
       else
@@ -188,7 +195,6 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
             let rij ← mkAppM ``List.get! #[ri, j'']
             mkLambdaFVars #[i', j'] rij
 
-        trace[Meta.debug] "M: {M}"
         solPointExprArray := solPointExprArray.push M
         i := i + n * m
 
@@ -196,32 +202,6 @@ unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Exp
 
   return solPointExpr
 
--- TODO: Make the tactic work again.
-unsafe def conicSolver (goal : MVarId)
-  : MetaM (List MVarId) := do
-  let goalExprs ← SolutionExpr.fromGoal goal
-  let data ← determineCoeffs goal
-
-  let solPointExpr ← conicSolverFromValues goalExprs data
-  trace[Meta.debug] "conic_solver: {solPointExpr}"
-
-  pure [goal]
-
 end Meta
-
-namespace Tactic
-
-open Lean.Elab Lean.Elab.Tactic Lean.Meta
-
-syntax (name := conicSolver) "conic_solver" : tactic
-
-@[tactic conicSolver]
-unsafe def evalConicSolver : Tactic := fun stx => match stx with
-| `(tactic| conic_solver) => do
-    let l ← Meta.conicSolver (← getMainGoal)
-    replaceMainGoal l
-| _ => throwUnsupportedSyntax
-
-end Tactic
 
 end CvxLean

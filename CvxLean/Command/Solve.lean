@@ -123,9 +123,10 @@ unsafe def evalSolve : CommandElab := fun stx =>
       addProblemDeclaration (probName ++ `reduced) probReducedOpt false
 
       -- Call the solver on prob.reduced and get a point in E.
-      let coeffsData ← determineCoeffsFromExpr probReducedExpr
+      let (coeffsData, sections) ← determineCoeffsFromExpr probReducedExpr
       trace[Meta.debug] "coeffsData: {coeffsData}"
-      let solPointResponse ← Meta.conicSolverFromValues probReducedExpr coeffsData
+      let solPointResponse ←
+        Meta.conicSolverFromValues probReducedExpr coeffsData sections
       trace[Meta.debug] "solPointResponse: {solPointResponse}"
 
       match solPointResponse with

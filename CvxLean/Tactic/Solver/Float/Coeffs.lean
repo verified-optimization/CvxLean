@@ -226,8 +226,13 @@ unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr)
 instance {n m : ℕ} : OfNat (Fin n.succ ⊕ Fin m.succ) (x) where
   ofNat := if x <= n then Sum.inl (Fin.ofNat x) else Sum.inr (Fin.ofNat (x - n.succ))
 
+/-- Indices to group constraints together and tag cones with the correct
+dimension when translating the data into CBF format. This happens with the
+exponential cone, quadratic cone and rotated quadratic cone, for instance. -/
+def ScalarAffineSections : Type := Array Nat
+
 unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
-  : MetaM ProblemData := do
+  : MetaM (ProblemData × ScalarAffineSections) := do
   let floatDomain ← realToFloat goalExprs.domain
 
   -- Coefficients for objective function.
@@ -235,13 +240,16 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
     let objFun ← realToFloat objFun
     return ← determineScalarCoeffsAux objFun p floatDomain
 
-  let constraintsData ← withLambdaBody goalExprs.constraints fun p constraints => do
+  let (constraintsData, sections) ←
+    withLambdaBody goalExprs.constraints fun p constraints => do
     let mut data : ProblemData := ProblemData.empty
+    let mut sections := #[]
 
     -- Constraints without vectors.
     let cs ← unrollVectors constraints
 
     -- Coefficients for constraints.
+    let mut idx := 0
     for c in cs do
       trace[Meta.debug] "Coeffs going through constraint {c}."
       match Expr.consumeMData c with
@@ -249,10 +257,12 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
           let e ← realToFloat e
           let res ← determineScalarCoeffsAux e p floatDomain
           data := data.addZeroConstraint res.1 res.2
+          idx := idx + 1
       | .app (.const ``Real.posOrthCone _) e => do
           let e ← realToFloat e
           let res ← determineScalarCoeffsAux e p floatDomain
           data := data.addPosOrthConstraint res.1 res.2
+          idx := idx + 1
       | .app (.app (.app (.const ``Real.expCone _) a) b) c => do
           let res ← #[a, b, c].mapM fun e => do
             let e ← realToFloat e
@@ -262,6 +272,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
           data := data.addExpConstraint res[2]!.1 res[2]!.2
           data := data.addExpConstraint res[1]!.1 res[1]!.2
           data := data.addExpConstraint res[0]!.1 res[0]!.2
+          idx := idx + 3
       | .app (.app (.app (.app (.app (.const ``Real.rotatedSoCone _)
           (.app (.const ``Fin _) n)) _) v) w) x => do
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n
@@ -272,6 +283,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
             let e ← realToFloat e
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
             data := data.addRotatedSOConstraint ea eb
+            idx := idx + 1
       | .app (.app (.app (.app
           (.const ``Real.soCone _)
           (.app (.const ``Fin _) n)) _) t) x => do
@@ -283,6 +295,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
             let e ← realToFloat e
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
             data := data.addSOConstraint ea eb
+            idx := idx + 1
       -- TODO: Unroll?
       | .app (.app (.app (.const ``Real.Matrix.posOrthCone _) m) n) e => do
           let m : Nat ← evalExpr Nat (mkConst ``Nat) m
@@ -294,6 +307,7 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
               let eij ← realToFloat eij
               let res ← determineScalarCoeffsAux eij p floatDomain
               data := data.addPosOrthConstraint res.1 res.2
+              idx := idx + 1
       | .app (.app (.app
           (.const ``Real.Matrix.PSDCone _) mty) _) e => do
           let e ← realToFloat e
@@ -312,17 +326,22 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
               let e ← realToFloat e
               let (a, b) ← determineScalarCoeffsAux e p floatDomain
               data := data.addZeroConstraint a b
-
+              idx := idx + 1
       | _ => throwError "No match: {c}."
-    return data
+      -- New group, add idx.
+      sections := sections.push idx
+    return (data, sections)
 
-  return constraintsData.setObjectiveOnlyVector objectiveData.1 objectiveData.2
+  let (objectiveDataA, objectiveDataB) := objectiveData
+  let pd := constraintsData.setObjectiveOnlyVector objectiveDataA objectiveDataB
+
+  return (pd, sections)
 
 /-- Generate problem data from goal. -/
 unsafe def determineCoeffs (goal : Lean.MVarId) : MetaM ProblemData := do
   let goalExprs ← Meta.SolutionExpr.fromGoal goal
-
-  determineCoeffsFromExpr goalExprs
+  let (pd, _) ← determineCoeffsFromExpr goalExprs
+  return pd
 
 namespace  Tactic
 
