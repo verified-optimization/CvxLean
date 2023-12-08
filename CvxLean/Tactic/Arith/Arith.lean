@@ -71,8 +71,14 @@ elab (name := prepare_positivity) "prepare_positivity" : tactic => do
 
 end Tactic
 
+syntax "positivity!" : tactic
+
+macro_rules
+  | `(tactic| positivity!) =>
+    `(tactic| cases_and; prepare_positivity; positivity)
+
 syntax "arith" : tactic
 
 macro_rules
   | `(tactic| arith) =>
-    `(tactic| cases_and; prepare_positivity; positivity)
+    `(tactic| (first | linarith | positivity!))
