@@ -959,8 +959,8 @@ def divPowRevObj :=
     subject to
       hx : 0 < x
 
--- time_cmd equivalence divPowRevObjRed/divPowRevObjAuto : divPowRevObj := by
-  -- convexify
+time_cmd equivalence divPowRevObjRed/divPowRevObjAuto : divPowRevObj := by
+  convexify
 -- TODO(RFM): does not rewrite the correct term.
 
 -- #print divPowRevObjAuto
@@ -975,7 +975,6 @@ def divPowRevConstr :=
 
 time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
   convexify
--- TODO(RFM): does not rewrite the correct term.
 
 -- #print divPowRevConstrAuto
 
