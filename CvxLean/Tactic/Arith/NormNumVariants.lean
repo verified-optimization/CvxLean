@@ -1,5 +1,6 @@
 import Lean
 import Mathlib.Tactic.NormNum
+import CvxLean.Lib.Math.Data.Real
 
 namespace CvxLean
 
