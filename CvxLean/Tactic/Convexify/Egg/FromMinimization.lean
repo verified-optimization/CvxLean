@@ -31,45 +31,50 @@ partial def _root_.EggTree.surroundVars (t : Tree String String) (vars : List St
   | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
   | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
 
+inductive _root_.EggTree.OpArgTag
+  | arg
+  | val (s : String)
+
 /-- Mapping between atom names that come from the unchecked tree construction
 and their egg counterparts. `prob`, `objFun`, `constr` and `constrs` are special
 cases. The rest of names come from the atom library. It also returns the arity
 of the operation and some extra arguments. -/
-def _root_.EggTree.opMap : HashMap String (String × Nat × Array String) :=
+def _root_.EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
   HashMap.ofList [
-    ("prob",        ("prob", 2, #[])),
-    ("objFun",      ("objFun", 1, #[])),
-    ("constr",      ("constr", 2, #[])),
-    ("constrs",     ("constrs", 0, #[])),
-    ("maximizeNeg", ("neg", 1, #[])),
-    ("var",         ("var", 1, #[])),
-    ("param",       ("param", 1, #[])),
-    ("eq",          ("eq", 2, #[])),
-    ("le",          ("le", 2, #[])),
-    ("lt",          ("lt", 2, #[])),
-    ("neg",         ("neg", 1, #[])),
-    ("inv",         ("inv", 1, #[])),
-    ("abs",         ("abs", 1, #[])),
-    ("sqrt",        ("sqrt", 1, #[])),
-    ("powOne",      ("pow", 1, #["1"])),
-    ("sq",          ("pow", 1, #["2"])),
-    ("powNegOne",   ("pow", 1, #["-1"])),
-    ("powNegTwo",   ("pow", 1, #["-2"])),
-    ("log",         ("log", 1, #[])),
-    ("exp",         ("exp", 1, #[])),
-    ("xexp",        ("xexp", 1, #[])),
-    ("entr",        ("entr", 1, #[])),
-    ("min",         ("min", 2, #[])),
-    ("max",         ("max", 2, #[])),
-    ("add",         ("add", 2, #[])),
-    ("sub",         ("sub", 2, #[])),
-    ("mul1",        ("mul", 2, #[])),
-    ("mul2",        ("mul", 2, #[])),
-    ("div",         ("div", 2, #[])),
-    ("quadOverLin", ("qol", 2, #[])),
-    ("geoMean",     ("geo", 2, #[])),
-    ("logSumExp",   ("lse", 2, #[])),
-    ("norm2₂",      ("norm2", 2, #[]))
+    ("prob",        ("prob",    #[.arg, .arg])),
+    ("objFun",      ("objFun",  #[.arg])),
+    ("constr",      ("constr",  #[.arg, .arg])),
+    ("constrs",     ("constrs", #[])),
+    ("maximizeNeg", ("neg",     #[.arg])),
+    ("var",         ("var",     #[.arg])),
+    ("param",       ("param",   #[.arg])),
+    ("eq",          ("eq",      #[.arg])),
+    ("le",          ("le",      #[.arg, .arg])),
+    ("lt",          ("lt",      #[.arg, .arg])),
+    ("neg",         ("neg",     #[.arg])),
+    ("inv",         ("inv",     #[.arg])),
+    ("oneDiv",      ("div",     #[.val "1", .arg])),
+    ("abs",         ("abs",     #[.arg])),
+    ("sqrt",        ("sqrt",    #[.arg])),
+    ("powOne",      ("pow",     #[.arg, .val "1"])),
+    ("sq",          ("pow",     #[.arg, .val "2"])),
+    ("powNegOne",   ("pow",     #[.arg, .val "-1"])),
+    ("powNegTwo",   ("pow",     #[.arg, .val "-2"])),
+    ("log",         ("log",     #[.arg])),
+    ("exp",         ("exp",     #[.arg])),
+    ("xexp",        ("xexp",    #[.arg])),
+    ("entr",        ("entr",    #[.arg])),
+    ("min",         ("min",     #[.arg, .arg])),
+    ("max",         ("max",     #[.arg, .arg])),
+    ("add",         ("add",     #[.arg, .arg])),
+    ("sub",         ("sub",     #[.arg, .arg])),
+    ("mul1",        ("mul",     #[.arg, .arg])),
+    ("mul2",        ("mul",     #[.arg, .arg])),
+    ("div",         ("div",     #[.arg, .arg])),
+    ("quadOverLin", ("qol",     #[.arg, .arg])),
+    ("geoMean",     ("geo",     #[.arg, .arg])),
+    ("logSumExp",   ("lse",     #[.arg, .arg])),
+    ("norm2₂",      ("norm2",   #[.arg, .arg]))
   ]
 
 /-- Traverse the tree and use `EggTree.opMap` to align the names of the
@@ -78,12 +83,26 @@ partial def _root_.EggTree.adjustOps (t : Tree String String) :
   MetaM (Tree String String) := do
   match t with
   | Tree.node op children =>
-      if let some (op', arity, extraArgs) := EggTree.opMap.find? op then
-        if children.size ≠ arity && op' != "constrs" then
-          throwError s!"The operator {op} has arity {children.size}, but it should have arity {arity}."
-        let children' ← children.mapM adjustOps
-        let children' := children' ++ extraArgs.map Tree.leaf
-        return Tree.node op' children'
+      if let some (newOp, argTags) := EggTree.opMap.find? op then
+        let mut children ← children.mapM adjustOps
+        let mut newChildren := #[]
+        let mut arityError := false
+        for argTag in argTags do
+          match argTag with
+          | .arg =>
+              if children.size > 0 then
+                newChildren := newChildren.push children[0]!
+                children := children.drop 1
+              else
+                arityError := true
+                break
+          | .val s =>
+              newChildren := newChildren.push (Tree.leaf s)
+        arityError := arityError || children.size > 0
+        if arityError then
+          throwError s!"The op {op} was passed {children.size} arguments."
+        else
+        return Tree.node newOp newChildren
       else
         throwError s!"The atom {op} is not supported by the `convexify` tactic."
   | Tree.leaf "unknown" => throwError "Unknown atom."
