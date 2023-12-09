@@ -19,3 +19,16 @@ fn test_sqrt_pow4() {
         vec![("x", domain::nonneg_dom())], 
         "(sqrt (pow (var x) 4))");
 }
+
+#[test]
+fn test_div_constant_simp() {
+    convexify_check_expression(
+        "(div (div (var x) 20) (div 7 20))");
+}
+
+#[test]
+fn test_div_constant_le_simp() {
+    convexify_check_expression_with_domain(
+        vec![("x", domain::nonneg_dom()), ("y", domain::pos_dom())], 
+        "(le (div (qol 1 (var y)) 20) (mul (div 7 20) (sqrt (var x))))");
+}
