@@ -23,6 +23,7 @@ implementationConstraints
   (c1 : soCone (y + t) ![y - t, 2 * x])
   (c2 : 0 ≤ t)
   -- NOTE(RFM): This is a trick to make y strictly positive.
+  -- TODO(RFM): This makes the solver stall (error 166).
   (c3 : exp y' ≤ y)
 solution (t := x ^ 2 / y) (y' := log y)
 solutionEqualsAtom by rfl

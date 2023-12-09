@@ -18,7 +18,8 @@ implementationVars (t : ℝ) (y' : ℝ)
 implementationObjective (y - x - t)
 implementationConstraints
   (c1 : expCone t x y)
-  -- NOTE: This is a trick to make y strictly positive.
+  -- NOTE(RFM): This is a trick to make y strictly positive.
+  -- TODO(RFM): This can make the solver stall (error 166).
   (c2 : exp y' ≤ y)
 solution (t := -(x * log (x / y))) (y' := log y)
 solutionEqualsAtom by
