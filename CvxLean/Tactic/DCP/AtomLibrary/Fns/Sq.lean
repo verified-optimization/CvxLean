@@ -28,6 +28,27 @@ optimality by
   exact h
 vconditionElimination
 
+declare_atom sqNat [convex] (x : ℝ)? : x ^ (2 : ℕ) :=
+vconditions
+implementationVars (t : ℝ)
+implementationObjective (t)
+implementationConstraints
+  (c1 : rotatedSoCone t (1/2) ![x])
+solution
+  (t := x ^ 2)
+solutionEqualsAtom rfl
+feasibility
+  (c1 : by
+    unfold rotatedSoCone
+    simp
+    exact ⟨sq_nonneg x, zero_le_two⟩)
+optimality by
+  unfold rotatedSoCone at c1
+  have h := c1.1
+  simp at h ⊢
+  exact h
+vconditionElimination
+
 declare_atom Vec.sq [convex] (n : ℕ)& (x : Fin n → ℝ)? : x ^ 2 :=
 vconditions
 implementationVars (t : Fin n → ℝ)
