@@ -96,7 +96,11 @@ def evalStep (g : MVarId) (step : EggRewrite)
   (vars : List Name) (fvars : Array Expr) (domain : Expr)
   (numConstrTags : ℕ) (tagsMap : HashMap String ℕ) (isEquiv : Bool) :
   TacticM (List MVarId) := withMainContext <| do
-  let tag := step.location
+  let tag ← liftMetaM <| do
+    if let [_, tag] := step.location.splitOn ":" then
+      return tag
+    else
+      throwError "Unexpected tag name {step.location}."
   let tagNum := tagsMap.find! tag
   let atObjFun := tagNum == 0
 
@@ -261,7 +265,7 @@ def evalConvexify : Tactic := fun stx => match stx with
     let varDomainConstrs := domainConstrs.map (fun (_, v, d) => (v, d))
     let constrsToIgnore := domainConstrs.map (fun (h, _, _) => h)
 
-    -- Remove less-than's before sending it to egg.
+    -- Remove domain constraints before sending it to egg.
     let gStr := { gStr with
       constr := gStr.constr.filter (fun (h, _) => !constrsToIgnore.contains h) }
 
