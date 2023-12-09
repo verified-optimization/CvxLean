@@ -100,6 +100,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("mul_sub-rev"; "(sub (mul ?a ?b) (mul ?a ?c))" => "(mul ?a (sub ?b ?c))"),
 
+    rw!("div_one"; "(div ?a 1)" => "?a"),
+
     rw!("add_div"; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))"),
 
     rw!("add_div-rev"; "(add (div ?a ?c) (div ?b ?c))" => "(div (add ?a ?b) ?c)"),
@@ -108,6 +110,21 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("mul_div-rev"; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))"),
 
+    rw!("div_mul"; "(mul (div ?a ?b) ?c)" => "(div ?a (div ?b ?c))"
+        if is_not_zero("?b") if is_not_zero("?c")),
+    
+    rw!("div_mul-rev"; "(div ?a (div ?b ?c))" => "(mul (div ?a ?b) ?c)"
+        if is_not_zero("?b") if is_not_zero("?c")),
+
+    rw!("mul_div_mul_left"; "(div (mul ?c ?a) (mul ?c ?b))" => "(div ?a ?b)"
+        if is_not_zero("?c")),
+
+    rw!("div_div"; "(div (div ?a ?b) ?c)" => "(div ?a (mul ?b ?c))" 
+        if is_not_zero("?b") if is_not_zero("?c")),
+
+    rw!("div_div-rev"; "(div ?a (mul ?b ?c))" => "(div (div ?a ?b) ?c)" 
+        if is_not_zero("?b") if is_not_zero("?c")),
+    
     rw!("div_self"; "(div ?a ?a)" => "1" if is_not_zero("?a")),
 
     rw!("inv_eq_one_div"; "(inv ?a)" => "(div 1 ?a)" if is_not_zero("?a")),

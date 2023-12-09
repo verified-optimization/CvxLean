@@ -132,6 +132,9 @@ register_rewrite_map "mul_sub" ; "(mul ?a (sub ?b ?c))" => "(sub (mul ?a ?b) (mu
 register_rewrite_map "mul_sub-rev" ; "(sub (mul ?a ?b) (mul ?a ?c))" => "(mul ?a (sub ?b ?c))" :=
   simp_or_rw [←mul_sub];
 
+register_rewrite_map "div_one" ; "(div ?a 1)" => "?a" :=
+  simp_or_rw [div_one];
+
 register_rewrite_map "add_div" ; "(div (add ?a ?b) ?c)" => "(add (div ?a ?c) (div ?b ?c))" :=
   simp_or_rw [add_div];
 
@@ -143,6 +146,21 @@ register_rewrite_map "mul_div" ; "(mul ?a (div ?b ?c))" => "(div (mul ?a ?b) ?c)
 
 register_rewrite_map "mul_div-rev" ; "(div (mul ?a ?b) ?c)" => "(mul ?a (div ?b ?c))" :=
   simp_or_rw [←mul_div (G := ℝ)];
+
+register_rewrite_map "div_mul" ; "(mul (div ?a ?b) ?c)" => "(div ?a (div ?b ?c))" :=
+  simp_or_rw [div_mul];
+
+register_rewrite_map "div_mul-rev" ; "(div ?a (div ?b ?c))" => "(mul (div ?a ?b) ?c)" :=
+  simp_or_rw [←div_mul];
+
+register_rewrite_map "mul_div_mul_left" ; "(div (mul ?c ?a) (mul ?c ?b))" => "(div ?a ?b)" :=
+  simp_or_rw [mul_div_mul_left (G₀ := ℝ) _ _ (by positivity!)];
+
+register_rewrite_map "div_div" ; "(div (div ?a ?b) ?c)" => "(div ?a (mul ?b ?c))" :=
+  simp_or_rw [div_div];
+
+register_rewrite_map "div_div-rev" ; "(div ?a (mul ?b ?c))" => "(div (div ?a ?b) ?c)" :=
+  simp_or_rw [←div_div];
 
 register_rewrite_map "div_self" ; "(div ?a ?a)" => "1" :=
   simp_or_rw [div_self (G₀ := ℝ) (by positivity!)];
@@ -216,7 +234,7 @@ register_rewrite_map "pow_two-rev"; "(mul ?a ?a)" => "(pow ?a 2)" :=
 register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
   simp_or_rw [Real.pow_half_two (by positivity!)];
 
--- TODO(RFM): Technically ← but no pattern to match on otherwise.
+-- Exception, technically ← but we cannot find the pattern otherwise.
 register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
   simp_or_rw [Real.pow_half_two (by positivity!)];
 
@@ -271,7 +289,7 @@ register_rewrite_map "log_pow" ; "(log (pow ?a ?b))" => "(mul ?b (log ?a))" :=
 register_rewrite_map "log_pow-rev" ; "(mul ?b (log ?a))" => "(log (pow ?a ?b))" :=
   simp_or_rw [←Real.log_rpow (by positivity!)];
 
--- NOTE: Special rule that only works if the exponent is a natural number.
+-- Special type of rule as it only works if the exponent is a natural number.
 register_rewrite_map "log_pow_nat" ; "(log (pow ?a ?b))" => "(mul ?b (log ?a))" :=
   (norm_cast; simp_or_rw [Real.log_pow]);
 
