@@ -97,11 +97,13 @@ def evalStep (g : MVarId) (step : EggRewrite)
   (numConstrTags : ℕ) (tagsMap : HashMap String ℕ) (isEquiv : Bool) :
   TacticM (List MVarId) := withMainContext <| do
   let tag ← liftMetaM <| do
-    if let [_, tag] := step.location.splitOn ":" then
+    if step.location == "objFun" then
+      return "objFun"
+    else if let [_, tag] := step.location.splitOn ":" then
       return tag
     else
       throwError "Unexpected tag name {step.location}."
-  let tagNum := tagsMap.find! tag
+  let tagNum := tagsMap.find! step.location
   let atObjFun := tagNum == 0
 
   -- Special case when mapping the objective function in equivalence mode. Note
