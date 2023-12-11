@@ -70,7 +70,7 @@ def getReducedProblemAndReduction (prob : Expr)
   trace[Meta.debug] "probOpt: {probOpt.objFun}"
   -- NOTE: We should get the value from this applied to the float sol point.
 
-  let (_, (forwardMap, backwardMap, probReduction)) ← DCP.canonizeGoalFromExpr probSol
+  let (forwardMap, backwardMap, probReduction) ← DCP.canonizeGoalFromExpr probSol
 
   let probReducedSol := match (← inferType probReduction) with
   | Expr.forallE _ r _ _ => r
