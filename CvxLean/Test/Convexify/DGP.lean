@@ -192,6 +192,7 @@ end GP6
 section GP7
 
 -- NOTE: We don't have the power atom yet.
+-- TODO: add atoms for ^(1/2) and ^(-1/2).
 -- objFun : (x ^ (-1)) * y ^ (-1 / 2) * z ^ (-1) + 2.3 * x * z + 4 * x * y * z
 -- h4 : (1 / 3) * x ^ (-2) * y ^ (-2) + (4 / 3) * y ^ (1 / 2) * z ^ (-1) ≤ 1
 def gp7 :=
@@ -222,6 +223,36 @@ time_cmd reduction red7/dcp7 : gp7 := by
 solve dcp7
 
 end GP7
+
+/- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 6.1. -/
+section GP8
+
+-- hmin = wmin = 1, hmax = wmax = 100, Rmax = 10, σ = 0.5, π ≈ 3.14159.
+def gp8 :=
+  optimization (h w A r : ℝ)
+    minimize 2 * A * sqrt (w ^ 2 + h ^ 2)
+    subject to
+      h1  : 0 < h
+      h2  : 0 < w
+      h3  : 0 < A
+      h4  : 0 < r
+      h5  : 10 * sqrt (w ^ 2 + h ^ 2) / 2 * h ≤ 0.5 * A
+      h6  : 20 * sqrt (w ^ 2 + h ^ 2) / 2 * w ≤ 0.5 * A
+      h7  : 1 ≤ h
+      h8  : h ≤ 100
+      h9  : 1 ≤ w
+      h10 : w ≤ 100
+      h11 : 1.1 * r ≤ sqrt (A / (2 * 3.14159) + r ^ 2)
+      h12 : sqrt (A / (2 * 3.14159) + r ^ 2) ≤ 10
+
+set_option maxHeartbeats 1000000 in
+time_cmd reduction red8/dcp8 : gp8 := by
+  map_exp
+  convexify
+
+solve dcp8
+
+end GP8
 
 end
 
