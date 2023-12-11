@@ -19,7 +19,8 @@ lemma Real.one_sub_one_div_sq_nonneg_of_le_one {x : ℝ} :
 
 @[positivity ((1 / (_ : ℝ) ^ (2 : ℝ)) - 1)]
 def evalOneDivSqSubOne : PositivityExt where eval {_ _α} zα pα e := do
-  let (.app (.app _sub (.app (.app _div _one) (.app (.app _pow (x : Q(ℝ))) _two))) _one') ←
+  let (.app (.app _sub
+    (.app (.app _div _one) (.app (.app _pow (x : Q(ℝ))) _two))) _one') ←
     withReducible (whnf e) | throwError "not ((1 / x ^ 2) - 1)"
   -- 0 < x ?
   let h1 :=
@@ -91,7 +92,8 @@ def evalExpSubOne : PositivityExt where eval {_ _α} zα pα e := do
   | _ =>
       pure .none
 
-lemma Real.one_sub_div_exp_pos_of_pos {x : ℝ} : 0 < x → 0 < 1 - 1 / Real.exp x :=
+lemma Real.one_sub_div_exp_pos_of_pos {x : ℝ} :
+  0 < x → 0 < 1 - 1 / Real.exp x :=
   fun h => by field_simp; positivity
 
 @[positivity (1 - (1 / (Real.exp (_ : ℝ))))]
@@ -103,6 +105,42 @@ def evalOneSubDivExp : PositivityExt where eval {_ _α} zα pα e := do
       let pa' ← mkAppM ``Real.one_sub_div_exp_pos_of_pos #[pa]
       pure (.positive pa')
   | _ =>
+      pure .none
+
+lemma Real.scaled_sq_diff_pos_of_pos {a x : ℝ} :
+  0 < a - 1 → 0 < x → 0 < (a * x) ^ 2 - x ^ 2 :=
+  fun h1 h2 => by
+    have ha : 0 ≤ a := by linarith
+    have ha1 : 1 < a := by linarith
+    have hx : 0 ≤ x := by linarith
+    have hx2 : 0 < x ^ 2 := by positivity
+    rw [sub_pos, Real.mul_rpow ha hx, ←div_lt_iff hx2, div_self (ne_of_gt hx2)]
+    simp [ha1, abs_eq_self.mpr ha]
+
+@[positivity (((_ : ℝ) * (_ : ℝ)) ^ (2 : ℝ)) - ((_ : ℝ) ^ (2 : ℝ))]
+def evalSubMulSqSq : PositivityExt where eval {_ _α} zα pα e := do
+  let (.app (.app _sub
+    (.app (.app _pow (.app (.app _mul (a : Q(ℝ))) (x : Q(ℝ)))) _two))
+    (.app (.app _pow' (x' : Q(ℝ))) _two')) ←
+    withReducible (whnf e) | throwError "not ((a * x) ^ 2 - x ^ 2)"
+  if !(← isDefEq x x') then
+    return .none
+  -- 0 < a - 1 ?
+  let h1 := ← do
+    match ← core zα pα (q($a - 1) : Q(ℝ)) with
+    | .positive pa => return some pa
+    | _ => return none
+  -- 0 < x ?
+  let h2 := ← do
+    match ← core zα pα x with
+    | .positive pa => return some pa
+    | _ => return none
+  -- If 0 < a - 1 and 0 < x, then 0 < (a * x) ^ 2 - x ^ 2
+  match h1, h2 with
+  | some h1', some h2' =>
+      let pa' ← mkAppM ``Real.scaled_sq_diff_pos_of_pos #[h1', h2']
+      pure (.positive pa')
+  | _, _ =>
       pure .none
 
 end Mathlib.Meta.Positivity
