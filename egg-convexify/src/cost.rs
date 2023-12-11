@@ -245,16 +245,18 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::QOL([a, b]) => {
-                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
-                let da_nonpos = domain::option_is_nonpos(get_domain(a).as_ref());
-                let curvature_num = 
-                    if da_nonneg {
-                        curvature::of_convex_nondecreasing_fn(get_curvature!(a))
-                    } else if da_nonpos {
-                        curvature::of_convex_nonincreasing_fn(get_curvature!(a))
-                    } else {
-                        curvature::of_convex_none_fn(get_curvature!(a))
-                    };
+                // let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                // let da_nonpos = domain::option_is_nonpos(get_domain(a).as_ref());
+                // let curvature_num = 
+                //     if da_nonneg {
+                //         curvature::of_convex_nondecreasing_fn(get_curvature!(a))
+                //     } else if da_nonpos {
+                //         curvature::of_convex_nonincreasing_fn(get_curvature!(a))
+                //     } else {
+                //         curvature::of_convex_none_fn(get_curvature!(a))
+                //     };
+                // NOTE: Aligned with the atom library.
+                let curvature_num = curvature::of_convex_none_fn(get_curvature!(a));
                 let db_pos = domain::option_is_pos(get_domain(b).as_ref());
                 if db_pos {
                     let curvature_den = curvature::of_convex_nonincreasing_fn(get_curvature!(b));
@@ -282,26 +284,29 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
             Optimization::Norm2([a, b]) => {
-                let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
-                let da_nonpos = domain::option_is_nonpos(get_domain(a).as_ref());
-                let curvature_a = 
-                    if da_nonneg {
-                        curvature::of_convex_nondecreasing_fn(get_curvature!(a))
-                    } else if da_nonpos {
-                        curvature::of_convex_nonincreasing_fn(get_curvature!(a))
-                    } else {
-                        curvature::of_convex_none_fn(get_curvature!(a))
-                    };
-                let db_nonneg = domain::option_is_nonneg(get_domain(b).as_ref());
-                let db_nonpos = domain::option_is_nonpos(get_domain(b).as_ref());
-                let curvature_b = 
-                    if db_nonneg {
-                        curvature::of_convex_nondecreasing_fn(get_curvature!(b))
-                    } else if db_nonpos {
-                        curvature::of_convex_nonincreasing_fn(get_curvature!(b))
-                    } else {
-                        curvature::of_convex_none_fn(get_curvature!(b))
-                    };
+                // let da_nonneg = domain::option_is_nonneg(get_domain(a).as_ref());
+                // let da_nonpos = domain::option_is_nonpos(get_domain(a).as_ref());
+                // let curvature_a = 
+                //     if da_nonneg {
+                //         curvature::of_convex_nondecreasing_fn(get_curvature!(a))
+                //     } else if da_nonpos {
+                //         curvature::of_convex_nonincreasing_fn(get_curvature!(a))
+                //     } else {
+                //         curvature::of_convex_none_fn(get_curvature!(a))
+                //     };
+                // let db_nonneg = domain::option_is_nonneg(get_domain(b).as_ref());
+                // let db_nonpos = domain::option_is_nonpos(get_domain(b).as_ref());
+                // let curvature_b = 
+                //     if db_nonneg {
+                //         curvature::of_convex_nondecreasing_fn(get_curvature!(b))
+                //     } else if db_nonpos {
+                //         curvature::of_convex_nonincreasing_fn(get_curvature!(b))
+                //     } else {
+                //         curvature::of_convex_none_fn(get_curvature!(b))
+                //     };
+                // NOTE: Aligned with the atom library.
+                let curvature_a = curvature::of_convex_none_fn(get_curvature!(a));
+                let curvature_b = curvature::of_convex_none_fn(get_curvature!(b));
                 curvature = curvature::join(curvature_a, curvature_b);
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
