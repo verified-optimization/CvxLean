@@ -72,17 +72,22 @@ elab (name := prepare_positivity) "prepare_positivity" : tactic => do
 
 open Mathlib.Meta.Positivity
 
-def positivityNoFailure (goal : MVarId) : MetaM (List MVarId) := do
-  let t : Q(Prop) ← withReducible goal.getType'
-  try
-    let p ← solve t
-    goal.assign p
-    pure []
-  catch _ =>
-    pure [goal]
+/-- Call `positivity` but if the expression has no free variables, we try to
+apply `norm_num` first. -/
+def positivityMaybeNormNum : TacticM Unit :=
+  withMainContext do
+    let g ← getMainGoal
+    let t : Q(Prop) ← withReducible g.getType'
+    let fvs := (collectFVars {} t).fvarSet
+    let tac ←
+      if fvs.isEmpty then
+        `(tactic| (norm_num <;> positivity))
+      else
+        `(tactic| positivity)
+    let [] ← evalTacticAt tac g | throwError "positivity_maybe_norm_num failed"
 
-elab (name := positivity) "positivity_no_failure" : tactic => do
-  liftMetaTactic fun g => positivityNoFailure g
+elab (name := positivity) "positivity_maybe_norm_num" : tactic =>
+  positivityMaybeNormNum
 
 end Tactic
 
@@ -90,7 +95,7 @@ syntax "positivity!" : tactic
 
 macro_rules
   | `(tactic| positivity!) =>
-    `(tactic| cases_and; prepare_positivity; norm_cast; positivity)
+    `(tactic| cases_and; prepare_positivity; positivity_maybe_norm_num)
 
 syntax "arith" : tactic
 
