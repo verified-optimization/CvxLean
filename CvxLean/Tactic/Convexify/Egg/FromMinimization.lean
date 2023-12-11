@@ -78,7 +78,7 @@ def _root_.EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
     ("div",         ("div",     #[.arg, .arg])),
     ("quadOverLin", ("qol",     #[.arg, .arg])),
     ("geoMean",     ("geo",     #[.arg, .arg])),
-    ("logSumExp",   ("lse",     #[.arg, .arg])),
+    ("logSumExp₂",  ("lse",     #[.arg, .arg])),
     ("norm2₂",      ("norm2",   #[.arg, .arg]))
   ]
 
