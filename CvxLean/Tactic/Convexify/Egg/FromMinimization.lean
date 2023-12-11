@@ -161,7 +161,7 @@ def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : 
   let mut domainConstrs := #[]
   let mut i := 0
   for (h, c) in ocTree.constr do
-    -- TODO: some constraints may have the same name, so we add the index.
+    -- NOTE: some constraints may have the same name, so we add the index.
     let h := s!"{i}:" ++ h
     let res :=
       match c with
@@ -202,6 +202,7 @@ def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : 
     match res with
     | some r => domainConstrs := domainConstrs.push r
     | none => pure ()
+    i := i + 1
 
   -- Surround variables and adjust operations in the whole tree.
   let ocTree : OC (String × Tree String String) := {
