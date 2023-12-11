@@ -65,8 +65,7 @@ impl Analysis<Optimization> for Meta {
                 if !d_to.eq(&d_from) {
                     let inter = d_to.intersection(&d_from);
                     if Domain::is_empty(&inter) {
-                        // Should never get here.
-                        println!("Empty domain.");
+                        // Should never get here for feasible problems.
                         to.domain = None
                     } else {
                         to.domain = Some(inter); 
