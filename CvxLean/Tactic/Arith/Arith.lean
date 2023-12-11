@@ -70,16 +70,72 @@ elab (name := prepare_positivity) "prepare_positivity" : tactic => do
   let mvarId' ← preparePositivity mvarId
   replaceMainGoal [mvarId']
 
+open Mathlib.Meta.Positivity
+
+def positivityNoFailure (goal : MVarId) : MetaM (List MVarId) := do
+  let t : Q(Prop) ← withReducible goal.getType'
+  try
+    let p ← solve t
+    goal.assign p
+    pure []
+  catch _ =>
+    pure [goal]
+
+elab (name := positivity) "positivity_no_failure" : tactic => do
+  liftMetaTactic fun g => positivityNoFailure g
+
 end Tactic
 
 syntax "positivity!" : tactic
 
 macro_rules
   | `(tactic| positivity!) =>
-    `(tactic| cases_and; prepare_positivity; positivity)
+    `(tactic| cases_and; prepare_positivity; norm_cast; positivity)
 
 syntax "arith" : tactic
 
 macro_rules
   | `(tactic| arith) =>
     `(tactic| (first | linarith | positivity! | norm_num_simp_pow))
+
+open Real
+
+lemma xxx : ∀ (x : ℝ × ℝ × ℝ × ℝ),
+    log (OfScientific.ofScientific 10 true 0) ≤
+        x.2.2.1 - x.1 -
+          OfScientific.ofScientific 5 true 1 *
+            log (rexp (OfScientific.ofScientific 2 true 0 * x.1) + rexp (OfScientific.ofScientific 2 true 0 * x.2.1)) →
+      x.2.1 ≤
+          x.2.2.1 -
+            (OfScientific.ofScientific 5 true 1 *
+                log
+                  (rexp (OfScientific.ofScientific 2 true 0 * x.1) +
+                    rexp (OfScientific.ofScientific 2 true 0 * x.2.1)) +
+              log (OfScientific.ofScientific 20 true 0)) →
+        OfScientific.ofScientific 0 true 0 ≤ x.1 →
+          x.1 ≤ log (OfScientific.ofScientific 100 true 0) →
+            OfScientific.ofScientific 0 true 0 ≤ x.2.1 →
+              x.2.1 ≤ log (OfScientific.ofScientific 100 true 0) →
+                sqrt (rexp x.2.2.1 / (314159 / 50000) + rexp x.2.2.2 ^ 2) ≤ 10 →
+                  (log
+                        (rexp x.2.2.2 ^ OfScientific.ofScientific 2 true 0 *
+                          ((OfScientific.ofScientific 11 true 0 / OfScientific.ofScientific 10 true 0) ^
+                              OfScientific.ofScientific 2 true 0 -
+                            OfScientific.ofScientific 1 true 0)) ≤
+                      log
+                        (rexp x.2.2.1 /
+                          (OfScientific.ofScientific 314159 true 0 / OfScientific.ofScientific 50000 true 0)) ↔
+                    log (rexp x.2.2.2 ^ OfScientific.ofScientific 2 true 0) +
+                        log
+                          ((OfScientific.ofScientific 11 true 0 / OfScientific.ofScientific 10 true 0) ^
+                              OfScientific.ofScientific 2 true 0 -
+                            OfScientific.ofScientific 1 true 0) ≤
+                      log
+                        (rexp x.2.2.1 /
+                          (OfScientific.ofScientific 314159 true 0 / OfScientific.ofScientific 50000 true 0))) := by {
+                            norm_num_clean_up
+                            intros
+                            rw [log_mul]
+                            { positivity! }
+                            { norm_cast; positivity! }
+                          }
