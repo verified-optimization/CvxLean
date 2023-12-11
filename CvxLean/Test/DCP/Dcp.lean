@@ -22,7 +22,7 @@ noncomputable def test004 : Solution $
     minimize exp v
     subject to
       cv : 0 ≤ v
-      cw : 0 < w
+      cw : 1 / 100000 ≤ w
       c0 : klDiv v w ≤ 1
 := by
   dcp
@@ -112,8 +112,7 @@ optimization (x y : Fin n → ℝ)
   minimize (0 : ℝ)
   subject to
     cx : 0 ≤ x
-    cy : StrongLT 0 y
-    -- cy : ∀ i, 0 < (y) i
+    cy : 1 / 100000 ≤ y
     c0 : Vec.klDiv x y ≤ x
 := by
   dcp
@@ -198,7 +197,7 @@ noncomputable def testQuadOverLin : Solution $
     minimize x ^ 2 / y
     subject to
       c0 : 0 ≤ x
-      c0 : 0.001 ≤ y
+      c0 : 1 / 100000 ≤ y
 := by
   dcp
   sorry
