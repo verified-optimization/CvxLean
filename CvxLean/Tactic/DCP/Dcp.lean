@@ -255,25 +255,19 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
       match ← constraints.findIdxM? (isDefEq vcond) with
       | some i => do vcondData := vcondData.push (Sum.inl i)
       | none =>
-        -- TODO(RFM): Same issue with background conditions. Find a less hacky way?
         -- Infer vconditions from constraints.
-        let vcondProofTyBody ← liftM <| constraints.foldrM mkArrow vcond
-        let vcondProofTy ← mkForallFVars args vcondProofTyBody
+        vcondData := ←
+          withExistingLocalDecls originalConstrVars.toList do
+            let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
+              let tac ← `(by arith)
+              let v ← Lean.Elab.Term.elabTerm tac.raw (some vcond)
+              Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
+              instantiateMVars v
 
-        let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { arith })
-            let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
-            Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
-            instantiateMVars v
-
-        if let some e' := e then
-          -- The inferred variable condition.
-          let newCondition := mkAppNBeta e' args
-          let newCondition := mkAppNBeta newCondition (originalConstrVars.map (mkFVar ·.fvarId))
-
-          vcondData := vcondData.push (Sum.inr newCondition)
-        else
-          throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
+            if let some e' := e then
+              return vcondData.push (Sum.inr e')
+            else
+              throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
 
     return (Tree.node vcondData childrenVCondData)
   | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())
@@ -877,7 +871,7 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
 -- solution to solution but also the forward and backward maps.
 -- TODO: Better types for return type.
 def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
-  MetaM (Expr × (Expr × Expr × Expr)) := do
+  MetaM (Expr × Expr × Expr) := do
   -- Extract objective and constraints from `goalExprs`.
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
@@ -971,25 +965,26 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
         check res
         trace[Meta.debug] "second check passed"
         let res ← instantiateMVars res
+        check res
+        trace[Meta.debug] "instantiate mvars passed"
         return (forwardMap, backwardMap, res)
 
-  let newGoal ← mkFreshExprMVar none
-
-  return (newGoal, (forwardMap, backwardMap, reduction))
+  return (forwardMap, backwardMap, reduction)
 
 /-- -/
-def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × (Expr × Expr × Expr)) := do
+def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × Expr × Expr) := do
   let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
   canonizeGoalFromSolutionExpr goalExprs
 
 /-- -/
-def canonizeGoal (goal : MVarId) : MetaM MVarId := do
+def canonizeGoal (goal : MVarId) : MetaM (List MVarId) := do
   let goalExprs ← Meta.SolutionExpr.fromGoal goal
-  let (newGoal, (_forwardMap, _backwardMap, reduction)) ← canonizeGoalFromSolutionExpr goalExprs
+  let (_forwardMap, _backwardMap, reduction) ← canonizeGoalFromSolutionExpr goalExprs
+  let newGoal ← mkFreshExprMVar none
   let assignment := mkApp reduction newGoal
   check assignment
   goal.assign assignment
-  return newGoal.mvarId!
+  return [newGoal.mvarId!]
 
 end DCP
 
@@ -1001,9 +996,7 @@ syntax (name := dcp) "dcp" : tactic
 
 @[tactic dcp]
 def evalDcp : Tactic := fun stx => match stx with
-| `(tactic| dcp) => do
-  let goal ← Elab.Tactic.getMainGoal
-  replaceMainGoal [← DCP.canonizeGoal goal]
+| `(tactic| dcp) => liftMetaTactic DCP.canonizeGoal
 | _ => throwUnsupportedSyntax
 
 end Tactic
