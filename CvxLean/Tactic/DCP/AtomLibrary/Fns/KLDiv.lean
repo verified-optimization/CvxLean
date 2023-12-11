@@ -15,12 +15,12 @@ open Real
 declare_atom klDiv [convex] (x : ℝ)? (y : ℝ)? : x * log (x / y) - x + y  :=
 vconditions
   (hx : 0 ≤ x)
-  (hy : 10e-6 ≤ y)
+  (hy : 1 / 100000 ≤ y)
 implementationVars (t : ℝ)
 implementationObjective (y - x - t)
 implementationConstraints
   (c1 : expCone t x y)
-  (c2 : 10e-6 ≤ y)
+  (c2 : 1 / 100000 ≤ y)
 solution (t := -(x * log (x / y)))
 solutionEqualsAtom by
   ring
@@ -73,12 +73,12 @@ vconditionElimination
 declare_atom klDiv2 [convex] (x : ℝ)? (y : ℝ)? : klDiv x y :=
 vconditions
   (hx : 0 ≤ x)
-  (hy : 10e-6 ≤ y)
+  (hy : 1 / 100000 ≤ y)
 implementationVars (t : ℝ)
 implementationObjective (y - x - t)
 implementationConstraints
   (c1 : expCone t x y)
-  (c2 : 10e-6 ≤ y)
+  (c2 : 1 / 100000 ≤ y)
 solution (t := -(x * log (x / y)))
 solutionEqualsAtom by
   unfold klDiv
@@ -108,12 +108,12 @@ declare_atom Vec.klDiv [convex] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → �
   Vec.klDiv x y :=
 vconditions
   (hx : 0 ≤ x)
-  (hy : (fun _ => 10e-6) ≤ y)
+  (hy : (fun _ => 1 / 100000) ≤ y)
 implementationVars (t : Fin m → ℝ)
 implementationObjective (y - x - t)
 implementationConstraints
   (c1 : Vec.expCone t x y)
-  (c2 : Vec.const m 10e-6 ≤ y)
+  (c2 : Vec.const m (1 / 100000) ≤ y)
 solution (t := fun i => -((x i) * log ((x i) / (y i))))
 solutionEqualsAtom by
   simp [Vec.klDiv, klDiv]; ext i; simp; ring
@@ -128,22 +128,22 @@ feasibility
     intros i
     have h := klDiv.feasibility1 (x i) (y i) (hx i) (hy i)
     unfold posOrthCone at h
-    simpa using h)
+    simpa [Vec.const] using h)
 optimality fun i => by
     unfold Vec.expCone at c1
     apply klDiv.optimality (x i) (y i) (t i) (c1 i)
     unfold posOrthCone expCone at *
-    simpa using (c2 i)
+    simpa [Vec.const] using (c2 i)
 vconditionElimination
   (hx : fun i => by
     unfold Vec.expCone at c1
     apply klDiv.vcondElim0 (x i) (y i) (t i) (c1 i)
     unfold posOrthCone expCone at *
-    simpa using (c2 i))
+    simpa [Vec.const] using (c2 i))
   (hy : fun i => by
     unfold Vec.expCone at c1
     apply klDiv.vcondElim1 (x i) (y i) (t i) (c1 i)
     unfold posOrthCone expCone at *
-    simpa using (c2 i))
+    simpa [Vec.const] using (c2 i))
 
 end CvxLean

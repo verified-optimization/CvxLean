@@ -47,7 +47,7 @@ def hypersonicShapeDesign (a b : ℝ) :=
   optimization (Δx : ℝ)
     minimize sqrt (1 / (Δx ^ 2) - 1)
     subject to
-      h1 : 0 < Δx
+      h1 : 10e-6 ≤ Δx
       h2 : Δx ≤ 1
       h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 

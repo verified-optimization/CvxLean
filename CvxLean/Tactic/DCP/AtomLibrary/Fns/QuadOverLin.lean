@@ -17,13 +17,13 @@ open Real
 -- TODO(RFM): how to do strict positivity and make vcondelimination work?
 declare_atom quadOverLin [convex] (x : ℝ)? (y : ℝ)- : x ^ 2 / y :=
 vconditions
-  (hy : 10e-6 ≤ y)
+  (hy : 1 / 100000 ≤ y)
 implementationVars (t : ℝ) (y' : ℝ)
 implementationObjective (t)
 implementationConstraints
   (c1 : soCone (y + t) ![y - t, 2 * x])
   (c2 : 0 ≤ t)
-  (c3 : 10e-6 ≤ y)
+  (c3 : 1 / 100000 ≤ y)
 solution (t := x ^ 2 / y) (y' := log y)
 solutionEqualsAtom by rfl
 feasibility
