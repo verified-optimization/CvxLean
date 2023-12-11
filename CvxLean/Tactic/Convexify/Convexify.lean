@@ -285,6 +285,8 @@ def evalConvexify : Tactic := fun stx => match stx with
       let diff := after - before
       dbg_trace s!"Egg time: {diff} ms."
       dbg_trace s!"Number of steps: {steps.size}."
+      let size := (gStr.map fun (_, t) => t.size).fold 0 Nat.add
+      dbg_trace s!"Term size: {size}."
 
       -- Apply steps.
       let mut g ← getMainGoal

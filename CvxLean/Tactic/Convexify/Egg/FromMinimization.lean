@@ -15,6 +15,11 @@ partial def _root_.EggTree.toEggString : Tree String String → String
     "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
   | Tree.leaf n => n
 
+/-- Size of the AST. -/
+partial def _root_.EggTree.size : EggTree → Nat
+  | Tree.node _ children => 1 + (children.map EggTree.size).foldl Nat.add 0
+  | Tree.leaf _ => 1
+
 /-- -/
 def _root_.EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
   Tree String String :=
