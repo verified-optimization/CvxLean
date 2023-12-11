@@ -51,7 +51,6 @@ def hypersonicShapeDesign (a b : ℝ) :=
       h2 : Δx ≤ 1
       h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 
-set_option trace.Meta.debug true in
 time_cmd equivalence redqcp2/dqcp2 : hypersonicShapeDesign 0.05 0.65 := by
   unfold hypersonicShapeDesign
   convexify

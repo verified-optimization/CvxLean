@@ -16,7 +16,6 @@ noncomputable def testVCondInference : Solution <|
   dcp
   sorry
 
-set_option trace.Meta.debug true
 noncomputable def test004 : Solution $
   optimization (v w : ℝ)
     minimize exp v
@@ -28,7 +27,6 @@ noncomputable def test004 : Solution $
   dcp
   sorry
 
-set_option trace.Meta.debug true
 noncomputable def test000 : Solution $
   optimization (x : Fin 3 → ℝ) (y : ℝ)
     minimize y

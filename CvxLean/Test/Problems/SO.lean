@@ -27,8 +27,6 @@ def so2 :=
       hx : 1 / 1000 ≤ x
       h : exp (-x) ≤ sqrt x
 
-set_option trace.Meta.debug true
-
 solve so2
 
 #print so2.reduced

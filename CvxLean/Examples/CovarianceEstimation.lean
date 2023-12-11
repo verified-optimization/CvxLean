@@ -58,8 +58,6 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
     intro hR
     rw [nonsing_inv_nonsing_inv R hR.isUnit_det]
 
-set_option trace.Meta.debug true
-
 #print problem₂
 
 set_option maxHeartbeats 20000000

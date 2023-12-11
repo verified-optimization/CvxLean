@@ -6,8 +6,6 @@ section Coeffs
 
 open CvxLean Minimization
 
-set_option trace.Meta.debug true
-
 noncomputable def testVecExp1 : Solution $
   optimization (x y : Fin 1 → ℝ)
     minimize (0 : ℝ)
