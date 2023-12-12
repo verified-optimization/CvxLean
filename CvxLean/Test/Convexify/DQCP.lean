@@ -55,10 +55,6 @@ time_cmd equivalence redqcp2/dqcp2 : hypersonicShapeDesign 0.05 0.65 := by
   unfold hypersonicShapeDesign
   convexify
 
--- TODO: Error in solve (or dcp):
--- Lean server printed an error:
--- PANIC at Lean.Expr.mvarId! Lean.Expr:1067:14: mvar expected
--- PANIC at Lean.MetavarContext.getDecl Lean.MetavarContext:398:17: unknown metavariable
 solve dqcp2
 
 #print dqcp2.reduced

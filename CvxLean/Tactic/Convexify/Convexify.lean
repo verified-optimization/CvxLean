@@ -238,9 +238,12 @@ def evalConvexify : Tactic := fun stx => match stx with
     -- again.
     if let Expr.const n _ := gExprRaw then
       unfoldTarget n
+      dbg_trace s!"Convexify problem name: {n}"
       normNumCleanUp (useSimp := false)
       let gTarget ← getMainTarget
       gExprRaw ← liftM <| Meta.getExprRawFromGoal isEquiv gTarget
+    else
+      dbg_trace s!"Convexify problem name: unknown"
 
     -- Get `MinmizationExpr`.
     let gExpr ← MinimizationExpr.fromExpr gExprRaw
