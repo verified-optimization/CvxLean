@@ -149,6 +149,14 @@ pub fn get_steps(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: 
 }
 
 pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
+    get_steps_from_string_maybe_node_limit(prob_s, domains_vec, debug, None)
+}
+
+pub fn get_steps_from_string_maybe_node_limit(
+    prob_s: &str, 
+    domains_vec: Vec<(String, Domain)>, 
+    debug: bool, 
+    node_limit: Option<usize>) -> Option<Vec<Step>> {
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
     
     // Process domains, intersecting domains assigned to the same variable.
@@ -172,7 +180,14 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
         }
     }
     
-    for node_limit in [2500, 5000, 10000, 25000, 50000]  {
+    // Specify a node limit, or try with default ones.
+    let node_limits = 
+        if let Some(n) = node_limit { 
+            vec![n] 
+        } else { 
+            vec![2500, 5000, 10000, 25000, 50000] 
+        };
+    for node_limit in node_limits  {
         let analysis = Meta {
             domains : domains.clone()
         };
