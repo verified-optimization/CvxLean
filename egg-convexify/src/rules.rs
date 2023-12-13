@@ -181,6 +181,12 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("sqrt_eq_rpow-rev"; "(pow ?a 0.5)" => "(sqrt ?a)"),
 
+    rw!("sqrt_mul"; "(sqrt (mul ?a ?b))" => "(mul (sqrt ?a) (sqrt ?b))"
+        if is_ge_zero("?a") if is_ge_zero("?b")),
+
+    rw!("sqrt_mul-rev"; "(mul (sqrt ?a) (sqrt ?b))" => "(sqrt (mul ?a ?b))"
+        if is_ge_zero("?a") if is_ge_zero("?b")),
+
     rw!("pow_two"; "(pow ?a 2)" => "(mul ?a ?a)"),
 
     rw!("pow_two-rev"; "(mul ?a ?a)" => "(pow ?a 2)"),

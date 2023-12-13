@@ -225,6 +225,12 @@ register_rewrite_map "sqrt_eq_rpow" ; "(sqrt ?a)" => "(pow ?a 0.5)" :=
 register_rewrite_map "sqrt_eq_rpow-rev" ; "(pow ?a 0.5)" => "(sqrt ?a)" :=
   simp_or_rw [←Real.sqrt_eq_rpow];
 
+register_rewrite_map "sqrt_mul" ; "(sqrt (mul ?a ?b))" => "(mul (sqrt ?a) (sqrt ?b))" :=
+  simp_or_rw [Real.sqrt_mul (by positivity!)];
+
+register_rewrite_map "sqrt_mul-rev" ; "(mul (sqrt ?a) (sqrt ?b))" => "(sqrt (mul ?a ?b))" :=
+  simp_or_rw [←Real.sqrt_mul (by positivity!)];
+
 register_rewrite_map "pow_two"; "(pow ?a 2)" => "(mul ?a ?a)" :=
   (norm_cast; simp_or_rw [pow_two]);
 
