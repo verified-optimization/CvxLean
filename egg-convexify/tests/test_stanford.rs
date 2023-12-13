@@ -100,7 +100,7 @@ fn test_3_67_aux(n: usize, node_limit: usize) {
 
 #[test]
 fn test_3_67() {
-    for n in 2..10 {
+    for n in 2..11 {
         let now = Instant::now();
         {
             test_3_67_aux(n, 20000 * n);
@@ -108,4 +108,14 @@ fn test_3_67() {
         let elapsed = now.elapsed();
         println!("Time for 3.67 (n={}): {:.2?}", n, elapsed);
     }
+    // node_limit = 20000 * n
+    // n=2: 32359 nodes, 8 steps, 7.82s
+    // n=3: 52870 nodes, 28 steps, 23.97s
+    // n=4: 63224 nodes, 37 steps, 31.05s
+    // n=5: 102470 nodes, 87 steps, 46.83s
+    // n=6: 106484 nodes, 132 steps, 129.44s
+    // n=7: 135393 nodes, 282 steps, 152.53s
+    // n=8: 157549 nodes, 566 steps, 269.90s
+    // n=9: 174177 nodes, 511 steps, 307.08s
+    // n=10: 200372 nodes, 716 steps, 173.13s
 }
