@@ -7,6 +7,7 @@ use egg_convexify::domain;
 
 use egg_convexify::test_util::{*};
 
+// TODO: Failing because of qol curvature check simplification.
 #[test]
 fn test_3_32() {
     // 1 / (x * y) = (x^-0.5)^2 / y
@@ -16,6 +17,7 @@ fn test_3_32() {
         "(div 1 (mul (var x) (var y)))");
 }
 
+// TODO: Failing because of norm2 curvature check simplification.
 #[test]
 fn test_3_33() {
     // sqrt(1 + x^4 / y) = sqrt(1^2 + (x^2 / y)^2)
@@ -28,6 +30,7 @@ fn test_3_33() {
     );
 }
 
+// TODO: Failing because of norm2 curvature check simplification.
 #[test]
 fn test_3_36_a() {
     // sqrt(1 + 4x^2 + 16y^2) = sqrt((2x)^2 + (sqrt(1^2 + (4y)^2))^2)
@@ -37,13 +40,13 @@ fn test_3_36_a() {
          "(sqrt (add 1 (add (mul 4 (pow (var x) 2)) (mul 16 (pow (var y) 2)))))");
 }
 
-// #[test]
-// fn test_3_36_c() {
-//     // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5) 
-//     convexify_check_expression_with_domain(
-//         vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
-//          "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
-// }
+#[test]
+fn test_3_36_c() {
+    // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5) 
+    convexify_check_expression_with_domain(
+        vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
+         "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
+}
 
 #[test]
 fn test_3_38_e() {
@@ -54,11 +57,7 @@ fn test_3_38_e() {
          "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
 }
 
-#[test]
-fn test_3_67() {
-    // Generalizaiton of 3.28. Works for n = 3, times out for n >= 4.
-    // (sqrt(x_1) + ... + sqrt(x_n))^2  
-    //               ... = sum_{i <= n} x_i + 2 * sum_{i < j <= n} geo(x_i, x_j)
+fn test_3_67_aux(n: usize) {
     let build_domain = |n| {
         if n < 2 { 
             panic!("n must be >= 2"); 
@@ -86,11 +85,22 @@ fn test_3_67() {
         }
         format!("(neg (pow {} 2))", t)
     };
-    let domain_pre = build_domain(3).clone();
+    let domain_pre = build_domain(n).clone();
     let domain = 
         domain_pre
             .iter()
             .map(|(s,d)| (s.as_str(), d.clone()))
             .collect::<Vec<_>>();
-    convexify_check_expression_with_domain(domain, &build_term(3));
+    convexify_check_expression_with_domain(domain, &build_term(n));
+}
+
+#[test]
+fn test_3_67() {
+    // Generalizaiton of 3.28. Works for n = 3, times out for n >= 4.
+    // (sqrt(x_1) + ... + sqrt(x_n))^2  
+    //               ... = sum_{i <= n} x_i + 2 * sum_{i < j <= n} geo(x_i, x_j)
+    test_3_67_aux(3);
+    // test_3_67_aux(4);
+    // test_3_67_aux(5);
+    // test_3_67_aux(6);
 }
