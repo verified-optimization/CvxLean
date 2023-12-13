@@ -4,7 +4,7 @@ use domain::Domain as Domain;
 use crate::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
-use extract::get_steps_from_string as get_steps_from_string; 
+use extract::get_steps_from_string_maybe_node_limit as get_steps_from_string_maybe_node_limit; 
 
 fn make(obj: &str, constrs: Vec<&str>) -> Minimization {
     let mut constrs_s = Vec::new();
@@ -49,10 +49,13 @@ pub fn convexify_check_and_print(obj: &str, constrs: Vec<&str>) {
 
 // Used to test out-of-context expressions.
 
-fn convexify_check_expression_with_domain_maybe_print(domains : Vec<(&str, Domain)>, s: &str, print: bool) {
+fn convexify_check_expression_with_domain_maybe_print_maybe_node_limit(
+    domains : Vec<(&str, Domain)>, 
+    s: &str, print: bool, 
+    node_limit: Option<usize>) {
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
-    let steps = get_steps_from_string(s, domains, true);
+    let steps = get_steps_from_string_maybe_node_limit(s, domains, true, node_limit);
     if steps.is_none() {
         panic!("Test failed, could not rewrite target into DCP form.");
     }
@@ -61,12 +64,28 @@ fn convexify_check_expression_with_domain_maybe_print(domains : Vec<(&str, Domai
     }
 }
 
+fn convexify_check_expression_with_domain_maybe_print(domains : Vec<(&str, Domain)>, s: &str, print: bool) {
+    convexify_check_expression_with_domain_maybe_print_maybe_node_limit(domains, s, print, None);
+}
+
 pub fn convexify_check_expression_with_domain(domains : Vec<(&str, Domain)>,s: &str) {
     convexify_check_expression_with_domain_maybe_print(domains, s, false);
 }
 
 pub fn convexify_check_expression_with_domain_and_print(domains : Vec<(&str, Domain)>,s: &str) {
     convexify_check_expression_with_domain_maybe_print(domains, s, true);
+}
+
+fn convexify_check_expression_with_domain_and_node_limit_maybe_print(domains : Vec<(&str, Domain)>, s: &str, print: bool, node_limit: usize) {
+    convexify_check_expression_with_domain_maybe_print_maybe_node_limit(domains, s, print, Some(node_limit));
+}
+
+pub fn convexify_check_expression_with_domain_and_node_limit(domains : Vec<(&str, Domain)>,s: &str, node_limit: usize) {
+    convexify_check_expression_with_domain_and_node_limit_maybe_print(domains, s, false, node_limit);
+}
+
+pub fn convexify_check_expression_with_domain_and_node_limit_and_print(domains : Vec<(&str, Domain)>,s: &str, node_limit: usize) {
+    convexify_check_expression_with_domain_and_node_limit_maybe_print(domains, s, true, node_limit);
 }
 
 pub fn convexify_check_expression(s: &str) {
