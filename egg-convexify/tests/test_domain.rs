@@ -686,3 +686,11 @@ fn exp_neg() {
     let expected = Domain::make_oo(domain::zero(), domain::one());
     assert!(result.eq(&expected));
 }
+
+/* Checkers tests. TODO: more. */
+
+#[test]
+fn is_nonneg_1() {
+    // [1, 1] is non-negative
+    assert!(domain::is_nonneg(&Domain::make_singleton(1.0)));
+}
