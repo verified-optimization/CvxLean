@@ -3,8 +3,9 @@ Tests from the additional exercises in the Stanford Convex Optimization course:
 https://github.com/cvxgrp/cvxbook_additional_exercises
 !*/
 
-use egg_convexify::domain;
+use std::time::Instant;
 
+use egg_convexify::domain;
 use egg_convexify::test_util::{*};
 
 // TODO: Failing because of qol curvature check simplification.
@@ -57,7 +58,10 @@ fn test_3_38_e() {
          "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
 }
 
-fn test_3_67_aux(n: usize) {
+fn test_3_67_aux(n: usize, node_limit: usize) {
+    // Generalizaiton of 3.28. Works for n = 3,4,5,6,7
+    // (sqrt(x_1) + ... + sqrt(x_n))^2  
+    //               ... = sum_{i <= n} x_i + 2 * sum_{i < j <= n} geo(x_i, x_j)
     let build_domain = |n| {
         if n < 2 { 
             panic!("n must be >= 2"); 
@@ -91,16 +95,17 @@ fn test_3_67_aux(n: usize) {
             .iter()
             .map(|(s,d)| (s.as_str(), d.clone()))
             .collect::<Vec<_>>();
-    convexify_check_expression_with_domain(domain, &build_term(n));
+        convexify_check_expression_with_domain_and_node_limit(domain, &build_term(n), node_limit);
 }
 
 #[test]
 fn test_3_67() {
-    // Generalizaiton of 3.28. Works for n = 3, times out for n >= 4.
-    // (sqrt(x_1) + ... + sqrt(x_n))^2  
-    //               ... = sum_{i <= n} x_i + 2 * sum_{i < j <= n} geo(x_i, x_j)
-    test_3_67_aux(3);
-    // test_3_67_aux(4);
-    // test_3_67_aux(5);
-    // test_3_67_aux(6);
+    for n in 2..10 {
+        let now = Instant::now();
+        {
+            test_3_67_aux(n, 20000 * n);
+        }
+        let elapsed = now.elapsed();
+        println!("Time for 3.67 (n={}): {:.2?}", n, elapsed);
+    }
 }
