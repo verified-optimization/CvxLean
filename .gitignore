@@ -1,7 +1,6 @@
 .DS_Store
 
 /build
-/evaluation
 /solver/*.cbf
 /solver/*.sol
 /egg-convexify/*.dot 
@@ -12,4 +11,7 @@
 *.olean
 
 /playground
+/evaluation
+/plots
+
 /CvxLean/Tactic/Solver/Mosek/Path.lean
