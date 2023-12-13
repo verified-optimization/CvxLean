@@ -79,7 +79,7 @@ impl Domain {
     }
 
     pub fn make_ci(lo: Float) -> Self {
-        Domain::make_from_endpoints(lo, inf(), false, false)
+        Domain::make_from_endpoints(lo, inf(), false, true)
     }
 
     pub fn make_oc(lo: Float, hi: Float) -> Self {
@@ -91,19 +91,19 @@ impl Domain {
     }
 
     pub fn make_oi(lo: Float) -> Self {
-        Domain::make_from_endpoints(lo, inf(), true, false)
+        Domain::make_from_endpoints(lo, inf(), true, true)
     }
 
     pub fn make_ic(hi: Float) -> Self {
-        Domain::make_from_endpoints(neg_inf(), hi, false, false)
+        Domain::make_from_endpoints(neg_inf(), hi, true, false)
     }
 
     pub fn make_io(hi: Float) -> Self {
-        Domain::make_from_endpoints(neg_inf(), hi, false, true)
+        Domain::make_from_endpoints(neg_inf(), hi, true, true)
     }
 
     pub fn make_ii() -> Self {
-        Domain::make_from_endpoints(neg_inf(), inf(), false, false)
+        Domain::make_from_endpoints(neg_inf(), inf(), true, true)
     }
 
     /* Comparisons. */
@@ -848,7 +848,17 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
                     } else if n == 1 {
                         return d1.clone();
                     } else if n % 2 == 0 {
-                        return nonneg_dom();
+                        let d = abs(d1);
+                        let lo = d.lo_float();
+                        let hi = d.hi_float();
+                        let c = &Float::with_val(F64_PREC, f);
+                        let l = d.lo_open;
+                        let r = d.hi_open;
+                        let res = 
+                            perform_pow(
+                                lo, c, hi, c,
+                                l, false, r, false);
+                        return res;
                     } else {
                         return free_dom();
                     }
