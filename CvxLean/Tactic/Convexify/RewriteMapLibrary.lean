@@ -241,6 +241,9 @@ register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
 register_rewrite_map "binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=
   simp_or_rw [Real.binomial_two];
 
+register_rewrite_map "rpow_eq_mul_rpow_pred"; "(pow ?a ?b)" => "(mul ?a (pow ?a (sub ?b 1)))" :=
+  simp_or_rw [Real.rpow_eq_mul_rpow_pred (by positivity!)];
+
 register_rewrite_map "inv_eq_pow_neg_one"; "(inv ?a)" => "(pow ?a (neg 1))" :=
   simp_or_rw [Real.inv_eq_pow_neg_one (by positivity!)];
 

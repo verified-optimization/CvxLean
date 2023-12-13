@@ -75,6 +75,10 @@ lemma binomial_two (x y : ℝ) :
   (x + y) ^ 2 = x ^ 2 + (2 * (x * y) + y ^ 2) := by
   simp only [rpow_two]; ring
 
+lemma rpow_eq_mul_rpow_pred {x y : ℝ} (hx : x ≠ 0) :
+  x ^ y = x * (x ^ (y - 1)) := by
+  conv => left; rw [(by ring : y = (y - 1) + 1), rpow_add_one hx, mul_comm]
+
 lemma exp_neg_eq_one_div (x : ℝ) : exp (-x) = 1 / exp x := by
   rw [exp_neg, inv_eq_one_div]
 

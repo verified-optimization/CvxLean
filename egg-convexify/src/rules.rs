@@ -191,6 +191,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
 
+    rw!("rpow_eq_mul_rpow_pred"; "(pow ?a ?b)" => "(mul ?a (pow ?a (sub ?b 1)))"
+        if is_not_zero("?a")),
+
     rw!("inv_eq_pow_neg_one"; "(inv ?a)" => "(pow ?a (neg 1))" if is_not_zero("?a")),
 
 
