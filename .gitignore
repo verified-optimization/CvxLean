@@ -1,13 +1,11 @@
 .DS_Store
 
+/.lake
 /build
 /solver/*.cbf
 /solver/*.sol
 /egg-convexify/*.dot 
 /egg-convexify/*.svg
-/ffi/build
-/ffi/lake-packages 
-/lake-packages
 *.olean
 
 /playground
