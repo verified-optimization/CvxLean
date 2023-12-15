@@ -9,11 +9,11 @@ namespace Mathlib.Meta.Positivity
 open Lean.Meta Qq
 
 lemma Real.one_sub_one_div_sq_nonneg_of_le_one {x : ℝ} :
-  0 < x → 0 ≤ 1 - x → 0 ≤ (1 / x ^ 2) - 1 :=
+  0 < x → 0 ≤ 1 - x → 0 ≤ (1 / x ^ (2 : ℝ)) - 1 :=
   fun h1 h2 => by
     have hx1 : x ≤ 1 := by linarith
     have h0x : 0 ≤ x := by positivity
-    have h0x2 : 0 < x ^ 2 := by positivity
+    have h0x2 : 0 < x ^ (2 : ℝ) := by positivity
     rw [le_sub_iff_add_le, zero_add, le_div_iff h0x2, one_mul]
     simpa [abs_eq_self.mpr h0x]
 

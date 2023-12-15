@@ -17,7 +17,7 @@ def agp1 :=
       minimize (x)
       subject to
         h1 : 0 < x
-        h2 : x ^ 2 - 10.123 ≤ 0
+        h2 : x ^ (2 : ℝ) - 10.123 ≤ 0
 
 time_cmd reduction reda1/dcpa1 : agp1 := by
   map_exp
@@ -72,7 +72,7 @@ def agp3 :=
       h3 : 0 < z
       h4 : 2 ≤ x
       h5 : x ≤ 3
-      h6 : sqrt x ≤ x ^ 2 - 6 * y / z
+      h6 : sqrt x ≤ x ^ (2 : ℝ) - 6 * y / z
       h7 : x * y = z
 
 time_cmd reduction reda3/dcpa3 : agp3 := by

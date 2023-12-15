@@ -29,7 +29,7 @@ elab (name := prove_log_le_log) "prove_log_le_log" : tactic => do
 macro "map_objFun_log" : tactic =>
   `(tactic|
       apply map_objective (g := Real.log) (hg := by prove_log_le_log) <;>
-      dsimp only [Function.comp])
+      simp only [Function.comp])
 
 /-- Tactic `map_objFun_sq` used to square the objective function attempting to
 prove all the side conditions with simple tactics. -/
@@ -47,7 +47,7 @@ elab (name := prove_pow_two_le_pow_two) "prove_pow_two_le_pow_two" : tactic => d
 macro "map_objFun_sq" : tactic =>
   `(tactic|
       apply map_objective (g := fun x => x ^ (2 : ℝ)) (hg := by prove_pow_two_le_pow_two) <;>
-      dsimp only [Function.comp])
+      simp only [Function.comp])
 
 end Tactic
 

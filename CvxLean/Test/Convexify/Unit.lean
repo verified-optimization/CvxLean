@@ -164,7 +164,7 @@ def powTwoLePowTwoConstr :=
     subject to
       hx : 0 ≤ x
       hy : 0 ≤ y
-      h : x ^ 2 ≤ y ^ 2
+      h : x ^ (2 : ℝ) ≤ y ^ (2 : ℝ)
 
 time_cmd equivalence powTwoLePowTwoConstrRed/powTwoLePowTwoConstrAuto : powTwoLePowTwoConstr := by
   convexify
@@ -842,7 +842,7 @@ time_cmd equivalence powAddRevConstrRed/powAddRevConstrAuto : powAddRevConstr :=
 -- mul_pow (obj)
 def mulPowObj :=
   optimization (x : ℝ)
-    minimize ((x * (sqrt x)) ^ 2 / x : ℝ)
+    minimize ((x * (sqrt x)) ^ (2 : ℝ) / x : ℝ)
     subject to
       hx : 0 < x
 
@@ -857,7 +857,7 @@ def mulPowConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : ((x * (sqrt x)) ^ 2 / x) ≤ 1
+      h : ((x * (sqrt x)) ^ (2 : ℝ) / x) ≤ 1
 
 time_cmd equivalence mulPowConstrRed/mulPowConstrAuto : mulPowConstr := by
   convexify
@@ -867,7 +867,7 @@ time_cmd equivalence mulPowConstrRed/mulPowConstrAuto : mulPowConstr := by
 -- mul_pow-rev (obj)
 def mulPowRevObj :=
   optimization (x : ℝ)
-    minimize (((sqrt x) ^ 2) * ((sqrt (x + 1)) ^ 2) : ℝ)
+    minimize (((sqrt x) ^ (2 : ℝ)) * ((sqrt (x + 1)) ^ (2 : ℝ)) : ℝ)
     subject to
       hx : 0 < x
 
@@ -882,7 +882,7 @@ def mulPowRevConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : (((sqrt x) ^ 2) * ((sqrt (x + 1)) ^ 2)) ≤ 1
+      h : (((sqrt x) ^ (2 : ℝ)) * ((sqrt (x + 1)) ^ (2 : ℝ))) ≤ 1
 
 time_cmd equivalence mulPowRevConstrRed/mulPowRevConstrAuto : mulPowRevConstr := by
   convexify
@@ -892,7 +892,7 @@ time_cmd equivalence mulPowRevConstrRed/mulPowRevConstrAuto : mulPowRevConstr :=
 -- pow_mul-rev (obj)
 def powMulRevObj :=
   optimization (x : ℝ)
-    minimize ((x ^ 1) ^ 2 : ℝ)
+    minimize ((x ^ (1 : ℝ)) ^ (2 : ℝ) : ℝ)
     subject to
       hx : 0 < x
 
@@ -907,7 +907,7 @@ def powMulRevConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : ((x ^ 2) ^ 2) ≤ 1
+      h : ((x ^ (2 : ℝ)) ^ (2 : ℝ)) ≤ 1
 
 time_cmd equivalence powMulRevConstrRed/powMulRevConstrAuto : powMulRevConstr := by
   convexify
@@ -917,7 +917,7 @@ time_cmd equivalence powMulRevConstrRed/powMulRevConstrAuto : powMulRevConstr :=
 -- div_pow (obj)
 def divPowObj :=
   optimization (x : ℝ)
-    minimize ((x ^ 2) * (1 / x) ^ 2 : ℝ)
+    minimize ((x ^ (2 : ℝ)) * (1 / x) ^ (2 : ℝ) : ℝ)
     subject to
       hx : 0 < x
 
@@ -932,7 +932,7 @@ def divPowConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : (1 / x) ^ 2 ≤ 1
+      h : (1 / x) ^ (2 : ℝ) ≤ 1
 
 time_cmd equivalence divPowConstrRed/divPowConstrAuto : divPowConstr := by
   convexify
@@ -942,7 +942,7 @@ time_cmd equivalence divPowConstrRed/divPowConstrAuto : divPowConstr := by
 -- div_pow-rev (obj)
 def divPowRevObj :=
   optimization (x : ℝ)
-    minimize ((x + x) ^ 2 / x ^ 2 : ℝ)
+    minimize ((x + x) ^ (2 : ℝ) / x ^ (2 : ℝ) : ℝ)
     subject to
       hx : 0 < x
 
@@ -957,7 +957,7 @@ def divPowRevConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : ((x + x) ^ 2 / x ^ 2) ≤ x
+      h : ((x + x) ^ (2 : ℝ) / x ^ (2 : ℝ)) ≤ x
 
 time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
   convexify
@@ -967,7 +967,7 @@ time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr :=
 -- pow_sub-rev (obj)
 def powSubRevObj :=
   optimization (x : ℝ)
-    minimize ((x ^ 2) / (sqrt x) : ℝ)
+    minimize ((x ^ (2 : ℝ)) / (sqrt x) : ℝ)
     subject to
       hx : 0 < x
 
@@ -982,7 +982,7 @@ def powSubRevConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : ((x ^ 2) / (sqrt x)) ≤ 1
+      h : ((x ^ (2 : ℝ)) / (sqrt x)) ≤ 1
 
 time_cmd equivalence powSubRevConstrRed/powSubRevConstrAuto : powSubRevConstr := by
   convexify
@@ -992,7 +992,7 @@ time_cmd equivalence powSubRevConstrRed/powSubRevConstrAuto : powSubRevConstr :=
 -- div_pow_eq_mul_pow_neg (obj)
 def divPowEqMulPowNegObj :=
   optimization (x : ℝ)
-    minimize (1 / (x ^ 2) : ℝ)
+    minimize (1 / (x ^ (2 : ℝ)) : ℝ)
     subject to
       hx : 0 < x
 
@@ -1007,7 +1007,7 @@ def divPowEqMulPowNegConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : 1 / (x ^ 2) ≤ 1
+      h : 1 / (x ^ (2 : ℝ)) ≤ 1
 
 time_cmd equivalence divPowEqMulPowNegConstrRed/divPowEqMulPowNegConstrAuto : divPowEqMulPowNegConstr := by
   convexify
@@ -1067,7 +1067,7 @@ time_cmd equivalence sqrtEqRpowConstrRed/sqrtEqRpowConstrAuto : sqrtEqRpowConstr
 -- pow_half_two (obj)
 def powHalfTwoObj :=
   optimization (x : ℝ)
-    minimize ((sqrt x) ^ 2 : ℝ)
+    minimize ((sqrt x) ^ (2 : ℝ) : ℝ)
     subject to
       hx : 0 < x
 
@@ -1082,7 +1082,7 @@ def powHalfTwoConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : (sqrt x) ^ 2 ≤ 1
+      h : (sqrt x) ^ (2 : ℝ) ≤ 1
 
 time_cmd equivalence powHalfTwoConstrRed/powHalfTwoConstrAuto : powHalfTwoConstr := by
   convexify
@@ -1220,7 +1220,7 @@ time_cmd equivalence expMulConstrRed/expMulConstrAuto : expMulConstr := by
 -- exp_mul-rev (obj)
 def expMulRevObj :=
   optimization (x : ℝ)
-    minimize ((exp x) ^ 2 : ℝ)
+    minimize ((exp x) ^ (2 : ℝ) : ℝ)
     subject to
       hx : 0 < x
 
@@ -1234,7 +1234,7 @@ def expMulRevConstr :=
   optimization (x : ℝ)
     minimize (0 : ℝ)
     subject to
-      h : ((exp x) ^ 2) ≤ 1
+      h : ((exp x) ^ (2 : ℝ)) ≤ 1
 
 time_cmd equivalence expMulRevConstrRed/expMulRevConstrAuto : expMulRevConstr := by
   convexify
@@ -1368,7 +1368,7 @@ time_cmd equivalence logDivConstrRed/logDivConstrAuto : logDivConstr := by
 -- log_div-rev (obj)
 def logDivRevObj :=
   optimization (x : ℝ)
-    minimize (- (log (x ^ 2) - log x))
+    minimize (- (log (x ^ (2 : ℝ)) - log x))
     subject to
       hx : 0 < x
 
@@ -1383,7 +1383,7 @@ def logDivRevConstr :=
     minimize (0 : ℝ)
     subject to
       hx : 0 < x
-      h : - (log (x ^ 2) - log x) ≤ 1
+      h : - (log (x ^ (2 : ℝ)) - log x) ≤ 1
 
 time_cmd equivalence logDivRevConstrRed/logDivRevConstrAuto : logDivRevConstr := by
   convexify

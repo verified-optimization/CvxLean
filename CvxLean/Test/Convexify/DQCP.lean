@@ -45,11 +45,11 @@ section QCP2
 
 def hypersonicShapeDesign (a b : ℝ) :=
   optimization (Δx : ℝ)
-    minimize sqrt (1 / (Δx ^ 2) - 1)
+    minimize sqrt (1 / (Δx ^ (2 : ℝ)) - 1)
     subject to
       h1 : 10e-6 ≤ Δx
       h2 : Δx ≤ 1
-      h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
+      h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ (2 : ℝ)) ≤ 0
 
 time_cmd equivalence redqcp2/dqcp2 : hypersonicShapeDesign 0.05 0.65 := by
   unfold hypersonicShapeDesign

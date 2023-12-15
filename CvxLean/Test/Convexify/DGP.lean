@@ -16,7 +16,7 @@ def gp1 :=
       minimize (x)
       subject to
         h1 : 0 < x
-        h2 : x ^ 2 ≤ 10.123
+        h2 : x ^ (2 : ℝ) ≤ 10.123
 
 time_cmd reduction red1/dcp1 : gp1 := by
   map_exp
@@ -94,7 +94,7 @@ def gp4 :=
       h3 : 0 < z
       h4 : 2 <= x
       h5 : x <= 3
-      h6 : x ^ 2 + 6 * y / z <= sqrt x
+      h6 : x ^ (2 : ℝ) + 6 * y / z <= sqrt x
       h7 : x * y = z
 
 time_cmd reduction red4/dcp4 : gp4 := by
@@ -128,8 +128,8 @@ def gp5 :=
       h3 : 0 < z
       h4 : 2 ≤ x
       h5 : x ≤ 3
-      h6 : x^2 + 3 * y / z ≤ sqrt x
-      h7 : x / y = z ^ 2
+      h6 : x ^ (2 : ℝ) + 3 * y / z ≤ sqrt x
+      h7 : x / y = z ^ (2 : ℝ)
 
 time_cmd reduction red5/dcp5 : gp5 := by
   map_exp
@@ -202,7 +202,7 @@ def gp7 :=
       h1 : 0 < x
       h2 : 0 < y
       h3 : 0 < z
-      h4 : (1 / 3) * (1 / (x ^ 2)) * (1 / (y ^ 2)) + (4 / 3) * (sqrt y) * (1 / z) ≤ 1
+      h4 : (1 / 3) * (1 / (x ^ (2 : ℝ))) * (1 / (y ^ (2 : ℝ))) + (4 / 3) * (sqrt y) * (1 / z) ≤ 1
       h5 : x + 2 * y + 3 * z ≤ 1
       h6 : (1 / 2) * x * y = 1
 
@@ -230,20 +230,20 @@ section GP8
 -- hmin = wmin = 1, hmax = wmax = 100, Rmax = 10, σ = 0.5, π ≈ 3.14159.
 def gp8 :=
   optimization (h w A r : ℝ)
-    minimize 2 * A * sqrt (w ^ 2 + h ^ 2)
+    minimize 2 * A * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ))
     subject to
       h1  : 0 < h
       h2  : 0 < w
       h3  : 0 < A
       h4  : 0 < r
-      h5  : 10 * sqrt (w ^ 2 + h ^ 2) / 2 * h ≤ 0.5 * A
-      h6  : 20 * sqrt (w ^ 2 + h ^ 2) / 2 * w ≤ 0.5 * A
+      h5  : 10 * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ)) / 2 * h ≤ 0.5 * A
+      h6  : 20 * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ)) / 2 * w ≤ 0.5 * A
       h7  : 1 ≤ h
       h8  : h ≤ 100
       h9  : 1 ≤ w
       h10 : w ≤ 100
-      h11 : 1.1 * r ≤ sqrt (A / (2 * 3.14159) + r ^ 2)
-      h12 : sqrt (A / (2 * 3.14159) + r ^ 2) ≤ 10
+      h11 : 1.1 * r ≤ sqrt (A / (2 * 3.14159) + r ^ (2 : ℝ))
+      h12 : sqrt (A / (2 * 3.14159) + r ^ (2 : ℝ)) ≤ 10
 
 set_option maxHeartbeats 1000000 in
 time_cmd reduction red8/dcp8 : gp8 := by

@@ -125,7 +125,7 @@ macro "map_exp" : tactic =>
         (g := fun x => ExpMap.exp x)
         (f := fun x => LogMap.log x)
         (hfg := by prove_exp_log) <;>
-      dsimp only [Function.comp, ExpMap.exp, LogMap.log] <;>
+      simp only [Function.comp, ExpMap.exp, LogMap.log] <;>
       remove_positive_constraints)
 
 /-- Same as `map_exp` but at a particular position in the domain product. -/

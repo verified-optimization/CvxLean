@@ -192,7 +192,7 @@ noncomputable def testEntr : Solution $
 
 noncomputable def testQuadOverLin : Solution $
   optimization (x y : ℝ)
-    minimize x ^ 2 / y
+    minimize x ^ (2 : ℝ) / y
     subject to
       c0 : 0 ≤ x
       c0 : 1 / 100000 ≤ y

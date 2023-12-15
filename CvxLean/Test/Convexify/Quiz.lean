@@ -30,7 +30,7 @@ time_cmd equivalence eq2/dcpquiz2 : quiz2 := by
 
 def quiz3 :=
   optimization (x : ℝ)
-    minimize ((sqrt x) ^ 2)
+    minimize ((sqrt x) ^ (2 : ℝ))
     subject to
       h : 0 ≤ x
 
@@ -57,7 +57,7 @@ time_cmd equivalence eq5/dcpquiz5 : quiz5 := by
 
 def quiz6 :=
   optimization (x : ℝ)
-    minimize (-(log ((364 * x) ^ 2)))
+    minimize (-(log ((364 * x) ^ (2 : ℝ))))
     subject to
       h : 0 ≤ x
 
@@ -66,7 +66,7 @@ time_cmd equivalence eq6/dcpquiz6 : quiz6 := by
 
 def quiz7 :=
   optimization (x : ℝ)
-    minimize ((sqrt ((x + 2) * (1 / x))) ^ 2)
+    minimize ((sqrt ((x + 2) * (1 / x))) ^ (2 : ℝ))
     subject to
       h : 0 < x
 
@@ -84,7 +84,7 @@ time_cmd equivalence eq8/dcpquiz8 : quiz8 := by
 
 def quiz9 :=
   optimization (x y : ℝ)
-    minimize (1 / (((x⁻¹) ^ 2) / (y⁻¹)))
+    minimize (1 / (((x⁻¹) ^ (2 : ℝ)) / (y⁻¹)))
     subject to
       h₁ : 0 < x
       h₂ : 0 < y
@@ -94,7 +94,7 @@ time_cmd equivalence eq9/dcpquiz9 : quiz9 := by
 
 def quiz10 :=
   optimization (x : ℝ)
-    minimize ((log (exp x)) ^ 2)
+    minimize ((log (exp x)) ^ (2 : ℝ))
     subject to
       h : 0 ≤ x
 
