@@ -123,8 +123,6 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
         args := #[inputPath],
         env := #[("PATH", p)] }
 
-      dbg_trace s!"OUT: {out.stdout} {out.stderr}"
-
       if out.exitCode != 0 then
         dbg_trace ("MOSEK exited with code " ++ ToString.toString out.exitCode)
         return Sol.Response.failure out.exitCode.toNat
