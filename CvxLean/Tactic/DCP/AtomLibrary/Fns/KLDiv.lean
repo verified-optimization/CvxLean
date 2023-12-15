@@ -116,7 +116,7 @@ implementationConstraints
   (c2 : Vec.const m (1 / 100000) ≤ y)
 solution (t := fun i => -((x i) * log ((x i) / (y i))))
 solutionEqualsAtom by
-  simp [Vec.klDiv, klDiv]; ext i; simp; ring
+  unfold Vec.klDiv klDiv; ext i; simp; ring
 feasibility
   (c1 : by
     simp [Vec.klDiv, klDiv]

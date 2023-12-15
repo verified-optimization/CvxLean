@@ -37,7 +37,7 @@ solution
     if h : A.PosDef then (LDL.diag h) * (LDL.lower h)ᵀ else 0)
 solutionEqualsAtom by
   simp only [dif_pos hA, Vec.sum, Vec.log]
-  rw [Matrix.LogDetAtom.solution_eq_atom hA]
+  erw [Matrix.LogDetAtom.solution_eq_atom hA]
   congr
 feasibility
   (c_exp : by

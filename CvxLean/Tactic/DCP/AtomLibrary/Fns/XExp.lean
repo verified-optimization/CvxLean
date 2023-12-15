@@ -12,14 +12,14 @@ implementationVars (t₀ : ℝ) (t₁ : ℝ)
 implementationObjective t₀
 implementationConstraints
   (c1 : expCone t₁ x t₀)
-  (c2 : x ^ 2 ≤ t₁)
+  (c2 : x ^ (2 : ℝ) ≤ t₁)
   (c3 : 0 ≤ x)
-solution (t₀ := x * exp x) (t₁ := x ^ 2)
+solution (t₀ := x * exp x) (t₁ := x ^ (2 : ℝ))
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
     unfold expCone
-    by_cases (0 < x)
+    by_cases h : 0 < x
     . left
       refine ⟨h, ?_⟩
       rw [rpow_two, pow_two, ←mul_div, div_self (ne_of_lt h).symm, mul_one]

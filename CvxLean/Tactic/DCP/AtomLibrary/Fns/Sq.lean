@@ -7,14 +7,14 @@ namespace CvxLean
 
 open Real
 
-declare_atom sq [convex] (x : ℝ)? : x ^ 2 :=
+declare_atom sq [convex] (x : ℝ)? : x ^ (2 : ℝ) :=
 vconditions
 implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints
-  (c1 : rotatedSoCone t (1/2) ![x])
+  (c1 : rotatedSoCone t (1 / 2) ![x])
 solution
-  (t := x ^ 2)
+  (t := x ^ (2 : ℝ))
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
@@ -28,24 +28,24 @@ optimality by
   exact h
 vconditionElimination
 
-declare_atom Vec.sq [convex] (n : ℕ)& (x : Fin n → ℝ)? : x ^ 2 :=
+declare_atom Vec.sq [convex] (n : ℕ)& (x : Fin n → ℝ)? : x ^ (2 : ℝ) :=
 vconditions
 implementationVars (t : Fin n → ℝ)
 implementationObjective (t)
 implementationConstraints
-  (c1 : Vec.rotatedSoCone t (fun _ => 1/2) (Vec.toMatrix x))
+  (c1 : Vec.rotatedSoCone t (fun _ => 1 / 2) (Vec.toMatrix x))
 solution
-  (t := x ^ 2)
+  (t := x ^ (2 : ℝ))
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
     unfold Vec.rotatedSoCone
-    intros t i
-    convert sq.feasibility0 (x i); simp)
+    intros _ i
+    exact sq.feasibility0 (x i))
 optimality by
   intros i
   unfold Vec.rotatedSoCone at c1
-  convert sq.optimality (x i) (t i) (c1 i); simp
+  exact sq.optimality (x i) (t i) (c1 i)
 vconditionElimination
 
 end CvxLean

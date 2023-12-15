@@ -33,7 +33,7 @@ feasibility
     exact powNegOne.feasibility0 x hx)
   (c2 : by
     rw [Real.inv_eq_pow_neg_one hx]
-    have hinv : 0 < x ^ (-1) := by rwa [rpow_neg_one, inv_pos]
+    have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     exact le_of_lt hinv)
   (c3 : le_of_lt hx)
 optimality by
@@ -74,7 +74,7 @@ feasibility
     exact powNegOne.feasibility0 x hx)
   (c2 : by
     rw [Real.one_div_eq_pow_neg_one hx]
-    have hinv : 0 < x ^ (-1) := by rwa [rpow_neg_one, inv_pos]
+    have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     exact le_of_lt hinv)
   (c3 : le_of_lt hx)
 optimality by

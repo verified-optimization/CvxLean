@@ -108,12 +108,12 @@ def evalOneSubDivExp : PositivityExt where eval {_ _α} zα pα e := do
       pure .none
 
 lemma Real.scaled_sq_diff_pos_of_pos {a x : ℝ} :
-  0 < a - 1 → 0 < x → 0 < (a * x) ^ 2 - x ^ 2 :=
+  0 < a - 1 → 0 < x → 0 < (a * x) ^ (2 : ℝ) - x ^ (2 : ℝ) :=
   fun h1 h2 => by
     have ha : 0 ≤ a := by linarith
     have ha1 : 1 < a := by linarith
     have hx : 0 ≤ x := by linarith
-    have hx2 : 0 < x ^ 2 := by positivity
+    have hx2 : 0 < x ^ (2 : ℝ) := by positivity
     rw [sub_pos, Real.mul_rpow ha hx, ←div_lt_iff hx2, div_self (ne_of_gt hx2)]
     simp [ha1, abs_eq_self.mpr ha]
 

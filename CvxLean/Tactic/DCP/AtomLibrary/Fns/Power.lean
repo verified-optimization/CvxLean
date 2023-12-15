@@ -20,7 +20,7 @@ optimality by
   intros _ h
   simp [h]
 
-declare_atom powNegOne [convex] (x : ℝ)- : x ^ (-1) :=
+declare_atom powNegOne [convex] (x : ℝ)- : x ^ (-1 : ℝ) :=
 vconditions
   (hx : 0 < x)
 implementationVars (t : ℝ)
@@ -30,17 +30,17 @@ implementationConstraints
   (c2 : 0 ≤ t)
   (c3 : 0 ≤ x)
 solution
-  (t := x ^ (-1))
+  (t := x ^ (-1 : ℝ))
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
     have hxnn := le_of_lt hx
-    have hinv : 0 < x ^ (-1) := by rwa [rpow_neg_one, inv_pos]
+    have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     have hinvnn := le_of_lt hinv
     rw [soCone_add_sub_two_of_nonneg hinvnn hxnn, rpow_neg_one]
     field_simp)
   (c2 : by
-    have hinv : 0 < x ^ (-1) := by rwa [rpow_neg_one, inv_pos]
+    have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     exact le_of_lt hinv)
   (c3 : le_of_lt hx)
 optimality by
@@ -65,7 +65,7 @@ vconditionElimination
 
 -- NOTE(RFM): It is not straightforward to express it in terms of x ^ (-1) and
 -- x ^ 2 because of vconditions.
-declare_atom powNegTwo [convex] (x : ℝ)- : x ^ (-2) :=
+declare_atom powNegTwo [convex] (x : ℝ)- : x ^ (-2 : ℝ) :=
 vconditions
   (hx : 0 < x)
 implementationVars (t₀ : ℝ) (t₁ : ℝ)
@@ -77,21 +77,21 @@ implementationConstraints
   (c4 : 0 ≤ t₁)
   (c5 : 0 ≤ x)
 solution
-  (t₀ := x ^ (-2)) (t₁ := x ^ (-1))
+  (t₀ := x ^ (-2 : ℝ)) (t₁ := x ^ (-1 : ℝ))
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
     dsimp
     have hxnn := le_of_lt hx
-    have hinv : 0 < x ^ (-1) := by rwa [rpow_neg_one, inv_pos]
+    have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
     have hinvnn := le_of_lt hinv
     rw [soCone_add_sub_two_of_nonneg hxnn hinvnn, rpow_neg_one]
     field_simp)
   (c2 : by
     dsimp
     have hxnn := le_of_lt hx
-    have hinv : 0 < x ^ (-1) := by rwa [rpow_neg_one, inv_pos]
-    have hxneg2 : 0 < x ^ (-2) := by
+    have hinv : 0 < x ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
+    have hxneg2 : 0 < x ^ (-2 : ℝ) := by
       rw [(by norm_num : (-2 : ℝ) = (-1) + (-1)), rpow_add hx]
       apply mul_pos <;> exact hinv
     have hxneg2nn := le_of_lt hxneg2
@@ -130,24 +130,24 @@ optimality by
   have ht₁2pos : 0 < t₁ ^ (2 : ℝ) := by
     rw [rpow_two]
     exact pow_two_pos_of_ne_zero t₁ (ne_of_gt ht₁pos)
-  have ht₁inv : 0 < t₁ ^ (-1) := by rwa [rpow_neg_one, inv_pos]
+  have ht₁inv : 0 < t₁ ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
   have ht₀pos : 0 < t₀ := by
     cases (lt_or_eq_of_le c3) with
     | inl h => exact h
     | inr h => rw [←h] at c2; linarith
   -- Combine c1 and c2 appropriately to get t₀ ^ (-1) ≤ y ^ 2.
-  have ht₁invx : t₁ ^ (-1) ≤ x := by
+  have ht₁invx : t₁ ^ (-1 : ℝ) ≤ x := by
     rw [rpow_neg c4, rpow_one]
     rwa [←div_le_iff ht₁pos, ←inv_eq_one_div] at c1
-  have ht₁invy : t₁ ^ (-1) ≤ y := le_trans ht₁invx hy
+  have ht₁invy : t₁ ^ (-1 : ℝ) ≤ y := le_trans ht₁invx hy
   have ht₁invnn := le_of_lt ht₁inv
-  have ht₁neg2y2 : t₁ ^ (-2) ≤ y ^ (2 : ℝ) := by
+  have ht₁neg2y2 : t₁ ^ (-2 : ℝ) ≤ y ^ (2 : ℝ) := by
     have h := mul_le_mul ht₁invy ht₁invy ht₁invnn hynn
     rw [←rpow_add ht₁pos] at h
     norm_num at h
     rw [←pow_two, ←rpow_two] at h
     exact h
-  have ht₀invt₁neg2 : t₀ ^ (-1) ≤ t₁ ^ (-2) := by
+  have ht₀invt₁neg2 : t₀ ^ (-1 : ℝ) ≤ t₁ ^ (-2 : ℝ) := by
     rw [mul_one] at c2
     have ht₀1 : 0 < t₀ ^ (1 : ℝ) := by rwa [rpow_one]
     rw [rpow_neg c3, rpow_neg c4, inv_le_inv ht₀1 ht₁2pos, rpow_one]

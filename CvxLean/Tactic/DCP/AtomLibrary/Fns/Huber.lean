@@ -17,7 +17,7 @@ open Real
 declare_atom huber [convex] (x : ℝ)? : huber x :=
 vconditions
 implementationVars (v : ℝ) (w : ℝ)
-implementationObjective (2 * v + w ^ 2)
+implementationObjective (2 * v + w ^ (2 : ℝ))
 implementationConstraints
   (c1 : |x| ≤ v + w)
   (c2 : 0 ≤ w)
@@ -42,7 +42,8 @@ optimality by
   simp [huber]
   split_ifs with h
   { by_cases hwx : w ≤ |x|
-    { have hsq : |x| ^ 2 - w ^ 2 = (|x| + w) * (|x| - w) := by ring_nf; simp
+    { have hsq : |x| ^ (2 : ℝ) - w ^ (2 : ℝ) = (|x| + w) * (|x| - w) := by
+        ring_nf; simp
       rw [←sub_le_iff_le_add, ←sq_abs, ←rpow_two, ←rpow_two, hsq]
       apply mul_le_mul <;> linarith }
     { replace hwx := not_le.mp hwx
@@ -67,7 +68,7 @@ vconditionElimination
 declare_atom Vec.huber [convex] (m : Nat)& (x : Fin m → ℝ)? : Vec.huber x :=
 vconditions
 implementationVars (v : Fin m → ℝ) (w : Fin m → ℝ)
-implementationObjective (2 • v + w ^ 2)
+implementationObjective (2 • v + w ^ (2 : ℝ))
 implementationConstraints
   (c1 : |x| ≤ v + w)
   (c2 : 0 ≤ w)

@@ -15,22 +15,22 @@ open Real
 -- TODO(RFM): generalize to x : Fin n → ℝ
 -- TODO(RFM): distinguish between nonincreasing and nondecreasing.
 -- TODO(RFM): how to do strict positivity and make vcondelimination work?
-declare_atom quadOverLin [convex] (x : ℝ)? (y : ℝ)- : x ^ 2 / y :=
+declare_atom quadOverLin [convex] (x : ℝ)? (y : ℝ)- : x ^ (2 : ℝ) / y :=
 vconditions
   (hy : 1 / 100000 ≤ y)
-implementationVars (t : ℝ) (y' : ℝ)
+implementationVars (t : ℝ)
 implementationObjective (t)
 implementationConstraints
   (c1 : soCone (y + t) ![y - t, 2 * x])
   (c2 : 0 ≤ t)
   (c3 : 1 / 100000 ≤ y)
-solution (t := x ^ 2 / y) (y' := log y)
+solution (t := x ^ (2 : ℝ) / y)
 solutionEqualsAtom by rfl
 feasibility
   (c1 : by
     have hypos : 0 < y := by positivity
     have hynn : 0 ≤ y := by linarith
-    have hx2ynn : 0 ≤ x ^ 2 / y := by
+    have hx2ynn : 0 ≤ x ^ (2 : ℝ) / y := by
       rw [rpow_two]; exact div_nonneg (pow_two_nonneg x) hynn
     rw [soCone_add_sub_two_mul_of_nonneg _ hynn hx2ynn]
     rw [mul_div, mul_comm, ←mul_div, div_self (ne_of_gt hypos), mul_one])
