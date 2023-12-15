@@ -1,6 +1,4 @@
 import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Linarith
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Meta
@@ -9,7 +7,7 @@ import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.Solver.Float.OptimizationParam
-import CvxLean.Tactic.Util.PositivityExt
+import CvxLean.Tactic.Arith.Arith
 
 namespace CvxLean
 
@@ -128,9 +126,9 @@ where
       | some fvarId =>
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- Try to prove simple bconditions by norm_num.
+        -- Try to prove simple bconditions by arith.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
-          let v ← Lean.Elab.Term.elabTerm (← `(by norm_num)).raw (some bcondType)
+          let v ← Lean.Elab.Term.elabTerm (← `(by arith)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
           let v ← instantiateMVars v
           return v
@@ -257,25 +255,19 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
       match ← constraints.findIdxM? (isDefEq vcond) with
       | some i => do vcondData := vcondData.push (Sum.inl i)
       | none =>
-        -- TODO(RFM): Same issue with background conditions. Find a less hacky way?
         -- Infer vconditions from constraints.
-        let vcondProofTyBody ← liftM <| constraints.foldrM mkArrow vcond
-        let vcondProofTy ← mkForallFVars args vcondProofTyBody
+        vcondData := ←
+          withExistingLocalDecls originalConstrVars.toList do
+            let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
+              let tac ← `(by arith)
+              let v ← Lean.Elab.Term.elabTerm tac.raw (some vcond)
+              Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
+              instantiateMVars v
 
-        let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
-            let tac ← `(by intros; try { positivity_ext <;> linarith <;> norm_num })
-            let v ← Lean.Elab.Term.elabTerm tac.raw (some vcondProofTy)
-            Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
-            instantiateMVars v
-
-        if let some e' := e then
-          -- The inferred variable condition.
-          let newCondition := mkAppNBeta e' args
-          let newCondition := mkAppNBeta newCondition (originalConstrVars.map (mkFVar ·.fvarId))
-
-          vcondData := vcondData.push (Sum.inr newCondition)
-        else
-          throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
+            if let some e' := e then
+              return vcondData.push (Sum.inr e')
+            else
+              throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
 
     return (Tree.node vcondData childrenVCondData)
   | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())
@@ -367,17 +359,19 @@ abbrev FeasibilityProofsTree := Tree FeasibilityProofs Unit
 partial def mkFeasibility :
   GraphAtomDataTree →
   ReducedExprsWithSolutionTree →
+  BCondsTree →
   VCondsTree →
   SolEqAtomProofsTree →
   MetaM FeasibilityProofsTree
   | Tree.node atom childAtoms,
     Tree.node _reducedWithSolution childReducedWithSolution,
+    Tree.node bconds childBConds,
     Tree.node vcondVars childVCondVars,
     Tree.node _solEqAtom childSolEqAtom => do
       -- Recursive calls for arguments.
       let mut childFeasibility := #[]
       for i in [:childAtoms.size] do
-        let c ← mkFeasibility childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]! childSolEqAtom[i]!
+        let c ← mkFeasibility childAtoms[i]! childReducedWithSolution[i]! childBConds[i]! childVCondVars[i]! childSolEqAtom[i]!
         childFeasibility := childFeasibility.push c
       -- Use solEqAtom of children to rewrite the arguments in the vconditions.
       let mut vconds := #[]
@@ -389,12 +383,13 @@ partial def mkFeasibility :
       -- Apply feasibility property of the atom.
       let feasibility := atom.feasibility
       let feasibility := feasibility.map (mkAppN · (childReducedWithSolution.map (·.val.1)))
+      let feasibility := feasibility.map (mkAppN · bconds)
       let feasibility := feasibility.map (mkAppN · vconds)
       let _ ← feasibility.mapM check
       return Tree.node feasibility childFeasibility
-  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ =>
+  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _  =>
       return Tree.leaf ()
-  | _, _, _, _ =>
+  | _, _, _, _, _ =>
       throwError "Tree mismatch"
 
 abbrev OptimalityProof := Expr
@@ -747,12 +742,16 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkFeasibilityOC (originalVarsDecls : Array LocalDecl)
-  (atoms : OC (Tree GraphAtomData Expr)) (reducedWithSolution : OC ReducedExprsWithSolutionTree)
-  (vcondVars : OC (Tree (Array Expr) Unit)) (originalConstrVars : Array LocalDecl) (solEqAtom : OC (Tree Expr Expr)) :
-  MetaM (OC (Tree (Array Expr) Unit)) :=
+  (atoms : OC GraphAtomDataTree)
+  (reducedWithSolution : OC ReducedExprsWithSolutionTree)
+  (bconds : OC BCondsTree)
+  (vcondVars : OC VCondsTree)
+  (originalConstrVars : Array LocalDecl)
+  (solEqAtom : OC SolEqAtomProofsTree) :
+  MetaM (OC FeasibilityProofsTree) :=
 withExistingLocalDecls originalVarsDecls.toList do
   withExistingLocalDecls originalConstrVars.toList do
-    let feasibility ← OC.map4M mkFeasibility atoms reducedWithSolution vcondVars solEqAtom
+    let feasibility ← OC.map5M mkFeasibility atoms reducedWithSolution bconds vcondVars solEqAtom
     trace[Meta.debug] "feasibility {feasibility}"
     return feasibility
 /-- -/
@@ -844,7 +843,7 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
   let forwardImagesNewVars ← withExistingLocalDecls originalVarsDecls.toList do
     mkForwardImagesNewVars reducedWithSolution
   let solEqAtom ← mkSolEqAtomOC originalVarsDecls atoms reducedWithSolution vcondVars originalConstrVars
-  let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution vcondVars
+  let feasibility ← mkFeasibilityOC originalVarsDecls atoms reducedWithSolution bconds vcondVars
     originalConstrVars solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
   let (newConstrs, newConstrVars, newConstrVarsArray)
@@ -872,7 +871,7 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
 -- solution to solution but also the forward and backward maps.
 -- TODO: Better types for return type.
 def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
-  MetaM (Expr × (Expr × Expr × Expr)) := do
+  MetaM (Expr × Expr × Expr) := do
   -- Extract objective and constraints from `goalExprs`.
   let (objFun, constraints, originalVarsDecls)
     ← withLambdaBody goalExprs.constraints fun p constraints => do
@@ -966,25 +965,26 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
         check res
         trace[Meta.debug] "second check passed"
         let res ← instantiateMVars res
+        check res
+        trace[Meta.debug] "instantiate mvars passed"
         return (forwardMap, backwardMap, res)
 
-  let newGoal ← mkFreshExprMVar none
-
-  return (newGoal, (forwardMap, backwardMap, reduction))
+  return (forwardMap, backwardMap, reduction)
 
 /-- -/
-def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × (Expr × Expr × Expr)) := do
+def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × Expr × Expr) := do
   let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
   canonizeGoalFromSolutionExpr goalExprs
 
 /-- -/
-def canonizeGoal (goal : MVarId) : MetaM MVarId := do
+def canonizeGoal (goal : MVarId) : MetaM (List MVarId) := do
   let goalExprs ← Meta.SolutionExpr.fromGoal goal
-  let (newGoal, (_forwardMap, _backwardMap, reduction)) ← canonizeGoalFromSolutionExpr goalExprs
+  let (_forwardMap, _backwardMap, reduction) ← canonizeGoalFromSolutionExpr goalExprs
+  let newGoal ← mkFreshExprMVar none
   let assignment := mkApp reduction newGoal
   check assignment
   goal.assign assignment
-  return newGoal.mvarId!
+  return [newGoal.mvarId!]
 
 end DCP
 
@@ -996,9 +996,7 @@ syntax (name := dcp) "dcp" : tactic
 
 @[tactic dcp]
 def evalDcp : Tactic := fun stx => match stx with
-| `(tactic| dcp) => do
-  let goal ← Elab.Tactic.getMainGoal
-  replaceMainGoal [← DCP.canonizeGoal goal]
+| `(tactic| dcp) => liftMetaTactic DCP.canonizeGoal
 | _ => throwUnsupportedSyntax
 
 end Tactic

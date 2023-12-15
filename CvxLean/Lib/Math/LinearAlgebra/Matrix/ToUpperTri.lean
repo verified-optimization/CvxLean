@@ -36,7 +36,7 @@ lemma upperTriangular_toUpperTri {m : Type _} [LinearOrder m] (A : Matrix m m �
 lemma upperTriangular.toUpperTri_eq {A : Matrix n n ℝ} (hA : upperTriangular A) :
   A.toUpperTri = A := by
   ext i j
-  by_cases i ≤ j
+  by_cases h : i ≤ j
   simp [toUpperTri, h]
   simp [toUpperTri, h, hA (lt_of_not_ge h)]
 

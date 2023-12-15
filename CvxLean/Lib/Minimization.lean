@@ -2,29 +2,29 @@ import Mathlib.Order.Bounds.Basic
 import Mathlib.Data.Set.Function
 
 /-- Type of an optimization problem. -/
-structure Minimization (D : Type) (R : Type) where 
+structure Minimization (D : Type) (R : Type) where
   objFun : D → R
   constraints : D → Prop
 
 namespace Minimization
 
-variable {D E R S : Type} [Preorder R] [Preorder S] 
+variable {D E R S : Type} [Preorder R] [Preorder S]
 variable (p : Minimization D R) (q : Minimization E R)
 
 /-- A feasible point is a point in the domain that satisfies the constraints. -/
-structure FeasPoint where 
-  point : D 
+structure FeasPoint where
+  point : D
   feasibility : p.constraints point
 
 /-- A solution is a feasible point that is also optimal. -/
-structure Solution where 
-  point : D 
-  feasibility : p.constraints point 
+structure Solution where
+  point : D
+  feasibility : p.constraints point
   optimality : ∀ y : p.FeasPoint, p.objFun point ≤ p.objFun y.point
 
 section Reductions
 
-/-- Reduction from solution to solution maintaining equivalence through 
+/-- Reduction from solution to solution maintaining equivalence through
 functions `f` and `g`. For most purposes, this might be enough. -/
 def simple_reduction
   (sol : q.Solution)
@@ -49,11 +49,11 @@ def simple_reduction
 /-- Decompose constraint by adding another equality constraint. -/
 def decompose_constraint
   (g : D → E) (c : D → E → Prop)
-  (hc : ∀ x, p.constraints x = c x (g x)) 
+  (hc : ∀ x, p.constraints x = c x (g x))
   (sol : Solution
-    { objFun := fun (y : E × D) => objFun p y.snd, 
+    { objFun := fun (y : E × D) => objFun p y.snd,
       constraints := fun (y : E × D) => y.fst = g y.snd ∧ c y.snd y.fst }) :
-  p.Solution := 
+  p.Solution :=
 simple_reduction p _ sol
   (fun x => (g x, x)) (fun x => x.2)
   (fun {x} hx => le_refl _)
@@ -65,8 +65,8 @@ simple_reduction p _ sol
 def eq_to_le_left
   (e: Equiv D (S × E)) (f : E → S) (c : D → Prop)
   (hc : ∀ {x}, p.constraints x ↔ ((e.toFun x).1 = f (e.toFun x).2 ∧ c x))
-  (h_objFun : ∀ x r s, p.objFun (e.symm.toFun (r,x)) = p.objFun (e.symm.toFun (s,x))) 
-  (h_mono: ∀ x r s, r ≤ s → c (e.symm.toFun (r, x)) → c (e.symm.toFun (s, x))) 
+  (h_objFun : ∀ x r s, p.objFun (e.symm.toFun (r,x)) = p.objFun (e.symm.toFun (s,x)))
+  (h_mono: ∀ x r s, r ≤ s → c (e.symm.toFun (r, x)) → c (e.symm.toFun (s, x)))
   (sol : Solution
     { objFun := p.objFun,
       constraints := fun x => (e.toFun x).1 ≤ f (e.toFun x).2 ∧ c x } ) :
@@ -86,11 +86,11 @@ simple_reduction p _ sol
     simp_all )
 
 /-- -/
-def eq_to_le_right 
+def eq_to_le_right
   (e: Equiv D (S × E)) (f : E → S) (c : D → Prop)
   (hc : ∀ {x}, p.constraints x ↔ (f (e.toFun x).2 = (e.toFun x).1 ∧ c x))
-  (h_objFun : ∀ x r s, p.objFun (e.symm.toFun ⟨r, x⟩) = p.objFun (e.symm.toFun ⟨s, x⟩)) 
-  (h_mono: ∀ x r s, r ≤ s → c (e.symm.toFun (s, x)) → c (e.symm.toFun ⟨r, x⟩)) 
+  (h_objFun : ∀ x r s, p.objFun (e.symm.toFun ⟨r, x⟩) = p.objFun (e.symm.toFun ⟨s, x⟩))
+  (h_mono: ∀ x r s, r ≤ s → c (e.symm.toFun (s, x)) → c (e.symm.toFun ⟨r, x⟩))
   (sol : Solution
     { objFun := p.objFun,
       constraints := fun x => f (e.toFun x).2 ≤ (e.toFun x).1 ∧ c x }) :
@@ -121,7 +121,7 @@ def linearization_mono {of : D → R} {cs : D → Prop}
   (sol : Solution
       { objFun := fun (y : S × D) => f y.1 y.2,
         constraints := fun y => y.1 ≤ g y.2 ∧ c y.1 y.2 }) :
-  Solution {objFun := of, constraints := cs} := 
+  Solution {objFun := of, constraints := cs} :=
 simple_reduction _ _ sol
   (fun x => (g x, x)) (fun x => x.2)
   (fun {x} hx => le_of_eq (hof _).symm)
@@ -141,7 +141,7 @@ def linearization_antimono {of : D → R} {cs : D → Prop}
   (sol : Solution
       { objFun := fun (y : S × D) => f y.1 y.2,
         constraints := fun y => g y.2 ≤ y.1 ∧ c y.1 y.2 }) :
-  Solution {objFun := of, constraints := cs} := 
+  Solution {objFun := of, constraints := cs} :=
 simple_reduction _ _ sol
   (fun x => (g x, x)) (fun x => x.2)
   (fun {x} hx => le_of_eq (hof _).symm)
@@ -203,14 +203,14 @@ def graph_expansion_least_forall {of : D → R} {cs : D → Prop}
       { objFun := fun (y : (I → S) × D) => of y.2,
         constraints := fun (y : (I → S) × D) => (∀ i, d (y.1 i) y.2) ∧ (∀ i, c (y.1 i) y.2) })  :
   Solution {objFun := of, constraints := cs} :=
-  @graph_expansion_least D R _ of cs (I → S) g 
+  @graph_expansion_least D R _ of cs (I → S) g
     (fun y x => ∀ i, c (y i) x)
     (fun y x => ∀ i, d (y i) x)
     (fun y x => of x)
-    ⟨fun a i => le_refl (a i), 
+    ⟨fun a i => le_refl (a i),
      fun a b c hab hbc i => le_trans (hab i) (hbc i),
      fun a b => Iff.refl _⟩
-    (fun x v hc => ⟨fun i => (hg x (v i) i (hc i)).1, 
+    (fun x v hc => ⟨fun i => (hg x (v i) i (hc i)).1,
      fun v' c i => (hg x (v i) i (hc i)).2 (c i)⟩)
     (fun x => rfl)
     hcs
@@ -270,7 +270,7 @@ simple_reduction _ _ sol f g
 /- Rewrites used in `convexify` under the `reduction` command. -/
 section Rewrites
 
-def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop} 
+def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop}
   (hrw : ∀ x, cs x → f x = g x)
   (sol : Solution { objFun := g, constraints := cs }) :
   Solution { objFun := f, constraints := cs } :=
@@ -427,7 +427,7 @@ def rewrite_constraint_7_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c7' : D �
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1] at hx; exact hx)
 
-def rewrite_constraint_8 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {cs : D → Prop} {f : D → R}
+def rewrite_constraint_8 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {cs : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x ∧ cs x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ cs x } :=
@@ -437,7 +437,7 @@ def rewrite_constraint_8 {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D →
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2] at hx; exact hx)
 
-def rewrite_constraint_8_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {f : D → R}
+def rewrite_constraint_8_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c8' : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → (c8 x ↔ c8' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8' x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x } :=
@@ -457,7 +457,7 @@ def rewrite_constraint_9 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D 
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2] at hx; exact hx)
 
-def rewrite_constraint_9_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {f : D → R}
+def rewrite_constraint_9_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c9' : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → (c9 x ↔ c9' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9' x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x } :=
@@ -477,7 +477,7 @@ def rewrite_constraint_10 {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10
     (fun {x} hx => by simp only [hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx)
     (fun {x} hx => by simp only [←hrw x hx.1 hx.2.1 hx.2.2.1 hx.2.2.2.1 hx.2.2.2.2.1 hx.2.2.2.2.2.1 hx.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.1 hx.2.2.2.2.2.2.2.2.2.2] at hx; exact hx)
 
-def rewrite_constraint_10_last {R D} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {f : D → R}
+def rewrite_constraint_10_last {D R} [Preorder R] {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c10' : D → Prop} {f : D → R}
   (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → (c10 x ↔ c10' x))
   (sol : Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10' x }) :
   Solution { objFun := f, constraints := fun x => c1 x ∧ c2 x ∧ c3 x ∧ c4 x ∧ c5 x ∧ c6 x ∧ c7 x ∧ c8 x ∧ c9 x ∧ c10 x } :=

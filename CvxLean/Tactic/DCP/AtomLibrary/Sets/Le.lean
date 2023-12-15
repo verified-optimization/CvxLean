@@ -11,11 +11,13 @@ implementationObjective Real.posOrthCone (y - x)
 implementationConstraints
 solution
 solutionEqualsAtom by
-  simp [Real.posOrthCone]
+  unfold Real.posOrthCone
+  simp
 feasibility
 optimality by
   intros x' y' hx hy h
-  simp [Real.posOrthCone] at h
+  unfold Real.posOrthCone at h
+  simp at h
   exact (hx.trans h).trans hy
 vconditionElimination
 
@@ -32,14 +34,15 @@ solutionEqualsAtom by
   constructor
   · intros h i
     rw [← le.solEqAtom]
+    unfold Real.posOrthCone
     apply h
-  · intros h i
-    erw [le.solEqAtom]
-    apply h
+  · intros hy i
+    simp [hy i]
 feasibility
 optimality by
   intros x' y' hx hy h i
-  apply le.optimality _ _ _ _ (hx i) (hy i) (h i)
+  unfold Real.Vec.posOrthCone at h
+  exact le.optimality _ _ _ _ (hx i) (hy i) (h i)
 vconditionElimination
 
 end CvxLean

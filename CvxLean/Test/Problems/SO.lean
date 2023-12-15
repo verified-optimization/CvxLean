@@ -9,8 +9,8 @@ noncomputable def so1 :=
     maximize sqrt (x - y)
     subject to
       c1 : y = 2 * x - 3
-      c2 : x ^ 2 ≤ 2
-      c3 : 0 ≤ x - y -- TODO: error if 1 / 1000 ≤ x - y
+      c2 : x ^ (2 : ℝ) ≤ 2
+      c3 : 0 ≤ x - y
 
 solve so1
 
@@ -26,8 +26,6 @@ def so2 :=
     subject to
       hx : 1 / 1000 ≤ x
       h : exp (-x) ≤ sqrt x
-
-set_option trace.Meta.debug true
 
 solve so2
 

@@ -1,15 +1,15 @@
 .DS_Store
 
+/.lake
 /build
-/solver/build
-/solver/test.cbf
-/solver/test.sol
-/rewriter/*.dot 
-/rewriter/*.svg
-/ffi/build
-/ffi/lake-packages 
-/lake-packages
+/solver/*.cbf
+/solver/*.sol
+/egg-convexify/*.dot 
+/egg-convexify/*.svg
 *.olean
 
 /playground
+/evaluation
+/plots
+
 /CvxLean/Tactic/Solver/Mosek/Path.lean

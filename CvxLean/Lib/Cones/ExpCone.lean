@@ -2,7 +2,6 @@ import Mathlib.Data.Complex.Exponential
 
 namespace Real
 
-@[reducible]
 def expCone (x y z : Real) : Prop :=
   (0 < y ∧ y * exp (x / y) ≤ z) ∨ (y = 0 ∧ 0 ≤ z ∧ x ≤ 0)
 

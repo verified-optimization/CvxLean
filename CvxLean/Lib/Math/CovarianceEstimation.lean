@@ -18,7 +18,6 @@ noncomputable def covarianceMatrix {N n : ℕ} (y : Fin N → Fin n → ℝ) : M
 lemma gaussianPdf_pos {n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) (y : Fin n → ℝ) (h : R.PosDef):
   0 < gaussianPdf R y := by
   refine' mul_pos (div_pos zero_lt_one (sqrt_pos.2 (mul_pos _ h.det_pos))) (exp_pos _)
-  simp [rpow_eq_pow]
   exact (pow_pos (mul_pos (by positivity) pi_pos) n)
 
 lemma prod_gaussianPdf_pos {N n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) (y : Fin N → Fin n → ℝ)
@@ -33,7 +32,6 @@ lemma log_prod_gaussianPdf {N n : ℕ} (y : Fin N → Fin n → ℝ) (R : Matrix
       i ∈ Finset.univ → gaussianPdf R (y i) ≠ 0 := λ i hi => ne_of_gt (gaussianPdf_pos _ _ hR)
     have sqrt_2_pi_n_R_det_ne_zero: sqrt ((2 * π) ^ n * R.det) ≠ 0 := by
       refine' ne_of_gt (sqrt_pos.2 (mul_pos _ hR.det_pos))
-      simp [rpow_eq_pow]
       exact (pow_pos (mul_pos (by positivity) pi_pos) _)
     rw [log_prod Finset.univ (λ i => gaussianPdf R (y i)) this]
     unfold gaussianPdf
@@ -43,14 +41,11 @@ lemma log_prod_gaussianPdf {N n : ℕ} (y : Fin N → Fin n → ℝ) (R : Matrix
     simp [rpow_eq_pow]
     exact ne_of_gt (sqrt_pos.2 (pow_pos (mul_pos (by positivity) pi_pos) _))
     exact ne_of_gt (sqrt_pos.2 hR.det_pos)
-    simp [rpow_eq_pow]
     exact pow_nonneg (mul_nonneg (by positivity) (le_of_lt pi_pos)) _
     norm_num
     exact sqrt_2_pi_n_R_det_ne_zero
     exact div_ne_zero (by norm_num) sqrt_2_pi_n_R_det_ne_zero
     exact exp_ne_zero _
-
-#check congrArg
 
 lemma sum_quadForm {n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) {m : ℕ} (y : Fin m → Fin n → ℝ) :
   (∑ i, R.quadForm (y i))

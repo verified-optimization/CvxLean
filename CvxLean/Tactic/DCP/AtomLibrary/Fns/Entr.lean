@@ -17,7 +17,7 @@ solution (t := -(x * log x))
 solutionEqualsAtom by rfl
 feasibility
   (c : by
-    simp [expCone]
+    unfold expCone
     cases (lt_or_eq_of_le cond) with
     | inl h =>
         left
@@ -31,7 +31,7 @@ feasibility
         refine ⟨h, ?_⟩
         simp [h])
 optimality by
-  simp [expCone] at c
+  unfold expCone at c
   cases c with
   | inl c =>
       rw [mul_comm, ←neg_mul, ←div_le_iff c.1]
@@ -42,7 +42,7 @@ optimality by
       simp [entr, c.1, c.2]
 vconditionElimination
   (cond : by
-    simp [expCone] at c
+    unfold expCone at c
     cases c with
     | inl c => exact le_of_lt c.1
     | inr c => exact le_of_eq c.1.symm)
@@ -71,16 +71,17 @@ solution (t := Vec.entr x)
 solutionEqualsAtom by rfl
 feasibility
   (c : by
-    simp [Vec.expCone, Vec.entr]
-    intros i
+    unfold Vec.expCone Vec.entr
+    intros t i
     exact entr.feasibility0 (x i) (cond i))
 optimality by
-  simp [Vec.expCone, Vec.entr] at *
+  unfold Vec.expCone at c
+  unfold Vec.entr
   intros i
   exact entr.optimality (x i) (t i) (c i)
 vconditionElimination
   (cond : by
-    simp [Vec.expCone, Vec.entr] at c
+    unfold Vec.expCone at c
     intros i
     exact entr.vcondElim0 (x i) (t i) (c i))
 

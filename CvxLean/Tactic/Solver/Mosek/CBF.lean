@@ -25,7 +25,8 @@ end ObjSense
 /-- Cone type: free, positive orthant, negative orthant, fixpoint zero (for
 equality), quadratic, quadratic rotated or exponential. -/
 inductive ConeType
-| F | LPos | LNeg | LEq | Q | QR | EXP
+  | F | LPos | LNeg | LEq | Q | QR | EXP
+deriving DecidableEq
 
 namespace ConeType
 

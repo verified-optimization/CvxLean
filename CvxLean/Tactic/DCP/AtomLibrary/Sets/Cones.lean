@@ -39,13 +39,11 @@ end PosOrthCone
 section ExpCone
 
 declare_atom expCone [cone] (x : ℝ)? (y : ℝ)? (z : ℝ)? : expCone x y z :=
-optimality by
-  simp [expCone]
+optimality le_refl _
 
 declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)? (y : (Fin n) → ℝ)?
   (z : (Fin n) → ℝ)? : Vec.expCone x y z :=
-optimality by
-  simp [Vec.expCone]
+optimality le_refl _
 
 end ExpCone
 
@@ -54,23 +52,19 @@ section SOCone
 
 declare_atom soCone [cone] (n : Nat)& (t : ℝ)? (x : (Fin n) → ℝ)? :
   soCone t x :=
-optimality by
-  simp [soCone]
+optimality le_refl _
 
 declare_atom Vec.soCone [cone] (n : Nat)& (m : Nat)& (t : Fin m → Real)?
   (X : Matrix.{0,0,0} (Fin m) (Fin n) Real)? : Vec.soCone t X :=
-optimality by
-  simp [Vec.soCone]
+optimality le_refl _
 
 declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)? (w : ℝ)?
   (x : (Fin n) → ℝ)? : rotatedSoCone v w x :=
-optimality by
-  simp [rotatedSoCone]
+optimality le_refl _
 
 declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)?
   (w : (Fin n) → ℝ)? (x : (Fin n) → (Fin m) → ℝ)? : Vec.rotatedSoCone v w x :=
-optimality by
-  simp [Vec.rotatedSoCone]
+optimality le_refl _
 
 end SOCone
 
@@ -79,7 +73,7 @@ section PSDCone
 
 declare_atom Matrix.PSDCone [cone] (m : Type)& (hm : Fintype.{0} m)&
   (A : Matrix.{0,0,0} m m ℝ)? : Matrix.PSDCone A :=
-optimality fun h => h
+optimality le_refl _
 
 end PSDCone
 

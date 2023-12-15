@@ -130,7 +130,7 @@ addRealToFloat (x : ℕ) (i) : @instOfNat Real x Real.natCast i :=
   @instOfNatFloat x
 
 addRealToFloat (k : Nat) :
-  @SMul.smul ℕ ℝ AddMonoid.SMul k :=
+  @SMul.smul ℕ ℝ AddMonoid.toNatSMul k :=
   (fun (x : Float) => (OfNat.ofNat k) * x)
 
 addRealToFloat (i) : @Ring.toNeg Real i :=
@@ -208,7 +208,7 @@ addRealToFloat (n m k) :
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
 addRealToFloat (n m k : Nat) :
-  @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.SMul k :=
+  @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.toNatSMul k :=
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
 addRealToFloat : @Matrix.vecEmpty Real :=
@@ -247,8 +247,6 @@ addRealToFloat (n m) (i1) (i2) : @Matrix.vecMul (Fin n) (Fin m) Real i1 i2 :=
 addRealToFloat (n : Nat) (i) :
   @Matrix.trace (Fin n) ℝ (Fin.fintype n) i :=
   @Matrix.Computable.tr Float (Zero.mk (0 : Float)) n instAddFloat
-
-#check HMul.hMul
 
 addRealToFloat (n : Nat) (i) :
   @HMul.hMul

@@ -108,6 +108,7 @@ where
       MetaM (Option Expr) := do
     /- `first` tells us whether the outermost projection was `.1` (`some true`) or
        `.2` (`some false`). If this is not a recursive call, `first` is `none`. -/
+    -- TODO: This won't recognize "p.2 i".
     match first, e, rs with
     | _, Expr.fvar fVarId, [r] =>
       if fVarId == p then return r else return none

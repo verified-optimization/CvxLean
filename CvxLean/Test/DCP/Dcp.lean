@@ -16,19 +16,17 @@ noncomputable def testVCondInference : Solution <|
   dcp
   sorry
 
-set_option trace.Meta.debug true
 noncomputable def test004 : Solution $
   optimization (v w : ℝ)
     minimize exp v
     subject to
       cv : 0 ≤ v
-      cw : 0 < w
+      cw : 1 / 100000 ≤ w
       c0 : klDiv v w ≤ 1
 := by
   dcp
   sorry
 
-set_option trace.Meta.debug true
 noncomputable def test000 : Solution $
   optimization (x : Fin 3 → ℝ) (y : ℝ)
     minimize y
@@ -58,61 +56,65 @@ noncomputable def test001 : Solution $
   dcp
   sorry
 
--- noncomputable def test002 : Solution $
---   optimization (x y : ℝ)
---     minimize exp (huber y)
---     subject to
---       c0 : exp (exp (huber x)) ≤ y
--- := by
---   dcp
---   sorry
+noncomputable def test002 : Solution $
+  optimization (x y : ℝ)
+    minimize exp (huber y)
+    subject to
+      c0 : exp (exp (huber x)) ≤ y
+:= by
+  dcp
+  sorry
 
--- noncomputable def test003 : Solution $
---   optimization (x y : ℝ)
---     minimize (2 : ℝ) * (huber (y + x))
---     subject to
---       c0 : x ≤ y
--- := by
---   dcp
---   sorry
+noncomputable def test003 : Solution $
+  optimization (x y : ℝ)
+    minimize (2 : ℝ) * (huber (y + x))
+    subject to
+      c0 : x ≤ y
+:= by
+  dcp
+  sorry
 
--- noncomputable def testVec0 [Fintype m] : Solution $
---   optimization (x y : m → ℝ)
---     minimize (0 : ℝ)
---     subject to
---       c0 : Vec.exp y ≤ x
--- := by
---   dcp
---   sorry
+-- TODO: any fin type
+noncomputable def testVec0 : Solution $
+  optimization (x y : Fin m → ℝ)
+    minimize (0 : ℝ)
+    subject to
+      c0 : Vec.exp y ≤ x
+:= by
+  dcp
+  sorry
 
--- noncomputable def testVec [Fintype m] : Solution $
---   optimization (x y : m → ℝ)
---     minimize (0 : ℝ)
---     subject to
---       c0 : Vec.exp (Vec.exp x) ≤ x
--- := by
---   dcp
---   sorry
+-- TODO: any fin type
+noncomputable def testVec : Solution $
+  optimization (x y : Fin m → ℝ)
+    minimize (0 : ℝ)
+    subject to
+      c0 : Vec.exp (Vec.exp x) ≤ x
+:= by
+  dcp
+  sorry
 
--- noncomputable def test_Vec_huber {n : ℕ} : Solution $
--- optimization (x y : Fin n → ℝ)
---   minimize (0 : ℝ)
---   subject to
---     c0 : Vec.huber x ≤ x
--- := by
---   dcp
---   sorry
+noncomputable def test_Vec_huber {n : ℕ} : Solution $
+optimization (x y : Fin n → ℝ)
+  minimize (0 : ℝ)
+  subject to
+    c0 : Vec.huber x ≤ x
+:= by
+  dcp
+  sorry
 
--- noncomputable def test_Vec_kl_div {n : ℕ} : Solution $
--- optimization (x y : Fin n → ℝ)
---   minimize (0 : ℝ)
---   subject to
---     cx : 0 ≤ x
---     cy : ∀ i, 0 < y i
---     c0 : Vec.klDiv x y ≤ x
--- := by
---   dcp
---   sorry
+-- TODO: notation.
+-- TODO: error if the constraint is ∀ i
+noncomputable def test_Vec_kl_div {n : ℕ} : Solution $
+optimization (x y : Fin n → ℝ)
+  minimize (0 : ℝ)
+  subject to
+    cx : 0 ≤ x
+    cy : 1 / 100000 ≤ y
+    c0 : Vec.klDiv x y ≤ x
+:= by
+  dcp
+  sorry
 
 noncomputable def test2 : Solution $
   optimization (x y : ℝ)
@@ -152,8 +154,6 @@ noncomputable example
   sorry
 
 
-
-
 noncomputable def a1 : ℝ := 3
 noncomputable def b1 : ℝ := 4
 noncomputable def c1 : ℝ := 5
@@ -162,11 +162,60 @@ noncomputable def d1 : ℝ := 6
 set_option trace.Elab.debug true
 
 -- TODO:
--- noncomputable example : Solution $
---   minimization! (x y : ℝ) :
---     objective (x)
---     constraints
---       (hlog : 0 < exp a1)
---       (e : exp y ≤ log (exp a1))
---       (hsqrt : 0 ≤ x) := by
---   dcp
+noncomputable example : Solution $
+  optimization (x y : ℝ)
+    minimize (x)
+    subject to
+      hlog : 0 ≤ exp a1
+      e : exp y ≤ log (exp a1)
+      hsqrt : 0 ≤ x := by
+  dcp -- TODO: first constraint not reduced. We need to handle constant constraints.
+  sorry
+
+noncomputable def testXExp : Solution $
+  optimization (x : ℝ)
+    minimize x * exp x
+    subject to
+      c0 : 0 ≤ x
+:= by
+  dcp
+  sorry
+
+noncomputable def testEntr : Solution $
+  optimization (x : ℝ)
+    minimize -(-(x * log x))
+    subject to
+      c0 : 0 ≤ x
+:= by
+  dcp
+  sorry
+
+noncomputable def testQuadOverLin : Solution $
+  optimization (x y : ℝ)
+    minimize x ^ (2 : ℝ) / y
+    subject to
+      c0 : 0 ≤ x
+      c0 : 1 / 100000 ≤ y
+:= by
+  dcp
+  sorry
+
+noncomputable def testGeoMean : Solution $
+  optimization (x y : ℝ)
+    minimize - (sqrt (x * y))
+    subject to
+      c0 : 0 ≤ x
+      c0 : 0 ≤ y
+:= by
+  dcp
+  sorry
+
+noncomputable def testNorm2 : Solution $
+  optimization (x y : ℝ)
+    minimize ‖![x, y]‖
+    subject to
+      c0 : 0 ≤ x
+      c0 : 0 ≤ y
+:= by
+  dcp
+  sorry

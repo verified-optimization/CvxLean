@@ -17,14 +17,20 @@ solutionEqualsAtom by
   rfl;
 feasibility
   (c1 : by
-    simp [rotatedSoCone]
-    refine ⟨?_, cond, zero_le_two⟩
+    dsimp
+    unfold rotatedSoCone
+    refine ⟨?_, cond, by norm_num⟩
+    simp
     rw [sq_sqrt cond])
 optimality by
   intros y hy
-  simp [rotatedSoCone] at c1
+  unfold rotatedSoCone at c1
+  simp at c1
   have h := c1.1
   exact Real.le_sqrt_of_sq_le (le_trans h hy)
-vconditionElimination (cond : fun _ hx => c1.2.1.trans hx)
+vconditionElimination (cond : by
+  intros _ hx
+  unfold rotatedSoCone at c1
+  exact c1.2.1.trans hx)
 
 end CvxLean

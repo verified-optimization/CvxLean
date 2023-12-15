@@ -3,8 +3,9 @@ open System Lake DSL
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @
-  "81dd376a02781030ead59ee35ca5334a7fccc527"
+  "1250aa83953a2c7d5819cebea08ad7fdef997d49"
 
+meta if get_config? env = some "dev" then
 require scilean from git
   "https://github.com/verified-optimization/SciLean" @
   "master"
@@ -18,9 +19,6 @@ package CvxLean
 
 @[default_target]
 lean_lib CvxLeanTest
-
-@[default_target]
-lean_lib CvxLeanPreDCPTest
 
 @[default_target]
 lean_lib CvxLean
@@ -47,15 +45,15 @@ SchedulerM (BuildJob FilePath) :=
 
 @[default_target]
 target EggConvexify (pkg) : FilePath := do
-  let buildDir := pkg.dir / "rewriter"
+  let buildDir := pkg.dir / "egg-convexify"
   let binFile := buildDir / "target" / "release" / "egg-convexify"
   let dest := buildDir / "utils" / "egg-convexify"
   let manifestFile := buildDir / "Cargo.toml"
   buildCargo binFile manifestFile dest #[]
 
 script EggClean := do
-  let targetDir : FilePath := "." / "rewriter" / "target"
-  let utilsDir : FilePath  := "." / "rewriter" / "utils"
+  let targetDir : FilePath := "." / "egg-convexify" / "target"
+  let utilsDir : FilePath  := "." / "egg-convexify" / "utils"
   let out ←
   IO.Process.output {
     cmd := "rm"

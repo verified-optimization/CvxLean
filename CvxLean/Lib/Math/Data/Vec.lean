@@ -9,6 +9,12 @@ def abs [Abs α] (x : m → α) : m → α :=
 
 instance [Abs α] : Abs (m → α) := ⟨abs⟩
 
+def const (n : ℕ) (k : α) : Fin n → α  :=
+  fun _ => k
+
+def toMatrix {n : ℕ} (x : Fin n → α) : Fin n → Fin 1 → α :=
+  fun i => ![x i]
+
 section AddCommMonoid
 
 variable [AddCommMonoid α] {m : Nat} {n : Nat} (x : Fin m → α) (y : Fin n → α)
@@ -27,21 +33,21 @@ open Real BigOperators
 instance : Norm (m → ℝ) where
   norm x := sqrt (∑ i, (x i) ^ 2)
 
-variable (x y : m → Real)
+variable (x y : m → ℝ)
 
-def exp : m → Real :=
+def exp : m → ℝ :=
   fun i => Real.exp (x i)
 
-def log : m → Real :=
+def log : m → ℝ :=
   fun i => Real.log (x i)
 
-def entr : m → Real :=
+def entr : m → ℝ :=
   fun i => Real.entr (x i)
 
-def huber : m → Real :=
+def huber : m → ℝ :=
   fun i => Real.huber (x i)
 
-def klDiv : m → Real :=
+def klDiv : m → ℝ :=
   fun i => Real.klDiv (x i) (y i)
 
 end Real
