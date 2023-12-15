@@ -101,39 +101,49 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
   cbf := cbf.setScalarConstraints
     (CBF.ConeProduct.mk n groupedCones.length groupedCones)
 
-  -- TODO: locking?
-  let outputPath := "solver/problem.sol"
-  IO.FS.withFile outputPath IO.FS.Mode.readWrite fun handle => do
-    -- Write input.
-    let inputPath := "solver/problem.cbf"
-    IO.FS.writeFile inputPath (ToString.toString cbf)
+  let r ← IO.rand 0 (2 ^ 32 - 1)
+  let outputPath := s!"solver/problem{r}.sol"
+  let inputPath := s!"solver/problem{r}.cbf"
+  IO.FS.writeFile inputPath ""
+  IO.FS.writeFile outputPath ""
+  IO.FS.withFile outputPath IO.FS.Mode.read fun outHandle => do
+    IO.FS.withFile inputPath IO.FS.Mode.write fun inHandle => do
+      -- Write input.
+      inHandle.putStr (ToString.toString cbf)
 
-    -- Adjust path to MOSEK.
-    let p := if let some p' := ← IO.getEnv "PATH" then
-      if mosekBinPath != "" then p' ++ ":" ++ mosekBinPath else p'
-    else
-      mosekBinPath
+      -- Adjust path to MOSEK.
+      let p := if let some p' := ← IO.getEnv "PATH" then
+        if mosekBinPath != "" then p' ++ ":" ++ mosekBinPath else p'
+      else
+        mosekBinPath
 
-    -- Run solver.
-    let out ← IO.Process.output {
-      cmd := "mosek",
-      args := #[inputPath],
-      env := #[("PATH", p)] }
-    if out.exitCode != 0 then
-      dbg_trace ("MOSEK exited with code " ++ ToString.toString out.exitCode)
-      return Sol.Response.failure out.exitCode.toNat
+      -- Run solver.
+      let out ← IO.Process.output {
+        cmd := "mosek",
+        args := #[inputPath],
+        env := #[("PATH", p)] }
 
-    let res := out.stdout
-    IO.println res
+      dbg_trace s!"OUT: {out.stdout} {out.stderr}"
 
-    -- Read output.
-    let output ← IO.FS.Handle.readToEnd handle
+      if out.exitCode != 0 then
+        dbg_trace ("MOSEK exited with code " ++ ToString.toString out.exitCode)
+        return Sol.Response.failure out.exitCode.toNat
 
-    match Sol.Parser.parse output with
-    | Except.ok res => return Sol.Response.success res
-    | Except.error err =>
-        dbg_trace ("MOSEK output parsing failed. " ++ err)
-        return Sol.Response.failure 1
+      let res := out.stdout
+      IO.println res
+
+      -- Read output.
+      let output ← outHandle.readToEnd
+
+      -- Remove temporary files.
+      IO.FS.removeFile inputPath
+      IO.FS.removeFile outputPath
+
+      match Sol.Parser.parse output with
+      | Except.ok res => return Sol.Response.success res
+      | Except.error err =>
+          dbg_trace ("MOSEK output parsing failed. " ++ err)
+          return Sol.Response.failure 1
 
 /-- TODO: Move to Generation? -/
 unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Expr := do
