@@ -185,7 +185,7 @@ pub fn get_steps_from_string_maybe_node_limit(
         if let Some(n) = node_limit { 
             vec![n] 
         } else { 
-            vec![2500, 5000, 10000, 25000, 50000] 
+            vec![2500, 5000, 10000, 20000, 50000, 80000] 
         };
     for node_limit in node_limits  {
         let analysis = Meta {
