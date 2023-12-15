@@ -113,7 +113,8 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
 
   -- TODO: locking?
   let outputPath := "solver/problem.sol"
-  IO.FS.withFile outputPath IO.FS.Mode.read fun handle => do
+  IO.FS.writeFile outputPath ""
+  IO.FS.withFile outputPath IO.FS.Mode.readWrite fun handle => do
     -- Run solver.
     let out ← IO.Process.output {
       cmd := "mosek",

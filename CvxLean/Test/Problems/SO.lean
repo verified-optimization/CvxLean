@@ -10,7 +10,7 @@ noncomputable def so1 :=
     subject to
       c1 : y = 2 * x - 3
       c2 : x ^ 2 ≤ 2
-      c3 : 0 ≤ x - y -- TODO: error if 1 / 1000 ≤ x - y
+      c3 : 0 ≤ x - y
 
 solve so1
 
