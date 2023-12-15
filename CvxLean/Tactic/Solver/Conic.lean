@@ -101,20 +101,19 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
   cbf := cbf.setScalarConstraints
     (CBF.ConeProduct.mk n groupedCones.length groupedCones)
 
-  -- Write input.
-  let inputPath := "solver/problem.cbf"
-  IO.FS.writeFile inputPath (ToString.toString cbf)
-
-  -- Adjust path to MOSEK.
-  let p := if let some p' := ← IO.getEnv "PATH" then
-    if mosekBinPath != "" then p' ++ ":" ++ mosekBinPath else p'
-  else
-    mosekBinPath
-
   -- TODO: locking?
   let outputPath := "solver/problem.sol"
-  IO.FS.writeFile outputPath ""
   IO.FS.withFile outputPath IO.FS.Mode.readWrite fun handle => do
+    -- Write input.
+    let inputPath := "solver/problem.cbf"
+    IO.FS.writeFile inputPath (ToString.toString cbf)
+
+    -- Adjust path to MOSEK.
+    let p := if let some p' := ← IO.getEnv "PATH" then
+      if mosekBinPath != "" then p' ++ ":" ++ mosekBinPath else p'
+    else
+      mosekBinPath
+
     -- Run solver.
     let out ← IO.Process.output {
       cmd := "mosek",
