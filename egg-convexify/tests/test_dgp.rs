@@ -46,3 +46,19 @@ fn test_gp6() {
             "(le (div (exp (var d)) (exp (var w))) (param δ))"
         ]);
 }
+
+#[test]
+fn test_gp8() {
+    convexify_check(
+        "(mul (mul 2 (exp (var A))) (norm2 (exp (var w)) (exp (var h))))",
+        vec![
+            "(le (mul (div (mul 10 (norm2 (exp (var w)) (exp (var h)))) 2) (exp (var h))) (mul (div 1 2) (exp (var A))))",
+            "(le (mul (div (mul 20 (norm2 (exp (var w)) (exp (var h)))) 2) (exp (var w))) (mul (div 1 2) (exp (var A))))",
+            "(le 1 (exp (var h)))",
+            "(le (exp (var h)) 100)",
+            "(le 1 (exp (var w)))",
+            "(le (exp (var w)) 100)", 
+            "(le (mul (div 11 10) (exp (var r))) (sqrt (add (div (exp (var A)) (div 314159 50000)) (pow (exp (var r)) 2))))",
+            "(le (sqrt (add (div (exp (var A)) (div 314159 50000)) (pow (exp (var r)) 2))) 10)"
+    ]);
+}
