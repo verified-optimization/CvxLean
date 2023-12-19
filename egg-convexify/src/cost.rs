@@ -183,7 +183,7 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
             Optimization::Add([a, b]) => {
                 curvature = curvature::of_add(get_curvature!(a), get_curvature!(b));
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
-                num_vars = get_num_vars!(a) + get_num_vars!(b);
+                num_vars = 1 + get_num_vars!(a) + get_num_vars!(b);
             }
             Optimization::Sub([a, b]) => {
                 curvature = curvature::of_sub(get_curvature!(a), get_curvature!(b));

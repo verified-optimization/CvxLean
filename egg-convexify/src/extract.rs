@@ -1,5 +1,4 @@
 use egg::{*};
-use std::convert::TryInto;
 use std::fs;
 use std::time::Duration;
 use std::collections::HashMap;
@@ -17,9 +16,6 @@ use optimization::Meta as Meta;
 
 use crate::rules;
 use rules::rules as rules;
-
-use crate::cost;
-use cost::DCPCost as DCPCost;
 
 use crate::explain_util;
 use explain_util::Direction as Direction;
@@ -180,83 +176,62 @@ pub fn get_steps_from_string_maybe_node_limit(
         }
     }
     
-    // Specify a node limit, or try with default ones.
-    let node_limits = 
-        if let Some(n) = node_limit { 
-            vec![n] 
-        } else { 
-            vec![2500, 5000, 10000, 20000, 50000, 80000] 
-        };
-    for node_limit in node_limits  {
-        let analysis = Meta {
-            domains : domains.clone()
-        };
-        
-        let iter_limit = node_limit / 250;
-        let time_limit = (node_limit / 500).try_into().unwrap();
-        let runner: Runner<Optimization, Meta> = 
-            Runner::new(analysis)
-            .with_explanations_enabled()
-            .with_explanation_length_optimization()
-            .with_node_limit(node_limit)
-            .with_iter_limit(iter_limit)
-            .with_time_limit(Duration::from_secs(time_limit))
-            .with_expr(&expr)
-            .run(&rules());
-        
-        if debug {
-            println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
-            let dot_str =  runner.egraph.dot().to_string();
-            fs::write("test.dot", dot_str).expect("");
-        }
-
-        let root = runner.roots[0];
-
-        let best_cost;
-        let best;
-        {
-            let cost_func = DCPCost { egraph: &runner.egraph };
-            let extractor = 
-                Extractor::new(&runner.egraph, cost_func);
-            let (best_cost_found, best_found) = 
-                extractor.find_best(root);
-            best = best_found;
-            best_cost = best_cost_found;
-        }
-        if debug {
-            println!("Best cost: {:?}", best_cost);
-            println!("Best: {:?}", best.to_string());
-        }
-
-        let mut egraph = runner.egraph;
-        let mut explanation : Explanation<Optimization> = 
-            egraph.explain_equivalence(&expr, &best);
-        let flat_explanation : &FlatExplanation<Optimization> =
-            explanation.make_flat_explanation();
-        if debug {
-            println!("{} steps", flat_explanation.len() - 1);
-        }
-
-        let mut res = Vec::new();
-        if best_cost.0 <= Curvature::Convex {
-            for i in 0..flat_explanation.len() - 1 {
-                let current = &flat_explanation[i];
-                let next = &flat_explanation[i + 1];
-                match get_step(current, next) {
-                    Some(step) => { res.push(step); }
-                    None => { 
-                        // Should not get here.
-                        println!("Failed to extract step.");
-                    }
-                }
+    let analysis = Meta {
+        domains : domains.clone()
+    };
+    
+    let runner: Runner<Optimization, Meta> = 
+        Runner::new(analysis)
+        .with_explanations_enabled()
+        .with_explanation_length_optimization()
+        .with_node_limit(100000)
+        .with_time_limit(Duration::from_secs(100))
+        .with_expr(&expr)
+        .with_hook(|runner| {
+            if runner.egraph[runner.roots[0]].data.curvature <= Curvature::Convex {
+                return Err("DCP term found.".to_string());
             }
-        } else {
-            continue;
-        }
-
-        return Some(res);
+            return Ok(());
+        })
+        .run(&rules());
+    
+    if debug {
+        println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
+        let dot_str =  runner.egraph.dot().to_string();
+        fs::write("test.dot", dot_str).expect("");
     }
 
-    // It failed for all node limits.
-    return None;
+    let result_data = runner.egraph[runner.roots[0]].data.clone();
+    let best = result_data.best;
+    let curvature = result_data.curvature;
+    if !(curvature <= Curvature::Convex) {
+        return None;
+    }
+    if debug {
+        println!("Best: {:?}", best.to_string());
+    }
+
+    let mut egraph = runner.egraph;
+    let mut explanation : Explanation<Optimization> = 
+        egraph.explain_equivalence(&expr, &best);
+    let flat_explanation : &FlatExplanation<Optimization> =
+        explanation.make_flat_explanation();
+    if debug {
+        println!("{} steps", flat_explanation.len() - 1);
+    }
+
+    let mut res = Vec::new();
+    for i in 0..flat_explanation.len() - 1 {
+        let current = &flat_explanation[i];
+        let next = &flat_explanation[i + 1];
+        match get_step(current, next) {
+            Some(step) => { res.push(step); }
+            None => { 
+                // Should not get here.
+                println!("Failed to extract step.");
+            }
+        }
+    } 
+
+    return Some(res);
 }
