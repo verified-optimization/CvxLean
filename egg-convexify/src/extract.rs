@@ -33,11 +33,11 @@ pub struct Step {
 }
 
 fn get_step_aux(
-    direction: Direction, 
-    current: &FlatTerm<Optimization>, 
-    next: &FlatTerm<Optimization>, 
+    direction: Direction,
+    current: &FlatTerm<Optimization>,
+    next: &FlatTerm<Optimization>,
     location: &mut Option<String>,
-    expected_term: &mut Option<String>) -> 
+    expected_term: &mut Option<String>) ->
     Option<Step> {
     match next.node {
         Optimization::Prob(_) => { },
@@ -69,7 +69,7 @@ fn get_step_aux(
         let subexpr_to = next.get_recexpr().to_string();
         if expected_term.is_some() {
             return Some(Step {
-                rewrite_name: rule_name.to_string(), 
+                rewrite_name: rule_name.to_string(),
                 direction: Direction::Backward,
                 location: location.clone().unwrap_or_default(),
                 subexpr_from: subexpr_from,
@@ -86,7 +86,7 @@ fn get_step_aux(
         let subexpr_to = next.get_recexpr().to_string();
         if expected_term.is_some() {
             return Some(Step {
-                rewrite_name: rule_name.to_string(), 
+                rewrite_name: rule_name.to_string(),
                 direction: Direction::Forward,
                 location: location.clone().unwrap_or_default(),
                 subexpr_from: subexpr_from,
@@ -103,7 +103,7 @@ fn get_step_aux(
     } else {
         let children = current.children.iter().zip(next.children.iter());
         for (left, right) in children {
-            let child_res = 
+            let child_res =
                 get_step_aux(direction, left, right, location, expected_term);
             if child_res.is_some() {
                 return child_res;
@@ -132,7 +132,7 @@ pub struct Minimization {
 impl ToString for Minimization {
     fn to_string(&self) -> String {
         let obj_fun_s: String = format!("(objFun {})", self.obj_fun);
-        let constrs_s_l : Vec<String> = 
+        let constrs_s_l : Vec<String> =
             self.constrs.iter().map(|(h, c)| format!("(constr {} {})", h, c)).collect();
         let constr_s = format!("(constrs {})", constrs_s_l.join(" "));
         return format!("(prob {} {})", obj_fun_s, constr_s);
@@ -150,12 +150,12 @@ pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, d
 }
 
 pub fn get_steps_from_string_maybe_node_limit(
-    prob_s: &str, 
-    domains_vec: Vec<(String, Domain)>, 
-    debug: bool, 
+    prob_s: &str,
+    domains_vec: Vec<(String, Domain)>,
+    debug: bool,
     node_limit: Option<usize>) -> Option<Vec<Step>> {
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
-    
+
     // Process domains, intersecting domains assigned to the same variable.
     let mut domains: HashMap<String, Domain> = HashMap::new();
     for (x, dom) in domains_vec {
@@ -176,15 +176,16 @@ pub fn get_steps_from_string_maybe_node_limit(
             return None;
         }
     }
-    
+
     let analysis = Meta {
         domains : domains.clone()
     };
-    
+
     let node_limit = node_limit.unwrap_or(100000);
     let iter_limit = node_limit / 250;
     let time_limit = (node_limit / 500).try_into().unwrap();
-    let runner: Runner<Optimization, Meta> = 
+
+    let runner: Runner<Optimization, Meta> =
         Runner::new(analysis)
         .with_explanations_enabled()
         .with_explanation_length_optimization()
@@ -199,14 +200,15 @@ pub fn get_steps_from_string_maybe_node_limit(
             return Ok(());
         })
         .run(&rules());
-    
+
     if debug {
         println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
         let dot_str =  runner.egraph.dot().to_string();
         fs::write("test.dot", dot_str).expect("");
     }
 
-    let result_data = runner.egraph[runner.roots[0]].data.clone();
+    let root = runner.roots[0];
+    let result_data = runner.egraph[root].data.clone();
     let best = result_data.best;
     let curvature = result_data.curvature;
     if !(curvature <= Curvature::Convex) {
@@ -214,10 +216,13 @@ pub fn get_steps_from_string_maybe_node_limit(
     }
     if debug {
         println!("Best: {:?}", best.to_string());
+        println!("Curvature: {:?}", curvature);
+        println!("Num vars: {:?}", result_data.num_vars);
+        println!("Term size: {:?}", result_data.term_size);
     }
 
     let mut egraph = runner.egraph;
-    let mut explanation : Explanation<Optimization> = 
+    let mut explanation : Explanation<Optimization> =
         egraph.explain_equivalence(&expr, &best);
     let flat_explanation : &FlatExplanation<Optimization> =
         explanation.make_flat_explanation();
@@ -231,12 +236,12 @@ pub fn get_steps_from_string_maybe_node_limit(
         let next = &flat_explanation[i + 1];
         match get_step(current, next) {
             Some(step) => { res.push(step); }
-            None => { 
+            None => {
                 // Should not get here.
                 println!("Failed to extract step.");
             }
         }
-    } 
+    }
 
     return Some(res);
 }
