@@ -219,6 +219,7 @@ pub fn get_steps_from_string_maybe_node_limit(
         println!("Curvature: {:?}", curvature);
         println!("Num vars: {:?}", result_data.num_vars);
         println!("Term size: {:?}", result_data.term_size);
+        runner.print_report();
     }
 
     let mut egraph = runner.egraph;
