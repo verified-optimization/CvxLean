@@ -110,7 +110,7 @@ impl Analysis<Optimization> for Meta {
             to.term_size = from.term_size.clone();
         } else if to.curvature == from.curvature {
             // Select smallest "best".
-            if (to.num_vars, to.term_size) > (from.num_vars, from.term_size) {
+            if (from.num_vars, from.term_size) < (to.num_vars, to.term_size) {
                 to.best = from.best.clone();
                 to.num_vars = from.num_vars.clone();
                 to.term_size = from.term_size.clone();
@@ -277,6 +277,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::of_concave_nondecreasing_fn(get_curvature(a));
                 }
                 best = format!("(log {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Exp(a) => {
@@ -325,6 +326,7 @@ impl Analysis<Optimization> for Meta {
                 let curvature_b = curvature::of_convex_nondecreasing_fn(get_curvature(b));
                 curvature = curvature::join(curvature_a, curvature_b);
                 best = format!("(max {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Add([a, b]) => {
@@ -430,6 +432,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::join(curvature_a, curvature_b);
                 }
                 best = format!("(geo {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::LSE([a, b]) => {
