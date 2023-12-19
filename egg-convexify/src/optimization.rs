@@ -57,6 +57,7 @@ pub struct Data {
     pub is_constant: bool,
     pub curvature: Curvature, 
     pub best: RecExpr<Optimization>,
+    pub num_vars: usize,
     pub term_size: usize,
 }
 
@@ -100,28 +101,33 @@ impl Analysis<Optimization> for Meta {
         
         let curvature_before = to.curvature.clone();
         let best_before = to.best.clone();
+        let num_vars_before = to.num_vars.clone();
         let term_size_before = to.term_size.clone();
         if from.curvature < to.curvature {
             to.curvature = from.curvature.clone();
             to.best = from.best.clone();
+            to.num_vars = from.num_vars.clone();
             to.term_size = from.term_size.clone();
         } else if to.curvature == from.curvature {
             // Select smallest "best".
-            if to.term_size > from.term_size {
+            if (to.num_vars, to.term_size) > (from.num_vars, from.term_size) {
                 to.best = from.best.clone();
+                to.num_vars = from.num_vars.clone();
                 to.term_size = from.term_size.clone();
             }
         }
         let to_curvature_diff = curvature_before != to.curvature;
         let to_best_diff = best_before != to.best;
+        let to_num_vars_diff = num_vars_before != to.num_vars;
         let to_term_size_diff = term_size_before != to.term_size;
         let from_curvature_diff = to.curvature != from.curvature;
         let from_best_diff = to.best != from.best;
+        let from_num_vars_diff = to.num_vars != from.num_vars;
         let from_term_size_diff = to.term_size != from.term_size;
 
         DidMerge(
-            to_domain_diff || to_is_constant_diff || to_curvature_diff || to_best_diff || to_term_size_diff, 
-            from_domain_diff || from_is_constant_diff || from_curvature_diff || from_best_diff || from_term_size_diff)
+            to_domain_diff || to_is_constant_diff || to_curvature_diff || to_best_diff || to_num_vars_diff || to_term_size_diff, 
+            from_domain_diff || from_is_constant_diff || from_curvature_diff || from_best_diff || from_num_vars_diff || from_term_size_diff)
     }
 
     fn make(egraph: &EGraph, enode: &Optimization) -> Self::Data {
@@ -133,6 +139,8 @@ impl Analysis<Optimization> for Meta {
             |i: &Id| egraph[*i].data.curvature.clone();
         let get_best = 
             |i: &Id| egraph[*i].data.best.clone();
+        let get_num_vars = 
+            |i: &Id| egraph[*i].data.num_vars.clone();
         let get_term_size = 
             |i: &Id| egraph[*i].data.term_size.clone();
 
@@ -143,7 +151,8 @@ impl Analysis<Optimization> for Meta {
         let mut is_constant = false;
         let mut curvature = Curvature::Unknown;
         let mut best = RecExpr::default();
-        let mut term_size = usize::MAX;
+        let mut num_vars = 0;
+        let mut term_size = 0;
 
         match enode {
             Optimization::Prob([a, b]) => {
@@ -157,6 +166,7 @@ impl Analysis<Optimization> for Meta {
                         Curvature::Unknown
                     };
                 best = format!("(prob {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::ObjFun(a) => {
@@ -168,6 +178,7 @@ impl Analysis<Optimization> for Meta {
                         Curvature::Unknown
                     };
                 best = format!("(objFun {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Constr([h, c]) => {
@@ -180,15 +191,18 @@ impl Analysis<Optimization> for Meta {
                         Curvature::Unknown
                     };
                 best = format!("(constr {} {})", get_best(h), get_best(c)).parse().unwrap();
+                num_vars = get_num_vars(c);
                 term_size = 1 + get_term_size(c);
             }
             Optimization::Constrs(a) => {
                 curvature = Curvature::Constant;
                 term_size = 0;
+                num_vars = 0;
                 for c in a.iter() {
                     if curvature < get_curvature(c) {
                         curvature = get_curvature(c);
                     }
+                    num_vars += get_num_vars(c);
                     term_size += get_term_size(c);
                 }
                 let constrs_s_l : Vec<String> = 
@@ -200,11 +214,13 @@ impl Analysis<Optimization> for Meta {
                     curvature = Curvature::Affine
                 }
                 best = format!("(eq {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Le([a, b]) => {
                 curvature = curvature::of_le(get_curvature(a), get_curvature(b));
                 best = format!("(le {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Neg(a) => {
@@ -212,6 +228,7 @@ impl Analysis<Optimization> for Meta {
                 is_constant = get_is_constant(a);
                 curvature = curvature::of_neg(get_curvature(a));
                 best = format!("(neg {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Inv(a) => {
@@ -222,6 +239,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::of_convex_nonincreasing_fn(get_curvature(a));
                 }
                 best = format!("(inv {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Abs(a) => {
@@ -237,6 +255,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::of_convex_none_fn(get_curvature(a));
                 }
                 best = format!("(abs {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Sqrt(a) => {
@@ -247,6 +266,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::of_concave_nondecreasing_fn(get_curvature(a));
                 }
                 best = format!("(sqrt {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Log(a) => {
@@ -264,6 +284,7 @@ impl Analysis<Optimization> for Meta {
                 is_constant = get_is_constant(a);
                 curvature = curvature::of_convex_nondecreasing_fn(get_curvature(a));
                 best = format!("(exp {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::XExp(a) => {
@@ -274,6 +295,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::of_convex_nondecreasing_fn(get_curvature(a));
                 }
                 best = format!("(xexp {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Entr(a) => {
@@ -284,6 +306,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::of_concave_none_fn(get_curvature(a));
                 }
                 best = format!("(entr {})", get_best(a)).parse().unwrap();
+                num_vars = get_num_vars(a);
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Min([a, b]) => {
@@ -292,6 +315,7 @@ impl Analysis<Optimization> for Meta {
                 let curvature_a = curvature::of_concave_nondecreasing_fn(get_curvature(a));
                 let curvature_b = curvature::of_concave_nondecreasing_fn(get_curvature(b));
                 curvature = curvature::join(curvature_a, curvature_b);
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Max([a, b]) => {
@@ -308,6 +332,7 @@ impl Analysis<Optimization> for Meta {
                 is_constant = get_is_constant(a) && get_is_constant(b);
                 curvature = curvature::of_add(get_curvature(a), get_curvature(b));
                 best = format!("(add {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Sub([a, b]) => {
@@ -315,6 +340,7 @@ impl Analysis<Optimization> for Meta {
                 is_constant = get_is_constant(a) && get_is_constant(b);
                 curvature = curvature::of_sub(get_curvature(a), get_curvature(b));
                 best = format!("(sub {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Mul([a, b]) => {
@@ -339,6 +365,7 @@ impl Analysis<Optimization> for Meta {
                     _ => { }
                 }
                 best = format!("(mul {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Div([a, b]) => {
@@ -363,6 +390,7 @@ impl Analysis<Optimization> for Meta {
                     _ => { }
                 };
                 best = format!("(div {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Pow([a, b]) => {
@@ -375,6 +403,7 @@ impl Analysis<Optimization> for Meta {
                     }
                 } 
                 best = format!("(pow {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::QOL([a, b]) => {
@@ -387,6 +416,7 @@ impl Analysis<Optimization> for Meta {
                     curvature = curvature::join(curvature_num, curvature_den);
                 }
                 best = format!("(qol {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Geo([a, b]) => {
@@ -409,6 +439,7 @@ impl Analysis<Optimization> for Meta {
                 let curvature_b = curvature::of_convex_nondecreasing_fn(get_curvature(b));
                 curvature = curvature::join(curvature_a, curvature_b);
                 best = format!("(lse {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Norm2([a, b]) => {
@@ -418,6 +449,7 @@ impl Analysis<Optimization> for Meta {
                 let curvature_b = curvature::of_convex_none_fn(get_curvature(b));
                 curvature = curvature::join(curvature_a, curvature_b);
                 best = format!("(norm2 {} {})", get_best(a), get_best(b)).parse().unwrap();
+                num_vars = get_num_vars(a) + get_num_vars(b);
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Var(a) => {
@@ -431,6 +463,7 @@ impl Analysis<Optimization> for Meta {
                         }
                         curvature = Curvature::Affine;
                         best = format!("(var {})", s).parse().unwrap();
+                        num_vars = 1;
                         term_size = 1;
                     }
                     _ => {}
@@ -446,6 +479,7 @@ impl Analysis<Optimization> for Meta {
                         }
                         curvature = Curvature::Constant;
                         best = format!("(param {})", s).parse().unwrap();
+                        num_vars = 0;
                         term_size = 1;
                     }
                     _ => {}
@@ -456,6 +490,7 @@ impl Analysis<Optimization> for Meta {
             } 
             Optimization::Symbol(s) => {
                 best = format!("{}", s).parse().unwrap();
+                num_vars = 0;
                 term_size = 0;
             }
             Optimization::Constant(f) => {
@@ -463,11 +498,12 @@ impl Analysis<Optimization> for Meta {
                 is_constant = true;
                 curvature = Curvature::Constant;
                 best = format!("{}", f).parse().unwrap();
+                num_vars = 0;
                 term_size = 1;
             }
         }
 
-        Data { domain, is_constant, curvature, best, term_size }
+        Data { domain, is_constant, curvature, best, num_vars, term_size }
     }
 }
 

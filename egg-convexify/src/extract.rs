@@ -1,4 +1,5 @@
 use egg::{*};
+use std::convert::TryInto;
 use std::fs;
 use std::time::Duration;
 use std::collections::HashMap;
@@ -180,12 +181,16 @@ pub fn get_steps_from_string_maybe_node_limit(
         domains : domains.clone()
     };
     
+    let node_limit = node_limit.unwrap_or(100000);
+    let iter_limit = node_limit / 250;
+    let time_limit = (node_limit / 500).try_into().unwrap();
     let runner: Runner<Optimization, Meta> = 
         Runner::new(analysis)
         .with_explanations_enabled()
         .with_explanation_length_optimization()
-        .with_node_limit(100000)
-        .with_time_limit(Duration::from_secs(100))
+        .with_node_limit(node_limit)
+        .with_iter_limit(iter_limit)
+        .with_time_limit(Duration::from_secs(time_limit))
         .with_expr(&expr)
         .with_hook(|runner| {
             if runner.egraph[runner.roots[0]].data.curvature <= Curvature::Convex {
