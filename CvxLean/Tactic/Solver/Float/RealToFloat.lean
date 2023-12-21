@@ -190,6 +190,12 @@ addRealToFloat : Real.pi :=
 addRealToFloat : @Real.exp :=
   Float.exp
 
+def Float.Vec.exp.{u} {m : Type u} (x : m → Float) : m → Float :=
+  fun i => Float.exp (x i)
+
+addRealToFloat : @Vec.exp.{0} :=
+  @Float.Vec.exp.{0}
+
 addRealToFloat : @Real.sqrt :=
   Float.sqrt
 
