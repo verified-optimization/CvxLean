@@ -87,14 +87,17 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
     Bool ×
     Array MessageData ×
     AtomDataTrees) := do
-  trace[Meta.debug] "Constant? {e} {vars.map (mkFVar ·)}"
-  if isRelativelyConstant e vars || curvature == Curvature.Constant then
-    trace[Meta.debug] "Yes"
-    return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
-  if e.isFVar then --∧ vars.contains e.fvarId! then
+  -- Variable case.
+  if e.isFVar ∧ vars.contains e.fvarId! then
     trace[Meta.debug] "Variable {e}"
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   let potentialAtoms ← findRegisteredAtoms e
+  -- Constant case.
+  let isConstantExpr := isRelativelyConstant e vars || curvature == Curvature.Constant
+  let isPropExpr := (← inferType e).isProp
+  trace[Meta.debug] "Constant? {e} {vars.map (mkFVar ·)} {isConstantExpr}"
+  if isConstantExpr ∧ !isPropExpr then
+    return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   let mut failedAtoms : Array MessageData := #[]
   if potentialAtoms.size == 0 then
     failedAtoms := failedAtoms.push m!"No atom found for {e}"
