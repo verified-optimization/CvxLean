@@ -109,14 +109,12 @@ optimality by
     intros i
     simp [Vec.huber]
     rw [←rpow_two]
-    apply huber.optimality (x i) (v i) (w i) ((w i) ^ 2) (|x i|)
+    apply huber.optimality (x i) (v i) (w i) ((w i) ^ 2)
     { unfold posOrthCone; simpa using c1 i }
     { unfold posOrthCone; simpa using c2 i }
     { unfold posOrthCone; simpa using c3 i }
     { unfold posOrthCone; simpa using c4 i }
     { unfold rotatedSoCone; simp [sq_nonneg]; norm_num }
-    { unfold posOrthCone; simp [le_abs_self] }
-    { unfold posOrthCone; rw [←sub_le_iff_le_add, zero_sub]; simp [neg_le_abs_self] }
 
 vconditionElimination
 
