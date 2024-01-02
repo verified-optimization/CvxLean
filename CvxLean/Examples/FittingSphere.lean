@@ -27,7 +27,7 @@ namespace FittingSphere
 
 noncomputable section
 
-variable {n : ℕ} {m : ℕ} (x : Fin m → Fin n → ℝ)
+variable {n : ℕ} {m : ℕ} (x : Matrix (Fin m) (Fin n) ℝ)
 
 def p :=
   optimization (c : Fin n → ℝ) (r : ℝ)
@@ -35,7 +35,9 @@ def p :=
     subject to
       h1 : 10e-6 ≤ r
 
-equivalence ψ/q {n m : ℕ} (x : Fin m → Fin n → ℝ) : p x := by
+#check Matrix.transpose
+
+equivalence ψ/q {n m : ℕ} (x : Matrix (Fin m) (Fin n) ℝ) : p x := by
   unfold p
   -- Change of variables by hand. It should be:
   -- * change_of_variables (t) (r ↦ sqrt (t + ‖c‖ ^ 2))
@@ -73,11 +75,27 @@ equivalence ψ/q {n m : ℕ} (x : Fin m → Fin n → ℝ) : p x := by
   -- Remove norms.
   dsimp; simp only [norm_sq]; norm_num_clean_up
   -- TODO(RFM): Make dcp tactic work in equivalence mode.
+  -- Vector form for objective.
+  apply Minimization.Equivalence.trans
+  { let g : (Fin n → ℝ) × ℝ → ℝ := fun d =>
+      (let y := (x * xᵀ - (2 : ℝ) • (Matrix.const m d.1) * xᵀ - Matrix.diagonal (Vec.const m d.2));
+        (diag y) ⬝ᵥ (diag y))
+    apply MinimizationQ.rewrite_objective (g := g)
+    { rintro ⟨c, t⟩ _h1
+      simp only [trace]
+      congr 1; funext i;
+      simp [pow_two]
+      suffices hsuff : x i ⬝ᵥ x i - 2 * x i ⬝ᵥ c - t
+        = (x * xᵀ) i i - ((2 : ℝ) • (const m c * xᵀ)) i i - Vec.const m t i
+      { simp [hsuff] }
+      simp [Vec.const, Matrix.const, Matrix.mul_apply']
+      rw [dotProduct_comm] }
+  }
 
 reduction ψ'/r {n m : ℕ} (x : Fin m → Fin n → ℝ) : q x := by
   unfold q
   -- Finally:
-  -- dcp -- fails because of ∑
+  dcp -- fails because of diag * diag, we need an atom Vec.sqSum
 
 end
 
