@@ -1,15 +1,23 @@
+/-
+Copyright (c) 2024 Verified Optimization. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alexander Bentkamp, Ramon Fernández Mir
+-/
 import Mathlib.Data.Real.Basic
 import CvxLean.Lib.Math.Data.Matrix
 
 namespace Real
 
-def zeroCone (x : Real) : Prop :=
+/-- The zero cone `{0}`. -/
+def zeroCone (x : ℝ) : Prop :=
   x = 0
 
-def Vec.zeroCone (x : Fin n → Real) : Prop :=
+/-- The `n`-dimensional zero cone `{0}ⁿ`. -/
+def Vec.zeroCone {n} [Fintype n] (x : n → ℝ) : Prop :=
   ∀ i, Real.zeroCone (x i)
 
-def Matrix.zeroCone (M : Matrix (Fin n) (Fin m) Real) : Prop :=
+/-- The `n`-dimensional zero cone `{0}ⁿˣᵐ`. -/
+def Matrix.zeroCone {n m} [Fintype n] [Fintype m] (M : Matrix n m ℝ) : Prop :=
   ∀ i j, Real.zeroCone (M i j)
 
 end Real
