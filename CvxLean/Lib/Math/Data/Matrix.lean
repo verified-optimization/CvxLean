@@ -19,6 +19,9 @@ def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
 
 instance : Abs (Matrix m n ℝ) := ⟨abs⟩
 
+def const {m : ℕ} (n : ℕ) (k : Fin m → α) : Matrix (Fin n) (Fin m) α  :=
+  fun _ => k
+
 theorem vecCons_zero_zero {n}
   : vecCons (0 : ℝ) (0 : Fin n → ℝ) = 0 := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
