@@ -36,8 +36,18 @@ noncomputable instance instMaxReal : Max ℝ := by
 
 end Instances
 
-/- Lemmas used in `RewriteMapLibrary`. -/
 section Lemmas
+
+/- Lemmas used to prove properties about cones. -/
+
+lemma abs_le_of_sqrt_sq_add_nonneg_le {a b c : ℝ} (hb : 0 ≤ b)
+  (h : sqrt (a ^ 2 + b) ≤ c) : |a| ≤ c := by
+  rw [sqrt_le_iff] at h
+  replace ⟨hc, h⟩ := h
+  replace h := le_trans (le_add_of_nonneg_right hb) h
+  rwa [sq_le_sq, abs_of_nonneg hc] at h
+
+/- Lemmas used in `RewriteMapLibrary`. -/
 
 lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) :
   log x = log y ↔ x = y :=

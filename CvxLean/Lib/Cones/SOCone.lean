@@ -1,6 +1,7 @@
 import Mathlib.Data.Real.Sqrt
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import CvxLean.Lib.Math.Data.Real
 
 /-!
 We follow the MOSEK modeling cookbook:
@@ -37,15 +38,26 @@ noncomputable section ConeConversion
 def rotateSoCone {n : ℕ} (t : ℝ) (x : Fin n.succ → ℝ) : ℝ × ℝ × (Fin n → ℝ) :=
   ((t + x 0) / sqrt 2, (t - x 0) / sqrt 2, fun i => x i.succ)
 
--- TODO(RFM): Prove this.
 lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ}
   (h : soCone t x) :
   let (v, w, x) := rotateSoCone t x; rotatedSoCone v w x := by
   simp [rotatedSoCone, rotateSoCone]
+  have habsx0t : |x 0| ≤ t := by
+    rw [soCone, Fin.sum_univ_succ] at h
+    have hS : 0 ≤ ∑ i : Fin n, x (Fin.succ i) ^ 2 :=
+      Finset.sum_nonneg (fun _ _ => sq_nonneg _)
+    exact abs_le_of_sqrt_sq_add_nonneg_le hS h
+  have ht : 0 ≤ t := le_trans (abs_nonneg _) habsx0t
+  replace ⟨hx0t, hnx0t⟩ := abs_le.mp habsx0t
   split_ands
-  { sorry }
-  { sorry }
-  { sorry }
+  { field_simp
+    have hr : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by ring
+    rw [hr, le_sub_iff_add_le, add_comm]
+    rw [←Fin.sum_univ_succ (f := fun i => (x i) ^ 2)]
+    rw [←sqrt_le_left ht]
+    exact h }
+  { simp [le_div_iff]; linarith }
+  { simp [le_div_iff]; linarith }
 
 /-- If `(v, w, x) ∈ 𝒬ⁿ⁺²` then `u(v, w, x) ∈ 𝒬ᵣⁿ⁺¹`. -/
 def unrotateSoCone {n : ℕ} (v w : Real) (x : Fin n → ℝ) :
