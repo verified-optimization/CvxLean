@@ -51,8 +51,8 @@ lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ}
   replace ⟨hx0t, hnx0t⟩ := abs_le.mp habsx0t
   split_ands
   { field_simp
-    have hr : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by ring
-    rw [hr, le_sub_iff_add_le, add_comm]
+    have hrw : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by ring
+    rw [hrw, le_sub_iff_add_le, add_comm]
     rw [←Fin.sum_univ_succ (f := fun i => (x i) ^ 2)]
     rw [←sqrt_le_left ht]
     exact h }
@@ -64,12 +64,20 @@ def unrotateSoCone {n : ℕ} (v w : Real) (x : Fin n → ℝ) :
   ℝ × (Fin n.succ → ℝ) :=
   ((v + w) / sqrt 2, Matrix.vecCons ((v - w) / sqrt 2) x)
 
--- TODO(RFM): Prove this.
 lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ}
   (h : rotatedSoCone v w x) :
   let (t, x) := unrotateSoCone v w x; soCone t x := by
   simp [soCone, unrotateSoCone]
-  sorry
+  replace ⟨h, hv, hw⟩ := h
+  rw [sqrt_le_iff]
+  split_ands
+  { simp [le_div_iff]; linarith }
+  { rw [Fin.sum_univ_succ]
+    simp [Matrix.vecCons]
+    rw [add_comm, ←le_sub_iff_add_le]
+    field_simp
+    have hrw : ((v + w) ^ 2 - (v - w) ^ 2) / 2 = v * w * 2 := by ring
+    rwa [hrw] }
 
 -- TODO(RFM): rotate then unrotate?
 -- TODO(RFM): unrotate then rotate?
