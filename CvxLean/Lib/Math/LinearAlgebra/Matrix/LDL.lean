@@ -4,15 +4,15 @@ import CvxLean.Lib.Math.LinearAlgebra.Matrix.Spectrum
 import CvxLean.Lib.Math.Analysis.InnerProductSpace.GramSchmidtOrtho
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.Triangular
 
+/-!
+More results about LDL factorization (see `Mathlib.LinearAlgebra.Matrix.LDL`).
+-/
+
 variable {𝕜 : Type _} [IsROrC 𝕜]
 variable {n : Type _} [LinearOrder n] [IsWellOrder n (· < · : n → n → Prop)]
 variable [LocallyFiniteOrderBot n]
 
 namespace LDL
-
-/-!
-More results about LDL factorization (see `Mathlib.LinearAlgebra.Matrix.LDL`).
--/
 
 open Matrix
 
@@ -22,7 +22,7 @@ variable {S : Matrix n n 𝕜} [Fintype n] (hS : S.PosDef)
 
 @[simp]
 lemma lowerInv_diagonal (i : n) :
-  lowerInv hS i i = 1 := by
+    lowerInv hS i i = 1 := by
   rw [lowerInv_eq_gramSchmidtBasis]
   simpa only [gramSchmidtBasis, Basis.coe_mk]
     using @repr_gramSchmidt_diagonal 𝕜 (n → 𝕜) _
@@ -30,14 +30,14 @@ lemma lowerInv_diagonal (i : n) :
       (InnerProductSpace.ofMatrix hS.transpose) n _ _ _ i (Pi.basisFun 𝕜 n)
 
 lemma lower_eq_to_matrix :
-  lower hS =
-    ((@gramSchmidtBasis 𝕜 (n → 𝕜) _
-      (NormedAddCommGroup.ofMatrix hS.transpose)
-      (InnerProductSpace.ofMatrix hS.transpose)
+    lower hS =
+      ((@gramSchmidtBasis 𝕜 (n → 𝕜) _
+        (NormedAddCommGroup.ofMatrix hS.transpose)
+        (InnerProductSpace.ofMatrix hS.transpose)
   n _ _ _ (Pi.basisFun 𝕜 n)).toMatrix (Pi.basisFun 𝕜 n))ᵀ := by
   simp only [lower, lowerInv_eq_gramSchmidtBasis]
   apply Matrix.inv_eq_left_inv
-  rw [←transpose_mul, Basis.toMatrix_mul_toMatrix_flip, transpose_one]
+  rw [← transpose_mul, Basis.toMatrix_mul_toMatrix_flip, transpose_one]
 
 lemma lowerTriangular_lowerInv : lowerTriangular (lowerInv hS) := by
   apply lowerInv_triangular
@@ -59,8 +59,7 @@ lemma lower_diagonal (i : n) : lower hS i i = 1 := by
 
 @[simp]
 lemma det_lowerInv : (lowerInv hS).det = 1 := by
-  have h := det_of_lowerTriangular
-    (lowerInv hS) (by apply lowerInv_triangular)
+  have h := det_of_lowerTriangular (lowerInv hS) (by apply lowerInv_triangular)
   rw [h, Finset.prod_eq_one]
   intros
   rw [lowerInv_diagonal]

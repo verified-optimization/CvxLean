@@ -15,7 +15,7 @@ open BigOperators
 picks the correct inner product space instance. -/
 @[local instance]
 noncomputable def frobeniusNormedAddCommGroup' [NormedAddCommGroup 𝕜] :
-  NormedAddCommGroup (n → 𝕜) :=
+    NormedAddCommGroup (n → 𝕜) :=
   (by infer_instance : NormedAddCommGroup (PiLp 2 fun j : n => 𝕜))
 
 attribute [-instance] Pi.normedAddCommGroup
@@ -24,8 +24,8 @@ noncomputable instance : InnerProductSpace 𝕜 (n → 𝕜) :=
   EuclideanSpace.instInnerProductSpace
 
 lemma IsHermitian.hasEigenvector_eigenvectorBasis (hA : A.IsHermitian) (i : n) :
-  Module.End.HasEigenvector
-    (Matrix.toLin' A) (hA.eigenvalues i) (hA.eigenvectorBasis i) := by
+    Module.End.HasEigenvector
+      (Matrix.toLin' A) (hA.eigenvalues i) (hA.eigenvectorBasis i) := by
   simp only [IsHermitian.eigenvectorBasis, OrthonormalBasis.coe_reindex]
   apply LinearMap.IsSymmetric.hasEigenvector_eigenvectorBasis
 
@@ -33,9 +33,9 @@ lemma IsHermitian.hasEigenvector_eigenvectorBasis (hA : A.IsHermitian) (i : n) :
 matrix can be diagonalized by a change of basis using a matrix consisting of
 eigenvectors. -/
 theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n))
-  (as : n → ℝ)
-  (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
-  xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) * A =
+    (as : n → ℝ)
+    (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
+    xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) * A =
     diagonal (IsROrC.ofReal ∘ as) * xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) := by
   rw [basis_toMatrix_basisFun_mul]
   ext i j
@@ -67,12 +67,12 @@ theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n))
     rfl }
 
 lemma det_eq_prod_eigenvalues (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n))
-  (as : n → ℝ)
-  (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
-  det A = ∏ i, as i := by
+    (as : n → ℝ)
+    (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
+    det A = ∏ i, as i := by
   apply mul_left_cancel₀ (det_ne_zero_of_left_inverse
     (Basis.toMatrix_mul_toMatrix_flip (Pi.basisFun 𝕜 n) xs.toBasis))
-  rw [←det_mul, spectral_theorem xs as hxs, det_mul, mul_comm, det_diagonal]
+  rw [← det_mul, spectral_theorem xs as hxs, det_mul, mul_comm, det_diagonal]
   simp
 
 end Matrix
