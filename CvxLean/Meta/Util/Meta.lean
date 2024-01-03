@@ -34,7 +34,6 @@ where
     else
       k acc
 
--- From AESOP.
 def runMetaMAsCoreM (x : MetaM α) : CoreM α :=
   Prod.fst <$> x.run {} {}
 
