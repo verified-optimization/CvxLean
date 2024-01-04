@@ -72,9 +72,9 @@ lemma LDL.diagEntries_pos {A : Matrix n n ℝ} (hA: A.PosDef) (i : n) :
 lemma LogDetAtom.solution_eq_atom {A : Matrix n n ℝ} (hA: A.PosDef) :
     ∑ i, Real.log (LDL.diagEntries hA i) = Real.log (A.det) := by
   conv => rhs; rw [(LDL.lower_conj_diag hA).symm]
-  have := Real.log_prod Finset.univ (LDL.diagEntries hA)
+  have heqsum := Real.log_prod Finset.univ (LDL.diagEntries hA)
     (fun i _ => ne_of_gt (LDL.diagEntries_pos hA i))
-  simp [LDL.diag, this.symm]
+  simp [LDL.diag, heqsum.symm]
 
 lemma LogDetAtom.feasibility_exp {A : Matrix n n ℝ} (hA: A.PosDef) (i : n) :
     LDL.diagEntries hA i ≤ ((LDL.diag hA) * ((LDL.lower hA)ᵀ)).diag i := by
@@ -142,8 +142,8 @@ lemma LogDetAtom.optimality {t : n → ℝ} {Y Z D : Matrix n n ℝ} (ht : ∀ i
   have h_A_pd : A.PosDef := LogDetAtom.cond_elim ht hD hZ hPSD
   have h_Ddet_le_Adet : D.det ≤ A.det := LogDetAtom.optimality_Ddet_le_Adet ht hD hZ hPSD
   have h_Adet_pos: 0 < A.det := h_A_pd.det_pos
-  rw [←Real.exp_le_exp, Real.exp_sum, Real.exp_log h_Adet_pos]
-  apply le_trans (Finset.prod_le_prod (λ i _ => le_of_lt ((t i).exp_pos)) (λ i _ => ht i))
+  rw [← Real.exp_le_exp, Real.exp_sum, Real.exp_log h_Adet_pos]
+  apply le_trans (Finset.prod_le_prod (fun i _ => le_of_lt ((t i).exp_pos)) (fun i _ => ht i))
   convert h_Ddet_le_Adet
   simp [hD]
 
