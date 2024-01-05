@@ -2,6 +2,7 @@ import CvxLean.Command.Solve
 import CvxLean.Command.Equivalence
 import CvxLean.Tactic.Convexify.Convexify
 import CvxLean.Tactic.ChangeOfVariables.ChangeOfVariables
+import CvxLean.Tactic.ChangeOfVariables.Basic
 
 namespace LT2024
 
@@ -65,6 +66,8 @@ equivalence eqv₃/q₃ : p₃ 0.5 := by
   change_of_variables (h') (h ↦ exp h')
   change_of_variables (w') (w ↦ exp w')
   change_of_variables (d') (d ↦ exp d')
+  -- TODO: remove positive constraints.
+  simp only [exp_pos, true_and]
   convexify
 
 solve q₃
