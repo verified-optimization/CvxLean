@@ -23,15 +23,6 @@ instance : ChangeOfVariables (fun (x : ℝ) => 3 * x) := by
 instance : ChangeOfVariables (fun (x : ℝ)  => 3 / x) := by
   infer_instance
 
-instance : ChangeOfVariables (fun (xy : ℝ × ℝ) => (xy.1 + 1, xy.2)) := by
-  infer_instance
-
-instance : ChangeOfVariables (fun (xy : ℝ × ℝ) => (Real.exp xy.1, xy.2)) := by
-  infer_instance
-
-instance : ChangeOfVariables (fun (xy : ℝ × ℝ) => (xy.1 + 1, xy.2)) := by
-  infer_instance
-
 end ChangeOfVariablesInstances
 
 def p :=

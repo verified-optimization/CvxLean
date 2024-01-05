@@ -2,26 +2,27 @@ import Lean
 import CvxLean.Lib.Minimization
 import CvxLean.Lib.Equivalence
 import CvxLean.Meta.Minimization
-import CvxLean.Tactic.Conv.ConvOpt
-import CvxLean.Tactic.DCP.AtomLibrary.All
-import CvxLean.Tactic.Convexify.Convexify -- TODO(RFM): we only need normNumCleanUp from here, factor out.
+import CvxLean.Meta.Util.Expr
+import CvxLean.Tactic.Arith.Arith
+
+/-!
+# Change of variables
+-/
 
 namespace CvxLean
 
 open Minimization
 
+/-- -/
 class ChangeOfVariables {D E} (c : E → D) where
   inv : D → E
   condition : D → Prop
   property : ∀ x, condition x → c (inv x) = x
 
-def ChangeOfVariables.toEquivalence {D E R} [Preorder R]
-  {f : D → R} {cs : D → Prop}
-  (c : E → D) [cov : ChangeOfVariables c]
-  (h : ∀ x, cs x → cov.condition x) :
-  Equivalence
-    (Minimization.mk f cs)
-    (Minimization.mk (fun x => f (c x)) (fun x => cs (c x))) :=
+/-- -/
+def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D → Prop} (c : E → D)
+    [cov : ChangeOfVariables c] (h : ∀ x, cs x → cov.condition x) :
+    Equivalence (Minimization.mk f cs) (Minimization.mk (fun x => f (c x)) (fun x => cs (c x))) :=
   StrongEquivalence.toEquivalence <| {
     phi := fun x => cov.inv x
     psi := fun y => c y
@@ -33,6 +34,7 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R]
 
 section Structural
 
+/-- -/
 instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E)
   [cov₁ : ChangeOfVariables c₁] [cov₂ : ChangeOfVariables c₂] :
   ChangeOfVariables (c₁ ∘ c₂) := {
@@ -44,57 +46,60 @@ instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E)
     }
   }
 
-instance ChangeOfVariables.prod_left {D E F} (c : E → D)
-  [cov : ChangeOfVariables c] :
+/-- -/
+instance ChangeOfVariables.prod_left {D E F} (c : E → D) [cov : ChangeOfVariables c] :
   ChangeOfVariables (fun x : E × F => (c x.1, x.2)) := {
     inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
     condition := fun ⟨x₁, _⟩ => cov.condition x₁
     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
   }
 
-instance ChangeOfVariables.prod_left_binary_left_constant
-  {D E F} {T} (c : T → E → D) (t : T)
-  [cov : ChangeOfVariables (fun x => c t x)] :
-  ChangeOfVariables (fun x : E × F => (c t x.1, x.2)) := {
-    inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
-    condition := fun ⟨x₁, _⟩ => cov.condition x₁
-    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
-  }
+-- /-- -/
+-- instance ChangeOfVariables.prod_left_binary_left_constant {D E F} {T} (c : T → E → D) (t : T)
+--     [cov : ChangeOfVariables (fun x => c t x)] :
+--     ChangeOfVariables (fun x : E × F => (c t x.1, x.2)) :=
+--   { inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
+--     condition := fun ⟨x₁, _⟩ => cov.condition x₁
+--     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
+--   }
 
-instance ChangeOfVariables.prod_left_binary_right_constant
-  {D E F} {T} (c : E → T → D) (t : T)
-  [cov : ChangeOfVariables (fun x => c x t)] :
-  ChangeOfVariables (fun x : E × F => (c x.1 t, x.2)) := {
-    inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
-    condition := fun ⟨x₁, _⟩ => cov.condition x₁
-    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
-  }
+-- /-- -/
+-- instance ChangeOfVariables.prod_left_binary_right_constant
+--   {D E F} {T} (c : E → T → D) (t : T)
+--   [cov : ChangeOfVariables (fun x => c x t)] :
+--   ChangeOfVariables (fun x : E × F => (c x.1 t, x.2)) := {
+--     inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
+--     condition := fun ⟨x₁, _⟩ => cov.condition x₁
+--     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx]
+--   }
 
-instance ChangeOfVariables.prod_right {D E F} (c : E → D)
-  [cov : ChangeOfVariables c] :
-  ChangeOfVariables (fun x : F × E => (x.1, c x.2)) := {
-    inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
+/-- -/
+instance ChangeOfVariables.prod_right {D E F} (c : E → D) [cov : ChangeOfVariables c] :
+    ChangeOfVariables (fun x : F × E => (x.1, c x.2)) :=
+  { inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
     condition := fun ⟨_, x₂⟩ => cov.condition x₂
     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
   }
 
-instance ChangeOfVariables.prod_right_binary_left_constant
-  {D E F} {T} (c : T → E → D) (t : T)
-  [cov : ChangeOfVariables (fun x => c t x)] :
-  ChangeOfVariables (fun x : F × E => (x.1, c t x.2)) := {
-    inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
-    condition := fun ⟨_, x₂⟩ => cov.condition x₂
-    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
-  }
+-- /-- -/
+-- instance ChangeOfVariables.prod_right_binary_left_constant
+--   {D E F} {T} (c : T → E → D) (t : T)
+--   [cov : ChangeOfVariables (fun x => c t x)] :
+--   ChangeOfVariables (fun x : F × E => (x.1, c t x.2)) := {
+--     inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
+--     condition := fun ⟨_, x₂⟩ => cov.condition x₂
+--     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
+--   }
 
-instance ChangeOfVariables.prod_right_binary_right_constant
-  {D E F} {T} (c : E → T → D) (t : T)
-  [cov : ChangeOfVariables (fun x => c x t)] :
-  ChangeOfVariables (fun x : F × E => (x.1, c x.2 t)) := {
-    inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
-    condition := fun ⟨_, x₂⟩ => cov.condition x₂
-    property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
-  }
+-- /-- -/
+-- instance ChangeOfVariables.prod_right_binary_right_constant
+--   {D E F} {T} (c : E → T → D) (t : T)
+--   [cov : ChangeOfVariables (fun x => c x t)] :
+--   ChangeOfVariables (fun x : F × E => (x.1, c x.2 t)) := {
+--     inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
+--     condition := fun ⟨_, x₂⟩ => cov.condition x₂
+--     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx]
+--   }
 
 instance ChangeOfVariables.id {D} : ChangeOfVariables (fun x : D => x) := {
   inv := fun x => x
@@ -112,8 +117,8 @@ instance : ChangeOfVariables Real.exp := {
   property := fun _ hx => Real.exp_log hx
 }
 
--- NOTE(RFM): x ≠ 0 is technically not necessary as division is defined on all
--- of ℝ, but we want to avoid division by zero.
+-- NOTE(RFM): x ≠ 0 is technically not necessary as division is defined on all of ℝ, but we want to
+-- avoid division by zero.
 instance : ChangeOfVariables (fun x : ℝ => x⁻¹) := {
   inv := fun x => x⁻¹
   condition := fun x => x ≠ 0
@@ -229,19 +234,30 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       let gToChange := gsTrans[0]!
       let gNext := gsTrans[1]!
 
+      -- Make `ChangeOfVariables` instance.
+      -- The arguments are the number of variables to the left and right  of `varToChange`.
+      let rec mkCovExpr : ℕ → ℕ → MetaM Expr
+        | 0, 0 => do synthInstance (← mkAppM ``ChangeOfVariables #[changeFn])
+        | 0, _ => do
+            mkAppOptM ``ChangeOfVariables.prod_left #[none, none, mkConst ``Real, changeFn, none]
+        | l + 1, r => do
+            let covExpr' ← mkCovExpr l r
+            mkAppOptM ``ChangeOfVariables.prod_right #[none, none, mkConst ``Real, none, covExpr']
+      let covExpr ← mkCovExpr covIdx (vars.length - covIdx - 1)
+      trace[Meta.debug] s!"covExpr: {covExpr}"
+      check covExpr
+
       -- Apply `ChangeOfVariables.toEquivalence`.
       let D := gExpr.domain
       let E := newDomain
       let R := gExpr.codomain
-      let RPreorder ← synthInstance
-        (mkAppN (mkConst ``Preorder [levelZero]) #[R])
+      let RPreorder ← synthInstance (mkAppN (mkConst ``Preorder [levelZero]) #[R])
       let f := gExpr.objFun
       let cs := gExpr.constraints
-      -- let cov ← mkFreshExprMVar <|
-      --   (mkAppN (mkConst ``ChangeOfVariables [levelZero, levelZero]) #[D, E, c])
       let toApply := mkAppN
         (mkConst ``ChangeOfVariables.toEquivalence)
-        #[D, E, R, RPreorder, f, cs, c]
+        #[D, E, R, RPreorder, f, cs, c, covExpr]
+      let toApply ← instantiateMVars toApply
       let gsAfterApply ← gToChange.apply toApply
       if gsAfterApply.length != 1 then
         throwError (
@@ -251,8 +267,13 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       -- Solve change of variables condition.
       let gCondition := gsAfterApply[0]!
       let (_, gCondition) ← gCondition.intros
+      dbg_trace s!"gCond {← Meta.ppGoal gCondition}."
+
       let gsFinal ← evalTacticAt
-        (← `(tactic| simp [ChangeOfVariables.condition] <;> intros <;> positivity)) gCondition
+        (← `(tactic|
+          simp [ChangeOfVariables.condition] <;>
+          positivity!))
+        gCondition
       if gsFinal.length != 0 then
         for g in gsFinal do
           dbg_trace s!"Could not prove {← Meta.ppGoal g}."

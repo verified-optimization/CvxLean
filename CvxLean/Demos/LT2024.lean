@@ -43,8 +43,8 @@ solve q₂
 #eval q₂.solution
 #eval q₂.value
 
-/- https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
-def p₃ :=
+/-- See https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
+def p₃ (α : ℝ) :=
   optimization (h w d : ℝ)
     minimize (1 / (h * w * d))
     subject to
@@ -58,10 +58,13 @@ def p₃ :=
       c8 : 5 ≤ d / w
       c9 : d / w ≤ 6
 
-solve p₃
+--solve p₃
 
-equivalence eqv₃/q₃ : p₃ := by
-  map_exp -- or change of variables
+equivalence eqv₃/q₃ : p₃ 0.5 := by
+  unfold p₃
+  change_of_variables (h') (h ↦ exp h')
+  change_of_variables (w') (w ↦ exp w')
+  change_of_variables (d') (d ↦ exp d')
   convexify
 
 solve q₃

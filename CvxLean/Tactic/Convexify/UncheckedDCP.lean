@@ -1,3 +1,4 @@
+import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.DCP.Dcp
 
 namespace CvxLean
@@ -15,7 +16,7 @@ partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC (Name
       return (n.toString, uncheckedAtomTree))
 where
   findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
-    if DCP.isRelativelyConstant e vars then
+    if e.isRelativelyConstant vars then
       -- NOTE: There are special cases for constants with negation and
       -- division, but what about something like 2 * 3?
       if ← isOptimizationParam e.constName then
