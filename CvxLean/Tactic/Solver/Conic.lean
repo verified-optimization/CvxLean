@@ -2,8 +2,8 @@ import CvxLean.Lib.Minimization
 import CvxLean.Lib.Math.Data.Array
 import CvxLean.Lib.Math.Data.Matrix
 import CvxLean.Lib.Math.Data.Real
-import CvxLean.Lib.Math.Data.Float
 import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Util.ToExpr
 import CvxLean.Meta.Minimization
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.Solver.Float.Coeffs
