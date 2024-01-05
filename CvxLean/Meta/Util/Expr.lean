@@ -4,6 +4,18 @@ import CvxLean.Lib.Math.Data.Array
 
 open Lean
 
+/-- TODO Check if `expr` is constant by checking if it contains any free variable
+from `vars`. -/
+def Lean.Expr.isConstant (expr : Expr) : Bool := (Lean.collectFVars {} expr).fvarSet.isEmpty
+
+/-- Check if `expr` is constant by checking if it contains any free variable
+from `vars`. -/
+def Lean.Expr.isRelativelyConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
+  let fvarSet := (Lean.collectFVars {} expr).fvarSet
+  for v in vars do
+    if fvarSet.contains v then return false
+  return true
+
 def Lean.Expr.removeMData (e : Expr) : CoreM Expr := do
   let post (e : Expr) : CoreM TransformStep := do
     return TransformStep.done e.consumeMData

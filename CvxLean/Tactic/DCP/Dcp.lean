@@ -2,6 +2,7 @@ import Mathlib.Tactic.NormNum
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Meta
+import CvxLean.Meta.Util.Expr
 import CvxLean.Lib.Math.Data.Array
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
@@ -32,18 +33,6 @@ abbrev AtomDataTrees :=
 
 abbrev NewVarsTree := Tree (Array LocalDecl) Unit
 abbrev NewConstrVarsTree := Tree (Array LocalDecl) Unit
-
-/-- TODO Check if `expr` is constant by checking if it contains any free variable
-from `vars`. -/
-def isConstant (expr : Expr) : Bool := (collectFVars {} expr).fvarSet.isEmpty
-
-/-- Check if `expr` is constant by checking if it contains any free variable
-from `vars`. -/
-def isRelativelyConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
-  let fvarSet := (collectFVars {} expr).fvarSet
-  for v in vars do
-    if fvarSet.contains v then return false
-  return true
 
 /-- Return list of all registered atoms that match with a given expression.
 For every registered atom, it returns:
@@ -93,7 +82,7 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
     return (false, #[], Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
   let potentialAtoms ← findRegisteredAtoms e
   -- Constant case.
-  let isConstantExpr := isRelativelyConstant e vars || curvature == Curvature.Constant
+  let isConstantExpr := e.isRelativelyConstant vars || curvature == Curvature.Constant
   let isPropExpr := (← inferType e).isProp
   trace[Meta.debug] "Constant? {e} {vars.map (mkFVar ·)} {isConstantExpr}"
   if isConstantExpr ∧ !isPropExpr then
@@ -148,7 +137,7 @@ where
     let mut childBConds := #[]
     for i in [:args.size] do
       let arg := args[i]!
-      if atom.argKinds[i]! == ArgKind.Constant ∧ not (isRelativelyConstant arg vars) then
+      if atom.argKinds[i]! == ArgKind.Constant ∧ not (arg.isRelativelyConstant vars) then
         return FindAtomResult.Error
           #[m!"Trying atom {atom.expr} for expression {e}: " ++
             m!"Expected constant argument, but found: {arg}"]
