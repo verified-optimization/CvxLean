@@ -242,13 +242,13 @@ addRealToFloat (m) (i) (hm) : @Matrix.sum (Fin m) Real hm i :=
   fun M => (@Matrix.Computable.toArray Float (Zero.mk (0 : Float)) m M).foldl (fun acc v => acc + v.foldl (· + ·) 0) 0
 
 addRealToFloat (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) Real i1 i2 i3 :=
-  @Matrix.Computable.dotProduct Float (Zero.mk (0 : Float)) n instMulFloat instAddFloat
+  @Matrix.Computable.dotProduct Float (Zero.mk (0 : Float)) instMulFloat instAddFloat n
 
 addRealToFloat (n m) (i1) (i2) : @Matrix.mulVec (Fin n) (Fin m) Real i1 i2 :=
-  @Matrix.Computable.mulVec Float (Zero.mk (0 : Float)) n m instMulFloat instAddFloat
+  @Matrix.Computable.mulVec Float (Zero.mk (0 : Float)) instMulFloat instAddFloat n m
 
 addRealToFloat (n m) (i1) (i2) : @Matrix.vecMul (Fin n) (Fin m) Real i1 i2 :=
-  @Matrix.Computable.vecMul Float (Zero.mk (0 : Float)) n m instMulFloat instAddFloat
+  @Matrix.Computable.vecMul Float (Zero.mk (0 : Float)) instMulFloat instAddFloat n m
 
 addRealToFloat (n : Nat) (i) :
   @Matrix.trace (Fin n) ℝ (Fin.fintype n) i :=
@@ -260,13 +260,13 @@ addRealToFloat (n : Nat) (i) :
     (Matrix (Fin n) (Fin n) ℝ)
     (Matrix (Fin n) (Fin n) ℝ)
     i :=
-  @Matrix.Computable.mul Float (Zero.mk (0 : Float)) n n n instMulFloat instAddFloat
+  @Matrix.Computable.mul Float (Zero.mk (0 : Float)) instMulFloat instAddFloat n n n
 
 addRealToFloat (n : Nat) (i1 i2 i3 i4) : @Matrix.PosDef (Fin n) ℝ i1 i2 i3 i4 :=
-  @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLTFloat
+  @Matrix.Computable.PosDef Float (Zero.mk (0 : Float)) instMulFloat instAddFloat n instLTFloat
 
 addRealToFloat (n : Nat) (i1 i2 i3 i4) : @Matrix.PosSemidef (Fin n) ℝ i1 i2 i3 i4 :=
-  @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) n instAddFloat instMulFloat instLEFloat
+  @Matrix.Computable.PosSemidef Float (Zero.mk (0 : Float)) instMulFloat instAddFloat n instLEFloat
 
 def Matrix.toUpperTri' [LinearOrder m] [Zero α]
   (A : Matrix m m α) : Matrix m m α :=
