@@ -239,7 +239,8 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       let rec mkCovExpr : ℕ → ℕ → MetaM Expr
         | 0, 0 => do synthInstance (← mkAppM ``ChangeOfVariables #[changeFn])
         | 0, _ => do
-            mkAppOptM ``ChangeOfVariables.prod_left #[none, none, mkConst ``Real, changeFn, none]
+            let rType := composeDomain (newVars.drop (covIdx + 1))
+            mkAppOptM ``ChangeOfVariables.prod_left #[none, none, rType, changeFn, none]
         | l + 1, r => do
             let covExpr' ← mkCovExpr l r
             mkAppOptM ``ChangeOfVariables.prod_right #[none, none, mkConst ``Real, none, covExpr']
