@@ -71,7 +71,7 @@ equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
   convexify
 
 solve q₃
--- solve p₃ that's what i really want
+-- solve p₃ that's what I really want
 
 #print q₃.reduced
 
@@ -80,7 +80,17 @@ solve q₃
 #eval q₃.value
 
 #check eqv₃.psi
--- TODO: Float maps so that we can
+-- TODO: Float maps so that we can chain equivalences.
+-- or change solve.
+-- We need:
+-- * All tactics to work smoothly on equivalence and reduciton modes (wrapper).
+-- * Deal with map_exp and everything in cov/basic.
+-- * Tactics to clean up problem.
+-- * The wrapper should also deal with unfolding and not closing goals, using transitivity.
+-- * dcp needs to return an equivalence.
+--
+-- Ideas:
+-- * EquivalenceTacticM, ReductionTacticM, RelaxationTacitcM.
 
 end
 
