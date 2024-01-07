@@ -1,0 +1,1 @@
+-- Wrapper to make tactics work under equivalence or reduction.

@@ -45,38 +45,42 @@ solve q₂
 #eval q₂.value
 
 /-- See https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
-def p₃ (α : ℝ) :=
+def p₃ (Awall Aflr α β γ δ: ℝ) :=
   optimization (h w d : ℝ)
     minimize (1 / (h * w * d))
     subject to
       c1 : 0 < h
       c2 : 0 < w
       c3 : 0 < d
-      c4 : 2 * (h * d + w * d) ≤ 100
-      c5 : w * d ≤ 10
-      c6 : 0.5 ≤ h / w
-      c7 : h / w ≤ 0.5
-      c8 : 5 ≤ d / w
-      c9 : d / w ≤ 6
+      c4 : 2 * (h * d + w * d) ≤ Awall
+      c5 : w * d ≤ Aflr
+      c6 : α ≤ h / w
+      c7 : h / w ≤ β
+      c8 : γ ≤ d / w
+      c9 : d / w ≤ δ
 
 --solve p₃
 
-equivalence eqv₃/q₃ : p₃ 0.5 := by
-  unfold p₃
+equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
+  unfold p₃ -- No need to unfold?
   change_of_variables (h') (h ↦ exp h')
   change_of_variables (w') (w ↦ exp w')
   change_of_variables (d') (d ↦ exp d')
-  -- TODO: remove positive constraints.
+  -- TODO: remove positive constraints. Tactic remove_trivial_constraints
   simp only [exp_pos, true_and]
   convexify
 
 solve q₃
+-- solve p₃ that's what i really want
 
 #print q₃.reduced
 
 #eval q₃.status
 #eval q₃.solution
 #eval q₃.value
+
+#check eqv₃.psi
+-- TODO: Float maps so that we can
 
 end
 
