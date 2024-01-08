@@ -13,6 +13,46 @@ variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 
 namespace Minimization
 
+section Equivalence
+
+/-- Regular notion of equivalence between optimization problems. -/
+structure Equivalence where
+  phi : D → E
+  psi : E → D
+  phi_feasibility : ∀ x, p.feasible x → q.feasible (phi x)
+  psi_feasibility : ∀ y, q.feasible y → p.feasible (psi y)
+  phi_optimality : ∀ x, p.optimal x → q.optimal (phi x)
+  psi_optimality : ∀ x, q.optimal x → p.optimal (psi x)
+
+def Equivalence.refl : Equivalence p p :=
+  { phi := id,
+    psi := id,
+    phi_feasibility := fun _ hx => hx,
+    psi_feasibility := fun _ hy => hy,
+    phi_optimality := fun _ hx => hx,
+    psi_optimality := fun _ hx => hx }
+
+def Equivalence.symm (E : Equivalence p q) : Equivalence q p :=
+  { phi := E.psi,
+    psi := E.phi,
+    phi_feasibility := E.psi_feasibility,
+    psi_feasibility := E.phi_feasibility,
+    phi_optimality := E.psi_optimality,
+    psi_optimality := E.phi_optimality }
+
+def Equivalence.trans (E₁ : Equivalence p q) (E₂ : Equivalence q r) : Equivalence p r :=
+  { phi := E₂.phi ∘ E₁.phi,
+    psi := E₁.psi ∘ E₂.psi,
+    phi_feasibility := fun x hx => E₂.phi_feasibility (E₁.phi x) (E₁.phi_feasibility x hx),
+    psi_feasibility := fun y hy => E₁.psi_feasibility (E₂.psi y) (E₂.psi_feasibility y hy),
+    phi_optimality := fun x hx => E₂.phi_optimality (E₁.phi x) (E₁.phi_optimality x hx),
+    psi_optimality := fun y hy => E₁.psi_optimality (E₂.psi y) (E₂.psi_optimality y hy) }
+
+instance : Trans (@Equivalence R D E _) (@Equivalence R E F _) (@Equivalence R D F _) :=
+  { trans := fun E₁ E₂ => Equivalence.trans _ _ _ E₁ E₂ }
+
+end Equivalence
+
 section StrongEquivalence
 
 /-- Notion of equivalence used by the DCP procedure. -/
@@ -20,23 +60,21 @@ structure StrongEquivalence where
   phi : D → E
   psi : E → D
   phi_feasibility : ∀ x, p.constraints x → q.constraints (phi x)
-  phi_optimality : ∀ x, p.constraints x → q.objFun (phi x) ≤ p.objFun x
   psi_feasibility : ∀ y, q.constraints y → p.constraints (psi y)
+  phi_optimality : ∀ x, p.constraints x → q.objFun (phi x) ≤ p.objFun x
   psi_optimality : ∀ y, q.constraints y → p.objFun (psi y) ≤ q.objFun y
 
 def StrongEquivalence.toFwd (E : StrongEquivalence p q) : Solution p → Solution q :=
   fun sol => {
     point := E.phi sol.point,
     feasibility := E.phi_feasibility sol.point sol.feasibility,
-    optimality := fun y => by
+    optimality := fun y hy => by
       -- g(phi(x)) <= f(x)
-      have h₁ := E.phi_optimality sol.point sol.feasibility;
+      have h₁ := E.phi_optimality sol.point sol.feasibility
       -- f(x) <= f(psi(y))
-      let psi_y : p.FeasPoint :=
-        ⟨E.psi y.point, E.psi_feasibility y.point y.feasibility⟩
-      have h₂ := sol.optimality psi_y;
+      have h₂ := sol.optimality (E.psi y) (E.psi_feasibility y hy)
       -- f(psi(y)) <= g(y)
-      have h₃ := E.psi_optimality y.point y.feasibility;
+      have h₃ := E.psi_optimality y hy
       exact le_trans (le_trans h₁ h₂) h₃
   }
 
@@ -44,15 +82,13 @@ def StrongEquivalence.toBwd (E : StrongEquivalence p q) : Solution q → Solutio
   fun sol => {
     point := E.psi sol.point,
     feasibility := E.psi_feasibility sol.point sol.feasibility,
-    optimality := fun y => by
+    optimality := fun y hy => by
       -- f(psi(x)) <= g(x)
-      have h₁ := E.psi_optimality sol.point sol.feasibility;
+      have h₁ := E.psi_optimality sol.point sol.feasibility
       -- g(x) <= g(phi(y))
-      let phi_y : q.FeasPoint :=
-        ⟨E.phi y.point, E.phi_feasibility y.point y.feasibility⟩
-      have h₂ := sol.optimality phi_y;
+      have h₂ := sol.optimality (E.phi y) (E.phi_feasibility y hy)
       -- g(phi(y)) <= f(y)
-      have h₃ := E.phi_optimality y.point y.feasibility;
+      have h₃ := E.phi_optimality y hy
       exact le_trans (le_trans h₁ h₂) h₃
   }
 
@@ -60,37 +96,35 @@ def StrongEquivalence.refl : StrongEquivalence p p :=
   { phi := id,
     psi := id,
     phi_feasibility := fun _ hx => hx,
-    phi_optimality := fun _ _ => le_refl _,
     psi_feasibility := fun _ hy => hy,
+    phi_optimality := fun _ _ => le_refl _,
     psi_optimality := fun _ _ => le_refl _ }
 
 def StrongEquivalence.symm (E : StrongEquivalence p q) : StrongEquivalence q p :=
   { phi := E.psi,
     psi := E.phi,
     phi_feasibility := E.psi_feasibility,
-    phi_optimality := E.psi_optimality,
     psi_feasibility := E.phi_feasibility,
+    phi_optimality := E.psi_optimality,
     psi_optimality := E.phi_optimality }
 
 def StrongEquivalence.trans (E₁ : StrongEquivalence p q) (E₂ : StrongEquivalence q r) :
   StrongEquivalence p r :=
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
-    phi_feasibility := fun x hx =>
-      E₂.phi_feasibility (E₁.phi x) (E₁.phi_feasibility x hx),
+    phi_feasibility := fun x hx => E₂.phi_feasibility (E₁.phi x) (E₁.phi_feasibility x hx),
+    psi_feasibility := fun y hy => E₁.psi_feasibility (E₂.psi y) (E₂.psi_feasibility y hy),
     phi_optimality := fun x hx => by
       -- h(phi₂(phi₁(x))) <= g(phi₁(x))
-      have h₁ := E₂.phi_optimality (E₁.phi x) (E₁.phi_feasibility x hx);
+      have h₁ := E₂.phi_optimality (E₁.phi x) (E₁.phi_feasibility x hx)
       -- g(phi₁(x)) <= f(x)
-      have h₂ := E₁.phi_optimality x hx;
+      have h₂ := E₁.phi_optimality x hx
       exact le_trans h₁ h₂,
-    psi_feasibility := fun y hy =>
-      E₁.psi_feasibility (E₂.psi y) (E₂.psi_feasibility y hy),
     psi_optimality := fun y hy => by
       -- f(psi₁(psi₂(y))) <= g(psi₂(y))
-      have h₁ := E₁.psi_optimality (E₂.psi y) (E₂.psi_feasibility y hy);
+      have h₁ := E₁.psi_optimality (E₂.psi y) (E₂.psi_feasibility y hy)
       -- g(psi₂(y)) <= h(y)
-      have h₂ := E₂.psi_optimality y hy;
+      have h₂ := E₂.psi_optimality y hy
       exact le_trans h₁ h₂
   }
 
@@ -98,53 +132,16 @@ instance :
   Trans (@StrongEquivalence R D E _) (@StrongEquivalence R E F _) (@StrongEquivalence R D F _) :=
   { trans := fun E₁ E₂ => StrongEquivalence.trans _ _ _ E₁ E₂ }
 
-end StrongEquivalence
-
-
-section Equivalence
-
-def optimal {D R} [Preorder R] (p : Minimization D R) (x : FeasPoint p) : Prop :=
-  ∀ y : p.FeasPoint, p.objFun x.point ≤ p.objFun y.point
-
-/-- Regular notion of equivalence between optimization problems. -/
-structure Equivalence where
-  phi : FeasPoint p → FeasPoint q
-  psi : FeasPoint q → FeasPoint p
-  phi_optimality : ∀ x, optimal p x → optimal q (phi x)
-  psi_optimality : ∀ x, optimal q x → optimal p (psi x)
-
-def Equivalence.refl : Equivalence p p :=
-  { phi := id,
-    psi := id,
-    phi_optimality := fun _ hx => hx,
-    psi_optimality := fun _ hx => hx }
-
-def Equivalence.symm (E : Equivalence p q) : Equivalence q p :=
-  { phi := E.psi,
-    psi := E.phi,
-    phi_optimality := E.psi_optimality,
-    psi_optimality := E.phi_optimality }
-
-def Equivalence.trans (E₁ : Equivalence p q) (E₂ : Equivalence q r) : Equivalence p r :=
-  { phi := E₂.phi ∘ E₁.phi,
-    psi := E₁.psi ∘ E₂.psi,
-    phi_optimality := fun x hx => E₂.phi_optimality (E₁.phi x) (E₁.phi_optimality x hx),
-    psi_optimality := fun y hy => E₁.psi_optimality (E₂.psi y) (E₂.psi_optimality y hy) }
-
-instance :
-  Trans (@Equivalence R D E _) (@Equivalence R E F _) (@Equivalence R D F _) :=
-  { trans := fun E₁ E₂ => Equivalence.trans _ _ _ E₁ E₂ }
-
-end Equivalence
-
 variable {p q}
 
 /-- As expected, an equivalence can be built from a strong equivalence. -/
 def StrongEquivalence.toEquivalence (E : StrongEquivalence p q) : Equivalence p q :=
-  { phi := fun x => ⟨E.phi x.point, E.phi_feasibility x.point x.feasibility⟩,
-    psi := fun x => ⟨E.psi x.point, E.psi_feasibility x.point x.feasibility⟩,
-    phi_optimality := fun x hx y =>
-      have h₁ := E.phi_optimality x.point x.feasibility
+  { phi := E.phi,
+    psi := E.psi,
+    phi_feasibility := E.phi_feasibility,
+    psi_feasibility := E.psi_feasibility,
+    phi_optimality := fun x hx y hy =>
+      have h₁ := E.phi_optimality x
       have h₂ := hx ⟨E.psi y.point, E.psi_feasibility y.point y.feasibility⟩
       have h₃ := E.psi_optimality y.point y.feasibility
       le_trans (le_trans h₁ h₂) h₃,
@@ -153,6 +150,8 @@ def StrongEquivalence.toEquivalence (E : StrongEquivalence p q) : Equivalence p 
       have h₂ := hx ⟨E.phi y.point, E.phi_feasibility y.point y.feasibility⟩
       have h₃ := E.phi_optimality y.point y.feasibility;
       le_trans (le_trans h₁ h₂) h₃ }
+
+end StrongEquivalence
 
 end Minimization
 

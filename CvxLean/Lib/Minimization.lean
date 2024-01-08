@@ -11,55 +11,64 @@ namespace Minimization
 variable {D E R S : Type} [Preorder R] [Preorder S]
 variable (p : Minimization D R) (q : Minimization E R)
 
-/-- A feasible point is a point in the domain that satisfies the constraints. -/
-structure FeasPoint where
-  point : D
-  feasibility : p.constraints point
+/-- A point `x : D` is feasible in `p` if it satisfies the constraints. -/
+def feasible (x : D) : Prop := p.constraints x
 
-/-- A solution is a feasible point that is also optimal. -/
-structure Solution where
+/-- A point `x : D` is optimal in `p` if it is feasible and for any feasible point `y : D` the
+value of `x` is a lower bound to the value of `y`. -/
+def optimal (x : D) : Prop := p.feasible x ∧ ∀ y, p.feasible y → p.objFun x ≤ p.objFun y
+
+/-- A solution is an optimal point. -/
+structure Solution where mk' ::
   point : D
-  feasibility : p.constraints point
-  optimality : ∀ y : p.FeasPoint, p.objFun point ≤ p.objFun y.point
+  isSolution : p.optimal point
+
+/-- Solution constructor. -/
+def Solution.mk
+    (point : D)
+    (feasibility : p.feasible point)
+    (optimality : ∀ y, p.feasible y → p.objFun point ≤ p.objFun y) : p.Solution :=
+  { point := point,
+    isSolution := ⟨feasibility, optimality⟩ }
+
+/-- Solutions are feasible. -/
+def Solution.feasibility (sol : p.Solution) : p.feasible sol.point := sol.isSolution.1
 
 section Reductions
 
 /-- Reduction from solution to solution maintaining equivalence through
 functions `f` and `g`. For most purposes, this might be enough. -/
 def simple_reduction
-  (sol : q.Solution)
-  (f : D → E) (g : E → D)
-  (h_objFun_f : ∀ {x : D}, p.constraints x → q.objFun (f x) ≤ p.objFun x)
-  (h_objFun_g : ∀ {x : E}, q.constraints x → p.objFun (g x) ≤ q.objFun x)
-  (h_constraints_f : ∀ {x}, p.constraints x → q.constraints (f x))
-  (h_constraints_g : ∀ {x}, q.constraints x → p.constraints (g x)) :
-  p.Solution :=
-  { point := g sol.point,
-    feasibility := h_constraints_g sol.feasibility,
-    optimality := by
-      intro xhx
-      cases xhx with
-      | mk x hx =>
-        apply le_trans _ (h_objFun_f hx)
-        apply le_trans (h_objFun_g sol.feasibility)
-        exact sol.optimality {
-          point := f x,
-          feasibility := h_constraints_f hx } }
+    (sol : q.Solution)
+    (f : D → E) (g : E → D)
+    (h_objFun_f : ∀ {x : D}, p.constraints x → q.objFun (f x) ≤ p.objFun x)
+    (h_objFun_g : ∀ {x : E}, q.constraints x → p.objFun (g x) ≤ q.objFun x)
+    (h_constraints_f : ∀ {x}, p.constraints x → q.constraints (f x))
+    (h_constraints_g : ∀ {x}, q.constraints x → p.constraints (g x)) :
+    p.Solution :=
+  Solution.mk p <|
+    (g sol.point)
+    (h_constraints_g sol.feasibility)
+    (by
+      intro x hx
+      apply le_trans _ (h_objFun_f hx)
+      apply le_trans (h_objFun_g sol.feasibility)
+      exact sol.optimality (f x) (h_constraints_f hx))
 
 /-- Decompose constraint by adding another equality constraint. -/
 def decompose_constraint
-  (g : D → E) (c : D → E → Prop)
-  (hc : ∀ x, p.constraints x = c x (g x))
-  (sol : Solution
-    { objFun := fun (y : E × D) => objFun p y.snd,
-      constraints := fun (y : E × D) => y.fst = g y.snd ∧ c y.snd y.fst }) :
-  p.Solution :=
-simple_reduction p _ sol
-  (fun x => (g x, x)) (fun x => x.2)
-  (fun {x} hx => le_refl _)
-  (fun {x} hx => le_refl _)
-  (fun {x} hx => ⟨rfl, (hc _) ▸ hx⟩)
-  (fun {x} hx => by {rw [hc, ←hx.1]; exact hx.2})
+    (g : D → E) (c : D → E → Prop)
+    (hc : ∀ x, p.constraints x = c x (g x))
+    (sol : Solution
+      { objFun := fun (y : E × D) => objFun p y.snd,
+        constraints := fun (y : E × D) => y.fst = g y.snd ∧ c y.snd y.fst }) :
+    p.Solution :=
+  simple_reduction p _ sol
+    (fun x => (g x, x)) (fun x => x.2)
+    (fun {_} _ => le_refl _)
+    (fun {_} _ => le_refl _)
+    (fun {_} hx => ⟨rfl, (hc _) ▸ hx⟩)
+    (fun {_} hx => (hc _).symm ▸ hx.1 ▸ hx.2)
 
 /-- -/
 def eq_to_le_left
@@ -236,21 +245,17 @@ simple_reduction _ _ sol e.symm.toFun e.toFun
 
 /-- -/
 def map_objective {D : Type}
-  (R S : Type) [Preorder R] [Preorder S]
-  (f : D → R) (g : R → S) (cs : D → Prop)
-  (hg: ∀ r s, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s)
-  (sol : Solution
-    { objFun := g ∘ f,
-      constraints := cs }) :
-Solution
-  { objFun := f,
-    constraints := cs } :=
-{ point := sol.point,
-  feasibility := sol.feasibility,
-  optimality := by
-    intros y
-    have : g (f sol.point) ≤ g (f y.point) := sol.optimality ⟨y.1, y.2⟩
-    exact hg _ _ sol.feasibility y.feasibility this }
+    (R S : Type) [Preorder R] [Preorder S]
+    (f : D → R) (g : R → S) (cs : D → Prop)
+    (hg : ∀ r s, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s)
+    (sol : Solution { objFun := g ∘ f, constraints := cs }) :
+    Solution { objFun := f, constraints := cs } :=
+  { point := sol.point,
+    feasibility := sol.feasibility,
+    optimality := by
+      intros y hy
+      have : g (f sol.point) ≤ g (f y) := sol.optimality y hy
+      exact hg _ _ sol.feasibility hy this }
 
 /-- -/
 def map_domain {of : D → R} {cs : D → Prop}

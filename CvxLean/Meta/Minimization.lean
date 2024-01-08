@@ -56,18 +56,14 @@ def toMinimizationExpr (solExpr : SolutionExpr) : MinimizationExpr :=
 /-- Build a `Solution` type from `SolutionExpr`. -/
 def toExpr (solExpr : SolutionExpr) : Expr :=
   mkApp4 (mkConst `Minimization.Solution)
-    solExpr.domain solExpr.codomain solExpr.codomainPreorder
-    (solExpr.toMinimizationExpr.toExpr)
+    solExpr.domain solExpr.codomain solExpr.codomainPreorder solExpr.toMinimizationExpr.toExpr
 
 /-- Decompose `Solution` type into its components. -/
 def fromExpr (goalType : Expr) : MetaM SolutionExpr := do
   match goalType with
-  | Expr.app (Expr.app (Expr.app (Expr.app (Expr.const `Minimization.Solution _ )
-        domain) codomain) codomainPreorder)
-          (Expr.app (Expr.app (Expr.app (Expr.app (Expr.const `Minimization.mk _)
-            domain') codomain') objFun) constraints) => do
-    return SolutionExpr.mk domain codomain codomainPreorder
-      domain' codomain' objFun constraints
+  | .app (.app (.app (.app (.const `Minimization.Solution _) domain) codomain) codomainPreorder) <|
+    .app (.app (.app (.app (.const `Minimization.mk _) domain') codomain') objFun) constraints => do
+      return SolutionExpr.mk domain codomain codomainPreorder domain' codomain' objFun constraints
   | _ => throwError "Goal not of the form `Minimization.Solution ...`."
 
 /-- Applies `SolutionExpr.fromExpr` to goal. -/
@@ -175,7 +171,7 @@ def withDomainLocalDecls [Inhabited α] (domain : Expr) (p : Expr)
 def decomposeAnd (e : Expr) : MetaM (List (Expr)) := do
   match e with
   | Expr.app (Expr.app (Expr.const ``And _) p) q => do
-    return p :: (← decomposeAnd q)
+      return p :: (← decomposeAnd q)
   | _ => return [e]
 
 /-- Decompose an expression of `And`-connected constraints into a list of names and expressions. -/
@@ -201,21 +197,18 @@ def composeAndWithProj : List Expr → (Expr × (Expr → List Expr))
   | [] => (mkConst ``True, fun _ => [])
   | [c] => (c, fun e => [e])
   | c :: cs =>
-    let (cs, prs) := composeAndWithProj cs
-    let res := mkApp2 (mkConst ``And) c cs
-    let prs := fun e => mkApp3 (mkConst ``And.left) c cs e
-                    :: prs (mkApp3 (mkConst ``And.right) c cs e)
-    (res, prs)
+      let (cs, prs) := composeAndWithProj cs
+      let res := mkApp2 (mkConst ``And) c cs
+      let prs :=
+        fun e => mkApp3 (mkConst ``And.left) c cs e :: prs (mkApp3 (mkConst ``And.right) c cs e)
+      (res, prs)
 
 /-- Generates a name that is not yet contained in `set` -/
 partial def generateNewName (base : String) (set : HashSet Name) : MetaM Name := do
   tryNumber 1 set
 where
-  tryNumber (i : Nat) vars : MetaM Name := do
-    let name := s!"{base}{i}"
-    if vars.contains name
-    then tryNumber (i+1) vars
-    else return name
+  tryNumber (i : Nat) vars : MetaM Name :=
+    let name := s!"{base}{i}"; if vars.contains name then tryNumber (i + 1) vars else return name
 
 end Meta
 

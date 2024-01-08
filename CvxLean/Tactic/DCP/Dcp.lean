@@ -4,9 +4,10 @@ import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Meta
 import CvxLean.Meta.Util.Expr
 import CvxLean.Lib.Math.Data.Array
+import CvxLean.Lib.Minimization
+import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
-import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.Solver.Float.OptimizationParam
 import CvxLean.Tactic.Arith.Arith
 
@@ -28,8 +29,7 @@ abbrev BCond := Expr
 abbrev BConds := Array BCond
 abbrev BCondsTree := Tree BConds BConds
 
-abbrev AtomDataTrees :=
-  GraphAtomDataTree × ArgumentsTree × CurvatureTree × BCondsTree
+abbrev AtomDataTrees := GraphAtomDataTree × ArgumentsTree × CurvatureTree × BCondsTree
 
 abbrev NewVarsTree := Tree (Array LocalDecl) Unit
 abbrev NewConstrVarsTree := Tree (Array LocalDecl) Unit
@@ -319,7 +319,7 @@ partial def mkSolEqAtom :
       -- Recursive calls for arguments.
       let mut childSolEqAtom := #[]
       for i in [:childAtoms.size] do
-        childSolEqAtom := childSolEqAtom.push $
+        childSolEqAtom := childSolEqAtom.push <|
           ← mkSolEqAtom childAtoms[i]! childReducedWithSolution[i]! childVCondVars[i]!
       -- Rewrite arguments in atom expr.
       let mut solEqAtomR ← mkEqRefl atom.expr
@@ -940,6 +940,9 @@ def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
 
             return (objFunBackward, constrBackward)
 
+        let 
+        let res ← mkAppOptM ``Minimization.Equivalence.mk
+          #[none, none, none, none ]
         let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinimizationExpr.toExpr, newProblem.toMinimizationExpr.toExpr]
         check res
         trace[Meta.debug] "res: {res}"

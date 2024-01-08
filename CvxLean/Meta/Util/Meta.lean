@@ -23,8 +23,8 @@ def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr))
 partial def withLetDecls' -- TODO: SciLean conflict.
     [Inhabited α]
     (declInfos : Array (Name × (Array Expr → m Expr) × (Array Expr → m Expr)))
-    (k : (xs : Array Expr) → m α)
-    : m α :=
+    (k : (xs : Array Expr) → m α) :
+    m α :=
   loop #[]
 where
   loop [Inhabited α] (acc : Array Expr) : m α := do
