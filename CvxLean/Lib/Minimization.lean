@@ -17,6 +17,15 @@ structure Minimization (D R : Type) where
 
 namespace Minimization
 
+/-- We assume constraints are joind by `∧`. A problem with several constraints can be written as
+`⟨f, [[c1, ..., cn]]⟩`. -/
+syntax (name := constrNotation) "[[" term,* "]]" : term
+
+macro_rules
+  | `([[]]) => `(fun x => True)
+  | `([[$c:term]]) => `(fun x => $c x)
+  | `([[$c:term, $cs:term,*]]) => `(fun x => $c x ∧ ([[$cs,*]] x))
+
 variable {D E R : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R)
 
