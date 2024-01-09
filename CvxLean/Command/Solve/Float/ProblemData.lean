@@ -1,7 +1,7 @@
 namespace CvxLean
 
-/-- Cones admitting scalar affine constraints. Note that the only cone that
-admits matrix affine constraints is the PSD cone. -/
+/-- Cones admitting scalar affine constraints. Note that the only cone that admits matrix affine
+constraints is the PSD cone. -/
 inductive ScalarConeType
   | Zero | PosOrth | Exp | Q | QR
 
@@ -27,8 +27,7 @@ structure ScalarAffine :=
 namespace ScalarAffine
 
 instance : ToString ScalarAffine where
-  toString sa :=
-    s!"ScalarAffine [{sa.n}, {sa.m}, {sa.A}, {sa.a}, {sa.b}]"
+  toString sa := s!"ScalarAffine [{sa.n}, {sa.m}, {sa.A}, {sa.a}, {sa.b}]"
 
 end ScalarAffine
 

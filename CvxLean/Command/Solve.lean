@@ -1,6 +1,5 @@
 import CvxLean.Tactic.DCP.AtomLibrary.All
-import CvxLean.Tactic.Solver.Conic
-import CvxLean.Command.Reduction
+import CvxLean.Command.Solve.Conic
 
 namespace CvxLean
 
@@ -47,9 +46,7 @@ def getProblemName (term : Syntax) : MetaM Lean.Name := do
 
   return idStx.getId
 
-/-- Get solution expression and reduction expression from optimization problem.
--/
--- NOTE: Also send backwardMap.
+/-- Get solution expression and reduction expression from optimization problem. -/
 def getReducedProblemAndReduction (prob : Expr)
 : MetaM (Meta.SolutionExpr × Expr × Expr) := do
   let probTy ← inferType prob

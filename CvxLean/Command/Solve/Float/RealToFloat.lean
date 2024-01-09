@@ -2,14 +2,13 @@ import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 import CvxLean.Lib.Math.Data.Matrix
 import CvxLean.Lib.Cones.All
-import CvxLean.Meta.Util.Expr
-import CvxLean.Meta.Minimization
-import CvxLean.Tactic.Solver.Float.Cones
-import CvxLean.Tactic.Solver.Float.OptimizationParam
-import CvxLean.Tactic.Solver.Float.RealToFloatExt
-
 import CvxLean.Lib.Math.CovarianceEstimation
 import CvxLean.Lib.Math.LogDet
+import CvxLean.Syntax.OptimizationParam
+import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Minimization
+import CvxLean.Command.Solve.Float.Cones
+import CvxLean.Command.Solve.Float.RealToFloatExt
 
 namespace CvxLean
 
@@ -52,16 +51,14 @@ def realSolutionToFloat (s : Meta.SolutionExpr) : MetaM Meta.SolutionExpr := do
   let fDomain ← realToFloat s.domain
   let fCodomain ← realToFloat s.codomain
   let fCodomainPreorder ← realToFloat s.codomainPreorder
-  let fDomain' ← realToFloat s.domain'
-  let fCodomain' ← realToFloat s.codomain'
-  let fObjFun ← realToFloat s.objFun
-  let fConstraints ← realToFloat s.constraints
-  return Meta.SolutionExpr.mk fDomain fCodomain fCodomainPreorder fDomain' fCodomain' fObjFun fConstraints
+  let fP ← realToFloat s.p
+  return Meta.SolutionExpr.mk fDomain fCodomain fCodomainPreorder fP
 
 @[macro addRealToFloatCommand] partial def AddRealToFloatCommand : Macro
 | `(addRealToFloat $idents:funBinder* : $real := $float) => do
   if idents.size != 0 then
-    return (← `(addRealToFloat : fun $idents:funBinder* => $real := fun $idents:funBinder* => $float)).raw
+    let c ← `(addRealToFloat : fun $idents:funBinder* => $real := fun $idents:funBinder* => $float)
+    return c.raw
   else
     Macro.throwUnsupported
 | _ => Macro.throwUnsupported
@@ -105,11 +102,6 @@ addRealToFloat : Real.instZeroReal :=
 
 addRealToFloat : Real.instOneReal :=
   One.mk (1 : Float)
-
--- def instPreorderFloat : Preorder Float := sorry
-
--- addRealToFloat : Real.instPreorderReal :=
---   instPreorderFloat
 
 addRealToFloat : Real.instLEReal :=
   instLEFloat
@@ -183,7 +175,6 @@ addRealToFloat (i) : @instHPow Real i :=
 addRealToFloat (i) : @LE.le Real i :=
   Float.le
 
--- TODO: define Float.pi using foreign function interface
 addRealToFloat : Real.pi :=
   2 * Float.acos 0
 

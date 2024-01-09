@@ -6,12 +6,12 @@ import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Util.ToExpr
 import CvxLean.Meta.Minimization
 import CvxLean.Syntax.Minimization
-import CvxLean.Tactic.Solver.Float.Coeffs
-import CvxLean.Tactic.Solver.Float.FloatToReal
-import CvxLean.Tactic.Solver.Mosek.Sol
-import CvxLean.Tactic.Solver.InferDimension
-import CvxLean.Tactic.Solver.Mosek.CBF
-import CvxLean.Tactic.Solver.Mosek.Path
+import CvxLean.Command.Solve.Float.Coeffs
+import CvxLean.Command.Solve.Float.FloatToReal
+import CvxLean.Command.Solve.Mosek.Sol
+import CvxLean.Command.Solve.InferDimension
+import CvxLean.Command.Solve.Mosek.CBF
+import CvxLean.Command.Solve.Mosek.Path
 
 namespace CvxLean
 
@@ -48,12 +48,12 @@ def groupCones (sections : ScalarAffineSections) (l : List CBF.Cone) :
   return res
 
 /-- -/
-def getVars (goalExprs : SolutionExpr) : MetaM (List (Lean.Name × Expr)) := do
-  decomposeDomain (← instantiateMVars goalExprs.domain')
+def getVars (minExpr : MinimizationExpr) : MetaM (List (Lean.Name × Expr)) := do
+  decomposeDomain (← instantiateMVars minExpr.domain)
 
 /-- -/
-unsafe def getTotalDim (goalExprs : SolutionExpr) : MetaM Nat := do
-  let vars ← getVars goalExprs
+unsafe def getTotalDim (minExpr : MinimizationExpr) : MetaM Nat := do
+  let vars ← getVars minExpr
 
   let mut totalDim := 0
   for (_, varTy) in vars do
@@ -64,10 +64,9 @@ unsafe def getTotalDim (goalExprs : SolutionExpr) : MetaM Nat := do
   return totalDim
 
 /-- -/
-unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
-  (data : ProblemData) (sections : ScalarAffineSections)
-  : MetaM Sol.Response := do
-  let totalDim ← getTotalDim goalExprs
+unsafe def conicSolverFromValues (minExpr : MinimizationExpr) (data : ProblemData)
+  (sections : ScalarAffineSections) : MetaM Sol.Response := do
+  let totalDim ← getTotalDim minExpr
 
   let mut cbf := CBF.Problem.empty
   cbf := cbf.addScalarVariable (CBF.Cone.mk CBF.ConeType.F totalDim)
@@ -144,8 +143,8 @@ unsafe def conicSolverFromValues (goalExprs : SolutionExpr)
           return Sol.Response.failure 1
 
 /-- TODO: Move to Generation? -/
-unsafe def exprFromSol (goalExprs : SolutionExpr) (sol : Sol.Result) : MetaM Expr := do
-  let vars ← getVars goalExprs
+unsafe def exprFromSol (minExpr : MinimizationExpr) (sol : Sol.Result) : MetaM Expr := do
+  let vars ← getVars minExpr
 
   -- Generate solution of the correct shape.
   let solPointExprArrayRaw : Array Expr :=

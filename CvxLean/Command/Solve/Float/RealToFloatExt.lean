@@ -16,8 +16,8 @@ instance : ToMessageData RealToFloatData := {
     float: {d.float}"
 }
 
-def RealToFloatExtension := 
-  PersistentEnvExtension 
+def RealToFloatExtension :=
+  PersistentEnvExtension
     (Array Key × RealToFloatData) (Array Key × RealToFloatData) (DiscrTree RealToFloatData)
 deriving Inhabited
 
@@ -25,9 +25,10 @@ initialize realToFloatExtension : RealToFloatExtension ← do
   let realToFloatExtension ← registerPersistentEnvExtension {
     name            := `realToFloatExtension
     mkInitial       := return {}
-    addImportedFn   := fun as ctx =>
-      return mkStateFromImportedEntries 
-        (fun (s : DiscrTree RealToFloatData) (d : Array Key × RealToFloatData) => s.insertCore d.1 d.2) {} as,
+    addImportedFn   := fun as _ctx =>
+      return mkStateFromImportedEntries
+        (fun (s : DiscrTree RealToFloatData) (d : Array Key × RealToFloatData) =>
+          s.insertCore d.1 d.2) {} as,
     addEntryFn      := fun s d => s.insertCore d.1 d.2,
     exportEntriesFn := fun s => s.toArray
   }

@@ -1,7 +1,7 @@
 import CvxLean.Syntax.Minimization
 import CvxLean.Lib.Cones.All
-import CvxLean.Tactic.Solver.Float.ProblemData
-import CvxLean.Tactic.Solver.Float.RealToFloat
+import CvxLean.Command.Solve.Float.ProblemData
+import CvxLean.Command.Solve.Float.RealToFloat
 
 namespace CvxLean
 
@@ -231,17 +231,17 @@ dimension when translating the data into CBF format. This happens with the
 exponential cone, quadratic cone and rotated quadratic cone, for instance. -/
 def ScalarAffineSections : Type := Array Nat
 
-unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
+unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr)
   : MetaM (ProblemData × ScalarAffineSections) := do
-  let floatDomain ← realToFloat goalExprs.domain
+  let floatDomain ← realToFloat minExpr.domain
 
   -- Coefficients for objective function.
-  let objectiveData ← withLambdaBody goalExprs.objFun fun p objFun => do
+  let objectiveData ← withLambdaBody minExpr.objFun fun p objFun => do
     let objFun ← realToFloat objFun
     return ← determineScalarCoeffsAux objFun p floatDomain
 
   let (constraintsData, sections) ←
-    withLambdaBody goalExprs.constraints fun p constraints => do
+    withLambdaBody minExpr.constraints fun p constraints => do
     let mut data : ProblemData := ProblemData.empty
     let mut sections := #[]
 
@@ -336,27 +336,5 @@ unsafe def determineCoeffsFromExpr (goalExprs : Meta.SolutionExpr)
   let pd := constraintsData.setObjectiveOnlyVector objectiveDataA objectiveDataB
 
   return (pd, sections)
-
-/-- Generate problem data from goal. -/
-unsafe def determineCoeffs (goal : Lean.MVarId) : MetaM ProblemData := do
-  let goalExprs ← Meta.SolutionExpr.fromGoal goal
-  let (pd, _) ← determineCoeffsFromExpr goalExprs
-  return pd
-
-namespace  Tactic
-
-open Lean.Elab
-open Lean.Elab.Tactic
-
-syntax (name := coeffs) "coeffs" : tactic
-
-@[tactic coeffs]
-unsafe def evalCoeffs : Tactic := fun stx => match stx with
-| `(tactic| coeffs) => do
-  let data ← determineCoeffs (← getMainGoal)
-  logInfo m!"PROBLEM DATA \n {data}."
-| _ => throwUnsupportedSyntax
-
-end Tactic
 
 end CvxLean
