@@ -62,7 +62,6 @@ def p₃ (Awall Aflr α β γ δ: ℝ) :=
 --solve p₃
 
 equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
-  unfold p₃ -- No need to unfold?
   change_of_variables (h') (h ↦ exp h')
   change_of_variables (w') (w ↦ exp w')
   change_of_variables (d') (d ↦ exp d')

@@ -1,7 +1,7 @@
 import CvxLean.Command.Solve
 import CvxLean.Command.Equivalence
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Tactic.DCP.Dcp
+import CvxLean.Tactic.DCP.DCP
 import CvxLean.Test.Util.TimeCmd
 
 namespace Unit

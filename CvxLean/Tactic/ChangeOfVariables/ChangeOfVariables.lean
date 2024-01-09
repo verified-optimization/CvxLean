@@ -131,78 +131,77 @@ syntax (name := change_of_variables)
   "change_of_variables" "(" ident ")" "(" ident "↦" term ")" : tactic
 
 def changeOfVariablesBuilder : EquivalenceBuilder := fun eqvExpr g stx => match stx with
-  | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => do
-      g.withContext do
-        let newVar := newVarStx.getId
-        let varToChange := varToChangeStx.getId
+  | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => g.withContext do
+      let newVar := newVarStx.getId
+      let varToChange := varToChangeStx.getId
 
-        let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
-        let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
+      let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
+      let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
 
-        -- Find change of variables location.
-        let covIdx := vars.findIdx? (fun ⟨n, _⟩ => n == varToChange)
-        if covIdx.isNone then
-          throwError "Variable {varToChange} not found in domain."
-        let covIdx := covIdx.get!
+      -- Find change of variables location.
+      let covIdx := vars.findIdx? (fun ⟨n, _⟩ => n == varToChange)
+      if covIdx.isNone then
+        throwError "Variable {varToChange} not found in domain."
+      let covIdx := covIdx.get!
 
-        -- New domain.
-        let newVars := vars.map (fun ⟨n, ty⟩ => ⟨if n = varToChange then newVar else n, ty⟩)
-        let newDomain := composeDomain newVars
+      -- New domain.
+      let newVars := vars.map (fun ⟨n, ty⟩ => ⟨if n = varToChange then newVar else n, ty⟩)
+      let newDomain := composeDomain newVars
 
-        -- Construct change of variables function.
-        let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
-        -- u ↦ c(u)
-        let changeFnStx ← `(fun $newVarStx => $changeStx)
-        let changeFn ← Tactic.elabTerm changeFnStx none
-        -- c(x)
-        let changeTerm ← Core.betaReduce <|
-          mkApp changeFn (mkFVar (FVarId.mk varToChange))
-        -- (x₁, ..., u, ..., xₙ) ↦ (x₁, ..., c(u), ..., xₙ)
-        let c ← withLocalDeclD `p newDomain fun p => do
-          Meta.withDomainLocalDecls newDomain p fun xs prs => do
-            -- (x₁, ..., c(xᵢ), ..., xₙ)
-            let fullChangeTerm ← Expr.mkProd <|
-              (xs.take covIdx) ++ #[changeTerm] ++ (xs.drop (covIdx + 1))
-            let replacedFVars := Expr.replaceFVars fullChangeTerm fvars xs
-            mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
+      -- Construct change of variables function.
+      let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
+      -- u ↦ c(u)
+      let changeFnStx ← `(fun $newVarStx => $changeStx)
+      let changeFn ← Tactic.elabTerm changeFnStx none
+      -- c(x)
+      let changeTerm ← Core.betaReduce <|
+        mkApp changeFn (mkFVar (FVarId.mk varToChange))
+      -- (x₁, ..., u, ..., xₙ) ↦ (x₁, ..., c(u), ..., xₙ)
+      let c ← withLocalDeclD `p newDomain fun p => do
+        Meta.withDomainLocalDecls newDomain p fun xs prs => do
+          -- (x₁, ..., c(xᵢ), ..., xₙ)
+          let fullChangeTerm ← Expr.mkProd <|
+            (xs.take covIdx) ++ #[changeTerm] ++ (xs.drop (covIdx + 1))
+          let replacedFVars := Expr.replaceFVars fullChangeTerm fvars xs
+          mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
 
-        -- Make `ChangeOfVariables` instance.
-        -- The arguments are the number of variables to the left and right  of `varToChange`.
-        let rec mkCovExpr : ℕ → ℕ → MetaM Expr
-          | 0, 0 => do synthInstance (← mkAppM ``ChangeOfVariables #[changeFn])
-          | 0, _ => do
-              let rType := composeDomain (newVars.drop (covIdx + 1))
-              mkAppOptM ``ChangeOfVariables.prod_left #[none, none, rType, changeFn, none]
-          | l + 1, r => do
-              let covExpr' ← mkCovExpr l r
-              mkAppOptM ``ChangeOfVariables.prod_right #[none, none, mkConst ``Real, none, covExpr']
-        let covExpr ← mkCovExpr covIdx (vars.length - covIdx - 1)
+      -- Make `ChangeOfVariables` instance.
+      -- The arguments are the number of variables to the left and right  of `varToChange`.
+      let rec mkCovExpr : ℕ → ℕ → MetaM Expr
+        | 0, 0 => do synthInstance (← mkAppM ``ChangeOfVariables #[changeFn])
+        | 0, _ => do
+            let rType := composeDomain (newVars.drop (covIdx + 1))
+            mkAppOptM ``ChangeOfVariables.prod_left #[none, none, rType, changeFn, none]
+        | l + 1, r => do
+            let covExpr' ← mkCovExpr l r
+            mkAppOptM ``ChangeOfVariables.prod_right #[none, none, mkConst ``Real, none, covExpr']
+      let covExpr ← mkCovExpr covIdx (vars.length - covIdx - 1)
 
-        -- Apply `ChangeOfVariables.toEquivalence`.
-        let D := lhsMinExpr.domain
-        let E := newDomain
-        let R := lhsMinExpr.codomain
-        let RPreorder ← synthInstance (mkAppN (mkConst ``Preorder [levelZero]) #[R])
-        let f := lhsMinExpr.objFun
-        let cs := lhsMinExpr.constraints
-        let toApply := mkAppN (mkConst ``ChangeOfVariables.toEquivalence)
-          #[D, E, R, RPreorder, f, cs, c, covExpr]
-        let toApply ← instantiateMVars toApply
-        let gsAfterApply ← g.apply toApply
-        if gsAfterApply.length != 1 then
-          throwError (
-            "Failed to apply `ChangeOfVariables.toEquivalence`. " ++
-            "Make sure that the change of variables is inferrable by type class resolution.")
+      -- Apply `ChangeOfVariables.toEquivalence`.
+      let D := lhsMinExpr.domain
+      let E := newDomain
+      let R := lhsMinExpr.codomain
+      let RPreorder ← synthInstance (mkAppN (mkConst ``Preorder [levelZero]) #[R])
+      let f := lhsMinExpr.objFun
+      let cs := lhsMinExpr.constraints
+      let toApply := mkAppN (mkConst ``ChangeOfVariables.toEquivalence)
+        #[D, E, R, RPreorder, f, cs, c, covExpr]
+      let toApply ← instantiateMVars toApply
+      let gsAfterApply ← g.apply toApply
+      if gsAfterApply.length != 1 then
+        throwError (
+          "Failed to apply `ChangeOfVariables.toEquivalence`. " ++
+          "Make sure that the change of variables is inferrable by type class resolution.")
 
-        -- Solve change of variables condition.
-        let gCondition := gsAfterApply[0]!
-        let (_, gCondition) ← gCondition.intros
-        let gsFinal ← evalTacticAt
-          (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity!)) gCondition
-        if gsFinal.length != 0 then
-          throwError "Failed to solve change of variables condition."
+      -- Solve change of variables condition.
+      let gCondition := gsAfterApply[0]!
+      let (_, gCondition) ← gCondition.intros
+      let gsFinal ← evalTacticAt
+        (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity!)) gCondition
+      if gsFinal.length != 0 then
+        throwError "Failed to solve change of variables condition."
 
-        pure ()
+      pure ()
   | _ => throwUnsupportedSyntax
 
 @[tactic change_of_variables]

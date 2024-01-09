@@ -1,14 +1,14 @@
 import Mathlib.Tactic.NormNum
-import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Meta
 import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.TacticBuilder
 import CvxLean.Lib.Math.Data.Array
 import CvxLean.Lib.Minimization
 import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
-import CvxLean.Tactic.Solver.Float.OptimizationParam
+import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Tactic.Arith.Arith
 
 namespace CvxLean
@@ -38,8 +38,7 @@ abbrev NewConstrVarsTree := Tree (Array LocalDecl) Unit
 For every registered atom, it returns:
 * The list of arguments as Lean expressions for further matching.
 * The atom entry, of type `GraphAtomData`. -/
-def findRegisteredAtoms (e : Expr) :
-  MetaM (Array (Arguments × GraphAtomData)) := do
+def findRegisteredAtoms (e : Expr) : MetaM (Array (Arguments × GraphAtomData)) := do
   let discrTree ← getAtomDiscrTree
   let atoms ← discrTree.getMatch (← zetaReduce (← e.removeMData))
   trace[Meta.debug] "discrTree {atoms.size} {e}"
@@ -63,8 +62,8 @@ processed. It is used by `processAtom`. A successful match includes 4 trees:
 * A tree of background conditions.
 -/
 inductive FindAtomResult
-| Success (res : AtomDataTrees)
-| Error (msgs : Array MessageData)
+  | Success (res : AtomDataTrees)
+  | Error (msgs : Array MessageData)
 
 /-- Given an expression `e`, optimization variables `vars` and the expected
 curvature `curvature`, this function attempts to recursively match `e` with
@@ -596,16 +595,16 @@ def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars :
       return constrForward
 
 /-- -/
-def makeObjFunBackward (newDomain : Expr) (newProblem : Expr) (xs : Array Expr) (ys : Array Expr) (objFunOpt : Expr)
-    (reducedConstrs : Array Expr) (newConstrs : Array Expr)
+def makeObjFunBackward (newDomain : Expr) (redProblem : Expr) (xs : Array Expr) (ys : Array Expr) (objFunOpt : Expr)
+    (redConstrs : Array Expr) (newConstrs : Array Expr)
     (newConstrVars : Array LocalDecl) : MetaM Expr := do
   -- ∀ {x : E}, Minimization.constraints q x → Minimization.objFun p (g x) ≤ Minimization.objFun q x
 
   withLocalDeclD `p newDomain fun p => do
     let prs := (← Meta.mkProjections newDomain p).map (·.2.2)
 
-    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[newProblem, p]) fun h => do
-      let (_, cprs) := Meta.composeAndWithProj (reducedConstrs ++ newConstrs).toList
+    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[redProblem, p]) fun h => do
+      let (_, cprs) := Meta.composeAndWithProj (redConstrs ++ newConstrs).toList
       let hProj := cprs h
       let objFunBackwardBody := objFunOpt
       let objFunBackwardBody := objFunBackwardBody.replaceFVars
@@ -618,15 +617,15 @@ def makeObjFunBackward (newDomain : Expr) (newProblem : Expr) (xs : Array Expr) 
       return objFunBackward
 
 /-- -/
-def makeConstrBackward (vcondElimMap : Std.HashMap Nat Expr) (newDomain : Expr) (newProblem : Expr) (xs : Array Expr) (ys : Array Expr) (constrOpt : Array Expr)
-    (reducedConstrs : Array Expr) (newConstrs : Array Expr) (newConstrVars : Array LocalDecl) : MetaM Expr := do
+def makeConstrBackward (vcondElimMap : Std.HashMap Nat Expr) (newDomain : Expr) (redProblem : Expr) (xs : Array Expr) (ys : Array Expr) (constrOpt : Array Expr)
+    (redConstrs : Array Expr) (newConstrs : Array Expr) (newConstrVars : Array LocalDecl) : MetaM Expr := do
   -- ∀ {x : E}, Minimization.constraints q x → Minimization.constraints p (g x)
 
   withLocalDeclD `p newDomain fun p => do
     let prs := (← Meta.mkProjections newDomain p).map (·.2.2)
 
-    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[newProblem, p]) fun h => do
-      let (_, cprs) := Meta.composeAndWithProj (reducedConstrs ++ newConstrs).toList
+    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[redProblem, p]) fun h => do
+      let (_, cprs) := Meta.composeAndWithProj (redConstrs ++ newConstrs).toList
       let hProj := cprs h
       let mut constrBackwardProofs := #[]
       let mut filteredCounter := 0
@@ -858,128 +857,119 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
     (reducedExprs := reducedExprs)
     (optimality := optimality)
 
-/-- -/
--- NOTE: Temporarily changing this to not only return the map from
--- solution to solution but also the forward and backward maps.
--- TODO: Better types for return type.
-def canonizeGoalFromSolutionExpr (goalExprs : Meta.SolutionExpr) :
-  MetaM (Expr × Expr × Expr) := do
-  -- Extract objective and constraints from `goalExprs`.
-  let (objFun, constraints, originalVarsDecls)
-    ← withLambdaBody goalExprs.constraints fun p constraints => do
-    let pr := (← Meta.mkProjections goalExprs.domain p).toArray
-    let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
-        fun xs => do
-          return ← xs.mapM fun x => x.fvarId!.getDecl
-    withExistingLocalDecls originalVarsDecls.toList do
-      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ←
-        Meta.decomposeConstraints constraints
-      let constraints ←
-        constraints.mapM (fun ((n : Lean.Name), e) => do
+open Meta Elab Tactic
+
+/-- TODO -/
+def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) := do
+  let ogProblemExpr := ogProblem.toExpr
+  let D := ogProblem.domain
+  let R := ogProblem.codomain
+
+  -- Get `objFun` and `constraints` without projections (e.g., `p.1 + p.2`) but rather with
+  -- declared variables in `originalVarsDecls` (e.g.,  `x + y`).
+  let (objFun, constraints, originalVarsDecls) ←
+    withLambdaBody ogProblem.constraints fun p constraints => do
+      let pr := (← Meta.mkProjections D p).toArray
+      let originalVarsDecls ←
+        withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
+          fun xs => xs.mapM fun x => x.fvarId!.getDecl
+      withExistingLocalDecls originalVarsDecls.toList do
+        let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+        let constraints ← Meta.replaceProjections constraints p.fvarId! xs
+        let constraints : List (Name × Expr) ← Meta.decomposeConstraints constraints
+        let constraints ← constraints.mapM (fun (n, e) => do
           return (n, ← Expr.removeMData e))
-      let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
-      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
-      return (objFun, constraints, originalVarsDecls)
+        let objFunP := ogProblem.objFun.bindingBody!.instantiate1 p
+        let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
+        return (objFun, constraints, originalVarsDecls)
 
   -- Process the atom tree.
   let pat ← mkProcessedAtomTree Curvature.Convex objFun constraints originalVarsDecls
 
-  -- Create new goal and reduction.
-  let (forwardMap, backwardMap, reduction) ← withExistingLocalDecls pat.originalVarsDecls.toList do
-      let xs := pat.originalVarsDecls.map fun decl => mkFVar decl.fvarId
+  -- Create reduced problem and equivalence proof.
+  withExistingLocalDecls pat.originalVarsDecls.toList do
+    -- Original problem variables.
+    let originalVars := pat.originalVarsDecls.map fun decl => mkFVar decl.fvarId
 
-      let forwardMap ← makeForwardMap goalExprs.domain xs pat.forwardImagesNewVars
+    -- Forward map: φ.
+    let forwardMap ← makeForwardMap D originalVars pat.forwardImagesNewVars
 
-      let (objFunForward, constrForward) ←
-        withExistingLocalDecls pat.originalConstrVars.toList do
+    let (objFunForward, constrForward) ←
+      withExistingLocalDecls pat.originalConstrVars.toList do
+        let objFunForward ← makeObjFunForward D originalVars pat.originalConstrVars ogProblemExpr
+          (pat.constraints.toArray.map Prod.snd) pat.solEqAtom.objFun.val
+        let constrForward ← makeConstrForward D originalVars pat.originalConstrVars ogProblemExpr
+          (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constr.map Tree.val)
+          pat.feasibility
+        return (objFunForward, constrForward)
 
-          let objFunForward ← makeObjFunForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
-            (pat.constraints.toArray.map Prod.snd) pat.solEqAtom.objFun.val
-          let constrForward ← makeConstrForward goalExprs.domain xs pat.originalConstrVars goalExprs.toMinimizationExpr.toExpr
-            (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constr.map Tree.val) pat.feasibility
+    withExistingLocalDecls pat.newVarDecls do
+      -- New variables added by the reduction.
+      let newVars := (pat.newVarDecls.map (mkFVar ·.fvarId)).toArray
 
-          return (objFunForward, constrForward)
+      -- Reduced variables: originalVars ⊎ newVars.
+      let redVars ← (originalVars ++ newVars).mapM fun x => do
+        let decl ← x.fvarId!.getDecl
+        return (decl.userName, decl.type)
 
-      withExistingLocalDecls pat.newVarDecls do
-        let ys := (pat.newVarDecls.map (mkFVar ·.fvarId)).toArray
-        trace[Meta.debug] "ys: {ys}"
+      -- New domain: D × T where T is the domain of the new variables.
+      let E := Meta.composeDomain redVars.toList
 
-        let vars ← (xs ++ ys).mapM fun x => do
-          let decl ← x.fvarId!.getDecl
-          return (decl.userName, decl.type)
-        let newDomain := Meta.composeDomain vars.toList
-        let mkDomainFunc := fun e =>
-          withLocalDeclD `p newDomain fun p => do
-            let prs := (← Meta.mkProjections newDomain p).map (·.2.2)
-            let e := Expr.replaceFVars e (xs ++ ys) prs.toArray
-            mkLambdaFVars #[p] e
+      -- Function to replace variables by projections in the new domain.
+      let mkDomain := fun e =>
+        withLocalDeclD `p E fun p => do
+          let prs := (← Meta.mkProjections E p).map (·.2.2)
+          let e := Expr.replaceFVars e (originalVars ++ newVars) prs.toArray
+          mkLambdaFVars #[p] e
 
-        let reducedConstrs := pat.reducedExprs.constr.map Tree.val
-        let reducedConstrs := reducedConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
+      -- Reduced problem.
+      let redConstrs := pat.reducedExprs.constr.map Tree.val
+      let redConstrs := redConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
+      let redProblem : MinimizationExpr :=
+        { domain := E
+          codomain := R
+          objFun := ← mkDomain pat.reducedExprs.objFun.val
+          constraints := ← mkDomain <| Meta.composeAnd (redConstrs ++ pat.newConstrs).toList }
+      let redProblemExpr := redProblem.toExpr
 
-        let newProblem : Meta.SolutionExpr := { goalExprs with
-          domain := newDomain
-          domain' := newDomain
-          objFun := ← mkDomainFunc pat.reducedExprs.objFun.val
-          constraints := ← mkDomainFunc $ Meta.composeAnd (reducedConstrs ++ pat.newConstrs).toList
-        }
-        let newProblemExpr := newProblem.toExpr
+      -- Backward map: ψ.
+      let backwardMap ← makeBackwardMap originalVars mkDomain
 
-        let backwardMap ← makeBackwardMap xs mkDomainFunc
+      let (objFunBackward, constrBackward) ←
+        withExistingLocalDecls pat.newConstrVarsArray.toList do
+          let objFunBackward ← makeObjFunBackward E redProblemExpr originalVars newVars
+            pat.optimality.objFun.val redConstrs pat.newConstrs pat.newConstrVarsArray
 
-        let (objFunBackward, constrBackward) ←
-          withExistingLocalDecls pat.newConstrVarsArray.toList do
-            let objFunBackward ← makeObjFunBackward newDomain newProblem.toMinimizationExpr.toExpr xs ys pat.optimality.objFun.val
-              reducedConstrs pat.newConstrs pat.newConstrVarsArray
+          let constrBackward ← makeConstrBackward pat.vcondElimMap E redProblemExpr originalVars
+            newVars (pat.optimality.constr.map (·.val)) redConstrs pat.newConstrs
+            pat.newConstrVarsArray
 
-            let constrBackward ← makeConstrBackward pat.vcondElimMap newDomain newProblem.toMinimizationExpr.toExpr xs ys (pat.optimality.constr.map (·.val))
-              reducedConstrs pat.newConstrs pat.newConstrVarsArray
+          return (objFunBackward, constrBackward)
 
-            return (objFunBackward, constrBackward)
+      -- Combine forward and backward maps into equivalence witness.
+      let strongEqvProof ← mkAppOptM ``Minimization.StrongEquivalence.mk
+        #[D, E, R, none, ogProblemExpr, redProblemExpr,
+          -- phi
+          forwardMap,
+          -- psi
+          backwardMap,
+          -- phi_feasibility
+          constrForward,
+          -- psi_feasibility
+          constrBackward,
+          -- phi_optimality
+          objFunForward,
+          -- psi_optimality
+          objFunBackward]
+      let eqvProof ← mkAppM ``Minimization.Equivalence.ofStrongEquivalence #[strongEqvProof]
 
-        let 
-        let res ← mkAppOptM ``Minimization.Equivalence.mk
-          #[none, none, none, none ]
-        let res ← mkAppM ``Minimization.simple_reduction #[goalExprs.toMinimizationExpr.toExpr, newProblem.toMinimizationExpr.toExpr]
-        check res
-        trace[Meta.debug] "res: {res}"
+      return (redProblem, eqvProof)
 
-        let res := mkApp res (mkBVar 0) -- Insert new goal here later.
-        let res := mkApp6 res
-          forwardMap
-          (← zetaReduce backwardMap)
-          objFunForward
-          objFunBackward
-          constrForward
-          (← zetaReduce constrBackward)
-        let res := mkLambda `sol Lean.BinderInfo.default newProblemExpr res
-
-        check res
-        trace[Meta.debug] "second check passed"
-        let res ← instantiateMVars res
-        check res
-        trace[Meta.debug] "instantiate mvars passed"
-        return (forwardMap, backwardMap, res)
-
-  return (forwardMap, backwardMap, reduction)
-
-/-- -/
-def canonizeGoalFromExpr (goalExpr : Expr) : MetaM (Expr × Expr × Expr) := do
-  let goalExprs ← Meta.SolutionExpr.fromExpr goalExpr
-  canonizeGoalFromSolutionExpr goalExprs
-
-/-- -/
-def canonizeGoal (goal : MVarId) : MetaM (List MVarId) := do
-  let goalExprs ← Meta.SolutionExpr.fromGoal goal
-  let (_forwardMap, _backwardMap, reduction) ← canonizeGoalFromSolutionExpr goalExprs
-  let newGoal ← mkFreshExprMVar none
-  let assignment := mkApp reduction newGoal
-  check assignment
-  goal.assign assignment
-  return [newGoal.mvarId!]
+def dcpBuilder : EquivalenceBuilder := fun eqvExpr g _ => g.withContext do
+  let ogProblem ← eqvExpr.toMinimizationExprLHS
+  let (_, eqvProof) ← canonize ogProblem
+  if ! (← isDefEq (mkMVar g) eqvProof) then
+    throwError "DCP failed to prove equivalence"
 
 end DCP
 
@@ -991,8 +981,8 @@ syntax (name := dcp) "dcp" : tactic
 
 @[tactic dcp]
 def evalDcp : Tactic := fun stx => match stx with
-| `(tactic| dcp) => liftMetaTactic DCP.canonizeGoal
-| _ => throwUnsupportedSyntax
+  | `(tactic| dcp) => DCP.dcpBuilder.toTactic stx
+  | _ => throwUnsupportedSyntax
 
 end Tactic
 
