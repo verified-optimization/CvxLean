@@ -65,6 +65,7 @@ def toTactic (builder : EquivalenceBuilder) : Tactic := fun stx => withMainConte
     throwError "Equivalence transitivity failed."
   let mut gToChange := gsTrans[0]!
   let gNext := gsTrans[1]!
+  gNext.setTag Name.anonymous
 
   -- Convert reduciton to equivalence if needed.
   match transf with
