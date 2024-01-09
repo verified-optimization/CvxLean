@@ -9,7 +9,7 @@ We define equivalence and strong equivalence, and several equivalence-preserving
 
 namespace Minimization
 
-variable {R D E F : Type} [Preorder R]
+variable {D E F R : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 /-
   p := min { f(x) | c_p(x) }
@@ -27,6 +27,8 @@ structure Equivalence where
   psi_optimality : ∀ x, q.optimal x → p.optimal (psi x)
 
 namespace Equivalence
+
+variable {p q r}
 
 notation p " ≃ " q => Equivalence p q
 
@@ -54,10 +56,8 @@ def trans (E₁ : p ≃ q) (E₂ : q ≃ r) : p ≃ r :=
     phi_optimality := fun x hx => E₂.phi_optimality (E₁.phi x) (E₁.phi_optimality x hx),
     psi_optimality := fun y hy => E₁.psi_optimality (E₂.psi y) (E₂.psi_optimality y hy) }
 
-instance : Trans (@Equivalence R D E _) (@Equivalence R E F _) (@Equivalence R D F _) :=
-  { trans := fun E₁ E₂ => Equivalence.trans _ _ _ E₁ E₂ }
-
-variable {p q}
+instance : Trans (@Equivalence D E R _) (@Equivalence E F R _) (@Equivalence D F R _) :=
+  { trans := Equivalence.trans }
 
 def toFwd (E : p ≃ q) : Solution p → Solution q :=
   fun sol => {
@@ -83,6 +83,8 @@ structure StrongEquivalence where
   psi_optimality : ∀ y, q.constraints y → p.objFun (psi y) ≤ q.objFun y
 
 namespace StrongEquivalence
+
+variable {p q r}
 
 notation p " ≃ₛ " q => StrongEquivalence p q
 
@@ -110,25 +112,29 @@ def trans (E₁ : p ≃ₛ q) (E₂ : q ≃ₛ r) : p ≃ₛ r :=
     phi_optimality := fun x hx =>
       -- h(φ₂(φ₁(x))) ≤ g(φ₁(x))
       have h₁ := E₂.phi_optimality (E₁.phi x) (E₁.phi_feasibility x hx)
-      -- g(φ₁(x)) <= f(x)
+      -- g(φ₁(x)) ≤ f(x)
       have h₂ := E₁.phi_optimality x hx
       le_trans h₁ h₂,
     psi_optimality := fun y hy =>
-      -- f(ψ₁(ψ₂(y))) <= g(ψ₂(y))
+      -- f(ψ₁(ψ₂(y))) ≤ g(ψ₂(y))
       have h₁ := E₁.psi_optimality (E₂.psi y) (E₂.psi_feasibility y hy)
-      -- g(ψ₂(y)) <= h(y)
+      -- g(ψ₂(y)) ≤ h(y)
       have h₂ := E₂.psi_optimality y hy
       le_trans h₁ h₂
   }
 
 instance :
-    Trans (@StrongEquivalence R D E _) (@StrongEquivalence R E F _) (@StrongEquivalence R D F _) :=
-  { trans := fun E₁ E₂ => StrongEquivalence.trans _ _ _ E₁ E₂ }
+    Trans (@StrongEquivalence D E R _) (@StrongEquivalence E F R _) (@StrongEquivalence D F R _) :=
+  { trans := StrongEquivalence.trans }
+
+end StrongEquivalence
+
+namespace Equivalence
 
 variable {p q}
 
 /-- As expected, an equivalence can be built from a strong equivalence. -/
-def toEquivalence (E : p ≃ₛ q) : p ≃ q :=
+def ofStrongEquivalence (E : p ≃ₛ q) : p ≃ q :=
   { phi := E.phi,
     psi := E.psi,
     phi_feasibility := E.phi_feasibility,
@@ -136,29 +142,35 @@ def toEquivalence (E : p ≃ₛ q) : p ≃ q :=
     phi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
       ⟨E.phi_feasibility x h_feas_x,
        fun y h_feas_y =>
-        -- g(φ(x)) <= f(x)
+        -- g(φ(x)) ≤ f(x)
         have h₁ := E.phi_optimality x h_feas_x
-        -- f(x) <= f(ψ(y))
+        -- f(x) ≤ f(ψ(y))
         have h₂ := h_opt_x (E.psi y) (E.psi_feasibility y h_feas_y)
-        -- f(ψ(y)) <= g(y)
+        -- f(ψ(y)) ≤ g(y)
         have h₃ := E.psi_optimality y h_feas_y
         le_trans (le_trans h₁ h₂) h₃⟩,
     psi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
       ⟨E.psi_feasibility x h_feas_x,
        fun y h_feas_y =>
         have h₁ := E.psi_optimality x h_feas_x
-        -- f(ψ(x)) <= g(x)
+        -- f(ψ(x)) ≤ g(x)
         have h₂ := h_opt_x (E.phi y) (E.phi_feasibility y h_feas_y)
-        -- g(x) <= g(φ(y))
+        -- g(x) ≤ g(φ(y))
         have h₃ := E.phi_optimality y h_feas_y
-        -- g(φ(y)) <= f(y)
+        -- g(φ(y)) ≤ f(y)
         le_trans (le_trans h₁ h₂) h₃⟩ }
 
-def toFwd (E : p ≃ₛ q) : Solution p → Solution q :=
-  E.toEquivalence.toFwd
+end Equivalence
 
-def StrongEquivalence.toBwd (E : p ≃ₛ q) : Solution q → Solution p :=
-  E.toEquivalence.toBwd
+namespace StrongEquivalence
+
+open Equivalence
+
+def toFwd (E : p ≃ₛ q) : Solution p → Solution q :=
+  (ofStrongEquivalence E).toFwd
+
+def toBwd (E : p ≃ₛ q) : Solution q → Solution p :=
+  (ofStrongEquivalence E).toBwd
 
 end StrongEquivalence
 
@@ -166,7 +178,7 @@ namespace Equivalence
 
 /- Mapping the objective function by monotonic functions yields an equivalence. Also, mapping the
 whole domain by a function with a right inverse. -/
-noncomputable section Maps
+section Maps
 
 def map_objFun {g : R → R}
     (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
@@ -180,13 +192,13 @@ def map_objFun {g : R → R}
     psi_optimality := fun _ ⟨h_feas_x, h_opt_x⟩ =>
       ⟨h_feas_x, fun y h_feas_y => (h h_feas_x h_feas_y).mp (h_opt_x y h_feas_y)⟩ }
 
-def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
+noncomputable def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
     ⟨f, cs⟩ ≃ ⟨fun x => (Real.log (f x)), cs⟩ := by
   apply map_objFun
   intros r s h_feas_r h_feas_s
   exact Real.log_le_log (h r h_feas_r) (h s h_feas_s)
 
-def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
+noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
     ⟨f, cs⟩ ≃ ⟨fun x => (f x) ^ (2 : ℝ), cs⟩ := by
   apply map_objFun (g := fun x => x ^ (2 : ℝ))
   intros r s h_feas_r h_feas_s
@@ -195,7 +207,7 @@ def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
 def map_domain {f : D → R} {cs : D → Prop} {fwd : D → E} {bwd : E → D}
     (h : ∀ x, cs x → bwd (fwd x) = x) :
     ⟨f, cs⟩ ≃ ⟨fun x => f (bwd x), (fun x => cs (bwd x))⟩ :=
-  StrongEquivalence.toEquivalence <|
+  Equivalence.ofStrongEquivalence <|
   { phi := fwd,
     psi := bwd,
     phi_feasibility := fun {x} hx => by simp [h x hx]; exact hx,
@@ -208,22 +220,19 @@ end Maps
 /- Rewriting the objective function or the constraints leads to equivalent problems. -/
 section Rewrites
 
-def rewrite_objective {D R} [Preorder R] {f g : D → R} {cs : D → Prop}
-    (hrw : ∀ x, cs x → f x = g x) :
-    Equivalence
-      (Minimization.mk f cs)
-      (Minimization.mk g cs) :=
-  StrongEquivalence.toEquivalence <|
+variable {f g : D → R}
+variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
+variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
+variable {cs cs' : D → Prop}
+
+def rewrite_objective (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≃ ⟨g, cs⟩ :=
+  Equivalence.ofStrongEquivalence <|
   { phi := id,
     psi := id,
     phi_feasibility := fun _ hx => hx
     psi_feasibility := fun _ hx => hx
     phi_optimality := fun {x} hx => le_of_eq (hrw x hx).symm
     psi_optimality := fun {x} hx => le_of_eq (hrw x hx) }
-
-variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
-variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
-variable {cs cs' : D → Prop} {f : D → R}
 
 /- Helper tactics to build equivalences from rewriting constraints in one line. -/
 section EquivalenceOfConstrRw
@@ -237,7 +246,7 @@ macro "prove_psi_feasibility_of_rw_constr" hrw:ident : tactic =>
   `(tactic| (simp [constraints]; intros; rw [($hrw)] <;> tauto))
 
 macro "equivalence_of_rw_constr" hrw:ident : term =>
-  `(StrongEquivalence.toEquivalence <|
+  `(Equivalence.ofStrongEquivalence <|
     { phi := id,
       psi := id,
       phi_feasibility := by prove_phi_feasibility_of_rw_constr $hrw
@@ -247,13 +256,13 @@ macro "equivalence_of_rw_constr" hrw:ident : term =>
 
 end EquivalenceOfConstrRw
 
-def rewrite_constraints (hrw : ∀ x, (cs x ↔ cs' x)) : ⟨f, [[cs]]⟩ ≃ ⟨f, [[cs']]⟩ :=
+def rewrite_constraints (hrw : ∀ x, cs x ↔ cs' x) : ⟨f, [[cs]]⟩ ≃ ⟨f, [[cs']]⟩ :=
   equivalence_of_rw_constr hrw
 
 def rewrite_constraint_1 (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) : ⟨f, [[c1, cs]]⟩ ≃ ⟨f, [[c1', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
-def rewrite_constraint_1_last (hrw : ∀ x, (c1 x ↔ c1' x)) : ⟨f, [[c1]]⟩ ≃ ⟨f, [[c1']]⟩ :=
+def rewrite_constraint_1_last (hrw : ∀ x, c1 x ↔ c1' x) : ⟨f, [[c1]]⟩ ≃ ⟨f, [[c1']]⟩ :=
   equivalence_of_rw_constr hrw
 
 def rewrite_constraint_2 (hrw : ∀ x, c1 x → cs x → (c2 x ↔ c2' x)) :
@@ -351,13 +360,15 @@ variable {cs : D → Prop} {f : D → R}
 /-- Decompose constraint by adding another equality constraint. -/
 def decompose_constraint (g : D → E) (c : D → E → Prop) (hc : ∀ x, cs x = c x (g x)) :
     ⟨f, cs⟩ ≃ ⟨fun (_, y) => f y, fun (x, y) => x = g y ∧ c y x⟩ :=
-  StrongEquivalence.toEquivalence <|
+  Equivalence.ofStrongEquivalence <|
   { phi := fun x => (g x, x),
     psi := fun (_, y) => y,
     phi_feasibility := fun {x} h_feas_x => by simpa [feasible, ← hc, h_feas_x],
     psi_feasibility := fun (x, y) ⟨h_x_eq_gy, h_cyx⟩ => by simp [feasible, hc, h_x_eq_gy ▸ h_cyx],
     phi_optimality := fun {_} _ => le_refl _,
     psi_optimality := fun {_} _ => le_refl _ }
+
+-- TODO
 
 -- def eq_to_le_left
 --   (e: Equiv D (S × E)) (f : E → S) (c : D → Prop)
