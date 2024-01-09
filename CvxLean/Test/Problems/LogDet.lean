@@ -11,9 +11,8 @@ noncomputable def logDet1 :=
       h₁ : 10 ≤ log X.det
       h₂ : X.PosDef
 
+set_option trace.Meta.debug true
 solve logDet1
-
-#print logDet1.reduced
 
 #eval logDet1.status       -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval logDet1.value        -- 296.826317

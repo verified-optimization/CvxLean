@@ -156,21 +156,21 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
     let c' := Expr.consumeMData c
     match c' with
     -- Vector zero cone.
-    | .app (.app (.const ``Real.Vec.zeroCone _) n) e =>
+    | .app (.app (.app (.const ``Real.Vec.zeroCone _) (.app (.const ``Fin _) n)) _) e =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
           let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.zeroCone #[ei])
     -- Positive orthant cone.
-    | .app (.app (.const ``Real.Vec.posOrthCone _) n) e =>
+    | .app (.app (.app (.const ``Real.Vec.posOrthCone _) (.app (.const ``Fin _) n)) _) e =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
           let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.posOrthCone #[ei])
     -- Vector exponential cone.
-    | .app (.app (.app (.app (.const ``Real.Vec.expCone _) n) a) b) c =>
+    | .app (.app (.app (.app (.app (.const ``Real.Vec.expCone _) (.app (.const ``Fin _) n)) _) a) b) c =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
           let idxExpr ← mkFinIdxExpr i n

@@ -11,12 +11,12 @@ open Lean Elab Meta Tactic Term Command Minimization
 
 /--  -/
 def runReductionTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
-  runTransformationTactic ExpectedTransformation.Reduction mvarId stx
+  runTransformationTactic TransformationGoal.Reduction mvarId stx
 
 /-- Run reduction tactic and return both the right-hand term (`q`) and the reduction proof, of
 type `Reduction p q`. -/
 def elabReductionProof (lhs : Expr) (stx : Syntax) : TermElabM (Expr × Expr) :=
-  elabTransformationProof ExpectedTransformation.Reduction lhs stx
+  elabTransformationProof TransformationGoal.Reduction lhs stx
 
 syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command

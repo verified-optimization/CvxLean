@@ -271,19 +271,19 @@ section Cones
 
 addRealToFloat : @Real.zeroCone := @Float.zeroCone
 
-addRealToFloat : @Real.Vec.zeroCone := @Float.Vec.zeroCone
+addRealToFloat : @Real.Vec.zeroCone.{0} := @Float.Vec.zeroCone.{0}
 
 addRealToFloat : @Real.posOrthCone := @Float.posOrthCone
 
-addRealToFloat : @Real.Vec.posOrthCone := @Float.Vec.posOrthCone
+addRealToFloat : @Real.Vec.posOrthCone.{0} := @Float.Vec.posOrthCone.{0}
 
-addRealToFloat : @Real.Matrix.posOrthCone := @Float.Matrix.posOrthCone
+addRealToFloat : @Real.Matrix.posOrthCone.{0, 0} := @Float.Matrix.posOrthCone.{0, 0}
 
 addRealToFloat : @Real.expCone := @Float.expCone
 
-addRealToFloat : @Real.Vec.expCone := @Float.Vec.expCone
+addRealToFloat : @Real.Vec.expCone.{0} := @Float.Vec.expCone.{0}
 
-addRealToFloat (n) (i) : @Real.Matrix.PSDCone (Fin n) i := @Float.Matrix.PSDCone n
+addRealToFloat (n) (i) : @Real.Matrix.PSDCone.{0} (Fin n) i := @Float.Matrix.PSDCone n
 
 end Cones
 

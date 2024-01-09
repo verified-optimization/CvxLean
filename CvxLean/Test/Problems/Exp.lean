@@ -5,9 +5,9 @@ section Exp
 open CvxLean Minimization Real
 
 noncomputable def exp1 :=
-  optimization (x : ℝ) 
+  optimization (x : ℝ)
     maximize (x)
-    subject to 
+    subject to
       h : exp x ≤ 10
 
 solve exp1
@@ -19,9 +19,9 @@ solve exp1
 #eval exp1.solution -- 2.302585
 
 noncomputable def exp2 :=
-  optimization (x : ℝ) 
+  optimization (x : ℝ)
     minimize (exp x)
-    subject to 
+    subject to
       h : 10 ≤ x
 
 solve exp2

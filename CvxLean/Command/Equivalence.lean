@@ -11,12 +11,12 @@ open Lean Elab Meta Tactic Term Command Minimization
 
 /--  -/
 partial def runEquivalenceTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit := do
-  runTransformationTactic ExpectedTransformation.Equivalence mvarId stx
+  runTransformationTactic TransformationGoal.Equivalence mvarId stx
 
 /-- Run equivalence tactic and return both the right-hand term (`q`) and the equivalence proof, of
 type `Equivalence p q`. -/
 def elabEquivalenceProof (lhs : Expr) (stx : Syntax) : TermElabM (Expr × Expr) := do
-  elabTransformationProof ExpectedTransformation.Equivalence lhs stx
+  elabTransformationProof TransformationGoal.Equivalence lhs stx
 
 syntax (name := equivalence)
   "equivalence" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
