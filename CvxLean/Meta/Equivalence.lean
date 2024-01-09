@@ -43,6 +43,10 @@ end EquivalenceExpr
 
 macro "equivalence_rfl" : tactic => `(tactic| exact Minimization.Equivalence.refl _)
 
+macro "equivalence_symm" : tactic => `(tactic| apply Minimization.Equivalence.symm)
+
+macro "equivalence_trans" : tactic => `(tactic| apply Minimization.Equivalence.trans)
+
 end Meta
 
 end CvxLean

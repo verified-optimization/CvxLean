@@ -19,43 +19,68 @@ def expectedTransformationFromExpr (e : Expr) : MetaM ExpectedTransformation := 
     throwError "Expected an `Equivalence` or `Reduction`, got {e}."
 
 /-- -/
-def ReductionBuilder := ReductionExpr → Tactic
+def ReductionBuilder := ReductionExpr → MVarId → Tactic
 
 namespace ReductionBuilder
 
 def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
-  let goal ← getMainGoal
-  let goalType ← whnf (← goal.getType)
-  match ← expectedTransformationFromExpr goalType with
+  match ← expectedTransformationFromExpr (← getMainTarget) with
     | ExpectedTransformation.Equivalence => do
         throwError "Expected `Reduction`, found `Equivalence`."
     | _ => do
         pure ()
-  let redExpr ← ReductionExpr.fromExpr goalType
-  builder redExpr stx
+
+  -- Apply transitivity.
+  let g ← getMainGoal
+  let gsTrans ← evalTacticAt (← `(tactic| reduction_trans)) g
+  if gsTrans.length != 4 then
+    throwError "Reduction transitivity failed."
+  let gToChange := gsTrans[0]!
+  let gNext := gsTrans[1]!
+
+  -- Run builder.
+  let redExpr ← ReductionExpr.fromExpr (← gToChange.getType)
+  builder redExpr gToChange stx
+
+  -- Set next goal.
+  setGoals [gNext]
 
 end ReductionBuilder
 
 /-- -/
-def EquivalenceBuilder := EquivalenceExpr → Tactic
+def EquivalenceBuilder := EquivalenceExpr → MVarId → Tactic
 
 namespace EquivalenceBuilder
 
 def toTactic (builder : EquivalenceBuilder) : Tactic := fun stx => do
-  let goal ← getMainGoal
-  let goalType ← whnf (← goal.getType)
-  match ← expectedTransformationFromExpr goalType with
+  let transf ← expectedTransformationFromExpr (← getMainTarget)
+
+  -- Apply transitivity.
+  let g ← getMainGoal
+  let gsTrans ←
+    match transf with
+    | ExpectedTransformation.Reduction => evalTacticAt (← `(tactic| reduction_trans)) g
+    | ExpectedTransformation.Equivalence => evalTacticAt (← `(tactic| equivalence_trans)) g
+  if gsTrans.length != 4 then
+    throwError "Equivalence transitivity failed."
+  let mut gToChange := gsTrans[0]!
+  let gNext := gsTrans[1]!
+
+  -- Convert reduciton to equivalence if needed.
+  match transf with
     | ExpectedTransformation.Reduction => do
-        if let [goal] ← goal.apply (mkConst ``Minimization.Reduction.ofEquivalence) then
-          setGoals [goal]
+        if let [g] ← gToChange.apply (mkConst ``Minimization.Reduction.ofEquivalence) then
+          gToChange := g
         else
           throwError "Could not convert equivalence tactic to reduction tactic."
     | _ => do
         pure ()
-  let goal ← getMainGoal
-  let goalType ← whnf (← goal.getType)
-  let eqvExpr ← EquivalenceExpr.fromExpr goalType
-  builder eqvExpr stx
+
+  let eqvExpr ← EquivalenceExpr.fromExpr (← gToChange.getType)
+  builder eqvExpr gToChange stx
+
+  -- Set next goal.
+  setGoals [gNext]
 
 end EquivalenceBuilder
 
