@@ -1,5 +1,3 @@
-import CvxLean.Syntax.Minimization
-import CvxLean.Syntax.Prod
 import CvxLean.Tactic.DCP.AtomLibrary.All
 
 noncomputable section Basic
