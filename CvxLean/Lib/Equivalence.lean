@@ -160,6 +160,12 @@ def ofStrongEquivalence (E : p ≃ₛ q) : p ≃ q :=
         -- g(φ(y)) ≤ f(y)
         le_trans (le_trans h₁ h₂) h₃⟩ }
 
+instance : Trans (@StrongEquivalence D E R _) (@Equivalence E F R _) (@Equivalence D F R _) :=
+  { trans := fun S E => Equivalence.trans (ofStrongEquivalence S) E }
+
+instance : Trans (@Equivalence D E R _) (@StrongEquivalence E F R _) (@Equivalence D F R _) :=
+  { trans := fun E S => Equivalence.trans E (ofStrongEquivalence S) }
+
 end Equivalence
 
 namespace StrongEquivalence

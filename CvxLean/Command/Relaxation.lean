@@ -1,2 +1,0 @@
--- TODO: A command like reduction and equivalence, but we only
--- require injective maps between feasible sets.
