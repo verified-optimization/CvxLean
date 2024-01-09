@@ -1,5 +1,6 @@
 import Lean
 import CvxLean.Lib.Reduction
+import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Reduction
 import CvxLean.Meta.TacticBuilder
@@ -12,10 +13,10 @@ open Lean Elab Meta Tactic Term Command Minimization
 def runReductionTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
   runTransformationTactic ExpectedTransformation.Reduction mvarId stx
 
-/-- Run equivalence tactic and return both the right-hand term (`q`) and the reduction proof, of
+/-- Run reduction tactic and return both the right-hand term (`q`) and the reduction proof, of
 type `Reduction p q`. -/
 def elabReductionProof (lhs : Expr) (stx : Syntax) : TermElabM (Expr × Expr) :=
-  elabTransformationProof ExpectedTransformation.Equivalence lhs stx
+  elabTransformationProof ExpectedTransformation.Reduction lhs stx
 
 syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command

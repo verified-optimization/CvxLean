@@ -27,9 +27,9 @@ def toExpr (minExpr : MinimizationExpr) : Expr :=
 /-- Decompose `Minimization` type into its components. -/
 def fromExpr (prob : Expr) : MetaM MinimizationExpr :=
   match prob with
-  | .app (.app (.app (.app (.const `Minimization.mk _) domain) codomain) objFun) constraints => do
+  | .app (.app (.app (.app (.const ``Minimization.mk _) domain) codomain) objFun) constraints => do
     return MinimizationExpr.mk domain codomain objFun constraints
-  | _ => throwError "Expr not of the form `Minimization.mk ...`."
+  | _ => throwError "Expr not of the form `Minimization.mk ...` {prob}."
 
 end MinimizationExpr
 

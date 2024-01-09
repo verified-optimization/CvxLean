@@ -1,5 +1,6 @@
 import Lean
 import CvxLean.Lib.Equivalence
+import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder

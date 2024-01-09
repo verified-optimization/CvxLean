@@ -52,7 +52,7 @@ def EquivalenceBuilder := EquivalenceExpr → MVarId → Tactic
 
 namespace EquivalenceBuilder
 
-def toTactic (builder : EquivalenceBuilder) : Tactic := fun stx => do
+def toTactic (builder : EquivalenceBuilder) : Tactic := fun stx => withMainContext do
   let transf ← expectedTransformationFromExpr (← getMainTarget)
 
   -- Apply transitivity.
@@ -113,9 +113,16 @@ def elabTransformationProof (transf : ExpectedTransformation) (lhs : Expr) (stx 
     let syntheticMVarsSaved := (← get).syntheticMVars
     modify fun s => { s with syntheticMVars := {} }
     try
+      -- Unfold LHS if needed.
+      let lhs := ← do
+        if let Expr.const n _ := lhs then
+          let r ← unfold lhs n
+          return r.expr
+        else
+          return lhs
+
       -- Build type.
-      let lhsTy ← inferType lhs
-      let lhsMinExpr ← MinimizationExpr.fromExpr lhsTy
+      let lhsMinExpr ← MinimizationExpr.fromExpr lhs
       let D := lhsMinExpr.domain
       let E ← Meta.mkFreshTypeMVar
       let R := lhsMinExpr.codomain

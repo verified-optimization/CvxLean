@@ -131,8 +131,8 @@ syntax (name := change_of_variables)
   "change_of_variables" "(" ident ")" "(" ident "↦" term ")" : tactic
 
 def changeOfVariablesBuilder : EquivalenceBuilder := fun eqvExpr g stx => match stx with
-  | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) =>
-      withMainContext do
+  | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => do
+      g.withContext do
         let newVar := newVarStx.getId
         let varToChange := varToChangeStx.getId
 
@@ -202,14 +202,14 @@ def changeOfVariablesBuilder : EquivalenceBuilder := fun eqvExpr g stx => match 
         if gsFinal.length != 0 then
           throwError "Failed to solve change of variables condition."
 
-        -- Clean up projections.
-        normNumCleanUp (useSimp := False)
-
         pure ()
   | _ => throwUnsupportedSyntax
 
 @[tactic change_of_variables]
-def evalChangeOfVariables : Tactic := changeOfVariablesBuilder.toTactic
+def evalChangeOfVariables : Tactic := fun stx => do
+  changeOfVariablesBuilder.toTactic stx
+  -- Clean up projections (needs to happen here as it applies to the goal post-transitivity).
+  normNumCleanUp (useSimp := False)
 
 end Tactic
 

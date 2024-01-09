@@ -1,4 +1,5 @@
 import CvxLean.Command.Equivalence
+import CvxLean.Command.Reduction
 import CvxLean.Tactic.ChangeOfVariables.ChangeOfVariables
 
 open CvxLean
@@ -32,22 +33,16 @@ def p :=
       h : 0 < x
 
 equivalence eqv/q1 : p := by
-  unfold p
   change_of_variables (u) (x ↦ Real.exp u)
-  equivalence_rfl
 
 #print q1
 
 equivalence eqv2/q2 : p := by
-  unfold p
   change_of_variables (u) (y ↦ u + (1 : ℝ))
-  equivalence_rfl
 
 #print q2
 
-equivalence eqv3/q3 : p := by
-  unfold p
+reduction eqv3/q3 : p := by
   change_of_variables (u) (x ↦ (1 : ℝ) / u)
-  equivalence_rfl
 
 #print q3

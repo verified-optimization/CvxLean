@@ -18,11 +18,11 @@ structure EquivalenceExpr where
 
 namespace EquivalenceExpr
 
-def toMinimizationExprLHS (eqvExpr : EquivalenceExpr) : MetaM MinimizationExpr :=
-  MinimizationExpr.fromExpr eqvExpr.p
+def toMinimizationExprLHS (eqvExpr : EquivalenceExpr) : MetaM MinimizationExpr := do
+  MinimizationExpr.fromExpr (← whnf eqvExpr.p)
 
-def toMinimizationExprRHS (eqvExpr : EquivalenceExpr) : MetaM MinimizationExpr :=
-  MinimizationExpr.fromExpr eqvExpr.q
+def toMinimizationExprRHS (eqvExpr : EquivalenceExpr) : MetaM MinimizationExpr := do
+  MinimizationExpr.fromExpr (← whnf eqvExpr.q)
 
 def toExpr (eqvExpr : EquivalenceExpr) : Expr :=
   mkApp6 (mkConst ``Minimization.Equivalence)
@@ -41,7 +41,7 @@ def fromGoal (goal : MVarId) : MetaM EquivalenceExpr := do
 
 end EquivalenceExpr
 
-macro "equivalence_rfl" : tactic => `(tactic| exact Minimization.Equivalence.refl _)
+macro "equivalence_rfl" : tactic => `(tactic| apply Minimization.Equivalence.refl)
 
 macro "equivalence_symm" : tactic => `(tactic| apply Minimization.Equivalence.symm)
 

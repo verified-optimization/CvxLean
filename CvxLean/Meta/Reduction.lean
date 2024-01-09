@@ -41,7 +41,7 @@ def fromGoal (goal : MVarId) : MetaM ReductionExpr := do
 
 end ReductionExpr
 
-macro "reduction_rfl" : tactic => `(tactic| exact Minimization.Reduction.refl _)
+macro "reduction_rfl" : tactic => `(tactic| apply Minimization.Reduction.refl)
 
 macro "reduction_trans" : tactic => `(tactic| apply Minimization.Reduction.trans)
 
