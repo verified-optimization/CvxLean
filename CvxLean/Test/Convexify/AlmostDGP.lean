@@ -1,7 +1,8 @@
 import CvxLean.Command.Solve
-import CvxLean.Tactic.ChangeOfVariables.Basic
+import CvxLean.Command.Reduction
+import CvxLean.Command.Util.TimeCmd
+import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Test.Util.TimeCmd
 
 namespace AlmostGP
 
@@ -20,7 +21,8 @@ def agp1 :=
         h2 : x ^ (2 : ℝ) - 10.123 ≤ 0
 
 time_cmd reduction reda1/dcpa1 : agp1 := by
-  map_exp
+  change_of_variables (u) (x ↦ Real.exp u)
+  
   convexify
 
 #print dcpa1

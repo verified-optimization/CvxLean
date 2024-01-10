@@ -80,7 +80,8 @@ def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) 
       #[← mkFreshExprMVar none]
     else
       #[← mkFreshExprMVar none, Lean.mkConst `Real, ← mkFreshExprMVar none]
-  let args ← Array.range numArgs |>.mapM fun _ => mkFreshExprMVar none
+  -- One extra argument for the objective function.
+  let args ← Array.range (numArgs + 1) |>.mapM fun _ => mkFreshExprMVar none
   return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
 
 /-- Given an egg rewrite and a current goal with all the necessary information
@@ -118,8 +119,6 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
 
   let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
 
-  trace[Meta.debug] s!"Rewriting {step.rewriteName} at {step.location}."
-
   let gToChange := ← do
     if isMap then return g else
       let toApply ← rewriteWrapperApplyExpr isMap rwWrapper numArgs expectedExpr
@@ -140,6 +139,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
     try { $tacStx <;> norm_num_simp_pow } <;>
     try { norm_num_simp_pow })
   let gsAfterRw ← evalTacticAt fullTac gToChange
+  trace[Meta.debug] "After tactic. {gsAfterRw}"
 
   if gsAfterRw.length == 0 then
     pure ()
@@ -150,8 +150,6 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
     dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
 
 def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext do
-  trace[Meta.debug] "convexifyBuilder: {g}"
-
   let lhs ← eqvExpr.toMinimizationExprLHS
 
   -- Get optimization variables.
@@ -195,15 +193,20 @@ def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext 
     dbg_trace s!"Term JSON: {eggMinimization.toJson}."
 
     -- Apply steps.
+    let mut g := g
     for step in steps do
       let gs ← Tactic.run g <| (evalStep step vars tagsMap).toTactic stx
+      trace[Meta.debug] "gs {gs}."
       if gs.length != 1 then
         dbg_trace s!"Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
         break
       else
+        g := gs[0]!
         dbg_trace s!"Rewrote {step.rewriteName}."
 
-    saveTacticInfoForToken stx
+    let gsFinal ← evalTacticAt (← `(tactic| equivalence_rfl)) g
+    if gsFinal.length != 0 then
+      throwError "`convexify` error: Could not close last goal."
   catch e =>
     let eStr ← e.toMessageData.toString
     throwError "`convexify` error: {eStr}"
@@ -215,10 +218,11 @@ syntax (name := convexify) "convexify" : tactic
 
 @[tactic convexify]
 def evalConvexify : Tactic := fun stx => match stx with
-  | `(tactic| convexify) => do
+  | `(tactic| convexify) => withMainContext do
       normNumCleanUp (useSimp := false)
       convexifyBuilder.toTactic stx
       normNumCleanUp (useSimp := false)
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end CvxLean

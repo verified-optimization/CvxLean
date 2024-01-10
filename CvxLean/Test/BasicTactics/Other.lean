@@ -3,7 +3,7 @@ import CvxLean.Tactic.Basic.CleanUpComp
 import CvxLean.Tactic.Basic.RenameVars
 import CvxLean.Tactic.Basic.RenameConstrs
 import CvxLean.Tactic.Basic.ReorderConstrs
--- import CvxLean.Tactic.Basic.RemoveConstr
+import CvxLean.Tactic.Basic.RemoveConstr
 -- import CvxLean.Tactic.Conv.ConvOpt
 
 noncomputable section BasicTacticTest
@@ -74,15 +74,16 @@ example : Solution <|
   --   rw [add_comm]
   sorry
 
+set_option trace.Meta.debug true in
 example : Solution <|
   optimization (x y z : ℝ)
     minimize x + y + z
     subject to
       cz : z = x + y
-      cz' : z = x + y := by
-  -- remove_constr cz'
-  -- · exact h
-  -- rename_constr [czz]
+      cz' : z = x + y
+      cz'' : z ≤ x + 4 := by
+  remove_constr cz' by { exact cz }
+  rename_constrs [czz, czz2]
   sorry
 
 end BasicTacticTest

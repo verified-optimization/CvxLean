@@ -16,7 +16,6 @@ def p :=
       h1 : 0.001 ≤ x
       h2 : 1 / (sqrt x) ≤ (exp x)
 
-set_option trace.Meta.debug true in
 time_cmd equivalence eq/q : p := by
   convexify
 
