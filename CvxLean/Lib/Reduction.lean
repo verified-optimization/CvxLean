@@ -48,12 +48,23 @@ instance : Trans (@Reduction D E R _) (@Equivalence E F R _) (@Reduction D F R _
 instance : Trans (@Equivalence D E R _) (@Reduction E F R _) (@Reduction D F R _) :=
   { trans := fun E R => Reduction.trans (ofEquivalence E) R }
 
+section Maps
+
+def map_objFun_of_comonotonic {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
+    (h : ∀ {r s}, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s) :
+    ⟨f, cs⟩ ≽ ⟨fun x => g (f x), cs⟩ :=
+  { psi := id,
+    psi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
+      ⟨h_feas_x,
+       fun y h_feas_y =>
+        have h_gfx_le_gfy : g (f x) ≤ g (f y) := h_opt_x y h_feas_y;
+        h h_feas_x h_feas_y h_gfx_le_gfy⟩ }
+
 -- TODO
 -- All equivalences yield reductions. Build lemmas in meta? Is it useful to have them?
 
-section Maps
-
-def map_objFun {g : R → R} (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
+def map_objFun {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
+    (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
     ⟨f, cs⟩ ≽ ⟨fun x => g (f x), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun h
 

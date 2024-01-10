@@ -47,6 +47,12 @@ macro "equivalence_symm" : tactic => `(tactic| apply Minimization.Equivalence.sy
 
 macro "equivalence_trans" : tactic => `(tactic| apply Minimization.Equivalence.trans)
 
+open Parser Elab Tactic
+
+elab "equivalence_step" _arr:darrow tac:tacticSeqIndentGt : tactic => do
+  evalTactic <| ← `(tactic| equivalence_trans)
+  evalTacticSeq1Indented tac.raw
+
 end Meta
 
 end CvxLean

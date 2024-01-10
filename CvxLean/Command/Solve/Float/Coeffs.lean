@@ -284,8 +284,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr)
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
             data := data.addRotatedSOConstraint ea eb
             idx := idx + 1
-      | .app (.app (.app (.app
-          (.const ``Real.soCone _)
+      | .app (.app (.app (.app (.const ``Real.soCone _)
           (.app (.const ``Fin _) n)) _) t) x => do
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n
           -- TODO: This is a common issue with all vectors.
@@ -297,7 +296,8 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr)
             data := data.addSOConstraint ea eb
             idx := idx + 1
       -- TODO: Unroll?
-      | .app (.app (.app (.const ``Real.Matrix.posOrthCone _) m) n) e => do
+      | .app (.app (.app (.app (.app (.const ``Real.Matrix.posOrthCone _)
+          (.app (.const ``Fin _) m)) (.app (.const ``Fin _) n)) _) _) e => do
           let m : Nat ← evalExpr Nat (mkConst ``Nat) m
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n
           for i in [:m] do
@@ -308,8 +308,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr)
               let res ← determineScalarCoeffsAux eij p floatDomain
               data := data.addPosOrthConstraint res.1 res.2
               idx := idx + 1
-      | .app (.app (.app
-          (.const ``Real.Matrix.PSDCone _) mty) _) e => do
+      | .app (.app (.app (.const ``Real.Matrix.PSDCone _) mty) _) e => do
           let e ← realToFloat e
           let res ← determineMatrixCoeffsAux e p floatDomain
           -- The size of the matrix can be inferred from number of coefficients.

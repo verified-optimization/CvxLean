@@ -153,7 +153,8 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (stx : Sy
     try
       -- Unfold LHS if needed.
       let lhs := ← do
-        if let Expr.const n _ := lhs then
+        let (n, _) := lhs.getAppFnArgs
+        if n != ``Minimization.mk then
           let r ← unfold lhs n
           return r.expr
         else

@@ -5,7 +5,7 @@ namespace CvxLean
 
 namespace Meta
 
-open Lean Lean.Meta
+open Lean Meta
 
 /-- `Reduction` type components as expressions. -/
 structure ReductionExpr where
@@ -44,6 +44,12 @@ end ReductionExpr
 macro "reduction_rfl" : tactic => `(tactic| apply Minimization.Reduction.refl)
 
 macro "reduction_trans" : tactic => `(tactic| apply Minimization.Reduction.trans)
+
+open Parser Elab Tactic
+
+elab "reduction_step" _arr:darrow tac:tacticSeqIndentGt : tactic => do
+  evalTactic <| ← `(tactic| reduction_trans)
+  evalTacticSeq1Indented tac.raw
 
 end Meta
 

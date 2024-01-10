@@ -19,7 +19,7 @@ namespace Minimization
 
 /-- We assume constraints are joind by `∧`. A problem with several constraints can be written as
 `⟨f, [[c1, ..., cn]]⟩`. -/
-syntax (name := constrNotation) "[[" term,* "]]" : term
+syntax (name := constrNotation) "[ [" term,* "] ]" : term
 
 macro_rules
   | `([[]]) => `(fun x => True)
