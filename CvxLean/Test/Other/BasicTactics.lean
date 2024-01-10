@@ -1,6 +1,6 @@
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.Basic.CleanUpComp
--- import CvxLean.Tactic.Basic.Rename
+import CvxLean.Tactic.Basic.RenameVars
 -- import CvxLean.Tactic.Basic.RenameConstr
 import CvxLean.Tactic.Basic.ReorderConstrs
 -- import CvxLean.Tactic.Basic.DomainEquiv
@@ -40,6 +40,15 @@ example : Solution <|
   sorry
 
 example : Solution <|
+  optimization (x y z : ℝ)
+    minimize x * y * z
+    subject to
+      c : z = x + y := by
+  rename_vars [y, z, x]
+  rename_vars [a, b ,c]
+  sorry
+
+example : Solution <|
   optimization (x y : ℝ)
     minimize c * x
     subject to
@@ -75,7 +84,7 @@ example : Solution <|
     subject to
       cz : z = x + y
       cxy : exp x ≤ exp y := by
-  reorder_constr [cxy, cz]
+  reorder_constrs [cxy, cz]
   conv_constr cxy =>
     rw [Real.exp_le_exp]
   conv_constr cz =>

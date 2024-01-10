@@ -25,14 +25,12 @@ def cleanUpCompBuilder : EquivalenceBuilder := fun eqvExpr g _ => g.withContext 
   let rhsMinExpr := { lhsMinExpr with objFun := newObjFun, constraints := newConstraints }
   let newEqvExpr := { eqvExpr with p := lhsMinExpr.toExpr, q := rhsMinExpr.toExpr }
   if (← isDefEq (mkMVar g) newEqvExpr.toExpr) then
-    throwError "`clean_up_comp` failed to unify the goal."
+    throwError "`clean_up_comp` error: Failed to unify the goal."
   let simpComp ← ({} : SimpTheorems).addDeclToUnfold ``Function.comp
   let simpContext := { config := {}, simpTheorems := #[simpComp] }
   if let (some newGoal, _) ← simpTarget g simpContext then
-    if let [] ← evalTacticAt (← `(tactic| equivalence_rfl)) newGoal then
-      pure ()
-    else
-      throwError "`clean_up_comp` failed to close the goal."
+    if let _ :: _ ← evalTacticAt (← `(tactic| equivalence_rfl)) newGoal then
+      throwError "`clean_up_comp` error: Failed to close the goal."
 
 end Meta
 
