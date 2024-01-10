@@ -8,7 +8,7 @@ open CvxLean Minimization Real
 noncomputable def A1 : Matrix (Fin 2) (Fin 2) ℝ :=
 fun i j =>
   (#[#[23.90853599,  0.40930502]
-   , #[ 0.79090389, 21.30303590] ][i.val]!)[j.val]!
+   , #[ 0.79090389, 21.30303590]][i.val]!)[j.val]!
 
 @[optimization_param]
 noncomputable def b1 : ℝ := 8.0
@@ -17,7 +17,7 @@ noncomputable def b1 : ℝ := 8.0
 noncomputable def C1 : Matrix (Fin 2) (Fin 2) ℝ :=
 fun i j =>
   (#[#[0.31561605, 0.97905625]
-   , #[0.84321261, 0.06878862] ][i.val]!)[j.val]!
+   , #[0.84321261, 0.06878862]][i.val]!)[j.val]!
 
 noncomputable def sdp1 :=
   optimization (X : Matrix (Fin 2) (Fin 2) ℝ)

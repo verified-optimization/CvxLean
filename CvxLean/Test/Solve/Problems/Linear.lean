@@ -79,7 +79,7 @@ noncomputable def A5 : Matrix (Fin 4) (Fin 4) ℝ :=
     (#[#[ 0.51417013, -1.40067196,  0.71943208,  0.58510080]
      , #[-0.53401066,  1.65680551,  0.13519183,  0.29269704]
      , #[ 0.39224659, -0.61942485,  1.73666095,  2.46240110]
-     , #[ 1.76713469,  0.61389781,  0.80559111, -0.12640489] ][i.val]!)[j.val]!
+     , #[ 1.76713469,  0.61389781,  0.80559111, -0.12640489]][i.val]!)[j.val]!
 
 @[optimization_param]
 noncomputable def b5 : Fin 4 → ℝ :=
@@ -98,6 +98,7 @@ noncomputable def linear5 :=
       h₁ : A5.mulVec x ≤ b5
       h₂ : 0 ≤ x
 
+set_option trace.Meta.debug true in
 solve linear5
 
 #print linear5.reduced

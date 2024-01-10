@@ -8,8 +8,8 @@ noncomputable def logDet1 :=
   optimization (X : Matrix (Fin 2) (Fin 2) ℝ)
     minimize (Matrix.trace X)
     subject to
-      h₁ : 10 ≤ log X.det
-      h₂ : X.PosDef
+      c1 : 10 ≤ log X.det
+      c2 : X.PosDef
 
 set_option trace.Meta.debug true
 solve logDet1
@@ -25,9 +25,8 @@ noncomputable def logDet2 :=
   optimization (X : Matrix (Fin 2) (Fin 2) ℝ)
     maximize (log X.det)
     subject to
-      h₁ : X.PosDef
-      h₂ : X 0 0 + X 0 1 + X 1 1 ≤ 50
-      h₃ : X 0 1 = X 1 0
+      c1 : X.PosDef
+      c2 : X 0 0 + X 0 1 + X 1 1 ≤ 50
 
 solve logDet2
 

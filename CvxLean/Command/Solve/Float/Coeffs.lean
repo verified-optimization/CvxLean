@@ -5,11 +5,7 @@ import CvxLean.Command.Solve.Float.RealToFloat
 
 namespace CvxLean
 
-open Lean
-open Lean.Meta
-open Meta
-open Lean.Elab
-open Lean.Elab.Tactic
+open Lean Meta Elab Tactic
 
 /- Generate Float expression from natural number.
 TODO: Duplicate? Move? -/
@@ -54,8 +50,7 @@ unsafe def evalFloatMatrix (e : Expr) : MetaM (Array (Array Float)) := do
   let (tyn, tym) ← do (match (← inferType e) with
   | .forallE _ tyn (.forallE _ tym (.const ``Float _) _) _ =>
       return (tyn, tym)
-  | .app (.app (.app (.const ``Matrix _) tyn) tym)
-      (.const ``Float _) =>
+  | .app (.app (.app (.const ``Matrix _) tyn) tym) (.const ``Float _) =>
       return (tyn, tym)
   | _ => throwError "Not a float matrix: {e} {e.ctorName}.")
   let elemsn ← elemsOfFintype tyn
@@ -96,8 +91,7 @@ partial def generateZerosOfShape (ty : Expr) : MetaM Expr :=
 type shape with zeros everywhere except one place. Serves as a basis and is used
 to evaluate the coefficients in a constraint or objective function. Two arrays
 are returned, one for scalar variables and one for matrix variables. -/
-unsafe def generateBasisOfShape (ty : Expr)
-  : MetaM (Array Expr × Array Expr) :=
+unsafe def generateBasisOfShape (ty : Expr) : MetaM (Array Expr × Array Expr) :=
   match ty.consumeMData with
   -- 1-dimensional variables.
   | .const ``Float _ =>
@@ -115,8 +109,7 @@ unsafe def generateBasisOfShape (ty : Expr)
         res := res.push b
       return (#[], res)
   -- Matrices.
-  | .app (.app (.app (.const ``Matrix _) tyn)  tym)
-      (.const ``Float _)  => do
+  | .app (.app (.app (.const ``Matrix _) tyn) tym) (.const ``Float _)  => do
       let mut res := #[]
       let elemsn ← elemsOfFintype tyn
       for i in elemsn do
@@ -186,8 +179,8 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
 /- Given an expression (scalar constraint or objective function) and a variable
 `p` with type corresponding to the domain, return the coefficients and the
 constant term. -/
-unsafe def determineScalarCoeffsAux (e : Expr) (p : Expr) (fty : Expr)
-  : MetaM (Array Float × Float) := do
+unsafe def determineScalarCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
+    MetaM (Array Float × Float) := do
   -- Constant part.
   let mut constExpr := e
   let zs ← generateZerosOfShape fty
@@ -202,8 +195,8 @@ unsafe def determineScalarCoeffsAux (e : Expr) (p : Expr) (fty : Expr)
   return (coeffs, const)
 
 /- Same as above, but for matrix affine constraints. -/
-unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr)
-  : MetaM (Array (Array (Array Float)) × Array (Array Float)) := do
+unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
+    MetaM (Array (Array (Array Float)) × Array (Array Float)) := do
   -- Constant part.
   let mut constExpr := e
   let zs ← generateZerosOfShape fty
@@ -231,8 +224,8 @@ dimension when translating the data into CBF format. This happens with the
 exponential cone, quadratic cone and rotated quadratic cone, for instance. -/
 def ScalarAffineSections : Type := Array Nat
 
-unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr)
-  : MetaM (ProblemData × ScalarAffineSections) := do
+unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
+    MetaM (ProblemData × ScalarAffineSections) := do
   let floatDomain ← realToFloat minExpr.domain
 
   -- Coefficients for objective function.
@@ -260,6 +253,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr)
           idx := idx + 1
       | .app (.const ``Real.posOrthCone _) e => do
           let e ← realToFloat e
+          trace[Meta.debug] "Coeffs going through posOrthCone {e}."
           let res ← determineScalarCoeffsAux e p floatDomain
           data := data.addPosOrthConstraint res.1 res.2
           idx := idx + 1

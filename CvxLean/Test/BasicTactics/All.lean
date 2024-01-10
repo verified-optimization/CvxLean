@@ -1,3 +1,2 @@
-import CvxLean.Test.Other.BasicTactics
-import CvxLean.Test.Other.RealToFloat
-import CvxLean.Test.Other.Coeffs
+import CvxLean.Test.BasicTactics.ChangeOfVariables
+import CvxLean.Test.BasicTactics.Other
