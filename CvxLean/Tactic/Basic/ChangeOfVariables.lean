@@ -196,8 +196,6 @@ def changeOfVariablesBuilder : EquivalenceBuilder := fun eqvExpr g stx => match 
         (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity!)) gCondition
       if gsFinal.length != 0 then
         throwError "Failed to solve change of variables condition."
-
-      pure ()
   | _ => throwUnsupportedSyntax
 
 @[tactic change_of_variables]
