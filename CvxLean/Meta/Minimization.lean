@@ -121,7 +121,7 @@ def composeDomain (vars : List (Name × Expr)) : Expr :=
   Returns a list of variables, with name, type, and definition in terms of `p`. -/
 partial def mkProjections (domain : Expr) (p : Expr) : m (List (Name × Expr × Expr)) := do
   match domain with
-  | Expr.app (Expr.app (Expr.const `Prod lvls) (ty1 : Expr)) (ty2 : Expr) => do
+  | Expr.app (Expr.app (Expr.const ``Prod lvls) (ty1 : Expr)) (ty2 : Expr) => do
     let v ← getLabelName ty1
     let d := mkApp3 (mkConst `Prod.fst lvls) ty1 ty2 p
     let r ← mkProjections ty2 (mkApp3 (mkConst `Prod.snd lvls) ty1 ty2 p)

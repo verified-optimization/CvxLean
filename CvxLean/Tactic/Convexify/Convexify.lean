@@ -111,12 +111,23 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
   let mut expectedExpr ← EggString.toExpr vars expectedTermStr
   if !atObjFun then
     expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
+  trace[Meta.debug] "vars: {vars}"
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
-  expectedExpr ← withLocalDeclD `p eqvExpr.domainP fun p => do
-    Meta.withDomainLocalDecls eqvExpr.domainP p fun xs prs => do
+  trace[Meta.debug] "fvars: {fvars}"
+  trace[Meta.debug] "eqvExpr.domainP: {eqvExpr.domainP.ctorName}"
+  trace[Meta.debug] "expectedExpr: {expectedExpr}"
+    -- WHYY????
+  let D ← instantiateMVars eqvExpr.domainP
+  expectedExpr ← withLocalDeclD `p D fun p => do
+    trace[Meta.debug] "p: {p}"
+    let pr := (← mkProjections D p).toArray
+    trace[Meta.debug] "pr: {pr}"
+    Meta.withDomainLocalDecls D  p fun xs prs => do
+      trace[Meta.debug] "xs: {xs}"
+      trace[Meta.debug] "prs: {prs}"
       let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
       mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
-
+  trace[Meta.debug] "Expected: {expectedExpr}"
   let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
 
   let gToChange := ← do
@@ -129,7 +140,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
 
       return gsAfterApply[0]!
 
-  trace[Meta.debug] s!"After apply."
+  trace[Meta.debug] "After apply. {gToChange}"
 
   -- Finally, apply the tactic that should solve all proof obligations. A mix
   -- of approaches using `norm_num` in combination with the tactic provided
@@ -156,6 +167,7 @@ def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext 
   let vars ← withLambdaBody lhs.constraints fun p _ => do
     let pr ← mkProjections lhs.domain p
     return pr.map (Prod.fst)
+  trace[Meta.debug] "Vars: {vars}."
   let varsStr := vars.map toString
 
   -- Get goal as tree and create tags map.
@@ -196,10 +208,8 @@ def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext 
     let mut g := g
     for step in steps do
       let gs ← Tactic.run g <| (evalStep step vars tagsMap).toTactic stx
-      trace[Meta.debug] "gs {gs}."
       if gs.length != 1 then
-        dbg_trace s!"Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
-        break
+        throwError "Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
       else
         g := gs[0]!
         dbg_trace s!"Rewrote {step.rewriteName}."

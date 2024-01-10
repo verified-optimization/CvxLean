@@ -3,11 +3,11 @@ import Lean
 namespace Lean.Meta
 
 
-variable [MonadControlT MetaM m] [Monad m] [MonadError m]
+variable [MonadControlT MetaM m] [Monad m]
 
 /-- Open lambda-expression by introducing a new local declaration. Similar to
 lambdaTelescope, but for only one variable. -/
-def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → m α) : m α := do
+def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α) : MetaM α := do
   match e with
   | Expr.lam n ty body _ =>
     withLocalDeclD n ty fun fvar => do

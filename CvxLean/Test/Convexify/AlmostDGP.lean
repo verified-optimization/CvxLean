@@ -49,8 +49,11 @@ def agp2 :=
         h2 : 0 < y
         h3 : x * y - 5.382 ≤ 0
 
+set_option trace.Meta.debug true
 time_cmd reduction reda2/dcpa2 : agp2 := by
-  map_exp
+  change_of_variables (u) (x ↦ Real.exp u)
+  change_of_variables (v) (y ↦ Real.exp v)
+  remove_trivial_constrs
   convexify
 
 #print dcpa2
