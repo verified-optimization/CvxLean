@@ -262,6 +262,28 @@ macro "equivalence_of_rw_constr" hrw:ident : term =>
 
 end EquivalenceOfConstrRw
 
+/-- We assume constraints are joind by `∧`. A problem with several constraints can be written as
+`⟨f, [[c1, ..., cn]]⟩`. -/
+syntax (name := constrNotation) "[ [" term,* "] ]" : term
+
+macro_rules
+  | `([[]]) => `(fun x => True)
+  | `([[$c]]) => `(fun x => $c x)
+  | `([[$c1, $c2]]) => `(fun x => $c1 x ∧ $c2 x)
+  | `([[$c1, $c2, $c3]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x)
+  | `([[$c1, $c2, $c3, $c4]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x)
+  | `([[$c1, $c2, $c3, $c4, $c5]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x ∧ $c10 x)
+  | `([[$c, $cs,*]]) => `(fun x => $c x ∧ ([[$cs,*]] x))
+
 def rewrite_constraints (hrw : ∀ x, cs x ↔ cs' x) : ⟨f, [[cs]]⟩ ≃ ⟨f, [[cs']]⟩ :=
   equivalence_of_rw_constr hrw
 
