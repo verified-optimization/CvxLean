@@ -1,26 +1,25 @@
 import CvxLean.Syntax.Minimization
--- import CvxLean.Tactic.Basic.DomainEquiv
--- import CvxLean.Tactic.Basic.Rename
 import CvxLean.Tactic.Basic.CleanUpComp
--- import CvxLean.Tactic.Conv.ConvOpt
--- import CvxLean.Tactic.Basic.ReorderConstr
--- import CvxLean.Tactic.Basic.ShowVars
+-- import CvxLean.Tactic.Basic.Rename
 -- import CvxLean.Tactic.Basic.RenameConstr
+import CvxLean.Tactic.Basic.ReorderConstrs
+-- import CvxLean.Tactic.Basic.DomainEquiv
 -- import CvxLean.Tactic.Basic.RemoveConstr
-import CvxLean.Command.Equivalence
+-- import CvxLean.Tactic.Basic.ShowVars
+-- import CvxLean.Tactic.Conv.ConvOpt
 
-namespace BasicTacticTest
+noncomputable section BasicTacticTest
 
 open Real CvxLean Minimization
 
-noncomputable def testCleanUpComp (f g : ℝ → ℝ) (cs : ℝ → Prop) : Solution ⟨f ∘ g, cs ∘ g⟩ := by
+example (f g : ℝ → ℝ) (cs : ℝ → Prop) : Solution ⟨f ∘ g, cs ∘ g⟩ := by
   clean_up_comp
   sorry
 
-noncomputable opaque a : ℝ
-noncomputable opaque b : ℝ
-noncomputable opaque c : ℝ
-noncomputable opaque d : ℝ
+opaque a : ℝ
+opaque b : ℝ
+opaque c : ℝ
+opaque d : ℝ
 
 opaque aa : Prop
 opaque bb : Prop
@@ -28,19 +27,19 @@ opaque cc : Prop
 opaque dd : Prop
 opaque ee : Prop
 
-noncomputable example : Solution <|
-  optimization (x y z w : ℝ)
-    minimize (((c * x) * y) * z) * w
-    subject to
-      a : aa
-      b : bb
-      c : cc
-      d : dd
-      e : ee := by
-  reorder_constr [e, d, c, a, b]
+example : Solution <|
+    optimization (x y z w : ℝ)
+      minimize (((c * x) * y) * z) * w
+      subject to
+        a : aa
+        b : bb
+        c : cc
+        d : dd
+        e : ee := by
+  reorder_constrs [e, d, c, a, b]
   sorry
 
-noncomputable example : Solution <|
+example : Solution <|
   optimization (x y : ℝ)
     minimize c * x
     subject to
@@ -54,7 +53,7 @@ noncomputable example : Solution <|
     (fun p => (p.2, p.1)) sorry sorry)
   sorry
 
-noncomputable example : Solution <|
+example : Solution <|
   optimization (x y : ℝ)
     minimize c * x
     subject to
@@ -70,7 +69,7 @@ noncomputable example : Solution <|
   clean_up_comp
   sorry
 
-noncomputable example : Solution <|
+example : Solution <|
   optimization (x y z : ℝ)
     minimize x + y + z
     subject to
@@ -85,7 +84,7 @@ noncomputable example : Solution <|
     rw [add_comm]
   sorry
 
-noncomputable example : Solution <|
+example : Solution <|
   optimization (x y z : ℝ)
     minimize x + y + z
     subject to
