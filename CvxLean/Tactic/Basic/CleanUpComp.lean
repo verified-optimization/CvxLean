@@ -1,35 +1,38 @@
 import CvxLean.Meta.Minimization
+import CvxLean.Meta.Equivalence
+import CvxLean.Meta.TacticBuilder
 
 namespace CvxLean
 
-open Lean
+open Lean Meta Elab Tactic
 
 namespace Meta
-
-open Lean.Meta
 
 /-- -/
 def cleanUpCompAux (e : Expr) (name : String) : MetaM Expr := do
   match e with
-  | Expr.app (Expr.app (Expr.app (Expr.app (Expr.app
-      (Expr.const `Function.comp lvls) ty₁) ty₂) ty₃) f₁) f₂ => do
-    let f₂ ← instantiateMVars $ ← whnf f₂
+  | .app (.app (.app (.app (.app (.const ``Function.comp lvls) ty₁) ty₂) ty₃) f₁) f₂ => do
+    let f₂ ← instantiateMVars <| ← whnf f₂
     let f₁ ← instantiateMVars f₁
-    return mkApp5 (mkConst `Function.comp lvls) ty₁ ty₂ ty₃ f₁ f₂
+    return mkApp5 (mkConst ``Function.comp lvls) ty₁ ty₂ ty₃ f₁ f₂
   | _ => throwError "{name} not of the form '... ∘ ...'"
 
 /-- -/
-def cleanUpComp (goal : MVarId) : MetaM MVarId := do
-  let goalExprs ← SolutionExpr.fromGoal goal
-  let newObjFun ← cleanUpCompAux goalExprs.objFun "objFun"
-  let newConstraints ← cleanUpCompAux goalExprs.constraints "constr"
-  let newGoalType := {goalExprs with objFun := newObjFun, constraints := newConstraints}.toExpr
-  MVarId.setType goal newGoalType
-  let simpTheorems ← ({} : SimpTheorems).addDeclToUnfold ``Function.comp
-  let simpContext := { config := {}, simpTheorems := #[simpTheorems] }
-  if let (some newGoal, _) ← simpTarget goal simpContext then 
-    return newGoal
-  else throwError "unexpected number of subgoals"
+def cleanUpCompBuilder : EquivalenceBuilder := fun eqvExpr g _ => g.withContext do
+  let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
+  let newObjFun ← cleanUpCompAux lhsMinExpr.objFun "objFun"
+  let newConstraints ← cleanUpCompAux lhsMinExpr.constraints "constr"
+  let rhsMinExpr := { lhsMinExpr with objFun := newObjFun, constraints := newConstraints }
+  let newEqvExpr := { eqvExpr with p := lhsMinExpr.toExpr, q := rhsMinExpr.toExpr }
+  if (← isDefEq (mkMVar g) newEqvExpr.toExpr) then
+    throwError "`clean_up_comp` failed to unify the goal."
+  let simpComp ← ({} : SimpTheorems).addDeclToUnfold ``Function.comp
+  let simpContext := { config := {}, simpTheorems := #[simpComp] }
+  if let (some newGoal, _) ← simpTarget g simpContext then
+    if let [] ← evalTacticAt (← `(tactic| equivalence_rfl)) newGoal then
+      pure ()
+    else
+      throwError "`clean_up_comp` failed to close the goal."
 
 end Meta
 
@@ -41,10 +44,8 @@ syntax (name := cleanUpComp) "clean_up_comp" : tactic
 
 /-- -/
 @[tactic cleanUpComp]
-partial def evalCleanUpComp : Tactic
-| `(tactic| clean_up_comp) => do
-  let goal ← Elab.Tactic.getMainGoal
-  replaceMainGoal $ [← Meta.cleanUpComp goal]
-| _ => throwUnsupportedSyntax
+def evalCleanUpComp : Tactic := fun stx => match stx with
+  | `(tactic| clean_up_comp) => cleanUpCompBuilder.toTactic stx
+  | _ => throwUnsupportedSyntax
 
 end Tactic

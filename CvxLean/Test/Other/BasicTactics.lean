@@ -1,17 +1,21 @@
 import CvxLean.Syntax.Minimization
-import CvxLean.Tactic.Basic.DomainEquiv
-import CvxLean.Tactic.Basic.Rename
+-- import CvxLean.Tactic.Basic.DomainEquiv
+-- import CvxLean.Tactic.Basic.Rename
 import CvxLean.Tactic.Basic.CleanUpComp
-import CvxLean.Tactic.Conv.ConvOpt
-import CvxLean.Tactic.Basic.ReorderConstr
-import CvxLean.Tactic.Basic.ShowVars
-import CvxLean.Tactic.Basic.RenameConstr
-import CvxLean.Tactic.Basic.RemoveConstr
-import CvxLean.Lib.Math.Data.Vec
+-- import CvxLean.Tactic.Conv.ConvOpt
+-- import CvxLean.Tactic.Basic.ReorderConstr
+-- import CvxLean.Tactic.Basic.ShowVars
+-- import CvxLean.Tactic.Basic.RenameConstr
+-- import CvxLean.Tactic.Basic.RemoveConstr
+import CvxLean.Command.Equivalence
 
 namespace BasicTacticTest
 
 open Real CvxLean Minimization
+
+noncomputable def testCleanUpComp (f g : ℝ → ℝ) (cs : ℝ → Prop) : Solution ⟨f ∘ g, cs ∘ g⟩ := by
+  clean_up_comp
+  sorry
 
 noncomputable opaque a : ℝ
 noncomputable opaque b : ℝ
