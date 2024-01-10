@@ -39,11 +39,7 @@ instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E) [cov�
     [cov₂ : ChangeOfVariables c₂] : ChangeOfVariables (c₁ ∘ c₂) :=
   { inv := cov₂.inv ∘ cov₁.inv
     condition := fun x => cov₁.condition x ∧ cov₂.condition (cov₁.inv x)
-    property := fun x ⟨hx₁, hx₂⟩ => by {
-      simp [cov₂.property (cov₁.inv x) hx₂]
-      simp [cov₁.property x hx₁]
-    }
-  }
+    property := fun x ⟨hx₁, hx₂⟩ => by simp [cov₂.property (cov₁.inv x) hx₂, cov₁.property x hx₁] }
 
 /-- -/
 instance ChangeOfVariables.prod_left {D E F} (c : E → D) [cov : ChangeOfVariables c] :
