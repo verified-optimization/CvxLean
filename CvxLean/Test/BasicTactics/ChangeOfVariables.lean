@@ -1,6 +1,6 @@
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Reduction
-import CvxLean.Tactic.ChangeOfVariables.ChangeOfVariables
+import CvxLean.Tactic.Basic.ChangeOfVariables
 
 open CvxLean
 

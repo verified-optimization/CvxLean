@@ -1,8 +1,7 @@
-import CvxLean.Command.Solve
 import CvxLean.Command.Equivalence
+import CvxLean.Command.Solve
+import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Tactic.ChangeOfVariables.ChangeOfVariables
-import CvxLean.Tactic.ChangeOfVariables.Basic
 
 namespace LT2024
 

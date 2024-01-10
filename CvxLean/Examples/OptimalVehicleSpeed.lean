@@ -1,7 +1,7 @@
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Solve
 import CvxLean.Tactic.Basic.Rename
-import CvxLean.Tactic.ChangeOfVariables.ChangeOfVariables
+import CvxLean.Tactic.Basic.ChangeOfVariables
 
 noncomputable section OptimalVehicleSpeed
 
