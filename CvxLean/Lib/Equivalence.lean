@@ -231,7 +231,7 @@ variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
 variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
 variable {cs cs' : D → Prop}
 
-def rewrite_objective (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≃ ⟨g, cs⟩ :=
+def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≃ ⟨g, cs⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := id,
     psi := id,

@@ -1,5 +1,5 @@
+import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.Convexify.RewriteMapCmd
-import CvxLean.Tactic.Convexify.MapObjFun
 import CvxLean.Tactic.Arith.Arith
 
 /-- Attempt to close the goal using the lemma specified with a combination of
@@ -21,10 +21,10 @@ namespace CvxLean
 /- Objective function rules. -/
 
 register_objFun_rewrite_map "map_objFun_log"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (log ?a)) ?cs)" :=
-  map_objFun_log;
+  apply Minimization.Equivalence.map_objFun_log (by positivity!);
 
 register_objFun_rewrite_map "map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (pow ?a 2)) ?cs)" :=
-  map_objFun_sq;
+  apply Minimization.Equivalence.map_objFun_sq (by positivity!);
 
 
 /- Equality rules. -/

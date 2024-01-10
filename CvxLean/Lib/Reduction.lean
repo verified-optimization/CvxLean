@@ -90,8 +90,8 @@ variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
 variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
 variable {cs cs' : D → Prop}
 
-def rewrite_objective (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≽ ⟨g, cs⟩ :=
-  ofEquivalence <| Equivalence.rewrite_objective hrw
+def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≽ ⟨g, cs⟩ :=
+  ofEquivalence <| Equivalence.rewrite_objFun hrw
 
 def rewrite_constraints (hrw : ∀ x, cs x ↔ cs' x) : ⟨f, [[cs]]⟩ ≽ ⟨f, [[cs']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraints hrw

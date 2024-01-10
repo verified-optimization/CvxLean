@@ -1,6 +1,6 @@
+import CvxLean.Syntax.OptimizationParam
 import CvxLean.Meta.Util.Expr
 import CvxLean.Tactic.DCP.DCP
-import CvxLean.Tactic.Solver.Float.OptimizationParam
 
 namespace CvxLean
 
@@ -70,7 +70,7 @@ where
 
     return Tree.node (toString atom.id) childTrees
 
-
+/-- -/
 def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   MetaM (OC (String × Tree String String)) := do
   let (objFun, constraints, originalVarsDecls)
@@ -96,31 +96,6 @@ def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   let tree ← mkUncheckedTree originalVarsDecls oc
   return tree
 
-def uncheckedTreeFromExpr (goalExpr : Expr) :
-  MetaM (OC (String × Tree String String)) := do
-  let goalExprs ← Meta.MinimizationExpr.fromExpr goalExpr
-  uncheckedTreeFromMinimizationExpr goalExprs
-
-def uncheckedTree (goal : MVarId) : MetaM (OC (String × Tree String String)) := do
-  let goalExprs ← SolutionExpr.fromGoal goal
-  uncheckedTreeFromMinimizationExpr goalExprs.toMinimizationExpr
-
 end UncheckedDCP
-
-namespace Tactic
-
-open Lean.Elab Lean.Elab.Tactic
-
-syntax (name := uncheckedTree) "unchecked_tree" : tactic
-
-@[tactic uncheckedTree]
-def evalPreDcpTree : Tactic
-  | `(tactic| unchecked_tree) => do
-    let goal ← Elab.Tactic.getMainGoal
-    let _ ← UncheckedDCP.uncheckedTree goal
-    pure ()
-  | _ => throwUnsupportedSyntax
-
-end Tactic
 
 end CvxLean
