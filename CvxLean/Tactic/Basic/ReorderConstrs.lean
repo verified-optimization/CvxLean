@@ -40,7 +40,7 @@ def reorderConstrsBuilder (ids : Array Name) : EquivalenceBuilder :=
 
     if let [g] ← g.apply (mkConst ``Minimization.Equivalence.rewrite_constraints) then
       let (_, g) ← g.intros
-      if let _ :: _ ← evalTacticAt (← `(tactic| simp [and_comm, and_left_comm])) g then
+      if let _ :: _ ← evalTacticAt (← `(tactic| tauto)) g then
         throwError "`reorder_constrs` error: Failed to prove reordering correct."
     else
       throwError "`reorder_constrs` error: Failed to rewrite constraints."

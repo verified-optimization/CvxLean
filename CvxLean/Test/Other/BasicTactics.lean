@@ -1,9 +1,8 @@
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.Basic.CleanUpComp
 import CvxLean.Tactic.Basic.RenameVars
--- import CvxLean.Tactic.Basic.RenameConstr
+import CvxLean.Tactic.Basic.RenameConstrs
 import CvxLean.Tactic.Basic.ReorderConstrs
--- import CvxLean.Tactic.Basic.DomainEquiv
 -- import CvxLean.Tactic.Basic.RemoveConstr
 -- import CvxLean.Tactic.Basic.ShowVars
 -- import CvxLean.Tactic.Conv.ConvOpt
@@ -31,59 +30,42 @@ example : Solution <|
     optimization (x y z w : ℝ)
       minimize (((c * x) * y) * z) * w
       subject to
-        a : aa
-        b : bb
-        c : cc
-        d : dd
-        e : ee := by
-  reorder_constrs [e, d, c, a, b]
+        ca : aa
+        cb : bb
+        cc : cc
+        cd : dd
+        ce : ee := by
+  reorder_constrs [ce, cd, cc, ca, cb]
+  rename_constrs [c1, c2, c3, c4, c5]
   sorry
 
 example : Solution <|
-  optimization (x y z : ℝ)
-    minimize x * y * z
-    subject to
-      c : z = x + y := by
+    optimization (x y z : ℝ)
+      minimize x * y * z
+      subject to
+        c : z = x + y := by
   rename_vars [y, z, x]
   rename_vars [a, b ,c]
   sorry
 
 example : Solution <|
-  optimization (x y : ℝ)
-    minimize c * x
-    subject to
-      e : exp y ≤ log (a * sqrt x + b)
-      l : a * x + b * y = d
-      hsqrt : 0 ≤ x
-      hlog : 0 < a * sqrt x + b := by
-  domain_equiv Equiv.refl ({** ℝ ** w **} × {** ℝ ** y **})
-  domain_equiv (Equiv.mk
-    (fun (p : {** ℝ ** y **} × {** ℝ ** x **}) => (p.2, p.1))
-    (fun p => (p.2, p.1)) sorry sorry)
+    optimization (x y : ℝ)
+      minimize c * x
+      subject to
+        c1 : exp y ≤ log (a * sqrt x + b)
+        c2 : a * x + b * y = d
+        c3 : 0 ≤ x
+        c4 : 0 < a * sqrt x + b := by
+  rename_vars [y, x]
+  reorder_constrs [c2, c1, c4, c3]
   sorry
 
 example : Solution <|
-  optimization (x y : ℝ)
-    minimize c * x
-    subject to
-      e : exp y ≤ log (a * sqrt x + b)
-      l : a * x + b * y = d
-      hsqrt : 0 ≤ x
-      hlog : 0 < a * sqrt x + b := by
-  apply Minimization.domain_equiv (
-    Equiv.mk
-      (fun (p : {** ℝ ** y**} × {** ℝ ** x**}) =>
-        ((p.2, p.1) : {** ℝ ** x**} × {** ℝ ** y**}))
-      (fun p => (p.2, p.1)) sorry sorry)
-  clean_up_comp
-  sorry
-
-example : Solution <|
-  optimization (x y z : ℝ)
-    minimize x + y + z
-    subject to
-      cz : z = x + y
-      cxy : exp x ≤ exp y := by
+    optimization (x y z : ℝ)
+      minimize x + y + z
+      subject to
+        c1 : z = x + y
+        c2 : exp x ≤ exp y := by
   reorder_constrs [cxy, cz]
   conv_constr cxy =>
     rw [Real.exp_le_exp]
