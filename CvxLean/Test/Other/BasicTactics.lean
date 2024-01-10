@@ -4,7 +4,6 @@ import CvxLean.Tactic.Basic.RenameVars
 import CvxLean.Tactic.Basic.RenameConstrs
 import CvxLean.Tactic.Basic.ReorderConstrs
 -- import CvxLean.Tactic.Basic.RemoveConstr
--- import CvxLean.Tactic.Basic.ShowVars
 -- import CvxLean.Tactic.Conv.ConvOpt
 
 noncomputable section BasicTacticTest
@@ -66,13 +65,13 @@ example : Solution <|
       subject to
         c1 : z = x + y
         c2 : exp x ≤ exp y := by
-  reorder_constrs [cxy, cz]
-  conv_constr cxy =>
-    rw [Real.exp_le_exp]
-  conv_constr cz =>
-    rw [add_comm]
-  conv_obj =>
-    rw [add_comm]
+  rename_constrs [cz, cxy]
+  -- conv_constr cxy =>
+  --   rw [Real.exp_le_exp]
+  -- conv_constr cz =>
+  --   rw [add_comm]
+  -- conv_obj =>
+  --   rw [add_comm]
   sorry
 
 example : Solution <|
@@ -81,9 +80,9 @@ example : Solution <|
     subject to
       cz : z = x + y
       cz' : z = x + y := by
-  remove_constr cz'
-  · exact h
-  rename_constr [czz]
+  -- remove_constr cz'
+  -- · exact h
+  -- rename_constr [czz]
   sorry
 
 end BasicTacticTest

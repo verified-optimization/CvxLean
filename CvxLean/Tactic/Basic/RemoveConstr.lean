@@ -1,7 +1,5 @@
-import CvxLean.Lib.Minimization
-import CvxLean.Meta.Minimization
-import CvxLean.Tactic.Basic.ReplaceConstr
-import CvxLean.Tactic.Basic.ShowVars
+import CvxLean.Meta.Equivalence
+import CvxLean.Meta.TacticBuilder
 
 namespace CvxLean
 
@@ -13,10 +11,10 @@ open Lean Lean.Meta
 `total = n - 1`. -/
 def mkAndProj (e : Expr) (i : Nat) (total : Nat) : MetaM Expr := do
   match total, i with
-  | 1, 0 => return e
-  | 0, _ => throwError "total too small"
-  | _, 0 => return ← mkAppM ``And.left #[e]
-  | total + 1, i + 1 => mkAndProj (← mkAppM ``And.right #[e]) i total
+    | 1, 0 => return e
+    | 0, _ => throwError "total too small"
+    | _, 0 => return ← mkAppM ``And.left #[e]
+    | total + 1, i + 1 => mkAndProj (← mkAppM ``And.right #[e]) i total
 
 /-- Remove a redundant constraint from an optimization problem, redundant
 meaning that it is implied by the other constraints. -/
