@@ -41,28 +41,31 @@ def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder := fun
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let (idxToRemove, numConstrs, newConstrs, toShow) ←
       withLambdaBody lhsMinExpr.constraints fun p oldConstrsBody => do
-        let cs ← decomposeConstraints oldConstrsBody
-        let i := cs.findIdx fun c => c.1 == id
-        if i == cs.length then
+        let oldConstrsList ← decomposeConstraints oldConstrsBody
+        let idxToRemove := oldConstrsList.findIdx fun c => c.1 == id
+        if idxToRemove == oldConstrsList.length then
           throwError "`remove_constr` error: constraint {id} not found."
-        let cs' := cs.eraseIdx i
-        let newConstrs ← mkLambdaFVars #[p] <| composeAnd <| cs'.map Prod.snd
+        let newConstrsList := oldConstrsList.eraseIdx idxToRemove
+        let newConstrs ← mkLambdaFVars #[p] <| composeAnd <| newConstrsList.map Prod.snd
         -- Use `proof`. Some work is neeed to make the context look nice for the user.
-        let toShow ← mkLambdaFVars #[p] <| ← withDomainLocalDecls lhsMinExpr.domain p fun xs _ => do
-          let cs' ← cs'.mapM (fun (n, c) => do
-            return (n, ← Meta.replaceProjections c p.fvarId! xs))
-          let toErase ← Meta.replaceProjections ((cs.get! i).2) p.fvarId! xs
-          withLocalDeclsDNondep cs'.toArray fun csVars' => do
-            mkLambdaFVars csVars' (← Term.elabTerm proof toErase)
-
-        return (i, cs.length, newConstrs, toShow)
+        let lhsLabeledDomain ← decomposeDomain lhsMinExpr.domain
+        let toShow ← withLocalDeclsDNondep lhsLabeledDomain.toArray fun xs => do
+          mkLambdaFVars xs <| ← do
+            let niceNewConstrsList ← newConstrsList.mapM (fun (n, c) => do
+              return (n, ← replaceProjections c p.fvarId! xs))
+            let toErase := (oldConstrsList.get! idxToRemove).2;
+            let niceToErase ← Meta.replaceProjections toErase p.fvarId! xs
+            withLocalDeclsDNondep niceNewConstrsList.toArray fun cs => do
+              mkLambdaFVars cs (← Term.elabTermEnsuringType proof niceToErase)
+        return (idxToRemove, oldConstrsList.length, newConstrs, toShow)
 
     -- Return iff proof and the extra goal of type `c₁ ∧ ... ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ... ∧ cₙ → cᵢ`.
     let iffProof ← withLambdaBody newConstrs fun p newConstrsBody => do
       -- `c₁ ∧ ... ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ... ∧ cₙ → c₁ ∧ ... ∧ cₙ`.
       let newImpliesOld ← withLocalDeclD `h newConstrsBody fun h => do
         let l ← mkProjs (numConstrs - 1) h
-        let extra := mkAppNBeta toShow ((p :: l).toArray)
+        let xs := (← mkProjections lhsMinExpr.domain p).map (fun (_, _, e) => e)
+        let extra := mkAppNBeta toShow ((xs ++ l).toArray)
         let l := (l.take idxToRemove).append <| extra :: l.drop idxToRemove
         return ← mkLambdaFVars #[h] <| ← composeAndIntro l
       -- `c₁ ∧ ... ∧ cₙ → c₁ ∧ ... ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ... ∧ cₙ`.
@@ -74,12 +77,13 @@ def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder := fun
       return ← mkLambdaFVars #[p] <| ← mkAppM ``Iff.intro #[oldImpliesNew, newImpliesOld]
 
     -- Prove by rewriting.
-    trace[Meta.debug] "iffProof: {← inferType iffProof}"
     let D := eqvExpr.domainP
     let R := eqvExpr.codomain
     let RPreorder := eqvExpr.codomainPreorder
     let toApply ← mkAppOptM ``Minimization.Equivalence.rewrite_constraints
-      #[D, R, RPreorder, lhsMinExpr.objFun, none, none, iffProof]
+      #[D, R, RPreorder, lhsMinExpr.objFun, lhsMinExpr.constraints, newConstrs, iffProof]
+    check toApply
+    let toApply ← instantiateMVars toApply
     let _ ← g.apply toApply
     let gs ← getUnsolvedGoals
     if gs.length != 0 then
@@ -93,8 +97,7 @@ syntax (name := removeConstr) "remove_constr" ident term : tactic
 
 @[tactic removeConstr]
 partial def evalRemoveConstr : Tactic := fun stx => match stx with
-| `(tactic| remove_constr $id $proof) => do
-    (removeConstrBuilder id.getId proof).toTactic stx
+| `(tactic| remove_constr $id $proof) => (removeConstrBuilder id.getId proof).toTactic stx
 | _ => throwUnsupportedSyntax
 
 end Tactic
