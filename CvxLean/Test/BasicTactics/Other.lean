@@ -74,7 +74,6 @@ example : Solution <|
   --   rw [add_comm]
   sorry
 
-set_option trace.Meta.debug true in
 example : Solution <|
   optimization (x y z : ℝ)
     minimize x + y + z

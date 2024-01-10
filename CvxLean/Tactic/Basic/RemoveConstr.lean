@@ -27,7 +27,7 @@ def mkProjs (total : Nat) (h : Expr) : MetaM (List Expr) := do
 /-- Given a list of proofs of `aᵢ`, construct a proof of `a₁ ∧ a₂ ∧ ... ∧ aₙ`, where `total = n-1`. -/
 def composeAndIntro (l : List Expr) : MetaM Expr :=
   match l with
-    | [] => return mkConst ``True
+    | [] => return mkConst ``trivial
     | [e] => return e
     | List.cons e es => do
       let es ← composeAndIntro es
@@ -56,7 +56,14 @@ def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder := fun
             let toErase := (oldConstrsList.get! idxToRemove).2;
             let niceToErase ← Meta.replaceProjections toErase p.fvarId! xs
             withLocalDeclsDNondep niceNewConstrsList.toArray fun cs => do
-              mkLambdaFVars cs (← Term.elabTermEnsuringType proof niceToErase)
+              let (e, _) ← Lean.Elab.Term.TermElabM.run <| Lean.Elab.Term.commitIfNoErrors? <| do
+                let v ← Lean.Elab.Term.elabTerm proof niceToErase
+                Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
+                instantiateMVars v
+              if let some e' := e then
+                mkLambdaFVars cs e'
+              else
+                throwError "`remove_constr` error: failed to elaborate proof."
         return (idxToRemove, oldConstrsList.length, newConstrs, toShow)
 
     -- Return iff proof and the extra goal of type `c₁ ∧ ... ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ... ∧ cₙ → cᵢ`.
@@ -80,14 +87,19 @@ def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder := fun
     let D := eqvExpr.domainP
     let R := eqvExpr.codomain
     let RPreorder := eqvExpr.codomainPreorder
-    let toApply ← mkAppOptM ``Minimization.Equivalence.rewrite_constraints
+    let fullProof ← mkAppOptM ``Minimization.Equivalence.rewrite_constraints
       #[D, R, RPreorder, lhsMinExpr.objFun, lhsMinExpr.constraints, newConstrs, iffProof]
-    check toApply
-    let toApply ← instantiateMVars toApply
-    let _ ← g.apply toApply
+    check fullProof
+    let rhs := { lhsMinExpr with constraints := newConstrs }
+    if !(← isDefEq eqvExpr.q rhs.toExpr) then
+      throwError "`remove_constr` error: failed to unify RHS."
+
+    if let _ :: _ ← g.apply fullProof then
+      throwError "`remove_constr` error: failed to prove equivalence."
+
     let gs ← getUnsolvedGoals
     if gs.length != 0 then
-      throwError "`remove_constr` error: failed to close goal."
+      throwError "`remove_constr` error: failed to close all goals."
 
 end Meta
 
@@ -97,7 +109,9 @@ syntax (name := removeConstr) "remove_constr" ident term : tactic
 
 @[tactic removeConstr]
 partial def evalRemoveConstr : Tactic := fun stx => match stx with
-| `(tactic| remove_constr $id $proof) => (removeConstrBuilder id.getId proof).toTactic stx
+| `(tactic| remove_constr $id $proof) => do
+    (removeConstrBuilder id.getId proof).toTactic stx
+
 | _ => throwUnsupportedSyntax
 
 end Tactic
