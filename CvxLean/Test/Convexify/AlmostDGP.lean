@@ -53,7 +53,7 @@ set_option trace.Meta.debug true
 time_cmd reduction reda2/dcpa2 : agp2 := by
   change_of_variables (u) (x ↦ Real.exp u)
   change_of_variables (v) (y ↦ Real.exp v)
-  remove_trivial_constrs
+  
   convexify
 
 #print dcpa2

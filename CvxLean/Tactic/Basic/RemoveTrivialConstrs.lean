@@ -10,7 +10,7 @@ open Lean Meta Elab Term Tactic
 
 namespace Meta
 
-def removeTrivialConstrsBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext do
+def removeTrivialConstrsBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
   let constrNames ← withLambdaBody lhs.constraints fun _ constrsBody => do
     let cs ← decomposeConstraints constrsBody
@@ -19,7 +19,7 @@ def removeTrivialConstrsBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.w
   for n in constrNames do
     let eqvBuilder := removeConstrBuilder n (← `(term| (by positivity!)))
     let gs ← Tactic.run g <|
-      Tactic.tryCatch (eqvBuilder.toTactic stx) (fun _ => do pure ())
+      Tactic.tryCatch eqvBuilder.toTactic (fun _ => do pure ())
     if gs.length != 1 then
       throwError "`remove_trivial_constrs` error: failed to remove {n}."
     g := gs[0]!
@@ -38,7 +38,7 @@ syntax (name := removeTrivialConstrs) "remove_trivial_constrs" : tactic
 @[tactic removeTrivialConstrs]
 def evalRemoveTrivialConstrs : Tactic := fun stx => match stx with
   | `(tactic| remove_trivial_constrs) => do
-      removeTrivialConstrsBuilder.toTactic stx
+      removeTrivialConstrsBuilder.toTactic
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 

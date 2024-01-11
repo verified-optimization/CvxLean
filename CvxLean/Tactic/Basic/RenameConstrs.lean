@@ -14,7 +14,7 @@ def replaceConstrName (name : Name) (e : Expr) : MetaM Expr := do
 
 /-- Rename the constraints using `names`. The `names` Array can be shorter then
   the number of constraints; then only the first few constraints are renamed. -/
-def renameConstrsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun eqvExpr g _ => do
+def renameConstrsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun eqvExpr g => do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
 
   -- Create new renamed constraints.
@@ -48,7 +48,8 @@ syntax (name := renameConstrs) "rename_constrs" "[" ident,* "]" : tactic
 partial def evalRenameConstrs : Tactic := fun stx => match stx with
 | `(tactic| rename_constrs [$ids,*]) => do
     let names := ids.getElems.map Syntax.getId
-    (renameConstrsBuilder names).toTactic stx
+    (renameConstrsBuilder names).toTactic
+    saveTacticInfoForToken stx
 | _ => throwUnsupportedSyntax
 
 end Tactic

@@ -82,11 +82,11 @@ def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
 end ReductionBuilder
 
 /-- -/
-def EquivalenceBuilder := EquivalenceExpr → MVarId → Tactic
+def EquivalenceBuilder := EquivalenceExpr → MVarId → TacticM Unit
 
 namespace EquivalenceBuilder
 
-def toTactic (builder : EquivalenceBuilder) : Tactic := fun stx => withMainContext do
+def toTactic (builder : EquivalenceBuilder) : TacticM Unit := withMainContext do
   let transf ← TransformationGoal.fromExpr (← getMainTarget)
 
   -- Apply transitivity.
@@ -113,7 +113,7 @@ def toTactic (builder : EquivalenceBuilder) : Tactic := fun stx => withMainConte
 
   -- Run builder.
   let eqvExpr ← EquivalenceExpr.fromExpr (← gToChange.getType)
-  builder eqvExpr gToChange stx
+  builder eqvExpr gToChange
 
   -- Set next goal.
   gNext.setTag Name.anonymous

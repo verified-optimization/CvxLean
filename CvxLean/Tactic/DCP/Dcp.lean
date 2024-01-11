@@ -965,7 +965,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
 
       return (redProblem, eqvProof)
 
-def dcpBuilder : EquivalenceBuilder := fun eqvExpr g _ => g.withContext do
+def dcpBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let ogProblem ← eqvExpr.toMinimizationExprLHS
   let (_, eqvProof) ← canonize ogProblem
   if ! (← isDefEq (mkMVar g) eqvProof) then
@@ -981,7 +981,9 @@ syntax (name := dcp) "dcp" : tactic
 
 @[tactic dcp]
 def evalDcp : Tactic := fun stx => match stx with
-  | `(tactic| dcp) => DCP.dcpBuilder.toTactic stx
+  | `(tactic| dcp) => do
+      DCP.dcpBuilder.toTactic
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end Tactic

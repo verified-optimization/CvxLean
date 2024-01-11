@@ -18,7 +18,7 @@ def cleanUpCompAux (e : Expr) (name : String) : MetaM Expr := do
   | _ => throwError "{name} not of the form '... ∘ ...'"
 
 /-- -/
-def cleanUpCompBuilder : EquivalenceBuilder := fun eqvExpr g _ => g.withContext do
+def cleanUpCompBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
   let newObjFun ← cleanUpCompAux lhsMinExpr.objFun "objFun"
   let newConstraints ← cleanUpCompAux lhsMinExpr.constraints "constr"
@@ -43,7 +43,9 @@ syntax (name := cleanUpComp) "clean_up_comp" : tactic
 /-- -/
 @[tactic cleanUpComp]
 def evalCleanUpComp : Tactic := fun stx => match stx with
-  | `(tactic| clean_up_comp) => cleanUpCompBuilder.toTactic stx
+  | `(tactic| clean_up_comp) => do
+      cleanUpCompBuilder.toTactic
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end Tactic

@@ -27,8 +27,8 @@ def reorderConstrsExpr (ids : Array Name) (e : Expr) : MetaM Expr := do
   return composeAnd newConstrs.data
 
 /-- -/
-def reorderConstrsBuilder (ids : Array Name) : EquivalenceBuilder :=
-  fun eqvExpr g _ => g.withContext do
+def reorderConstrsBuilder (ids : Array Name) : EquivalenceBuilder := fun eqvExpr g =>
+  g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let newConstrs ← withLambdaBody lhsMinExpr.constraints fun p constrBody => do
       let constrBody ← reorderConstrsExpr ids constrBody
@@ -58,7 +58,8 @@ syntax (name := reorderConstrs) "reorder_constrs" "[" ident,* "]" : tactic
 def evalReorderConstrs : Tactic := fun stx => match stx with
   | `(tactic| reorder_constrs [$ids,*]) => do
       let ids := ids.getElems.map Syntax.getId
-      (reorderConstrsBuilder ids).toTactic stx
+      (reorderConstrsBuilder ids).toTactic
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end Tactic

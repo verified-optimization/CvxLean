@@ -88,7 +88,7 @@ def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) 
 about the minimization problem, we find the appropriate rewrite to apply, and
 output the remaining goals. -/
 def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String ℕ) :
-    EquivalenceBuilder := fun eqvExpr g _ => g.withContext do
+    EquivalenceBuilder := fun eqvExpr g => g.withContext do
   trace[Meta.debug] "evalStep: {g}"
   let tag ← liftMetaM <| do
     if step.location == "objFun" then
@@ -160,7 +160,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
       dbg_trace s!"Could not prove {← Meta.ppGoal g}."
     dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
 
-def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext do
+def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
 
   -- Get optimization variables.
@@ -207,7 +207,7 @@ def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g stx => g.withContext 
     -- Apply steps.
     let mut g := g
     for step in steps do
-      let gs ← Tactic.run g <| (evalStep step vars tagsMap).toTactic stx
+      let gs ← Tactic.run g <| (evalStep step vars tagsMap).toTactic
       if gs.length != 1 then
         throwError "Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
       else
@@ -230,7 +230,7 @@ syntax (name := convexify) "convexify" : tactic
 def evalConvexify : Tactic := fun stx => match stx with
   | `(tactic| convexify) => withMainContext do
       normNumCleanUp (useSimp := false)
-      convexifyBuilder.toTactic stx
+      convexifyBuilder.toTactic
       normNumCleanUp (useSimp := false)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
