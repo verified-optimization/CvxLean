@@ -6,6 +6,8 @@ noncomputable section
 
 open CvxLean Minimization Real
 
+/- First example. -/
+
 def p₁ :=
   optimization (x y : ℝ)
     maximize sqrt (x - y)
@@ -14,7 +16,7 @@ def p₁ :=
       c2 : x ^ (2 : ℝ) ≤ 2
       c3 : 0 ≤ x - y
 
-#print p₁
+#check p₁
 
 -- Apply DCP transformation and call solver.
 solve p₁
@@ -22,6 +24,9 @@ solve p₁
 #eval p₁.status
 #eval p₁.solution
 #eval p₁.value
+
+
+/- Second example. -/
 
 def p₂ :=
   optimization (x : ℝ)
@@ -32,6 +37,7 @@ def p₂ :=
 
 -- solve p₂
 
+-- Equivalence mode.
 equivalence eqv₂/q₂ : p₂ := by
   pre_dcp
 
@@ -43,7 +49,11 @@ solve q₂
 #eval q₂.solution
 #eval q₂.value
 
-/-- See https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
+
+/- Third example (geometric programming). -/
+
+/-- Maximizing the volume of a box.
+See: https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
 def p₃ (Awall Aflr α β γ δ : ℝ) :=
   optimization (h w d : ℝ)
     minimize (1 / (h * w * d))
@@ -73,10 +83,6 @@ solve q₃
 #eval q₃.value
 
 #check eqv₃
-
-def p₃.solution := eqv₃.psi_float q₃.solution
-
-#eval p₃.solution
 
 end
 

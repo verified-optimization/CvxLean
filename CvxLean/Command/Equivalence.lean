@@ -41,7 +41,7 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           mvarId.assign mvarVal }
         catch _ => pure ()
 
-      let (rhs, proof) ← elabEquivalenceProof lhs proofStx.raw
+      let (rhs, eqv) ← elabEquivalenceProof lhs proofStx.raw
 
       -- Add equivalent problem to the environment.
       let rhs ← instantiateMVars rhs
@@ -58,17 +58,15 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           [probId.getId])
 
       -- Add equivalence proof to the environment.
-      let proofTy ← inferType proof
-      let proofTy ← mkForallFVars (xs.map Prod.snd) proofTy
-      let proofTy ← instantiateMVars proofTy
-      let proof ← mkLambdaFVars (xs.map Prod.snd) proof
-      let proof ← instantiateMVars proof
+      let eqvTy ← inferType eqv
+      let eqvTy ← instantiateMVars eqvTy
+      let eqv ← instantiateMVars eqv
       Lean.addDecl <|
         Declaration.defnDecl
           (mkDefinitionValEx eqvId.getId
           []
-          proofTy
-          proof
+          eqvTy
+          eqv
           (Lean.ReducibilityHints.regular 0)
           (DefinitionSafety.safe)
           [probId.getId])
