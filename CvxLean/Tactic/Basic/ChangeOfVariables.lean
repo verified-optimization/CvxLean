@@ -5,6 +5,7 @@ import CvxLean.Meta.Minimization
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Tactic.Arith.Arith
+import CvxLean.Tactic.Basic.RemoveTrivialConstrs
 
 /-!
 # Change of variables
@@ -119,12 +120,9 @@ The idea here is to have a tactic
 For now, it only works with real variables.
 -/
 
-section Tactic
-
 open Lean Elab Meta Tactic Term
 
-syntax (name := change_of_variables)
-  "change_of_variables" "(" ident ")" "(" ident "↦" term ")" : tactic
+namespace Meta
 
 def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     (changeStx : TSyntax `term) : EquivalenceBuilder :=
@@ -198,14 +196,29 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     if gsFinal.length != 0 then
       throwError "Failed to solve change of variables condition."
 
+end Meta
 
-@[tactic change_of_variables]
+namespace Tactic
+
+syntax (name := changeOfVariables)
+  "change_of_variables" "(" ident ")" "(" ident "↦" term ")" : tactic
+
+@[tactic changeOfVariables]
 def evalChangeOfVariables : Tactic := fun stx => match stx with
   | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => do
       (changeOfVariablesBuilder newVarStx varToChangeStx changeStx).toTactic
       normNumCleanUp (useSimp := False)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
+
+syntax (name := changeOfVariablesAndRemove)
+  "change_of_variables!" "(" ident ")" "(" ident "↦" term ")" : tactic
+
+macro_rules
+  | `(tactic| change_of_variables! ($newVarStx) ($varToChangeStx ↦ $changeStx)) =>
+    `(tactic|
+        change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx);
+        remove_trivial_constrs)
 
 
 end Tactic
