@@ -3,7 +3,6 @@ import CvxLean.Lib.Math.CovarianceEstimation
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.DCP.AtomLibrary.All
-import CvxLean.Tactic.Conv.ConvOpt
 import CvxLean.Command.Reduction
 import CvxLean.Command.Solve
 
@@ -31,7 +30,7 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
     simp only [Function.comp, neg_neg, maximizeNeg]
   -- Move logarithm and sum inward.
   reduction_step =>
-    apply Reduction.rewrite_objective
+    apply Reduction.rewrite_objFun
     · intros R hR
       simp only [log_prod_gaussianPdf _ R hR.1,
         Finset.sum_add_distrib, Finset.sum_neg_distrib, neg_div]
@@ -46,7 +45,7 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
   -- Dissolve matrix inverse.
   reduction_step =>
     simp only [Function.comp, Matrix.PosDef_inv_iff_PosDef]
-    apply Reduction.rewrite_objective
+    apply Reduction.rewrite_objFun
     · intros R hR
       rewrite [nonsing_inv_nonsing_inv R (hR.1.isUnit_det),
         Matrix.det_nonsing_inv]
