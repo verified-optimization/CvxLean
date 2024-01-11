@@ -39,7 +39,8 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
 /-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for
 for for constraints), return the rewrite lemma that needs to be applied. Also
 return the number of arguments of each rewrite lemma to be able to build an
-expression in `rewriteWrapperApplyExpr`. -/
+expression in `rewriteWrapperApplyExpr`.
+TODO: Use conv tactics. -/
 def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :=
   if rwIdx == 0 then
     return (``Minimization.Equivalence.rewrite_objFun, 1)
@@ -55,7 +56,7 @@ def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :
     | 8  => return (``Minimization.Equivalence.rewrite_constraint_8_last,  8)
     | 9  => return (``Minimization.Equivalence.rewrite_constraint_9_last,  9)
     | 10 => return (``Minimization.Equivalence.rewrite_constraint_10_last, 10)
-    | _  => throwError "convexify can only rewrite problems with up to 10 constraints."
+    | _  => throwError "`convexify` error: can only rewrite problems with up to 10 constraints."
   else
     match rwIdx with
     | 1  => return (``Minimization.Equivalence.rewrite_constraint_1,  1)
@@ -68,7 +69,7 @@ def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :
     | 8  => return (``Minimization.Equivalence.rewrite_constraint_8,  8)
     | 9  => return (``Minimization.Equivalence.rewrite_constraint_9,  9)
     | 10 => return (``Minimization.Equivalence.rewrite_constraint_10, 10)
-    | _  => throwError "convexify can only rewrite problems with up to 10 constraints."
+    | _  => throwError "`convexify` error: can only rewrite problems with up to 10 constraints."
 
 /-- -/
 def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) (expected : Expr) :
@@ -111,31 +112,22 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
   let mut expectedExpr ← EggString.toExpr vars expectedTermStr
   if !atObjFun then
     expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
-  trace[Meta.debug] "vars: {vars}"
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
-  trace[Meta.debug] "fvars: {fvars}"
-  trace[Meta.debug] "eqvExpr.domainP: {eqvExpr.domainP.ctorName}"
-  trace[Meta.debug] "expectedExpr: {expectedExpr}"
-    -- WHYY????
+  -- TODO: Why do we need this???
   let D ← instantiateMVars eqvExpr.domainP
   expectedExpr ← withLocalDeclD `p D fun p => do
-    trace[Meta.debug] "p: {p}"
-    let pr := (← mkProjections D p).toArray
-    trace[Meta.debug] "pr: {pr}"
     Meta.withDomainLocalDecls D  p fun xs prs => do
-      trace[Meta.debug] "xs: {xs}"
-      trace[Meta.debug] "prs: {prs}"
       let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
       mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
-  trace[Meta.debug] "Expected: {expectedExpr}"
+
   let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
 
   let gToChange := ← do
     if isMap then return g else
       let toApply ← rewriteWrapperApplyExpr isMap rwWrapper numArgs expectedExpr
-      trace[Meta.debug] "Applying {toApply} with {numArgs} arguments."
       let gsAfterApply ← g.apply toApply
       if gsAfterApply.length != 1 then
+        trace[Meta.debug] "gsAfterApply: {gsAfterApply}."
         throwError "Expected 1 goal after applying rewrite wrapper, got {gsAfterApply.length}."
 
       return gsAfterApply[0]!

@@ -4,7 +4,6 @@ import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Tactic.Basic.RemoveTrivialConstrs
 
 namespace AlmostGP
 

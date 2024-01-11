@@ -1,7 +1,9 @@
 import CvxLean.Command.Solve
-import CvxLean.Tactic.ChangeOfVariables.Basic
+import CvxLean.Command.Reduction
+import CvxLean.Command.Equivalence
+import CvxLean.Command.Util.TimeCmd
+import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Test.Util.TimeCmd
 
 namespace GP
 
@@ -19,7 +21,7 @@ def gp1 :=
         h2 : x ^ (2 : ℝ) ≤ 10.123
 
 time_cmd reduction red1/dcp1 : gp1 := by
-  map_exp
+  change_of_variables! (u) (x ↦ Real.exp u)
   convexify
 
 #print dcp1
@@ -44,7 +46,8 @@ def gp2 :=
         h3 : x * y ≤ 5.382
 
 time_cmd reduction red2/dcp2 : gp2 := by
-  map_exp
+  change_of_variables! (u) (x ↦ exp u)
+  change_of_variables! (v) (y ↦ exp v)
   convexify
 
 #print dcp2
@@ -69,7 +72,8 @@ def gp3 :=
         h3 : sqrt (x * x + y) ≤ 1
 
 time_cmd reduction red3/dcp3 : gp3 := by
-  map_exp
+  change_of_variables! (u) (x ↦ exp u)
+  change_of_variables! (v) (y ↦ exp v)
   convexify
 
 #print dcp3
@@ -97,8 +101,11 @@ def gp4 :=
       h6 : x ^ (2 : ℝ) + 6 * y / z <= sqrt x
       h7 : x * y = z
 
+set_option trace.Meta.debug true in
 time_cmd reduction red4/dcp4 : gp4 := by
-  map_exp
+  change_of_variables! (u) (x ↦ exp u)
+  change_of_variables! (v) (y ↦ exp v)
+  change_of_variables! (w) (z ↦ exp w)
   convexify
 
 solve dcp4
@@ -132,7 +139,9 @@ def gp5 :=
       h7 : x / y = z ^ (2 : ℝ)
 
 time_cmd reduction red5/dcp5 : gp5 := by
-  map_exp
+  change_of_variables! (u) (x ↦ exp u)
+  change_of_variables! (v) (y ↦ exp v)
+  change_of_variables! (w) (z ↦ exp w)
   convexify
 
 #print dcp5
