@@ -1,4 +1,5 @@
 import CvxLean.Command.Equivalence
+import CvxLean.Command.Reduction
 import CvxLean.Command.Solve
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
@@ -14,9 +15,12 @@ def p₁ :=
     maximize sqrt (x - y)
     subject to
       c1 : y = 2 * x - 3
-      c2 : x ^ (2 : ℝ) ≤ 2 -- TODO: remove ": ℝ"
-      c3 : x ≤ 6
+      c2 : x ^ (2 : ℝ) ≤ 2
+      c3 : 0 ≤ x - y
 
+#print p₁
+
+-- Apply DCP transformation and call solver.
 solve p₁
 
 #eval p₁.status
@@ -34,7 +38,6 @@ def p₂ :=
 
 equivalence eqv₂/q₂ : p₂ := by
   convexify
-  norm_num
 
 solve q₂
 
@@ -45,7 +48,7 @@ solve q₂
 #eval q₂.value
 
 /-- See https://www.cvxpy.org/examples/dgp/max_volume_box.html -/
-def p₃ (Awall Aflr α β γ δ: ℝ) :=
+def p₃ (Awall Aflr α β γ δ : ℝ) :=
   optimization (h w d : ℝ)
     minimize (1 / (h * w * d))
     subject to
@@ -74,17 +77,10 @@ solve q₃
 #eval q₃.value
 
 #check eqv₃
--- TODO: Float maps so that we can chain equivalences.
--- or change solve.
--- We need:
--- * All tactics to work smoothly on equivalence and reduciton modes (wrapper).
--- * Deal with map_exp and everything in cov/basic.
--- * Tactics to clean up problem.
--- * The wrapper should also deal with unfolding and not closing goals, using transitivity.
--- * dcp needs to return an equivalence.
---
--- Ideas:
--- * EquivalenceTacticM, ReductionTacticM, RelaxationTacitcM.
+
+def p₃.solution := eqv₃.psi_float q₃.solution
+
+#eval p₃.solution
 
 end
 
