@@ -1,7 +1,10 @@
 import CvxLean.Command.Solve
+import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
+import CvxLean.Command.Util.TimeCmd
+import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Test.Util.TimeCmd
+
 
 namespace DQCP
 
@@ -52,7 +55,6 @@ def hypersonicShapeDesign (a b : ℝ) :=
       h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ (2 : ℝ)) ≤ 0
 
 time_cmd equivalence redqcp2/dqcp2 : hypersonicShapeDesign 0.05 0.65 := by
-  unfold hypersonicShapeDesign
   convexify
 
 solve dqcp2

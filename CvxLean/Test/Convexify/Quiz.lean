@@ -1,7 +1,9 @@
+import CvxLean.Command.Solve
+import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
-import CvxLean.Tactic.DCP.AtomLibrary.All
+import CvxLean.Command.Util.TimeCmd
+import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.Convexify.Convexify
-import CvxLean.Test.Util.TimeCmd
 
 namespace Quiz
 

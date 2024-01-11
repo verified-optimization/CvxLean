@@ -21,7 +21,7 @@ def gp1 :=
         h2 : x ^ (2 : ℝ) ≤ 10.123
 
 time_cmd reduction red1/dcp1 : gp1 := by
-  change_of_variables! (u) (x ↦ Real.exp u)
+  change_of_variables! (u) (x ↦ exp u)
   convexify
 
 #print dcp1
@@ -178,7 +178,9 @@ def gp6 :=
       h9 : d / w ≤ 6
 
 time_cmd reduction red6/dcp6 : gp6 := by
-  map_exp
+  change_of_variables! (h') (h ↦ exp h')
+  change_of_variables! (w') (w ↦ exp w')
+  change_of_variables! (d') (d ↦ exp d')
   convexify
 
 #print dcp6
@@ -217,7 +219,9 @@ def gp7 :=
 
 set_option maxHeartbeats 1000000
 time_cmd reduction red7/dcp7 : gp7 := by
-  map_exp
+  change_of_variables! (u) (x ↦ exp u)
+  change_of_variables! (v) (y ↦ exp v)
+  change_of_variables! (w) (z ↦ exp w)
   convexify
 
 #print dcp7
@@ -256,7 +260,10 @@ def gp8 :=
 
 set_option maxHeartbeats 1000000 in
 time_cmd reduction red8/dcp8 : gp8 := by
-  map_exp
+  change_of_variables! (h') (h ↦ exp h')
+  change_of_variables! (w') (w ↦ exp w')
+  change_of_variables! (A') (A ↦ exp A')
+  change_of_variables! (r') (r ↦ exp r')
   convexify
 
 solve dcp8
