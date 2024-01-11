@@ -58,7 +58,7 @@ lemma abs_le_of_sqrt_sq_add_nonneg_le {a b c : ℝ} (hb : 0 ≤ b)
   replace h := le_trans (le_add_of_nonneg_right hb) h
   rwa [sq_le_sq, abs_of_nonneg hc] at h
 
-/- Lemmas used in `CvxLean.Tactic.Convexify.RewriteMapLibrary`. -/
+/- Lemmas used in `CvxLean.Tactic.PreDCP.RewriteMapLibrary`. -/
 
 lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : log x = log y ↔ x = y :=
   ⟨fun h => by

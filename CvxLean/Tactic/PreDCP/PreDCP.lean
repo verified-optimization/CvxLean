@@ -2,9 +2,9 @@ import CvxLean.Lib.Equivalence
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Tactic.Arith.NormNumVariants
-import CvxLean.Tactic.Convexify.RewriteMapExt
-import CvxLean.Tactic.Convexify.RewriteMapLibrary
-import CvxLean.Tactic.Convexify.Egg.All
+import CvxLean.Tactic.PreDCP.RewriteMapExt
+import CvxLean.Tactic.PreDCP.RewriteMapLibrary
+import CvxLean.Tactic.PreDCP.Egg.All
 
 namespace CvxLean
 
@@ -56,7 +56,7 @@ def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :
     | 8  => return (``Minimization.Equivalence.rewrite_constraint_8_last,  8)
     | 9  => return (``Minimization.Equivalence.rewrite_constraint_9_last,  9)
     | 10 => return (``Minimization.Equivalence.rewrite_constraint_10_last, 10)
-    | _  => throwError "`convexify` error: can only rewrite problems with up to 10 constraints."
+    | _  => throwError "`pre_dcp` error: can only rewrite problems with up to 10 constraints."
   else
     match rwIdx with
     | 1  => return (``Minimization.Equivalence.rewrite_constraint_1,  1)
@@ -69,7 +69,7 @@ def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :
     | 8  => return (``Minimization.Equivalence.rewrite_constraint_8,  8)
     | 9  => return (``Minimization.Equivalence.rewrite_constraint_9,  9)
     | 10 => return (``Minimization.Equivalence.rewrite_constraint_10, 10)
-    | _  => throwError "`convexify` error: can only rewrite problems with up to 10 constraints."
+    | _  => throwError "`pre_dcp` error: can only rewrite problems with up to 10 constraints."
 
 /-- -/
 def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) (expected : Expr) :
@@ -97,7 +97,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
     else if let [_, tag] := step.location.splitOn ":" then
       return tag
     else
-      throwError "`convexify` error: Unexpected tag name {step.location}."
+      throwError "`pre_dcp` error: Unexpected tag name {step.location}."
   let tagNum := tagsMap.find! step.location
   let atObjFun := tagNum == 0
 
@@ -152,7 +152,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
       dbg_trace s!"Could not prove {← Meta.ppGoal g}."
     dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
 
-def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
+def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
 
   -- Get optimization variables.
@@ -208,21 +208,20 @@ def convexifyBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
 
     let gsFinal ← evalTacticAt (← `(tactic| equivalence_rfl)) g
     if gsFinal.length != 0 then
-      throwError "`convexify` error: Could not close last goal."
+      throwError "`pre_dcp` error: Could not close last goal."
   catch e =>
     let eStr ← e.toMessageData.toString
-    throwError "`convexify` error: {eStr}"
+    throwError "`pre_dcp` error: {eStr}"
 
-/-- The `convexify` tactic encodes a given minimization problem, sends it to
-egg, and reconstructs the proof from egg's output. It works both under the
-`reduction` and `equivalence` commands. -/
-syntax (name := convexify) "convexify" : tactic
+/-- The `pre_dcp` tactic encodes a given minimization problem, sends it to egg, and reconstructs
+the proof from egg's output. -/
+syntax (name := preDCP) "pre_dcp" : tactic
 
-@[tactic convexify]
-def evalConvexify : Tactic := fun stx => match stx with
-  | `(tactic| convexify) => withMainContext do
+@[tactic preDCP]
+def evalPreDCP : Tactic := fun stx => match stx with
+  | `(tactic| pre_dcp) => withMainContext do
       normNumCleanUp (useSimp := false)
-      convexifyBuilder.toTactic
+      preDCPBuilder.toTactic
       normNumCleanUp (useSimp := false)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax

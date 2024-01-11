@@ -3,7 +3,7 @@ import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Tactic.PreDCP.PreDCP
 
 namespace Unit
 
@@ -22,7 +22,7 @@ def mapObjFunLogObj :=
       h : 0 ≤ x
 
 time_cmd equivalence mapObjFunLogObjRed/mapObjFunLogObjAuto : mapObjFunLogObj := by
-  convexify
+  pre_dcp
 
 #print mapObjFunLogObjAuto
 
@@ -34,7 +34,7 @@ def mapObjFunSqObj :=
       h : 0 ≤ x
 
 time_cmd equivalence mapObjFunSqObjRed/mapObjFunSqObjAuto : mapObjFunSqObj := by
-  convexify
+  pre_dcp
 
 #print mapObjFunSqObjAuto
 
@@ -49,7 +49,7 @@ def logEqLogConstr :=
       h : exp x = exp x
 
 time_cmd equivalence logEqLogConstrRed/logEqLogConstrAuto : logEqLogConstr := by
-  convexify
+  pre_dcp
 
 #print logEqLogConstrAuto
 
@@ -65,7 +65,7 @@ def leSubIffAddLeConstr :=
       h : x ≤ 1 - x
 
 time_cmd equivalence leSubIffAddLeConstrRed/leSubIffAddLeConstrAuto : leSubIffAddLeConstr := by
-  convexify
+  pre_dcp
 
 #print leSubIffAddLeConstrAuto
 
@@ -77,7 +77,7 @@ def leSubIffAddLeConstrRev :=
       h : y + x ≤ x
 
 time_cmd equivalence leSubIffAddLeConstrRevRed/leSubIffAddLeConstrRevAuto : leSubIffAddLeConstrRev := by
-  convexify
+  pre_dcp
 
 #print leSubIffAddLeConstrRevAuto
 
@@ -90,7 +90,7 @@ def subLeIffLeAddConstr :=
       h : 1 - x ≤ x
 
 time_cmd equivalence subLeIffLeAddConstrRed/subLeIffLeAddConstrAuto : subLeIffLeAddConstr := by
-  convexify
+  pre_dcp
 
 #print subLeIffLeAddConstrAuto
 
@@ -102,7 +102,7 @@ def subLeIffLeAddConstrRev :=
       h : x ≤ y + x
 
 time_cmd equivalence subLeIffLeAddConstrRevRed/subLeIffLeAddConstrRevAuto : subLeIffLeAddConstrRev := by
-  convexify
+  pre_dcp
 
 #print subLeIffLeAddConstrRevAuto
 
@@ -115,7 +115,7 @@ def divLeIffConstr :=
       h : x / y ≤ 1
 
 time_cmd equivalence divLeIffConstrRed/divLeIffConstrAuto : divLeIffConstr := by
-  convexify
+  pre_dcp
 
 #print divLeIffConstrAuto
 
@@ -128,7 +128,7 @@ def divLeIffRevConstr :=
       h : x ≤ x * y
 
 time_cmd equivalence divLeIffRevConstrRed/divLeIffRevConstrAuto : divLeIffRevConstr := by
-  convexify
+  pre_dcp
 
 #print divLeIffRevConstrAuto
 
@@ -142,7 +142,7 @@ def logLeLogConstr :=
       h : log x ≤ log y
 
 time_cmd equivalence logLeLogConstrRed/logLeLogConstrAuto : logLeLogConstr := by
-  convexify
+  pre_dcp
 
 #print logLeLogConstrAuto
 
@@ -154,7 +154,7 @@ def logLeLogRevConstr :=
       h : exp x ≤ exp y
 
 time_cmd equivalence logLeLogRevConstrRed/logLeLogRevConstrAuto : logLeLogRevConstr := by
-  convexify
+  pre_dcp
 
 #print logLeLogRevConstrAuto
 
@@ -168,7 +168,7 @@ def powTwoLePowTwoConstr :=
       h : x ^ (2 : ℝ) ≤ y ^ (2 : ℝ)
 
 time_cmd equivalence powTwoLePowTwoConstrRed/powTwoLePowTwoConstrAuto : powTwoLePowTwoConstr := by
-  convexify
+  pre_dcp
 
 #print powTwoLePowTwoConstrAuto
 
@@ -182,7 +182,7 @@ def powTwoLePowTwoRevConstr :=
       h : sqrt x ≤ sqrt y
 
 time_cmd equivalence powTwoLePowTwoRevConstrRed/powTwoLePowTwoRevConstrAuto : powTwoLePowTwoRevConstr := by
-  convexify
+  pre_dcp
 
 #print powTwoLePowTwoRevConstrAuto
 
@@ -197,7 +197,7 @@ def negNegObj :=
       h : 0 ≤ x
 
 time_cmd equivalence negNegObjRed/negNegObjAuto : negNegObj := by
-  convexify
+  pre_dcp
 
 #print negNegObjAuto
 
@@ -209,7 +209,7 @@ def negNegConstr :=
       h : y ≤ -(-x)
 
 time_cmd equivalence negNegConstrRed/negNegConstrAuto : negNegConstr := by
-  convexify
+  pre_dcp
 
 #print negNegConstrAuto
 
@@ -221,7 +221,7 @@ def addZeroObj :=
       h : 0 ≤ x
 
 time_cmd equivalence addZeroObjRed/addZeroObjAuto : addZeroObj := by
-  convexify
+  pre_dcp
 
 #print addZeroObjAuto
 
@@ -233,7 +233,7 @@ def addZeroConstr :=
       h : y ≤ x + 0
 
 time_cmd equivalence addZeroConstrRed/addZeroConstrAuto : addZeroConstr := by
-  convexify
+  pre_dcp
 
 #print addZeroConstrAuto
 
@@ -246,7 +246,7 @@ def addCommObj :=
       h : 0 ≤ x
 
 time_cmd equivalence addCommObjRed/addCommObjAuto : addCommObj := by
-  convexify
+  pre_dcp
 
 #print addCommObjAuto
 
@@ -260,7 +260,7 @@ def addCommConstr :=
       hx : x + (1 + x) ≤ 1
 
 time_cmd equivalence addCommConstrRed/addCommConstrAuto : addCommConstr := by
-  convexify
+  pre_dcp
 
 #print addCommConstrAuto
 
@@ -273,7 +273,7 @@ def addAssocObj :=
       h : 0 ≤ x
 
 time_cmd equivalence addAssocObjRed/addAssocObjAuto : addAssocObj := by
-  convexify
+  pre_dcp
 
 #print addAssocObjAuto
 
@@ -286,7 +286,7 @@ def addAssocConstr :=
       h : x + (x + 1) ≤ 1
 
 time_cmd equivalence addAssocConstrRed/addAssocConstrAuto : addAssocConstr := by
-  convexify
+  pre_dcp
 
 #print addAssocConstrAuto
 
@@ -298,7 +298,7 @@ def subSelfObj :=
       h : 0 ≤ x
 
 time_cmd equivalence subSelfObjRed/subSelfObjAuto : subSelfObj := by
-  convexify
+  pre_dcp
 
 #print subSelfObjAuto
 
@@ -310,7 +310,7 @@ def subSelfConstr :=
       h : y ≤ x - x
 
 time_cmd equivalence subSelfConstrRed/subSelfConstrAuto : subSelfConstr := by
-  convexify
+  pre_dcp
 
 #print subSelfConstrAuto
 
@@ -322,7 +322,7 @@ def oneMulObj :=
       h : 0 ≤ x
 
 time_cmd equivalence oneMulObjRed/oneMulObjAuto : oneMulObj := by
-  convexify
+  pre_dcp
 
 #print oneMulObjAuto
 
@@ -334,7 +334,7 @@ def oneMulConstr :=
       h : 0 ≤ 1 * x
 
 time_cmd equivalence oneMulConstrRed/oneMulConstrAuto : oneMulConstr := by
-  convexify
+  pre_dcp
 
 #print oneMulConstrAuto
 
@@ -347,7 +347,7 @@ def oneMulRevObj :=
       h : 0 ≤ x
 
 time_cmd equivalence oneMulRevObjRed/oneMulRevObjAuto : oneMulRevObj := by
-  convexify
+  pre_dcp
 
 #print oneMulRevObjAuto
 
@@ -360,7 +360,7 @@ def oneMulRevConstr :=
       h : 0 ≤ x + x
 
 time_cmd equivalence oneMulRevConstrRed/oneMulRevConstrAuto : oneMulRevConstr := by
-  convexify
+  pre_dcp
 
 #print oneMulRevConstrAuto
 
@@ -372,7 +372,7 @@ def mulZeroObj :=
       h : 0 ≤ x
 
 time_cmd equivalence mulZeroObjRed/mulZeroObjAuto : mulZeroObj := by
-  convexify
+  pre_dcp
 
 #print mulZeroObjAuto
 
@@ -384,7 +384,7 @@ def mulZeroConstr :=
       h : y ≤ x * 0
 
 time_cmd equivalence mulZeroConstrRed/mulZeroConstrAuto : mulZeroConstr := by
-  convexify
+  pre_dcp
 
 #print mulZeroConstrAuto
 
@@ -397,7 +397,7 @@ def mulCommObj :=
       hx : 0 < x
 
 time_cmd equivalence mulCommObjRed/mulCommObjAuto : mulCommObj := by
-  convexify
+  pre_dcp
 
 #print mulCommObjAuto
 
@@ -410,7 +410,7 @@ def mulCommConstr :=
       h : x * (y * (1 / x)) ≤ 1
 
 time_cmd equivalence mulCommConstrRed/mulCommConstrAuto : mulCommConstr := by
-  convexify
+  pre_dcp
 
 #print mulCommConstrAuto
 
@@ -422,7 +422,7 @@ def mulAssocObj :=
       hx : 0 < x
 
 time_cmd equivalence mulAssocObjRed/mulAssocObjAuto : mulAssocObj := by
-  convexify
+  pre_dcp
 
 #print mulAssocObjAuto
 
@@ -435,7 +435,7 @@ def mulAssocConstr :=
       h : sqrt x * (sqrt x * 2) ≤ 1
 
 time_cmd equivalence mulAssocConstrRed/mulAssocConstrAuto : mulAssocConstr := by
-  convexify
+  pre_dcp
 
 #print mulAssocConstrAuto
 
@@ -447,7 +447,7 @@ def subEqAddNegObj :=
       h : 0 ≤ x
 
 time_cmd equivalence subEqAddNegObjRed/subEqAddNegObjAuto : subEqAddNegObj := by
-  convexify
+  pre_dcp
 
 #print subEqAddNegObjAuto
 
@@ -459,7 +459,7 @@ def subEqAddNegConstr :=
       h : y ≤ x - (-x)
 
 time_cmd equivalence subEqAddNegConstrRed/subEqAddNegConstrAuto : subEqAddNegConstr := by
-  convexify
+  pre_dcp
 
 #print subEqAddNegConstrAuto
 
@@ -471,7 +471,7 @@ def subEqAddNegRevObj :=
       h : 0 ≤ x
 
 time_cmd equivalence subEqAddNegRevObjRed/subEqAddNegRevObjAuto : subEqAddNegRevObj := by
-  convexify
+  pre_dcp
 
 #print subEqAddNegRevObjAuto
 
@@ -483,7 +483,7 @@ def subEqAddNegRevConstr :=
       h : y ≤ x + (-x)
 
 time_cmd equivalence subEqAddNegRevConstrRed/subEqAddNegRevConstrAuto : subEqAddNegRevConstr := by
-  convexify
+  pre_dcp
 
 #print subEqAddNegRevConstrAuto
 
@@ -495,7 +495,7 @@ def addSubObj :=
       h : 0 ≤ x
 
 time_cmd equivalence addSubObjRed/addSubObjAuto : addSubObj := by
-  convexify
+  pre_dcp
 
 #print addSubObjAuto
 
@@ -508,7 +508,7 @@ def addSubConstr :=
       h2 : x + (x - y) ≤ 1
 
 time_cmd equivalence addSubConstrRed/addSubConstrAuto : addSubConstr := by
-  convexify
+  pre_dcp
 
 #print addSubConstrAuto
 
@@ -520,7 +520,7 @@ def addSubRevObj :=
       h : 0 ≤ x
 
 time_cmd equivalence addSubRevObjRed/addSubRevObjAuto : addSubRevObj := by
-  convexify
+  pre_dcp
 
 #print addSubRevObjAuto
 
@@ -533,7 +533,7 @@ def addSubRevConstr :=
       h2 : (1 + x) - x ≤ 1
 
 time_cmd equivalence addSubRevConstrRed/addSubRevConstrAuto : addSubRevConstr := by
-  convexify
+  pre_dcp
 
 #print addSubRevConstrAuto
 
@@ -545,7 +545,7 @@ def addMulObj :=
       hx : 0 < x
 
 time_cmd equivalence addMulObjRed/addMulObjAuto : addMulObj := by
-  convexify
+  pre_dcp
 
 #print addMulObjAuto
 
@@ -558,7 +558,7 @@ def addMulConstr :=
       h : (-1 + sqrt x) * sqrt x ≤ 1
 
 time_cmd equivalence addMulConstrRed/addMulConstrAuto : addMulConstr := by
-  convexify
+  pre_dcp
 
 #print addMulConstrAuto
 
@@ -570,7 +570,7 @@ def addMulRevObj :=
       hx : 0 ≤ x
 
 time_cmd equivalence addMulRevObjRed/addMulRevObjAuto : addMulRevObj := by
-  convexify
+  pre_dcp
 
 #print addMulRevObjAuto
 
@@ -583,7 +583,7 @@ def addMulRevConstr :=
       h : 2 * x + 3 * x ≤ 1
 
 time_cmd equivalence addMulRevConstrRed/addMulRevConstrAuto : addMulRevConstr := by
-  convexify
+  pre_dcp
 
 #print addMulRevConstrAuto
 
@@ -595,7 +595,7 @@ def mulAddObj :=
       hx : 0 < x
 
 time_cmd equivalence mulAddObjRed/mulAddObjAuto : mulAddObj := by
-  convexify
+  pre_dcp
 
 #print mulAddObjAuto
 
@@ -608,7 +608,7 @@ def mulAddConstr :=
       h : sqrt x * (-1 + sqrt x) ≤ 1
 
 time_cmd equivalence mulAddConstrRed/mulAddConstrAuto : mulAddConstr := by
-  convexify
+  pre_dcp
 
 #print mulAddConstrAuto
 
@@ -620,7 +620,7 @@ def mulAddRevObj :=
       hx : 0 ≤ x
 
 time_cmd equivalence mulAddRevObjRed/mulAddRevObjAuto : mulAddRevObj := by
-  convexify
+  pre_dcp
 
 #print mulAddRevObjAuto
 
@@ -633,7 +633,7 @@ def mulAddRevConstr :=
       h : x * 2 + x * 3 ≤ 1
 
 time_cmd equivalence mulAddRevConstrRed/mulAddRevConstrAuto : mulAddRevConstr := by
-  convexify
+  pre_dcp
 
 #print mulAddRevConstrAuto
 
@@ -645,7 +645,7 @@ def mulSubObj :=
       hx : 0 < x
 
 time_cmd equivalence mulSubObjRed/mulSubObjAuto : mulSubObj := by
-  convexify
+  pre_dcp
 
 #print mulSubObjAuto
 
@@ -658,7 +658,7 @@ def mulSubConstr :=
       h : sqrt x * (sqrt x - 1) ≤ 1
 
 time_cmd equivalence mulSubConstrRed/mulSubConstrAuto : mulSubConstr := by
-  convexify
+  pre_dcp
 
 #print mulSubConstrAuto
 
@@ -670,7 +670,7 @@ def mulSubRevObj :=
       hx : 0 ≤ x
 
 time_cmd equivalence mulSubRevObjRed/mulSubRevObjAuto : mulSubRevObj := by
-  convexify
+  pre_dcp
 
 #print mulSubRevObjAuto
 
@@ -683,7 +683,7 @@ def mulSubRevConstr :=
       h : x * 2 - x * 3 ≤ 1
 
 time_cmd equivalence mulSubRevConstrRed/mulSubRevConstrAuto : mulSubRevConstr := by
-  convexify
+  pre_dcp
 
 #print mulSubRevConstrAuto
 
@@ -695,7 +695,7 @@ def addDivObj :=
       hx : 0 ≤ x
 
 time_cmd equivalence addDivObjRed/addDivObjAuto : addDivObj := by
-  convexify
+  pre_dcp
 
 #print addDivObjAuto
 
@@ -709,7 +709,7 @@ def addDivConstr :=
       h : (exp x + 1) / (exp y) ≤ 1
 
 time_cmd equivalence addDivConstrRed/addDivConstrAuto : addDivConstr := by
-  convexify
+  pre_dcp
 
 #print addDivConstrAuto
 
@@ -721,7 +721,7 @@ def addDivRevObj :=
       hx : 0 < x
 
 time_cmd equivalence addDivRevObjRed/addDivRevObjAuto : addDivRevObj := by
-  convexify
+  pre_dcp
 
 #print addDivRevObjAuto
 
@@ -733,7 +733,7 @@ def addDivRevConstr :=
       h : (x / 2) + ((-x) / 2) ≤ x
 
 time_cmd equivalence addDivRevConstrRed/addDivRevConstrAuto : addDivRevConstr := by
-  convexify
+  pre_dcp
 
 #print addDivRevConstrAuto
 
@@ -745,7 +745,7 @@ def mulDivObj :=
       hx : 0 < x
 
 time_cmd equivalence mulDivObjRed/mulDivObjAuto : mulDivObj := by
-  convexify
+  pre_dcp
 
 #print mulDivObjAuto
 
@@ -758,7 +758,7 @@ def mulDivConstr :=
       h : (sqrt x) * (sqrt x / 2) ≤ 1
 
 time_cmd equivalence mulDivConstrRed/mulDivConstrAuto : mulDivConstr := by
-  convexify
+  pre_dcp
 
 #print mulDivConstrAuto
 
@@ -770,7 +770,7 @@ def mulDivRevObj :=
       hx : 0 < x
 
 time_cmd equivalence mulDivRevObjRed/mulDivRevObjAuto : mulDivRevObj := by
-  convexify
+  pre_dcp
 
 #print mulDivRevObjAuto
 
@@ -783,7 +783,7 @@ def mulDivRevConstr :=
       h : (x * y) / x ≤ 1
 
 time_cmd equivalence mulDivRevConstrRed/mulDivRevConstrAuto : mulDivRevConstr := by
-  convexify
+  pre_dcp
 
 #print mulDivRevConstrAuto
 
@@ -795,7 +795,7 @@ def divSelfObj :=
       hx : 0 < x
 
 time_cmd equivalence divSelfObjRed/divSelfObjAuto : divSelfObj := by
-  convexify
+  pre_dcp
 
 #print divSelfObjAuto
 
@@ -808,7 +808,7 @@ def divSelfConstr :=
       h : (x / x) * y ≤ 1
 
 time_cmd equivalence divSelfConstrRed/divSelfConstrAuto : divSelfConstr := by
-  convexify
+  pre_dcp
 
 #print divSelfConstrAuto
 
@@ -823,7 +823,7 @@ def powAddRevObj :=
       hx : 0 < x
 
 time_cmd equivalence powAddRevObjRed/powAddRevObjAuto : powAddRevObj := by
-  convexify
+  pre_dcp
 
 #print powAddRevObjAuto
 
@@ -836,7 +836,7 @@ def powAddRevConstr :=
       h : (sqrt x) * (sqrt x) ≤ 1
 
 time_cmd equivalence powAddRevConstrRed/powAddRevConstrAuto : powAddRevConstr := by
-  convexify
+  pre_dcp
 
 #print powAddRevConstrAuto
 
@@ -848,7 +848,7 @@ def mulPowObj :=
       hx : 0 < x
 
 time_cmd equivalence mulPowObjRed/mulPowObjAuto : mulPowObj := by
-  convexify
+  pre_dcp
 
 #print mulPowObjAuto
 
@@ -861,7 +861,7 @@ def mulPowConstr :=
       h : ((x * (sqrt x)) ^ (2 : ℝ) / x) ≤ 1
 
 time_cmd equivalence mulPowConstrRed/mulPowConstrAuto : mulPowConstr := by
-  convexify
+  pre_dcp
 
 #print mulPowConstrAuto
 
@@ -873,7 +873,7 @@ def mulPowRevObj :=
       hx : 0 < x
 
 time_cmd equivalence mulPowRevObjRed/mulPowRevObjAuto : mulPowRevObj := by
-  convexify
+  pre_dcp
 
 #print mulPowRevObjAuto
 
@@ -886,7 +886,7 @@ def mulPowRevConstr :=
       h : (((sqrt x) ^ (2 : ℝ)) * ((sqrt (x + 1)) ^ (2 : ℝ))) ≤ 1
 
 time_cmd equivalence mulPowRevConstrRed/mulPowRevConstrAuto : mulPowRevConstr := by
-  convexify
+  pre_dcp
 
 #print mulPowRevConstrAuto
 
@@ -898,7 +898,7 @@ def powMulRevObj :=
       hx : 0 < x
 
 time_cmd equivalence powMulRevObjRed/powMulRevObjAuto : powMulRevObj := by
-  convexify
+  pre_dcp
 
 #print powMulRevObjAuto
 
@@ -911,7 +911,7 @@ def powMulRevConstr :=
       h : ((x ^ (2 : ℝ)) ^ (2 : ℝ)) ≤ 1
 
 time_cmd equivalence powMulRevConstrRed/powMulRevConstrAuto : powMulRevConstr := by
-  convexify
+  pre_dcp
 
 #print powMulRevConstrAuto
 
@@ -923,7 +923,7 @@ def divPowObj :=
       hx : 0 < x
 
 time_cmd equivalence divPowObjRed/divPowObjAuto : divPowObj := by
-  convexify
+  pre_dcp
 
 #print divPowObjAuto
 
@@ -936,7 +936,7 @@ def divPowConstr :=
       h : (1 / x) ^ (2 : ℝ) ≤ 1
 
 time_cmd equivalence divPowConstrRed/divPowConstrAuto : divPowConstr := by
-  convexify
+  pre_dcp
 
 #print divPowConstrAuto
 
@@ -948,7 +948,7 @@ def divPowRevObj :=
       hx : 0 < x
 
 time_cmd equivalence divPowRevObjRed/divPowRevObjAuto : divPowRevObj := by
-  convexify
+  pre_dcp
 
 #print divPowRevObjAuto
 
@@ -961,7 +961,7 @@ def divPowRevConstr :=
       h : ((x + x) ^ (2 : ℝ) / x ^ (2 : ℝ)) ≤ x
 
 time_cmd equivalence divPowRevConstrRed/divPowRevConstrAuto : divPowRevConstr := by
-  convexify
+  pre_dcp
 
 #print divPowRevConstrAuto
 
@@ -973,7 +973,7 @@ def powSubRevObj :=
       hx : 0 < x
 
 time_cmd equivalence powSubRevObjRed/powSubRevObjAuto : powSubRevObj := by
-  convexify
+  pre_dcp
 
 #print powSubRevObjAuto
 
@@ -986,7 +986,7 @@ def powSubRevConstr :=
       h : ((x ^ (2 : ℝ)) / (sqrt x)) ≤ 1
 
 time_cmd equivalence powSubRevConstrRed/powSubRevConstrAuto : powSubRevConstr := by
-  convexify
+  pre_dcp
 
 #print powSubRevConstrAuto
 
@@ -998,7 +998,7 @@ def divPowEqMulPowNegObj :=
       hx : 0 < x
 
 time_cmd equivalence divPowEqMulPowNegObjRed/divPowEqMulPowNegObjAuto : divPowEqMulPowNegObj := by
-  convexify
+  pre_dcp
 
 #print divPowEqMulPowNegObjAuto
 
@@ -1011,7 +1011,7 @@ def divPowEqMulPowNegConstr :=
       h : 1 / (x ^ (2 : ℝ)) ≤ 1
 
 time_cmd equivalence divPowEqMulPowNegConstrRed/divPowEqMulPowNegConstrAuto : divPowEqMulPowNegConstr := by
-  convexify
+  pre_dcp
 
 #print divPowEqMulPowNegConstrAuto
 
@@ -1023,7 +1023,7 @@ def oneDivEqPowNegOneObj :=
       hx : 0 < x
 
 time_cmd equivalence oneDivEqPowNegOneObjRed/oneDivEqPowNegOneObjAuto : oneDivEqPowNegOneObj := by
-  convexify
+  pre_dcp
 
 #print oneDivEqPowNegOneObjAuto
 
@@ -1036,7 +1036,7 @@ def oneDivEqPowNegOneConstr :=
       h : 1 / (sqrt x) ≤ 1
 
 time_cmd equivalence oneDivEqPowNegOneConstrRed/oneDivEqPowNegOneConstrAuto : oneDivEqPowNegOneConstr := by
-  convexify
+  pre_dcp
 
 #print oneDivEqPowNegOneConstrAuto
 
@@ -1048,7 +1048,7 @@ def sqrtEqRpowObj :=
       hx : 0 < x
 
 time_cmd equivalence sqrtEqRpowObjRed/sqrtEqRpowObjAuto : sqrtEqRpowObj := by
-  convexify
+  pre_dcp
 
 #print sqrtEqRpowObjAuto
 
@@ -1061,7 +1061,7 @@ def sqrtEqRpowConstr :=
       h : (sqrt x) * (sqrt x) ≤ 1
 
 time_cmd equivalence sqrtEqRpowConstrRed/sqrtEqRpowConstrAuto : sqrtEqRpowConstr := by
-  convexify
+  pre_dcp
 
 #print sqrtEqRpowConstrAuto
 
@@ -1073,7 +1073,7 @@ def powHalfTwoObj :=
       hx : 0 < x
 
 time_cmd equivalence powHalfTwoObjRed/powHalfTwoObjAuto : powHalfTwoObj := by
-  convexify
+  pre_dcp
 
 #print powHalfTwoObjAuto
 
@@ -1086,7 +1086,7 @@ def powHalfTwoConstr :=
       h : (sqrt x) ^ (2 : ℝ) ≤ 1
 
 time_cmd equivalence powHalfTwoConstrRed/powHalfTwoConstrAuto : powHalfTwoConstr := by
-  convexify
+  pre_dcp
 
 #print powHalfTwoConstrAuto
 
@@ -1101,7 +1101,7 @@ def expAddObj :=
       hx : 0 < x
 
 time_cmd equivalence expAddObjRed/expAddObjAuto : expAddObj := by
-  convexify
+  pre_dcp
 
 #print expAddObjAuto
 
@@ -1114,7 +1114,7 @@ def expAddConstr :=
       h : exp ((log x) + 2) ≤ 10
 
 time_cmd equivalence expAddConstrRed/expAddConstrAuto : expAddConstr := by
-  convexify
+  pre_dcp
 
 #print expAddConstrAuto
 
@@ -1126,7 +1126,7 @@ def expAddRevObj :=
       hx : 0 < x
 
 time_cmd equivalence expAddRevObjRed/expAddRevObjAuto : expAddRevObj := by
-  convexify
+  pre_dcp
 
 #print expAddRevObjAuto
 
@@ -1139,7 +1139,7 @@ def expAddRevConstr :=
       h : exp x * exp x ≤ 1
 
 time_cmd equivalence expAddRevConstrRed/expAddRevConstrAuto : expAddRevConstr := by
-  convexify
+  pre_dcp
 
 #print expAddRevConstrAuto
 
@@ -1151,7 +1151,7 @@ def expSubObj :=
       hx : 0 < x
 
 time_cmd equivalence expSubObjRed/expSubObjAuto : expSubObj := by
-  convexify
+  pre_dcp
 
 #print expSubObjAuto
 
@@ -1164,7 +1164,7 @@ def expSubConstr :=
       h : exp ((log x) - 2) ≤ 1
 
 time_cmd equivalence expSubConstrRed/expSubConstrAuto : expSubConstr := by
-  convexify
+  pre_dcp
 
 #print expSubConstrAuto
 
@@ -1176,7 +1176,7 @@ def expSubRevObj :=
       hx : 0 < x
 
 time_cmd equivalence expSubRevObjRed/expSubRevObjAuto : expSubRevObj := by
-  convexify
+  pre_dcp
 
 #print expSubRevObjAuto
 
@@ -1189,7 +1189,7 @@ def expSubRevConstr :=
       h : exp (2 * x) / exp x ≤ 1
 
 time_cmd equivalence expSubRevConstrRed/expSubRevConstrAuto : expSubRevConstr := by
-  convexify
+  pre_dcp
 
 #print expSubRevConstrAuto
 
@@ -1201,7 +1201,7 @@ def expMulObj :=
       hx : 0 < x
 
 time_cmd equivalence expMulObjRed/expMulObjAuto : expMulObj := by
-  convexify
+  pre_dcp
 
 #print expMulObjAuto
 
@@ -1214,7 +1214,7 @@ def expMulConstr :=
       h : exp (log x * 2) ≤ 1
 
 time_cmd equivalence expMulConstrRed/expMulConstrAuto : expMulConstr := by
-  convexify
+  pre_dcp
 
 #print expMulConstrAuto
 
@@ -1226,7 +1226,7 @@ def expMulRevObj :=
       hx : 0 < x
 
 time_cmd equivalence expMulRevObjRed/expMulRevObjAuto : expMulRevObj := by
-  convexify
+  pre_dcp
 
 #print expMulRevObjAuto
 
@@ -1238,7 +1238,7 @@ def expMulRevConstr :=
       h : ((exp x) ^ (2 : ℝ)) ≤ 1
 
 time_cmd equivalence expMulRevConstrRed/expMulRevConstrAuto : expMulRevConstr := by
-  convexify
+  pre_dcp
 
 #print expMulRevConstrAuto
 
@@ -1250,7 +1250,7 @@ def expNegEqOneDivObj :=
       h : 1 ≤ x
 
 time_cmd equivalence expNegEqOneDivObjRed/expNegEqOneDivObjAuto : expNegEqOneDivObj := by
-  convexify
+  pre_dcp
 
 #print expNegEqOneDivObjAuto
 
@@ -1263,7 +1263,7 @@ def expNegEqOneDivConstr :=
       h : x * exp (-(log x)) ≤ x
 
 time_cmd equivalence expNegEqOneDivConstrRed/expNegEqOneDivConstrAuto : expNegEqOneDivConstr := by
-  convexify
+  pre_dcp
 
 #print expNegEqOneDivConstrAuto
 
@@ -1275,7 +1275,7 @@ def expNegEqOneDivRevObj :=
       h : 1 ≤ x
 
 time_cmd equivalence expNegEqOneDivRevObjRed/expNegEqOneDivRevObjAuto : expNegEqOneDivRevObj := by
-  convexify
+  pre_dcp
 
 #print expNegEqOneDivRevObjAuto
 
@@ -1287,7 +1287,7 @@ def expNegEqOneDivRevConstr :=
       h : 1 / (exp x) ≤ 1
 
 time_cmd equivalence expNegEqOneDivRevConstrRed/expNegEqOneDivRevConstrAuto : expNegEqOneDivRevConstr := by
-  convexify
+  pre_dcp
 
 #print expNegEqOneDivRevConstrAuto
 
@@ -1299,7 +1299,7 @@ def logMulObj :=
       hx : 0 < x
 
 time_cmd equivalence logMulObjRed/logMulObjAuto : logMulObj := by
-  convexify
+  pre_dcp
 
 #print logMulObjAuto
 
@@ -1312,7 +1312,7 @@ def logMulConstr :=
       h : 1 ≤ log (x * x)
 
 time_cmd equivalence logMulConstrRed/logMulConstrAuto : logMulConstr := by
-  convexify
+  pre_dcp
 
 #print logMulConstrAuto
 
@@ -1324,7 +1324,7 @@ def logMulRevObj :=
       hx : 0 < x
 
 time_cmd equivalence logMulRevObjRed/logMulRevObjAuto : logMulRevObj := by
-  convexify
+  pre_dcp
 
 #print logMulRevObjAuto
 
@@ -1337,7 +1337,7 @@ def logMulRevConstr :=
       h : exp (log x + log (x + 1)) ≤ 1
 
 time_cmd equivalence logMulRevConstrRed/logMulRevConstrAuto : logMulRevConstr := by
-  convexify
+  pre_dcp
 
 #print logMulRevConstrAuto
 
@@ -1349,7 +1349,7 @@ def logDivObj :=
       hx : 0 < x
 
 time_cmd equivalence logDivObjRed/logDivObjAuto : logDivObj := by
-  convexify
+  pre_dcp
 
 #print logDivObjAuto
 
@@ -1362,7 +1362,7 @@ def logDivConstr :=
       h : log ((exp x) / x) ≤ 1
 
 time_cmd equivalence logDivConstrRed/logDivConstrAuto : logDivConstr := by
-  convexify
+  pre_dcp
 
 #print logDivConstrAuto
 
@@ -1374,7 +1374,7 @@ def logDivRevObj :=
       hx : 0 < x
 
 time_cmd equivalence logDivRevObjRed/logDivRevObjAuto : logDivRevObj := by
-  convexify
+  pre_dcp
 
 #print logDivRevObjAuto
 
@@ -1387,7 +1387,7 @@ def logDivRevConstr :=
       h : - (log (x ^ (2 : ℝ)) - log x) ≤ 1
 
 time_cmd equivalence logDivRevConstrRed/logDivRevConstrAuto : logDivRevConstr := by
-  convexify
+  pre_dcp
 
 #print logDivRevConstrAuto
 
@@ -1399,7 +1399,7 @@ def expLogObj :=
       hx : 0 < x
 
 time_cmd equivalence expLogObjRed/expLogObjAuto : expLogObj := by
-  convexify
+  pre_dcp
 
 #print expLogObjAuto
 
@@ -1412,7 +1412,7 @@ def expLogConstr :=
       h : exp (log x) ≤ 1
 
 time_cmd equivalence expLogConstrRed/expLogConstrAuto : expLogConstr := by
-  convexify
+  pre_dcp
 
 #print expLogConstrAuto
 
@@ -1424,7 +1424,7 @@ def logExpObj :=
       hx : 0 ≤ x
 
 time_cmd equivalence logExpObjRed/logExpObjAuto : logExpObj := by
-  convexify
+  pre_dcp
 
 #print logExpObjAuto
 
@@ -1436,7 +1436,7 @@ def logExpConstr :=
       h : log (exp x) ≤ 1
 
 time_cmd equivalence logExpConstrRed/logExpConstrAuto : logExpConstr := by
-  convexify
+  pre_dcp
 
 #print logExpConstrAuto
 

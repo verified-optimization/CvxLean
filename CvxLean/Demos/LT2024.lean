@@ -1,8 +1,4 @@
-import CvxLean.Command.Equivalence
-import CvxLean.Command.Reduction
-import CvxLean.Command.Solve
-import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean
 
 namespace LT2024
 
@@ -37,7 +33,7 @@ def p₂ :=
 -- solve p₂
 
 equivalence eqv₂/q₂ : p₂ := by
-  convexify
+  pre_dcp
 
 solve q₂
 
@@ -66,7 +62,7 @@ equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')
   change_of_variables! (d') (d ↦ exp d')
-  convexify
+  pre_dcp
 
 solve q₃
 

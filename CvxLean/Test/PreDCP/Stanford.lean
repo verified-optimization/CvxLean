@@ -3,7 +3,7 @@ import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Tactic.PreDCP.PreDCP
 
 
 namespace Stanford
@@ -28,7 +28,7 @@ def e367 :=
 
 set_option maxHeartbeats 100000000
 time_cmd reduction red367/dcp367 : e367 := by
-  convexify
+  pre_dcp
   dcp
 
 #print dcp367

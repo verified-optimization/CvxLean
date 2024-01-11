@@ -3,7 +3,7 @@ import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Tactic.PreDCP.PreDCP
 
 namespace Quiz
 
@@ -18,7 +18,7 @@ def quiz1 :=
       h : 0 < x
 
 time_cmd equivalence eq1/dcpquiz1 : quiz1 := by
-  convexify
+  pre_dcp
 
 def quiz2 :=
   optimization (x y : ℝ)
@@ -28,7 +28,7 @@ def quiz2 :=
       h₂ : 0 < y
 
 time_cmd equivalence eq2/dcpquiz2 : quiz2 := by
-  convexify
+  pre_dcp
 
 def quiz3 :=
   optimization (x : ℝ)
@@ -37,7 +37,7 @@ def quiz3 :=
       h : 0 ≤ x
 
 time_cmd equivalence eq3/dcpquiz3 : quiz3 := by
-  convexify
+  pre_dcp
 
 def quiz4 :=
   optimization (x : ℝ)
@@ -46,7 +46,7 @@ def quiz4 :=
       h : 0 ≤ x
 
 time_cmd equivalence eq4/dcpquiz4 : quiz4 := by
-  convexify
+  pre_dcp
 
 def quiz5 :=
   optimization (x : ℝ)
@@ -55,7 +55,7 @@ def quiz5 :=
       h : 1000 ≤ x -- irrelevant
 
 time_cmd equivalence eq5/dcpquiz5 : quiz5 := by
-  convexify
+  pre_dcp
 
 def quiz6 :=
   optimization (x : ℝ)
@@ -64,7 +64,7 @@ def quiz6 :=
       h : 0 ≤ x
 
 time_cmd equivalence eq6/dcpquiz6 : quiz6 := by
-  convexify
+  pre_dcp
 
 def quiz7 :=
   optimization (x : ℝ)
@@ -73,7 +73,7 @@ def quiz7 :=
       h : 0 < x
 
 time_cmd equivalence eq7/dcpquiz7 : quiz7 := by
-  convexify
+  pre_dcp
 
 def quiz8 :=
   optimization (x : ℝ)
@@ -82,7 +82,7 @@ def quiz8 :=
       h : 0 ≤ x
 
 time_cmd equivalence eq8/dcpquiz8 : quiz8 := by
-  convexify
+  pre_dcp
 
 def quiz9 :=
   optimization (x y : ℝ)
@@ -92,7 +92,7 @@ def quiz9 :=
       h₂ : 0 < y
 
 time_cmd equivalence eq9/dcpquiz9 : quiz9 := by
-  convexify
+  pre_dcp
 
 def quiz10 :=
   optimization (x : ℝ)
@@ -101,7 +101,7 @@ def quiz10 :=
       h : 0 ≤ x
 
 time_cmd equivalence eq10/dcpquiz10 : quiz10 := by
-  convexify
+  pre_dcp
 
 end
 

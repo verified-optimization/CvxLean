@@ -1,7 +1,7 @@
 import CvxLean.Command.Solve
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Tactic.PreDCP.PreDCP
 
 namespace MainExample
 
@@ -17,7 +17,7 @@ def p :=
       h2 : 1 / (sqrt x) ≤ (exp x)
 
 time_cmd equivalence eq/q : p := by
-  convexify
+  pre_dcp
 
 #print q
 -- def q : Minimization ℝ ℝ :=

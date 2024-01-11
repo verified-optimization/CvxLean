@@ -3,7 +3,7 @@ import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Tactic.PreDCP.PreDCP
 
 namespace GP
 
@@ -22,7 +22,7 @@ def gp1 :=
 
 time_cmd reduction red1/dcp1 : gp1 := by
   change_of_variables! (u) (x ↦ exp u)
-  convexify
+  pre_dcp
 
 #print dcp1
 -- def dcp1 : Minimization ℝ ℝ :=
@@ -48,7 +48,7 @@ def gp2 :=
 time_cmd reduction red2/dcp2 : gp2 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
-  convexify
+  pre_dcp
 
 #print dcp2
 -- def dcp2 : Minimization (ℝ × ℝ) ℝ :=
@@ -74,7 +74,7 @@ def gp3 :=
 time_cmd reduction red3/dcp3 : gp3 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
-  convexify
+  pre_dcp
 
 #print dcp3
 -- def dcp3 : Minimization (ℝ × ℝ) ℝ :=
@@ -106,7 +106,7 @@ time_cmd reduction red4/dcp4 : gp4 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
   change_of_variables! (w) (z ↦ exp w)
-  convexify
+  pre_dcp
 
 solve dcp4
 
@@ -142,7 +142,7 @@ time_cmd reduction red5/dcp5 : gp5 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
   change_of_variables! (w) (z ↦ exp w)
-  convexify
+  pre_dcp
 
 #print dcp5
 -- def dcp5 : Minimization (ℝ × ℝ × ℝ) ℝ :=
@@ -181,7 +181,7 @@ time_cmd reduction red6/dcp6 : gp6 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')
   change_of_variables! (d') (d ↦ exp d')
-  convexify
+  pre_dcp
 
 #print dcp6
 -- def dcp6 : Minimization (ℝ × ℝ × ℝ) ℝ :=
@@ -222,7 +222,7 @@ time_cmd reduction red7/dcp7 : gp7 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
   change_of_variables! (w) (z ↦ exp w)
-  convexify
+  pre_dcp
 
 #print dcp7
 -- def dcp7 : Minimization (ℝ × ℝ × ℝ) ℝ :=
@@ -264,7 +264,7 @@ time_cmd reduction red8/dcp8 : gp8 := by
   change_of_variables! (w') (w ↦ exp w')
   change_of_variables! (A') (A ↦ exp A')
   change_of_variables! (r') (r ↦ exp r')
-  convexify
+  pre_dcp
 
 solve dcp8
 

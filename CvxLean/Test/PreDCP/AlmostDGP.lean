@@ -3,7 +3,7 @@ import CvxLean.Command.Reduction
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Tactic.PreDCP.PreDCP
 
 namespace AlmostGP
 
@@ -23,7 +23,7 @@ def agp1 :=
 
 time_cmd reduction reda1/dcpa1 : agp1 := by
   change_of_variables! (u) (x ↦ Real.exp u)
-  convexify
+  pre_dcp
 
 #print dcpa1
 -- def dcpa1 : Minimization ℝ ℝ :=
@@ -51,7 +51,7 @@ set_option trace.Meta.debug true
 time_cmd reduction reda2/dcpa2 : agp2 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
-  convexify
+  pre_dcp
 
 #print dcpa2
 -- def dcpa2 : Minimization (ℝ × ℝ) ℝ :=
@@ -83,7 +83,7 @@ time_cmd reduction reda3/dcpa3 : agp3 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
   change_of_variables! (w) (z ↦ Real.exp w)
-  convexify
+  pre_dcp
 
 #print dcpa3
 -- def dcpa3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
@@ -114,7 +114,7 @@ set_option trace.Meta.debug true
 time_cmd reduction reda4/dcpa4 : agp4 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
-  convexify
+  pre_dcp
 
 #print dcpa4
 -- def dcpa4 : Minimization (ℝ × ℝ) ℝ :=
@@ -140,7 +140,7 @@ end AlmostDGP4
 
 -- reduction reda5/dcpa5 : agp5 := by
 --   map_exp
---   try { convexify } -- Should fail.
+--   try { pre_dcp } -- Should fail.
 
 -- end AlmostDGP5
 
@@ -157,7 +157,7 @@ end AlmostDGP4
 
 -- reduction reda6/dcpa6 : agp6 := by
 --   map_exp
---   try { convexify } -- Should fail.
+--   try { pre_dcp } -- Should fail.
 
 -- end AlmostDGP6
 

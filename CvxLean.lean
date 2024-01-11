@@ -1,2 +1,6 @@
 import CvxLean.Command.Solve
-import CvxLean.Tactic.Convexify.Convexify
+import CvxLean.Command.Reduction
+import CvxLean.Command.Equivalence
+import CvxLean.Tactic.Basic.All
+import CvxLean.Tactic.PreDCP.PreDCP
+import CvxLean.Tactic.DCP.DCP

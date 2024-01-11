@@ -1,5 +1,5 @@
 import Lean
-import CvxLean.Tactic.Convexify.Egg.EggTypes
+import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
 open Lean
 

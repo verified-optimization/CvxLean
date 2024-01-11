@@ -1,6 +1,6 @@
 import Lean
 import Std.Linter.UnreachableTactic
-import CvxLean.Tactic.Convexify.RewriteMapExt
+import CvxLean.Tactic.PreDCP.RewriteMapExt
 
 namespace CvxLean
 
