@@ -258,7 +258,8 @@ partial def findVConditions (originalConstrVars : Array LocalDecl) (constraints 
             if let some e' := e then
               return vcondData.push (Sum.inr e')
             else
-              throwError "Variable condition {n} not found or inferred: \n {vcond} {constraints}."
+              throwError
+                "Variable condition for {atom.id} not found or inferred: \n {vcond} {constraints}."
 
     return (Tree.node vcondData childrenVCondData)
   | Tree.leaf _, Tree.leaf _ => pure (Tree.leaf ())

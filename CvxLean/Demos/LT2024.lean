@@ -15,7 +15,7 @@ def p₁ :=
     subject to
       c1 : y = 2 * x - 3
       c2 : x ^ (2 : ℝ) ≤ 2 -- TODO: remove ": ℝ"
-      c3 : x ≤ 3
+      c3 : x ≤ 6
 
 solve p₁
 
@@ -34,6 +34,7 @@ def p₂ :=
 
 equivalence eqv₂/q₂ : p₂ := by
   convexify
+  norm_num
 
 solve q₂
 
@@ -58,18 +59,13 @@ def p₃ (Awall Aflr α β γ δ: ℝ) :=
       c8 : γ ≤ d / w
       c9 : d / w ≤ δ
 
---solve p₃
-
 equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
-  change_of_variables (h') (h ↦ exp h')
-  change_of_variables (w') (w ↦ exp w')
-  change_of_variables (d') (d ↦ exp d')
-  -- TODO: remove positive constraints. Tactic remove_trivial_constraints
-  simp only [exp_pos, true_and]
+  change_of_variables! (h') (h ↦ exp h')
+  change_of_variables! (w') (w ↦ exp w')
+  change_of_variables! (d') (d ↦ exp d')
   convexify
 
 solve q₃
--- solve p₃ that's what I really want
 
 #print q₃.reduced
 
@@ -77,7 +73,7 @@ solve q₃
 #eval q₃.solution
 #eval q₃.value
 
-#check eqv₃.psi
+#check eqv₃
 -- TODO: Float maps so that we can chain equivalences.
 -- or change solve.
 -- We need:
