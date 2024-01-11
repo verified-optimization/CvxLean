@@ -23,8 +23,7 @@ def agp1 :=
         h2 : x ^ (2 : ℝ) - 10.123 ≤ 0
 
 time_cmd reduction reda1/dcpa1 : agp1 := by
-  change_of_variables (u) (x ↦ Real.exp u)
-  remove_trivial_constrs
+  change_of_variables! (u) (x ↦ Real.exp u)
   convexify
 
 #print dcpa1
@@ -82,7 +81,9 @@ def agp3 :=
       h7 : x * y = z
 
 time_cmd reduction reda3/dcpa3 : agp3 := by
-  map_exp
+  change_of_variables! (u) (x ↦ Real.exp u)
+  change_of_variables! (v) (y ↦ Real.exp v)
+  change_of_variables! (w) (z ↦ Real.exp w)
   convexify
 
 #print dcpa3
@@ -110,8 +111,10 @@ def agp4 :=
       h2 : 0 < y
       h3 : x * y ≤ 2 - x - y
 
+set_option trace.Meta.debug true
 time_cmd reduction reda4/dcpa4 : agp4 := by
-  map_exp
+  change_of_variables! (u) (x ↦ Real.exp u)
+  change_of_variables! (v) (y ↦ Real.exp v)
   convexify
 
 #print dcpa4

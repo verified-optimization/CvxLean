@@ -226,10 +226,11 @@ end Maps
 /- Rewriting the objective function or the constraints leads to equivalent problems. -/
 section Rewrites
 
-variable {f g : D → R}
+variable {f : D → R}
 variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
 variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
 variable {cs cs' : D → Prop}
+variable {g : D → R}
 
 def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≃ ⟨g, cs⟩ :=
   Equivalence.ofStrongEquivalence <|
