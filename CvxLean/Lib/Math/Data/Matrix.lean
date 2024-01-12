@@ -67,7 +67,7 @@ def transpose (α) (M : Matrix m n α) : Matrix n m α :=
 def diag (α) (M : Matrix n n α) : n → α :=
   fun i => M i i
 
-def mul  (M : Matrix (Fin l) (Fin m) α) (N : Matrix (Fin m) (Fin n) α) :
+def mul (M : Matrix (Fin l) (Fin m) α) (N : Matrix (Fin m) (Fin n) α) :
     Matrix (Fin l) (Fin n) α :=
   fun i k => (fun j => M i j) ⬝ᵥᶜ (fun j => N j k)
 
