@@ -38,3 +38,7 @@ jobs:
       - name: Build CvxLean
         run: |
           ./build.sh
+      - name: Test CvxLean 
+        run: |
+          lake build CvxLeanTest
+          

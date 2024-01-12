@@ -6,4 +6,3 @@ lake exe cache get
 lake run EggClean
 lake build EggConvexify
 lake build CvxLean
-lake build CvxLeanTest
