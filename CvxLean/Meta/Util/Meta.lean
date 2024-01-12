@@ -2,10 +2,12 @@ import Lean
 
 namespace Lean.Meta
 
+
+variable [MonadControlT MetaM m] [Monad m]
+
 /-- Open lambda-expression by introducing a new local declaration. Similar to
 lambdaTelescope, but for only one variable. -/
-def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α) :
-  MetaM α := do
+def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α) : MetaM α := do
   match e with
   | Expr.lam n ty body _ =>
     withLocalDeclD n ty fun fvar => do
@@ -13,7 +15,6 @@ def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α)
       x fvar body
   | _ => throwError "withLambdaBody: expected lambda-expression: {e}"
 
-variable [MonadControlT MetaM m] [Monad m]
 
 def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr))
   (k : (xs : Array Expr) → m α) : m α :=
@@ -23,8 +24,8 @@ def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr))
 partial def withLetDecls' -- TODO: SciLean conflict.
     [Inhabited α]
     (declInfos : Array (Name × (Array Expr → m Expr) × (Array Expr → m Expr)))
-    (k : (xs : Array Expr) → m α)
-    : m α :=
+    (k : (xs : Array Expr) → m α) :
+    m α :=
   loop #[]
 where
   loop [Inhabited α] (acc : Array Expr) : m α := do
@@ -34,7 +35,6 @@ where
     else
       k acc
 
--- From AESOP.
 def runMetaMAsCoreM (x : MetaM α) : CoreM α :=
   Prod.fst <$> x.run {} {}
 

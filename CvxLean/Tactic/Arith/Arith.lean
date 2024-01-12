@@ -95,7 +95,7 @@ syntax "positivity!" : tactic
 
 macro_rules
   | `(tactic| positivity!) =>
-    `(tactic| cases_and; prepare_positivity; positivity_maybe_norm_num)
+    `(tactic| intros; cases_and; prepare_positivity; positivity_maybe_norm_num)
 
 syntax "arith" : tactic
 

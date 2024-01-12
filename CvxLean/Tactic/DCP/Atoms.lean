@@ -3,7 +3,7 @@ import CvxLean.Meta.Minimization
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Tactic.DCP.AtomSyntax
 import CvxLean.Lib.Math.Data.Real
-import CvxLean.Tactic.DCP.Dcp
+import CvxLean.Tactic.DCP.Algorithm
 
 namespace CvxLean
 

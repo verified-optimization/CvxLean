@@ -1,14 +1,16 @@
 import Mathlib.Data.List.Basic
 import Mathlib.Algebra.Group.Defs
 
+open Lean
+
 instance {α} : Inhabited (Array α) where
   default := Array.empty
 
-def Array.zeroes [Zero α] (n : Nat) : Array α := 
+def Array.zeros [Zero α] (n : Nat) : Array α :=
   Array.mk (List.replicate n 0)
 
-def DArray.zeroes [Zero α] (a b : Nat) : Array (Array α) :=
-  Array.mk (List.replicate b (Array.zeroes a))
+def DArray.zeros [Zero α] (a b : Nat) : Array (Array α) :=
+  Array.mk (List.replicate b (Array.zeros a))
 
 def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
   let mut bs := #[]
@@ -17,7 +19,9 @@ def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
       bs := bs.push (as.get ⟨i, h.2⟩)
   return bs
 
-@[specialize] def zipWithMAux (f : α → β → Lean.MetaM γ) (as : Array α) (bs : Array β) (i : Nat) (cs : Array γ) : Lean.MetaM (Array γ) := do
+@[specialize] def Array.zipWithMAux (f : α → β → MetaM γ)
+    (as : Array α) (bs : Array β) (i : Nat) (cs : Array γ) :
+    MetaM (Array γ) := do
   if h : i < as.size then
     let a := as.get ⟨i, h⟩;
     if h : i < bs.size then
@@ -29,8 +33,9 @@ def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
     pure cs
 termination_by _ => as.size - i
 
-def Array.zipWithM (f : α → β → Lean.MetaM γ) (as : Array α) (bs : Array β)  : 
-  Lean.MetaM (Array γ) := zipWithMAux f as bs 0 #[]
+def Array.zipWithM (f : α → β → MetaM γ) (as : Array α) (bs : Array β) :
+    MetaM (Array γ) :=
+  zipWithMAux f as bs 0 #[]
 
 def Array.drop (n : ℕ) (as : Array α) : Array α :=
   Array.mk (as.data.drop n)
