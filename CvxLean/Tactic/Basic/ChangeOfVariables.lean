@@ -24,7 +24,7 @@ class ChangeOfVariables {D E} (c : E → D) where
 /-- -/
 def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D → Prop} (c : E → D)
     [cov : ChangeOfVariables c] (h : ∀ x, cs x → cov.condition x) :
-    ⟨f, cs⟩ ≃ ⟨fun x => f (c x), fun x => cs (c x)⟩ :=
+    ⟨f, cs⟩ ≡ ⟨fun x => f (c x), fun x => cs (c x)⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => cov.inv x
     psi := fun y => c y
@@ -77,8 +77,6 @@ instance : ChangeOfVariables (fun x : ℝ => x⁻¹) :=
     condition := fun x => x ≠ 0
     property := fun x _ => by field_simp }
 
--- NOTE(RFM): a ≠ 0 is not given as a parameter but instead added to the condition to make type
--- class inference work.
 instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a * x) :=
   { inv := fun x => (1 / a) * x
     condition := fun _ => a ≠ 0
@@ -219,7 +217,6 @@ macro_rules
     `(tactic|
         change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx);
         remove_trivial_constrs)
-
 
 end Tactic
 
