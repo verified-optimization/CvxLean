@@ -28,7 +28,7 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D â†’ R} {cs : D â
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => cov.inv x
     psi := fun y => c y
-    phi_feasibility := fun x hx => by simp [cov.property x (h x hx)]; exact hx
+    phi_feasibility := fun x hx => by simp [feasible, cov.property x (h x hx)]; exact hx
     phi_optimality := fun x hx => by simp [cov.property x (h x hx)]
     psi_feasibility := fun y hy => hy
     psi_optimality := fun y _ => by simp }
