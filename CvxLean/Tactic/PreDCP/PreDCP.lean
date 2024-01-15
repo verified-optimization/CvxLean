@@ -222,7 +222,7 @@ def evalPreDCP : Tactic := fun stx => match stx with
   | `(tactic| pre_dcp) => withMainContext do
       normNumCleanUp (useSimp := false)
       preDCPBuilder.toTactic
-      normNumCleanUp (useSimp := false)
+      -- normNumCleanUp (useSimp := false)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
