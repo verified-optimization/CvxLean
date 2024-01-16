@@ -669,7 +669,7 @@ def mkOCWithNames (objFun : Expr) (constraints : List (Lean.Name × Expr)) (orig
 
 -- TODO: Better error message when discovering a concave atom where convex is expected, and vice versa.
 /-- Construct the atom tree. -/
-def mkAtomTree (objCurv : Curvature) (originalVarsDecls : Array LocalDecl) (oc : OC Expr) :
+def mkAtomTree (objCurv : Curvature) (originalVarsDecls : Array LocalDecl) (oc : OC Expr) (extraVars : Array FVarId := #[]) :
   MetaM (
     OC Bool ×
     OC (Array MessageData) ×
@@ -681,7 +681,7 @@ withExistingLocalDecls originalVarsDecls.toList do
   let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
   trace[Meta.debug] "mkAtomTree xs: {xs}"
   -- Find atoms.
-  let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!)) c) oc
+  let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!) ++ extraVars) c) oc
     ⟨objCurv, oc.constr.map (fun _ => Curvature.ConvexSet)⟩
   let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
   let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
@@ -820,10 +820,10 @@ structure ProcessedAtomTree where
   (optimality : OC (Tree Expr Expr))
 
 /-- -/
-def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl)
+def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl) (extraVars : Array FVarId := #[])
   : MetaM ProcessedAtomTree := do
   let oc ← mkOC objFun constraints originalVarsDecls
-  let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree objCurv originalVarsDecls oc
+  let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree objCurv originalVarsDecls (extraVars := extraVars) oc
   let originalConstrVars ← mkOriginalConstrVars originalVarsDecls constraints.toArray
   let (vcondIdx, isVCond, vcondVars) ← mkVConditions originalVarsDecls oc constraints atoms args failedAtom
     failedAtomMsgs originalConstrVars
