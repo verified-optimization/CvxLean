@@ -27,7 +27,7 @@ syntax (name := equivalenceAndBwdMap)
   "equivalence'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
 /-- See `evalEquivalence` and `evalEquivalenceAndBwdMap`. -/
-def evalEquivalenceAux (probId eqvId: TSyntax `ident) (xs: Array (Syntax × Expr))
+def evalEquivalenceAux (probId eqvId : TSyntax `ident) (xs : Array (Syntax × Expr))
     (lhsStx: Syntax) (proofStx: TSyntax `Lean.Parser.Term.byTactic) (bwdMap : Bool) :
     TermElabM Unit := do
   let D ← Meta.mkFreshTypeMVar
@@ -59,20 +59,21 @@ def evalEquivalenceAux (probId eqvId: TSyntax `ident) (xs: Array (Syntax × Expr
       [probId.getId])
 
   -- Add equivalence proof to the environment.
-  let eqvTy ← inferType eqv
-  let eqvTy ← instantiateMVars eqvTy
+  let eqv ← instantiateMVars eqv
+  let eqv ← mkLambdaFVars (xs.map Prod.snd) eqv
   let eqv ← instantiateMVars eqv
   Lean.addDecl <|
     Declaration.defnDecl
       (mkDefinitionValEx eqvId.getId
       []
-      eqvTy
+      (← inferType eqv)
       eqv
       (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe)
-      [probId.getId])
+      [probId.getId, eqvId.getId])
 
   if bwdMap then
+    trace[Meta.debug] "HERE"
     -- Get psi, reduce it appropriately and convert to float.
     let psi := (← whnf eqv).getArg! 7
 
@@ -134,12 +135,11 @@ def evalEquivalenceAux (probId eqvId: TSyntax `ident) (xs: Array (Syntax × Expr
 
     try
       let psiF ← realToFloat psi
-      let psiFTy ← inferType psiF
       Lean.addAndCompile <|
         Declaration.defnDecl
           (mkDefinitionValEx (eqvId.getId ++ `backward_map)
           []
-          psiFTy
+          (← inferType psiF)
           psiF
           (Lean.ReducibilityHints.regular 0)
           (DefinitionSafety.safe)
