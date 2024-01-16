@@ -11,9 +11,9 @@ namespace Tactic.Conv
 
 open Meta Elab Parser Tactic Conv
 
-syntax (name := convObj) "conv_obj" "=>" convSeq : tactic
+syntax (name := convObj) "conv_obj" "=>" (convSeq)? : tactic
 
-syntax (name := convConstr) "conv_constr" (ident)? "=>" convSeq : tactic
+syntax (name := convConstr) "conv_constr" (ident)? "=>" (convSeq)? : tactic
 
 /-- Wrapper function to enter conv mode on an optimization problem. -/
 def convertOpt (changeObjFun : Bool) (convTac : TacticM Unit) : EquivalenceBuilder := fun _ g =>
@@ -44,16 +44,17 @@ def convertOpt (changeObjFun : Bool) (convTac : TacticM Unit) : EquivalenceBuild
 
 section ConvObj
 
-/-- Enter conv mode on the objective function. -/
-def convertObj (stx : Syntax) (convTacStx : Syntax) : EquivalenceBuilder :=
+/-- Enter conv mode on the objective function. The `shouldEval` flag is set to false when no tactics
+are applied but we still want to enter conv mode and see the goal. -/
+def convertObj (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder :=
   convertOpt (changeObjFun := true) do
-    saveTacticInfoForToken stx
-    evalTactic convTacStx
+    if shouldEval then evalTactic stx else saveTacticInfoForToken stx
 
 @[tactic convObj]
 partial def evalConvObj : Tactic := fun stx => match stx with
-  | `(tactic| conv_obj => $code) => do
-      (convertObj stx code).toTactic
+  | `(tactic| conv_obj => $code) => (convertObj true code).toTactic
+  -- Avoid errors on empty conv block.
+  | `(tactic| conv_obj =>) => do (convertObj false stx).toTactic
   | _ => throwUnsupportedSyntax
 
 end ConvObj
@@ -67,7 +68,7 @@ partial def splitAnds (goal : MVarId) : TacticM (List MVarId) := do
   | .app (.app (.const ``And _) p) _q => do
       let (mp, mq) ← match List.filterMap id <| ← Conv.congr <| goal with
         | [mp, mq] => pure (mp, mq)
-        | _ => throwError "`conv_constr` error: Unexpected number of subgoals in splitAnds."
+        | _ => throwError "`conv_constr` error: unexpected number of subgoals in `splitAnds`."
       let tag ← getLabelName p
       mp.setTag tag
       return mp :: (← splitAnds mq)
@@ -77,14 +78,13 @@ partial def splitAnds (goal : MVarId) : TacticM (List MVarId) := do
       return [goal]
 
 /-- Enter conv mode setting all constraints as subgoals. -/
-def convertConstrs (stx : Syntax) (convTacStx : Syntax) : EquivalenceBuilder :=
+def convertConstrs (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder :=
   convertOpt (changeObjFun := false) do
     replaceMainGoal <| ← splitAnds <| ← getMainGoal
-    saveTacticInfoForToken stx
-    evalTactic convTacStx
+    if shouldEval then evalTactic stx else saveTacticInfoForToken stx
 
 /-- Enter conv mode on a specific constraint. -/
-def convertConstrWithName (h : Name) (stx : Syntax) (convTacStx : Syntax) : EquivalenceBuilder :=
+def convertConstrWithName (shouldEval : Bool) (stx : Syntax) (h : Name) : EquivalenceBuilder :=
   convertOpt (changeObjFun := false) do
     let constrs ← splitAnds <| ← getMainGoal
     let mut found := false
@@ -93,8 +93,7 @@ def convertConstrWithName (h : Name) (stx : Syntax) (convTacStx : Syntax) : Equi
       if t == h then
         found := true
         replaceMainGoal [constr]
-        saveTacticInfoForToken stx
-        evalTactic convTacStx
+        if shouldEval then evalTactic stx else saveTacticInfoForToken stx
         -- Ensure that labels are not lost after tactic is applied.
         let g ← getMainGoal
         let (lhs, rhs) ← getLhsRhsCore g
@@ -111,10 +110,11 @@ def convertConstrWithName (h : Name) (stx : Syntax) (convTacStx : Syntax) : Equi
 
 @[tactic convConstr]
 partial def evalConvConstr : Tactic := fun stx => match stx with
-  | `(tactic| conv_constr => $code) => do
-        (convertConstrs stx code).toTactic
-  | `(tactic| conv_constr $h => $code) => do
-        (convertConstrWithName h.getId stx code).toTactic
+  | `(tactic| conv_constr => $code) => (convertConstrs true code).toTactic
+  | `(tactic| conv_constr $h => $code) => (convertConstrWithName true code h.getId).toTactic
+  -- Avoid errors on empty conv block.
+  | `(tactic| conv_constr =>) => do (convertConstrs false stx).toTactic
+  | `(tactic| conv_constr $h =>) => do (convertConstrWithName false stx h.getId).toTactic
   | _ => throwUnsupportedSyntax
 
 end ConvConstr
