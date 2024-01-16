@@ -1,64 +1,63 @@
--- import CvxLean.Lib.Minimization
+import CvxLean.Lib.Equivalence
+import CvxLean.Meta.Equivalence
+import CvxLean.Meta.TacticBuilder
+import CvxLean.Tactic.Basic.ShowVars
 
--- namespace CvxLean
+namespace CvxLean
 
--- open Lean
+open Lean
 
--- namespace Tactic.Conv
+namespace Tactic.Conv
 
--- open Lean.Elab Lean.Elab.Tactic Lean.Elab.Tactic.Conv Lean.Meta Meta
+open Lean.Elab Lean.Elab.Tactic Lean.Elab.Tactic.Conv Lean.Meta Meta
 
--- syntax (name := convObj)
---   "conv_obj" "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
+syntax (name := convObj)
+  "conv_obj" "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
 
--- syntax (name := convConstr)
---   "conv_constr" (ident)? "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
+syntax (name := convConstr)
+  "conv_constr" (ident)? "=>" Lean.Parser.Tactic.Conv.convSeq : tactic
 
--- /-- Wrapper function to enter conv mode on an optimization problem. -/
--- def convertOpt (goal : MVarId) (changeObjFun : Bool) (convTac : TacticM Unit) :
---   TacticM MVarId := do
---   -- Check if goal is actually an optimization problem.
---   let _ ← SolutionExpr.fromGoal goal
---   let target ← MVarId.getType goal
---   let (targetNew, proof) ← convert target do
---     -- Use `congr` to get rid of `Solution`.
---     replaceMainGoal <| List.filterMap id <| ← Conv.congr <| ← getMainGoal
---     -- Use `congr` to split objFun and constraints.
---     replaceMainGoal <| List.filterMap id <| ← Conv.congr <| ← getMainGoal
---     if let [objFunGoal, constrsGoal] ← getGoals then
---       let toIgnore := if changeObjFun then constrsGoal else objFunGoal
---       let toChange := if changeObjFun then objFunGoal else constrsGoal
---       if let [] ← evalTacticAt (← `(tactic| rfl)).raw toIgnore then
---         replaceMainGoal [toChange]
---       else
---         throwError "conv_opt error: Failed to close subgoals."
---       evalTactic (← `(conv| ext $(mkIdent `p))).raw
---       conv
---     else
---       throwError "conv_opt error: Unexpected goal type."
---   let goal ← MVarId.replaceTargetEq goal targetNew proof
---   let goal ←
---     match ← evalTacticAt (← `(tactic| try rfl)).raw goal with
---     | [goal] => return goal
---     | _ => throwError "conv_opt error: Unexpected number of subgoals."
---   return goal
+/-- Wrapper function to enter conv mode on an optimization problem. -/
+def convertOpt (changeObjFun : Bool) (convTac : TacticM Unit) : EquivalenceBuilder := fun _ g =>
+  g.withContext do
+    -- Convert to equality goal.
+    if let [gEq] ← g.apply (mkConst ``Minimization.Equivalence.ofEq) then
+      -- Use `congr` to split objFun and constraints.
+      let gs := List.filterMap id <| ← Conv.congr gEq
+      if let [objFunGoal, constrsGoal] := gs then
+        let gToIgnore := if changeObjFun then constrsGoal else objFunGoal
+        let gToChange := if changeObjFun then objFunGoal else constrsGoal
+        if let _ :: _ ← evalTacticAt (← `(tactic| rfl)) gToIgnore then
+          let failureLocation := if changeObjFun then "constraints" else "objective function"
+          throwError "`conv_opt` error: failed to close {failureLocation} subgoals."
+        if let [gToConv] ← evalTacticAt (← `(conv| ext $(mkIdent `p))) gToChange then
+          if let [gToConv] ← evalTacticAt  (← `(conv| show_vars $(mkIdent `p))) gToConv then
+            -- Apply conv tactic.
+            for mvarId in ← Tactic.run gToConv convTac do
+              liftM <| mvarId.refl <|> mvarId.inferInstance <|> pure ()
+          else
+            throwError "`conv_opt` error: failed to show optimization variables."
+        else
+          throwError "`conv_opt` error: failed to close subgoals."
+      else
+        throwError "`conv_opt` error: unexpected goal type."
+    else
+      throwError "`conv_opt` error: could not convert to equality goal."
 
--- section ConvObj
+section ConvObj
 
--- /-- Enter conv mode on the objective function. -/
--- partial def convertObj (goal : MVarId) (conv : TacticM Unit) :
---   TacticM MVarId := do
---   convertOpt goal (changeObjFun := true) do
---     replaceMainGoal <| [← getMainGoal]
---     conv
+/-- Enter conv mode on the objective function. -/
+def convertObj (conv : TacticM Unit) : EquivalenceBuilder :=
+  convertOpt (changeObjFun := true) conv
 
--- @[tactic convObj]
--- partial def evalConvObj : Tactic := fun stx => match stx with
---   | `(tactic| conv_obj => $code) => do
---     replaceMainGoal [← convertObj (← getMainGoal) do evalTactic code.raw]
---   | _ => throwUnsupportedSyntax
+@[tactic convObj]
+partial def evalConvObj : Tactic := fun stx => match stx with
+  | `(tactic| conv_obj => $code) => do
+      (convertObj (evalTactic code)).toTactic
+      saveTacticInfoForToken stx
+  | _ => throwUnsupportedSyntax
 
--- end ConvObj
+end ConvObj
 
 -- section ConvConstr
 
@@ -123,6 +122,6 @@
 
 -- end ConvConstr
 
--- end Tactic.Conv
+end Tactic.Conv
 
--- end CvxLean
+end CvxLean

@@ -138,6 +138,10 @@ end StrongEquivalence
 
 namespace Equivalence
 
+/-- Equal problems are equivalent. Note that the domain needs to be the same. -/
+def ofEq {p q : Minimization D R} (h : p = q) : p ≡ q :=
+  h ▸ Equivalence.refl (p := p)
+
 variable {p q}
 
 /-- As expected, an `Equivalence` can be built from a `StrongEquivalence`. -/

@@ -4,7 +4,7 @@ import CvxLean.Tactic.Basic.RenameVars
 import CvxLean.Tactic.Basic.RenameConstrs
 import CvxLean.Tactic.Basic.ReorderConstrs
 import CvxLean.Tactic.Basic.RemoveConstr
--- import CvxLean.Tactic.Conv.ConvOpt
+import CvxLean.Tactic.Basic.ConvOpt
 
 noncomputable section BasicTacticTest
 
@@ -59,6 +59,7 @@ example : Solution <|
   reorder_constrs [c2, c1, c4, c3]
   sorry
 
+set_option trace.Meta.debug true
 example : Solution <|
     optimization (x y z : ℝ)
       minimize x + y + z
@@ -70,8 +71,9 @@ example : Solution <|
   --   rw [Real.exp_le_exp]
   -- conv_constr cz =>
   --   rw [add_comm]
-  -- conv_obj =>
-  --   rw [add_comm]
+  conv_obj => 
+    rw [add_comm]
+
   sorry
 
 example : Solution <|
