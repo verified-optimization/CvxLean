@@ -138,9 +138,22 @@ end StrongEquivalence
 
 namespace Equivalence
 
-/-- Equal problems are equivalent. Note that the domain needs to be the same. -/
-def ofEq {p q : Minimization D R} (h : p = q) : p ≡ q :=
-  h ▸ Equivalence.refl (p := p)
+section Eq
+
+variable {p q : Minimization D R}
+
+/-- Equal problems are equivalent. Note that the domain needs to be the same. We intentionally do
+not definet his as `h ▸ Equivalence.refl (p := p)` so that `phi` and `psi` can be easily
+extracted. -/
+def ofEq (h : p = q) : p ≡ q :=
+  { phi := id,
+    psi := id,
+    phi_feasibility := fun _ hx => h ▸ hx,
+    psi_feasibility := fun _ hy => h ▸ hy,
+    phi_optimality := fun _ hx => h ▸ hx,
+    psi_optimality := fun _ hy => h ▸ hy }
+
+end Eq
 
 variable {p q}
 
