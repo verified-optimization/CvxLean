@@ -67,13 +67,12 @@ example : Solution <|
         c1 : z = x + y
         c2 : exp x ≤ exp y := by
   rename_constrs [cz, cxy]
-  -- conv_constr cxy =>
-  --   rw [Real.exp_le_exp]
-  -- conv_constr cz =>
-  --   rw [add_comm]
-  conv_obj => 
+  conv_constr cxy =>
+    rw [Real.exp_le_exp]
+  conv_constr cz =>
     rw [add_comm]
-
+  conv_obj =>
+    rw [add_comm]
   sorry
 
 example : Solution <|
