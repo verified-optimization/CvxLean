@@ -59,7 +59,6 @@ example : Solution <|
   reorder_constrs [c2, c1, c4, c3]
   sorry
 
-set_option trace.Meta.debug true
 example : Solution <|
     optimization (x y z : ℝ)
       minimize x + y + z
@@ -76,14 +75,24 @@ example : Solution <|
   sorry
 
 example : Solution <|
-  optimization (x y z : ℝ)
-    minimize x + y + z
-    subject to
-      cz : z = x + y
-      cz' : z = x + y
-      cz'' : z ≤ x + 4 := by
+    optimization (x y z : ℝ)
+      minimize x + y + z
+      subject to
+        cz : z = x + y
+        cz' : z = x + y
+        cz'' : z ≤ x + 4 := by
   remove_constr cz' by { exact cz }
   rename_constrs [czz, czz2]
+  sorry
+
+example : Solution <|
+    optimization (x y z : ℝ)
+      minimize x + y + z
+      subject to
+        c1 : 1 + 2 + 3 ≤ x
+        c2 : 2 + 3 + 4 ≤ y := by
+  conv_opt =>
+    norm_num
   sorry
 
 end BasicTacticTest

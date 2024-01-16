@@ -24,7 +24,8 @@ def mkProjs (total : Nat) (h : Expr) : MetaM (List Expr) := do
     acc := e :: acc
   return acc
 
-/-- Given a list of proofs of `aᵢ`, construct a proof of `a₁ ∧ a₂ ∧ ... ∧ aₙ`, where `total = n-1`. -/
+/-- Given a list of proofs of `aᵢ`, construct a proof of `a₁ ∧ a₂ ∧ ... ∧ aₙ`, where `total = n-1`.
+-/
 def composeAndIntro (l : List Expr) : MetaM Expr :=
   match l with
     | [] => return mkConst ``trivial
