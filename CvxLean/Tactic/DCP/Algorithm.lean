@@ -984,7 +984,7 @@ syntax (name := dcp) "dcp" : tactic
 def evalDcp : Tactic := fun stx => match stx with
   | `(tactic| dcp) => do
       DCP.dcpBuilder.toTactic
-      saveTacticInfoForToken stx
+      -- saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end Tactic

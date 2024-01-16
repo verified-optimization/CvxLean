@@ -223,7 +223,7 @@ def evalPreDCP : Tactic := fun stx => match stx with
       evalTactic <| ← `(tactic| conv_opt => norm_num1)
       preDCPBuilder.toTactic
       evalTactic <| ← `(tactic| conv_opt => norm_num1)
-      saveTacticInfoForToken stx
+      -- saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end CvxLean
