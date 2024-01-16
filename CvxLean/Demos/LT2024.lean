@@ -73,7 +73,7 @@ def p₃ (Awall Aflr α β γ δ : ℝ) :=
 
 set_option trace.Meta.debug true
 
-equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
+equivalence' eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')
   change_of_variables! (d') (d ↦ exp d')
@@ -89,7 +89,7 @@ solve q₃
 
 #check eqv₃
 
-def p₃.solution := eqv₃.psi_float q₃.solution
+def p₃.solution := eqv₃.backward_map q₃.solution
 
 #eval p₃.solution
 
