@@ -6,6 +6,17 @@ import CvxLean.Tactic.PreDCP.RewriteMapLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
 import CvxLean.Tactic.Basic.ConvOpt
 
+/-!
+# Atomatic transformation to DCP form
+
+This file defines the tactic `pre_dcp`, which calls `egg` to find a sequence of rewrites that
+turns an optimization problem into DCP form.
+
+## TODO
+
+* Use `conv` tactics instead of rewrite lemmas.
+-/
+
 namespace CvxLean
 
 open Lean Elab Meta Tactic Term IO
@@ -15,10 +26,9 @@ def EggMinimization.ofOCTree (oc : OC (String × EggTree)) : EggMinimization :=
   { objFun := EggTree.toEggString oc.objFun.2,
     constrs := Array.data <| oc.constr.map fun (h, c) => (h, EggTree.toEggString c) }
 
-/-- Given the rewrite name and direction from egg's output, find the appropriate
-tactic in the environment. It also returns a bool to indicate if the proof needs
-an intermediate equality step. Otherwise, the tactic will be applied directly.
--/
+/-- Given the rewrite name and direction from egg's output, find the appropriate tactic in the
+environment. It also returns a bool to indicate if the proof needs an intermediate equality step.
+Otherwise, the tactic will be applied directly. -/
 def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteDirection) :
     MetaM (TSyntax `tactic × Bool) := do
   match ← getTacticFromRewriteName rewriteName with
@@ -36,11 +46,9 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
             return (← `(tactic| (rw [Iff.comm]; $tac)), false)
   | _ => throwError "Unknown rewrite name {rewriteName}({direction})."
 
-/-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for
-for for constraints), return the rewrite lemma that needs to be applied. Also
-return the number of arguments of each rewrite lemma to be able to build an
-expression in `rewriteWrapperApplyExpr`.
-TODO: Use conv tactics. -/
+/-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for for for
+constraints), return the rewrite lemma that needs to be applied. Also return the number of arguments
+of each rewrite lemma to be able to build an expression in `rewriteWrapperApplyExpr`. -/
 def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :=
   if rwIdx == 0 then
     return (``Minimization.Equivalence.rewrite_objFun, 1)
@@ -85,12 +93,10 @@ def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) 
   let args ← Array.range (numArgs + 1) |>.mapM fun _ => mkFreshExprMVar none
   return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
 
-/-- Given an egg rewrite and a current goal with all the necessary information
-about the minimization problem, we find the appropriate rewrite to apply, and
-output the remaining goals. -/
+/-- Given an egg rewrite and a current goal with all the necessary information about the
+minimization problem, we find the appropriate rewrite to apply, and output the remaining goals. -/
 def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String ℕ) :
     EquivalenceBuilder := fun eqvExpr g => g.withContext do
-  trace[Meta.debug] "evalStep: {g}"
   let tag ← liftMetaM <| do
     if step.location == "objFun" then
       return "objFun"
@@ -101,19 +107,14 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
   let tagNum := tagsMap.find! step.location
   let atObjFun := tagNum == 0
 
-  -- TODO: Do not handle them as exceptions, get the names of the wrapper lemmas
-  -- directly.
-  let (rwWrapper, numArgs) ← rewriteWrapperLemma tagNum (tagsMap.size - 1)
-
-  -- Build expexcted expression to generate the right rewrite condition. Again,
-  -- mapping the objective function is an exception where the expected term is
-  -- not used.
+  -- Build expexcted expression to generate the right rewrite condition. Again, mapping the
+  -- objective function is an exception where the expected term is not used.
   let expectedTermStr := step.expectedTerm
   let mut expectedExpr ← EggString.toExpr vars expectedTermStr
   if !atObjFun then
     expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
-  -- TODO: Why do we need this???
+  -- TODO: Why do we need this?
   let D ← instantiateMVars eqvExpr.domainP
   expectedExpr ← withLocalDeclD `p D fun p => do
     Meta.withDomainLocalDecls D  p fun xs prs => do
@@ -122,35 +123,31 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
 
   let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
 
+  let (rwWrapper, numArgs) ← rewriteWrapperLemma tagNum (tagsMap.size - 1)
   let gToChange := ← do
     if isMap then return g else
       let toApply ← rewriteWrapperApplyExpr isMap rwWrapper numArgs expectedExpr
       let gsAfterApply ← g.apply toApply
       if gsAfterApply.length != 1 then
-        trace[Meta.debug] "gsAfterApply: {gsAfterApply}."
-        throwError "Expected 1 goal after applying rewrite wrapper, got {gsAfterApply.length}."
-
+        throwError ("`pre_dcp` error: expected 1 goal after applying rewrite wrapper, got "
+          ++ s!"{gsAfterApply.length}.")
       return gsAfterApply[0]!
 
-  trace[Meta.debug] "After apply. {gToChange}"
-
-  -- Finally, apply the tactic that should solve all proof obligations. A mix
-  -- of approaches using `norm_num` in combination with the tactic provided
-  -- by the user for this particular rewrite.
+  -- Finally, apply the tactic that should solve all proof obligations. A mix of approaches using
+  -- `norm_num` in combination with the tactic provided by the user for this particular rewrite.
   let fullTac : Syntax ← `(tactic| intros;
     try { norm_num_clean_up; $tacStx <;> norm_num_simp_pow } <;>
     try { $tacStx <;> norm_num_simp_pow } <;>
     try { norm_num_simp_pow })
   let gsAfterRw ← evalTacticAt fullTac gToChange
-  trace[Meta.debug] "After tactic. {gsAfterRw}"
 
   if gsAfterRw.length == 0 then
     pure ()
   else
-    dbg_trace s!"Failed to rewrite {step.rewriteName}."
-    for g in gsAfterRw do
-      dbg_trace s!"Could not prove {← Meta.ppGoal g}."
-    dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
+    throwError "`pre_dcp` error: failed to rewrite {step.rewriteName}."
+    -- for g in gsAfterRw do
+    --   dbg_trace s!"Could not prove {← Meta.ppGoal g}."
+    -- dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
 
 def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
@@ -159,7 +156,6 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let vars ← withLambdaBody lhs.constraints fun p _ => do
     let pr ← mkProjections lhs.domain p
     return pr.map (Prod.fst)
-  trace[Meta.debug] "Vars: {vars}."
   let varsStr := vars.map toString
 
   -- Get goal as tree and create tags map.
@@ -201,17 +197,17 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
     for step in steps do
       let gs ← Tactic.run g <| (evalStep step vars tagsMap).toTactic
       if gs.length != 1 then
-        throwError "Failed to rewrite {step.rewriteName} after evaluating step ({gs.length} goals)."
+        throwError (s!"`pre_dcp` error: failed to rewrite {step.rewriteName} after evaluating "
+          ++ s!"step ({gs.length} goals remaining).")
       else
         g := gs[0]!
         dbg_trace s!"Rewrote {step.rewriteName}."
 
     let gsFinal ← evalTacticAt (← `(tactic| equivalence_rfl)) g
     if gsFinal.length != 0 then
-      throwError "`pre_dcp` error: Could not close last goal."
+      throwError "`pre_dcp` error: could not close last goal."
   catch e =>
-    let eStr ← e.toMessageData.toString
-    throwError "`pre_dcp` error: {eStr}"
+    throwError "`pre_dcp` error: {e.toMessageData}"
 
 /-- The `pre_dcp` tactic encodes a given minimization problem, sends it to egg, and reconstructs
 the proof from egg's output. -/
