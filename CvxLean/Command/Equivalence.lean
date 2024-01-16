@@ -129,20 +129,27 @@ def evalEquivalence : CommandElab := fun stx => match stx with
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9_last
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10_last
       simpThms ← simpThms.addDeclToUnfold ``CvxLean.ChangeOfVariables.toEquivalence
+      simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
+      simpThms ← simpThms.addDeclToUnfold ``Eq.mp
       simpCtx := { simpCtx with simpTheorems := #[simpThms] }
 
       let (res, _) ← simp psi simpCtx
       let psi := res.expr
 
-      trace[Meta.debug] "psi: {← inferType psi}"
-      let s := psi.size
-      trace[Meta.debug] "psi : {psi}"
-      -- try
-      --   let psiF ← realToFloat psi
-      -- catch e =>
-      --   trace[Meta.debug] "failed to convert {psi} to float {e.toMessageData}"
-      -- -- trace[Meta.debug] "psi: {psi}"
-
+      try
+        let psiF ← realToFloat psi
+        let psiFTy ← inferType psiF
+        Lean.addAndCompile <|
+          Declaration.defnDecl
+            (mkDefinitionValEx (eqvId.getId ++ `psi_float)
+            []
+            psiFTy
+            psiF
+            (Lean.ReducibilityHints.regular 0)
+            (DefinitionSafety.safe)
+            [])
+      catch e =>
+        trace[Meta.debug] "`equivalence` warning: failed to create `phi_float` - {e.toMessageData}."
   | _ => throwUnsupportedSyntax
 
 end CvxLean

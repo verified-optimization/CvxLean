@@ -37,12 +37,11 @@ def p₂ :=
 
 -- solve p₂
 
-set_option trace.Meta.debug true
+-- set_option trace.Meta.debug true
 
 -- Equivalence mode.
 equivalence eqv₂/q₂ : p₂ := by
   pre_dcp
-  conv_opt => norm_num1
 
 solve q₂
 
@@ -64,12 +63,15 @@ def p₃ (Awall Aflr α β γ δ : ℝ) :=
       c1 : 0 < h
       c2 : 0 < w
       c3 : 0 < d
-      c4 : 2 * (h * d + w * d) ≤ Awall
+      c4 : 2 * (h * w + h * d) ≤ Awall
       c5 : w * d ≤ Aflr
       c6 : α ≤ h / w
       c7 : h / w ≤ β
       c8 : γ ≤ d / w
       c9 : d / w ≤ δ
+
+
+set_option trace.Meta.debug true
 
 equivalence eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
   change_of_variables! (h') (h ↦ exp h')
@@ -86,6 +88,23 @@ solve q₃
 #eval q₃.value
 
 #check eqv₃
+
+def p₃.solution := eqv₃.psi_float q₃.solution
+
+#eval p₃.solution
+
+def h := p₃.solution.1
+def w := p₃.solution.2.1
+def d := p₃.solution.2.2
+
+#eval h * w * d
+
+#eval 2 * (h * w + h * d) ≤ 100
+#eval w * d ≤ 10
+#eval 0.5 ≤ h / w
+#eval h / w ≤ 2
+#eval 0.5 ≤ d / w
+#eval d / w ≤ 2
 
 end
 
