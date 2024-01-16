@@ -4,6 +4,8 @@ import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
+import CvxLean.Command.Solve.Float.RealToFloat
+import CvxLean.Tactic.Basic.ChangeOfVariables
 
 namespace CvxLean
 
@@ -24,25 +26,6 @@ syntax (name := equivalence)
 def reduceExpr (e : Expr) : MetaM Expr :=
   withTransparency (mode := TransparencyMode.all) <|
     reduce e (skipProofs := false) (skipTypes := false)
-
-def mycfg : Simp.Config := {
-  zeta              := true
-  beta              := true
-  eta               := true
-  iota              := true
-  proj              := true
-  decide            := true
-  arith             := true
-  dsimp := true
-  -- autoUnfold        := true
-  -- ground            := true
-  etaStruct := .all
-  -- contextual :=true
-  maxSteps := 10000
-  unfoldPartialApp := true
-}
-
-#check Std.Tactic.NormCast.evalPushCast
 
 /-- Create `equivalence` command. It is similar to the `reduction` command, but requires an
 `Equivalence` instead of a `Reduction`. -/
@@ -94,44 +77,71 @@ def evalEquivalence : CommandElab := fun stx => match stx with
           (DefinitionSafety.safe)
           [probId.getId])
 
-      -- Get psi.
+      -- Get psi, reduce it appropriately and convert to float.
       let psi := (← whnf eqv).getArg! 7
-      -- let psi ← reduceExpr psi
-      -- let mut simpThms := {}
-      -- simpThms ← simpThms.addDeclToUnfold `Eq.rec
-      -- let simpCtx :=
-      -- {
-      --   simpTheorems  := #[simpThms]
-      --   congrTheorems := (← getSimpCongrTheorems)
-      --   config        := Simp.neutralConfig
-      -- }
-      -- lambdaTelescope (← whnf psi) <| fun xs psiXs => do
-      let simpCtx ← Simp.Context.mkDefault
-      let cfg : Simp.Config := default
-      let mut simpCtx := { simpCtx with config := mycfg
 
-      -- { cfg with iota := true, proj := true, eta := true, zeta := true, beta := true, contextual :=true, maxSteps := 10000 }
+      let mut simpCtx ← Simp.Context.mkDefault
+      let simpCfg : Simp.Config :=
+        { zeta             := true
+          beta             := true
+          eta              := true
+          iota             := true
+          proj             := true
+          decide           := true
+          arith            := true
+          dsimp            := true
+          unfoldPartialApp := true
+          etaStruct        := .all }
+      simpCtx := { simpCtx with config := simpCfg }
 
-      }
-      trace[Meta.debug] "cfg iota: {simpCtx.config.iota}"
       let mut simpThms := {}
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.psi
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.mk
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.trans
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.refl
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.trans
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofStrongEquivalence
-      -- simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
-      -- simpThms ← simpThms.addDeclToUnfold ``Eq.ndrec
-      -- simpThms ← simpThms.addDeclToUnfold ``Eq.rec
-      -- simpThms ← simpThms.addDeclToUnfold ``Eq.symm
-      -- simpThms ← simpThms.addDeclToUnfold ``cast
-      let simpThmsArray := #[simpThms]
-      simpCtx := { simpCtx with simpTheorems := simpThmsArray }
-      let (res, used) ← simp psi simpCtx
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofEq
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.psi
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_log
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_sq
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_domain
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraints
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10_last
+      simpThms ← simpThms.addDeclToUnfold ``CvxLean.ChangeOfVariables.toEquivalence
+      simpCtx := { simpCtx with simpTheorems := #[simpThms] }
+
+      let (res, _) ← simp psi simpCtx
       let psi := res.expr
+
       trace[Meta.debug] "psi: {← inferType psi}"
-      trace[Meta.debug] "psi: {psi}"
+      let s := psi.size
+      trace[Meta.debug] "psi : {psi}"
+      -- try
+      --   let psiF ← realToFloat psi
+      -- catch e =>
+      --   trace[Meta.debug] "failed to convert {psi} to float {e.toMessageData}"
+      -- -- trace[Meta.debug] "psi: {psi}"
 
   | _ => throwUnsupportedSyntax
 

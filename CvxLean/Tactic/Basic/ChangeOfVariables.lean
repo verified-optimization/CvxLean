@@ -6,6 +6,7 @@ import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Tactic.Arith.Arith
 import CvxLean.Tactic.Basic.RemoveTrivialConstrs
+import CvxLean.Tactic.Basic.ConvOpt
 
 /-!
 # Change of variables
@@ -205,7 +206,7 @@ syntax (name := changeOfVariables)
 def evalChangeOfVariables : Tactic := fun stx => match stx with
   | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => do
       (changeOfVariablesBuilder newVarStx varToChangeStx changeStx).toTactic
-      normNumCleanUp (useSimp := False)
+      evalTactic <| ← `(tactic| conv_opt => norm_num1)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 

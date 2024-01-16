@@ -1,10 +1,10 @@
 import CvxLean.Lib.Equivalence
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
-import CvxLean.Tactic.Arith.NormNumVariants
 import CvxLean.Tactic.PreDCP.RewriteMapExt
 import CvxLean.Tactic.PreDCP.RewriteMapLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
+import CvxLean.Tactic.Basic.ConvOpt
 
 namespace CvxLean
 
@@ -220,9 +220,9 @@ syntax (name := preDCP) "pre_dcp" : tactic
 @[tactic preDCP]
 def evalPreDCP : Tactic := fun stx => match stx with
   | `(tactic| pre_dcp) => withMainContext do
-      normNumCleanUp (useSimp := false)
+      evalTactic <| ← `(tactic| conv_opt => norm_num1)
       preDCPBuilder.toTactic
-      -- normNumCleanUp (useSimp := false)
+      evalTactic <| ← `(tactic| conv_opt => norm_num1)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
