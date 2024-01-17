@@ -27,7 +27,7 @@ syntax (name := equivalenceAndBwdMap)
   "equivalence'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
 /-- See `evalEquivalence` and `evalEquivalenceAndBwdMap`. -/
-def evalEquivalenceAux (probId eqvId : TSyntax `ident) (xs : Array (Syntax × Expr))
+def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax × Expr))
     (lhsStx: Syntax) (proofStx: TSyntax `Lean.Parser.Term.byTactic) (bwdMap : Bool) :
     TermElabM Unit := do
   let D ← Meta.mkFreshTypeMVar
@@ -44,19 +44,24 @@ def evalEquivalenceAux (probId eqvId : TSyntax `ident) (xs : Array (Syntax × Ex
 
   let (rhs, eqv) ← elabEquivalenceProof lhs proofStx.raw
 
+  -- Names for new definitions.
+  let currNamespace ← getCurrNamespace
+  let probId := currNamespace ++ probIdStx.getId
+  let eqvId := currNamespace ++ eqvIdStx.getId
+
   -- Add equivalent problem to the environment.
   let rhs ← instantiateMVars rhs
   let rhs ← mkLambdaFVars (xs.map Prod.snd) rhs
   let rhs ← instantiateMVars rhs
   Lean.addDecl <|
     Declaration.defnDecl
-      (mkDefinitionValEx probId.getId
+      (mkDefinitionValEx probId
       []
       (← inferType rhs)
       rhs
       (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe)
-      [probId.getId])
+      [])
 
   -- Add equivalence proof to the environment.
   let eqv ← instantiateMVars eqv
@@ -64,13 +69,13 @@ def evalEquivalenceAux (probId eqvId : TSyntax `ident) (xs : Array (Syntax × Ex
   let eqv ← instantiateMVars eqv
   Lean.addDecl <|
     Declaration.defnDecl
-      (mkDefinitionValEx eqvId.getId
+      (mkDefinitionValEx eqvId
       []
       (← inferType eqv)
       eqv
       (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe)
-      [probId.getId, eqvId.getId])
+      [])
 
   if bwdMap then
     trace[Meta.debug] "HERE"
@@ -137,7 +142,7 @@ def evalEquivalenceAux (probId eqvId : TSyntax `ident) (xs : Array (Syntax × Ex
       let psiF ← realToFloat psi
       Lean.addAndCompile <|
         Declaration.defnDecl
-          (mkDefinitionValEx (eqvId.getId ++ `backward_map)
+          (mkDefinitionValEx (eqvId ++ `backward_map)
           []
           (← inferType psiF)
           psiF
