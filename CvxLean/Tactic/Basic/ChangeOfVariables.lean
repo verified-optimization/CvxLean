@@ -6,6 +6,7 @@ import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Tactic.Arith.Arith
 import CvxLean.Tactic.Basic.RemoveTrivialConstrs
+import CvxLean.Tactic.Basic.ConvOpt
 
 /-!
 # Change of variables
@@ -24,11 +25,11 @@ class ChangeOfVariables {D E} (c : E → D) where
 /-- -/
 def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D → Prop} (c : E → D)
     [cov : ChangeOfVariables c] (h : ∀ x, cs x → cov.condition x) :
-    ⟨f, cs⟩ ≃ ⟨fun x => f (c x), fun x => cs (c x)⟩ :=
+    ⟨f, cs⟩ ≡ ⟨fun x => f (c x), fun x => cs (c x)⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => cov.inv x
     psi := fun y => c y
-    phi_feasibility := fun x hx => by simp [cov.property x (h x hx)]; exact hx
+    phi_feasibility := fun x hx => by simp [feasible, cov.property x (h x hx)]; exact hx
     phi_optimality := fun x hx => by simp [cov.property x (h x hx)]
     psi_feasibility := fun y hy => hy
     psi_optimality := fun y _ => by simp }
@@ -77,8 +78,6 @@ instance : ChangeOfVariables (fun x : ℝ => x⁻¹) :=
     condition := fun x => x ≠ 0
     property := fun x _ => by field_simp }
 
--- NOTE(RFM): a ≠ 0 is not given as a parameter but instead added to the condition to make type
--- class inference work.
 instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a * x) :=
   { inv := fun x => (1 / a) * x
     condition := fun _ => a ≠ 0
@@ -207,7 +206,7 @@ syntax (name := changeOfVariables)
 def evalChangeOfVariables : Tactic := fun stx => match stx with
   | `(tactic| change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx)) => do
       (changeOfVariablesBuilder newVarStx varToChangeStx changeStx).toTactic
-      normNumCleanUp (useSimp := False)
+      evalTactic <| ← `(tactic| conv_opt => norm_num1)
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
@@ -219,7 +218,6 @@ macro_rules
     `(tactic|
         change_of_variables ($newVarStx) ($varToChangeStx ↦ $changeStx);
         remove_trivial_constrs)
-
 
 end Tactic
 

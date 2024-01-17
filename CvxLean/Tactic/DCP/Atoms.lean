@@ -133,15 +133,15 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               fun c => (`_, mkAppNBeta (mkAppNBeta c xs) vs)
             return (objFun, constraints, originalVarsDecls)
 
-      let xsDeclsPre ← xs.mapM fun x => x.fvarId!.getDecl
-      let mut xsDecls := #[]
+      let xsVarsPre := xs.map fun x => x.fvarId!
+      let mut xsVars := #[]
       for i in [:xs.size] do
         if atomData.argKinds[i]! != ArgKind.Constant then
-          xsDecls := xsDecls.push xsDeclsPre[i]!
-      trace[Meta.debug] "xsDecls: {xsDecls.map (·.userName)}"
+          xsVars := xsVars.push xsVarsPre[i]!
+      trace[Meta.debug] "xsVars: {(← xsVars.mapM (·.getDecl)).map (·.userName)}"
 
       trace[Meta.debug] "before PAT "
-      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
+      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls (extraVars := xsVars)
       trace[Meta.debug] "after PAT "
       -- `pat` is the atom tree resulting from the DCP procedure.
 

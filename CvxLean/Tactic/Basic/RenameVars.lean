@@ -1,5 +1,6 @@
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
+import CvxLean.Meta.Util.Expr
 
 namespace CvxLean
 
@@ -19,23 +20,23 @@ def renameVarsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun eqvE
   let newFVars := Array.mk <| renamedVars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
 
   -- Create new minimization expression.
-  let newObjFun ← withLambdaBody lhsMinExpr.objFun fun p objFunBody => do
-      let newObjFunBody := objFunBody.replaceFVars fvars newFVars
-      mkLambdaFVars #[p] newObjFunBody
-  let newConstrs ← withLambdaBody lhsMinExpr.constraints fun p constrsBody => do
-      let newConstrsBody := constrsBody.replaceFVars fvars newFVars
-      mkLambdaFVars #[p] newConstrsBody
+  let newObjFun ← withLocalDeclD `p newDomain fun p => do
+    let objFunBody := mkAppNBeta lhsMinExpr.objFun #[p]
+    mkLambdaFVars #[p] objFunBody
+  let newConstrs ← withLocalDeclD `p newDomain fun p => do
+    let objFunBody := mkAppNBeta lhsMinExpr.constraints #[p]
+    mkLambdaFVars #[p] objFunBody
   let rhsMinExpr : MinimizationExpr :=
-      { domain := newDomain,
-        codomain := lhsMinExpr.codomain,
-        objFun := newObjFun,
-        constraints := newConstrs }
+    { domain := newDomain,
+      codomain := lhsMinExpr.codomain,
+      objFun := newObjFun,
+      constraints := newConstrs }
   if !(← isDefEq eqvExpr.q rhsMinExpr.toExpr) then
-      throwError "`rename_vars` error: Failed to unify the goal."
+    throwError "`rename_vars` error: Failed to unify the goal."
 
   -- Close goal by reflexivity.
   if let _ :: _ ← evalTacticAt (← `(tactic| equivalence_rfl)) g then
-      throwError "`rename_vars` error: Failed to close the goal."
+    throwError "`rename_vars` error: Failed to close the goal."
 where
   manipulateVars : List (Name × Expr) → List Name → MetaM (List (Name × Expr))
     | (_, ty) :: vars, newName :: newNames =>

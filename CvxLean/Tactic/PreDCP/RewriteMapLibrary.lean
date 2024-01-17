@@ -30,43 +30,43 @@ register_objFun_rewrite_map "map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob 
 /- Equality rules. -/
 
 register_rewrite_map "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
-  rewrite [Real.log_eq_log (by positivity!) (by positivity!)];
+  rw [Real.log_eq_log (by positivity!) (by positivity!)];
 
 
 /- Less than or equal rules. -/
 
 register_rewrite_map "le_sub_iff_add_le" ; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)" :=
-  rewrite [le_sub_iff_add_le];
+  rw [le_sub_iff_add_le];
 
 register_rewrite_map "le_sub_iff_add_le-rev" ; "(le (add ?a ?c) ?b)" => "(le ?a (sub ?b ?c))" :=
-  rewrite [←le_sub_iff_add_le];
+  rw [←le_sub_iff_add_le];
 
 register_rewrite_map "sub_le_iff_le_add"; "(le (sub ?a ?c) ?b)" => "(le ?a (add ?b ?c))" :=
   rewrite [sub_le_iff_le_add];
 
 register_rewrite_map "sub_le_iff_le_add-rev"; "(le ?a (add ?b ?c))" => "(le (sub ?a ?c) ?b)" :=
-  rewrite [←sub_le_iff_le_add];
+  rw [←sub_le_iff_le_add];
 
 register_rewrite_map "div_le_iff" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" :=
-  rewrite [div_le_iff (by positivity!)];
+  rw [div_le_iff (by positivity!)];
 
 register_rewrite_map "div_le_iff-rev" ; "(le (div ?a ?b) ?c)" => "(le ?a (mul ?b ?c))" :=
-  rewrite [←div_le_iff (by positivity!)];
+  rw [←div_le_iff (by positivity!)];
 
 register_rewrite_map "div_le_one-rev" ; "(le ?a ?b)" => "(le (div ?a ?b) 1)" :=
-  rewrite [←div_le_one (by positivity!)];
+  rw [←div_le_one (by positivity!)];
 
 register_rewrite_map "log_le_log" ; "(le (log ?a) (log ?b))" => "(le ?a ?b)" :=
-  rewrite [Real.log_le_log (by positivity!) (by positivity!)];
+  rw [Real.log_le_log (by positivity!) (by positivity!)];
 
 register_rewrite_map "log_le_log-rev" ; "(le ?a ?b)" => "(le (log ?a) (log ?b))" :=
-  rewrite [←Real.log_le_log (by positivity!) (by positivity!)];
+  rw [←Real.log_le_log (by positivity!) (by positivity!)];
 
 register_rewrite_map "pow_two_le_pow_two"; "(le (pow ?a 2) (pow ?b 2))" => "(le ?a ?b)":=
-  rewrite [Real.pow_two_le_pow_two (by positivity!) (by positivity!)];
+  rw [Real.pow_two_le_pow_two (by positivity!) (by positivity!)];
 
 register_rewrite_map "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" :=
-  rewrite [←Real.pow_two_le_pow_two (by positivity!) (by positivity!)];
+  rw [←Real.pow_two_le_pow_two (by positivity!) (by positivity!)];
 
 
 /- Field rules. -/

@@ -4,9 +4,12 @@ import CvxLean.Tactic.Basic.RenameVars
 import CvxLean.Tactic.Basic.RenameConstrs
 import CvxLean.Tactic.Basic.ReorderConstrs
 import CvxLean.Tactic.Basic.RemoveConstr
--- import CvxLean.Tactic.Conv.ConvOpt
+import CvxLean.Tactic.Basic.ConvOpt
+import CvxLean.Command.Equivalence
 
-noncomputable section BasicTacticTest
+namespace BasicTacticTest
+
+noncomputable section
 
 open Real CvxLean Minimization
 
@@ -66,23 +69,47 @@ example : Solution <|
         c1 : z = x + y
         c2 : exp x ≤ exp y := by
   rename_constrs [cz, cxy]
-  -- conv_constr cxy =>
-  --   rw [Real.exp_le_exp]
-  -- conv_constr cz =>
-  --   rw [add_comm]
-  -- conv_obj =>
-  --   rw [add_comm]
+  conv_constr cxy =>
+    rw [Real.exp_le_exp]
+  conv_constr cz =>
+    rw [add_comm]
+  conv_obj =>
+    rw [add_comm]
   sorry
 
 example : Solution <|
-  optimization (x y z : ℝ)
-    minimize x + y + z
-    subject to
-      cz : z = x + y
-      cz' : z = x + y
-      cz'' : z ≤ x + 4 := by
+    optimization (x y z : ℝ)
+      minimize x + y + z
+      subject to
+        cz : z = x + y
+        cz' : z = x + y
+        cz'' : z ≤ x + 4 := by
   remove_constr cz' by { exact cz }
   rename_constrs [czz, czz2]
   sorry
+
+example : Solution <|
+    optimization (x y z : ℝ)
+      minimize x + y + z
+      subject to
+        c1 : 1 + 2 + 3 ≤ x
+        c2 : 2 + 3 + 4 ≤ y := by
+  conv_opt =>
+    norm_num
+  sorry
+
+equivalence eqv/q :
+    optimization (x y z : ℝ)
+      minimize x + y + z
+      subject to
+        c1 : 1 + 2 + 3 ≤ x
+        c2 : 2 + 3 + 4 ≤ y := by
+  rename_vars [a, b, c]
+  conv_obj =>
+    rw [add_assoc]
+  conv_constr c1 =>
+    norm_num1
+
+end
 
 end BasicTacticTest

@@ -7,10 +7,10 @@ open Lean Lean.Elab Lean.Elab.Term Lean.Elab.Command Lean.Meta
 
 open Minimization
 
-/-- Equivalent to the `#reduce` command. TODO: Move. -/
-def reduceExpr (e : Expr) : MetaM Expr :=
-  withTransparency (mode := TransparencyMode.all) <|
-    reduce e (skipProofs := true) (skipTypes := true)
+-- /-- Equivalent to the `#reduce` command. TODO: Move. -/
+-- def reduceExpr (e : Expr) : MetaM Expr :=
+--   withTransparency (mode := TransparencyMode.all) <|
+--     reduce e (skipProofs := true) (skipTypes := true)
 
 /-- Reduce like `Meta.DiscrTree.whnfDT`. -/
 partial def whnfUntilValue (e : Expr) : MetaM Expr := do
