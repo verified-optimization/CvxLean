@@ -14,7 +14,8 @@ turns an optimization problem into DCP form.
 
 ## TODO
 
-* Use `conv` tactics instead of rewrite lemmas.
+* Use `conv` tactics instead of rewrite lemmas? Note that we would need `conv` to add the other
+  constraints to the local context as right now it just shows the constraint to be rewritten.
 -/
 
 namespace CvxLean
