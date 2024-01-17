@@ -1,9 +1,18 @@
 import CvxLean.Lib.Equivalence
 
 /-!
-# Reduction
+# Reduction of optimization problems
 
-TODO
+We define the notion of reduction. It is a reflexive and transitive relation and it induces a
+bacward map between solutions. An equivalence gives a reduction.
+
+## References
+
+* [C. Papadimitriou, *Computational Complexity*][Pap93]
+
+## TODO
+
+* Build reductions from equivalences automatically in meta.
 -/
 
 namespace Minimization
@@ -11,7 +20,7 @@ namespace Minimization
 variable {D E F R : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 
-/-- TODO -/
+/-- We read `Reduction p q` as `p` reduces to `q` [Pap93,10.1]. -/
 structure Reduction where
   psi : E → D
   psi_optimality : ∀ x, q.optimal x → p.optimal (psi x)
@@ -50,6 +59,9 @@ instance : Trans (@Equivalence D E R _) (@Reduction E F R _) (@Reduction D F R _
 
 section Maps
 
+/-- Weaker version of `Equivalence.map_objFun`. For a reduction we only need the map to be
+comonotonic on the image of the objective function. Note that for an equivalence we also need it to
+be monotonic. -/
 def map_objFun_of_comonotonic {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
     (h : ∀ {r s}, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s) :
     ⟨f, cs⟩ ≽ ⟨fun x => g (f x), cs⟩ :=
@@ -60,22 +72,23 @@ def map_objFun_of_comonotonic {D R} [Preorder R] {f : D → R} {g : R → R} {cs
         have h_gfx_le_gfy : g (f x) ≤ g (f y) := h_opt_x y h_feas_y;
         h h_feas_x h_feas_y h_gfx_le_gfy⟩ }
 
--- TODO
--- All equivalences yield reductions. Build lemmas in meta? Is it useful to have them?
-
+/-- See `Equivalence.map_objFun`. -/
 def map_objFun {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
     (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
     ⟨f, cs⟩ ≽ ⟨fun x => g (f x), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun h
 
+/-- See `Equivalence.map_objFun_log`. -/
 noncomputable def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
     ⟨f, cs⟩ ≽ ⟨fun x => (Real.log (f x)), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun_log h
 
+/-- See `Equivalence.map_objFun_sq`. -/
 noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
     ⟨f, cs⟩ ≽ ⟨fun x => (f x) ^ (2 : ℝ), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun_sq h
 
+/-- See `Equivalence.map_domain`. -/
 def map_domain {f : D → R} {cs : D → Prop} {fwd : D → E} {bwd : E → D}
     (h : ∀ x, cs x → bwd (fwd x) = x) :
     ⟨f, cs⟩ ≽ ⟨fun x => f (bwd x), (fun x => cs (bwd x))⟩ :=
