@@ -42,14 +42,6 @@ def trans (R₁ : p ≼ q) (R₂ : q ≼ r) : p ≼ r :=
     psi_feasibility := fun x h => R₁.psi_feasibility (R₂.psi x) (R₂.psi_feasibility x h),
     psi_optimality := fun x h => R₁.psi_optimality (R₂.psi x) (R₂.psi_optimality x h) }
 
-def antisymm (R₁ : p ≼ q) (R₂ : q ≼ p) : p ≡ q :=
-  { phi := R₂.psi,
-    psi := R₁.psi,
-    phi_feasibility := R₂.psi_feasibility,
-    psi_feasibility := R₁.psi_feasibility,
-    phi_optimality := R₂.psi_optimality,
-    psi_optimality := R₁.psi_optimality }
-
 instance : Trans (@Reduction D E R _) (@Reduction E F R _) (@Reduction D F R _) :=
   { trans := Reduction.trans }
 
@@ -222,5 +214,17 @@ section Other
 end Other
 
 end Reduction
+
+namespace Equivalence
+
+def ofReductions (R₁ : p ≼ q) (R₂ : q ≼ p) : p ≡ q :=
+  { phi := R₂.psi,
+    psi := R₁.psi,
+    phi_feasibility := R₂.psi_feasibility,
+    psi_feasibility := R₁.psi_feasibility,
+    phi_optimality := R₂.psi_optimality,
+    psi_optimality := R₁.psi_optimality }
+
+end Equivalence
 
 end Minimization

@@ -25,14 +25,14 @@ namespace Relaxation
 
 variable {p q r}
 
-notation p " ≽ₛ " q => Relaxation p q
+notation p " ≽' " q => Relaxation p q
 
-def refl : p ≽ₛ p :=
+def refl : p ≽' p :=
   { phi := id,
     phi_feasibility := fun _ h => h,
     phi_optimality := fun _ _ => le_refl _ }
 
-def trans (Rx₁ : p ≽ₛ q) (Rx₂ : q ≽ₛ r) : p ≽ₛ r :=
+def trans (Rx₁ : p ≽' q) (Rx₂ : q ≽' r) : p ≽' r :=
   { phi := Rx₂.phi ∘ Rx₁.phi,
     phi_feasibility := fun x h => Rx₂.phi_feasibility (Rx₁.phi x) (Rx₁.phi_feasibility x h),
     phi_optimality := fun x hx =>
@@ -42,24 +42,16 @@ def trans (Rx₁ : p ≽ₛ q) (Rx₂ : q ≽ₛ r) : p ≽ₛ r :=
       have h₂ := Rx₁.phi_optimality x hx
       le_trans h₁ h₂ }
 
-def antisymm (Rx₁ : p ≽ₛ q) (Rx₂ : q ≽ₛ p) : p ≡ₛ q :=
-  { phi := Rx₁.phi,
-    psi := Rx₂.phi,
-    phi_feasibility := Rx₁.phi_feasibility,
-    psi_feasibility := Rx₂.phi_feasibility,
-    phi_optimality := Rx₁.phi_optimality,
-    psi_optimality := Rx₂.phi_optimality }
-
 instance : Trans (@Relaxation D E R _) (@Relaxation E F R _) (@Relaxation D F R _) :=
   { trans := Relaxation.trans }
 
 /-- First property in [RelaxationWiki]. -/
-lemma feasible_and_bounded_of_feasible (Rx : p ≽ₛ q) {x : D} (h_feas_x : p.feasible x) :
+lemma feasible_and_bounded_of_feasible (Rx : p ≽' q) {x : D} (h_feas_x : p.feasible x) :
     q.feasible (Rx.phi x) ∧ q.objFun (Rx.phi x) ≤ p.objFun x :=
   ⟨Rx.phi_feasibility x h_feas_x, Rx.phi_optimality x h_feas_x⟩
 
 /-- Second property in [RelaxationWiki]. NOTE: This does not use `Rx.phi_optimality`. -/
-lemma induces_original_problem_optimality (Rx : p ≽ₛ q) (phi_inv : E → D)
+lemma induces_original_problem_optimality (Rx : p ≽' q) (phi_inv : E → D)
     (phi_left_inv : Function.LeftInverse Rx.phi phi_inv)
     (h_objFun : ∀ x, p.feasible x → p.objFun x = q.objFun (Rx.phi x)) {y : E}
     (h_opt_y : q.optimal y) (h_feas_y : p.feasible (phi_inv y)) : p.optimal (phi_inv y) := by
@@ -69,7 +61,7 @@ lemma induces_original_problem_optimality (Rx : p ≽ₛ q) (phi_inv : E → D)
   have h_bound := h_opt_y.2 (Rx.phi x) (Rx.phi_feasibility x h_feas_x)
   rwa [← h_objFun _ h_feas_x] at h_bound
 
-def ofStrongEquivalence (E : p ≡ₛ q) : p ≽ₛ q :=
+def ofStrongEquivalence (E : p ≡' q) : p ≽' q :=
   { phi := E.phi,
     phi_feasibility := E.phi_feasibility,
     phi_optimality := E.phi_optimality }
@@ -81,5 +73,28 @@ instance : Trans (@StrongEquivalence D E R _) (@Relaxation E F R _) (@Relaxation
   { trans := fun E R => Relaxation.trans (ofStrongEquivalence E) R }
 
 end Relaxation
+
+namespace StrongEquivalence
+
+variable {p q}
+
+def ofRelaxations (Rx₁ : p ≽' q) (Rx₂ : q ≽' p) : p ≡' q :=
+  { phi := Rx₁.phi,
+    psi := Rx₂.phi,
+    phi_feasibility := Rx₁.phi_feasibility,
+    psi_feasibility := Rx₂.phi_feasibility,
+    phi_optimality := Rx₁.phi_optimality,
+    psi_optimality := Rx₂.phi_optimality }
+
+end StrongEquivalence
+
+namespace Equivalence
+
+variable {p q}
+
+def ofRelaxations (Rx₁ : p ≽' q) (Rx₂ : q ≽' p) : p ≡ q :=
+  Equivalence.ofStrongEquivalence (StrongEquivalence.ofRelaxations Rx₁ Rx₂)
+
+end Equivalence
 
 end Minimization

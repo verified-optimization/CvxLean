@@ -94,9 +94,9 @@ namespace StrongEquivalence
 
 variable {p q r}
 
-notation p " ≡ₛ " q => StrongEquivalence p q
+notation p " ≡' " q => StrongEquivalence p q
 
-def refl : p ≡ₛ p :=
+def refl : p ≡' p :=
   { phi := id,
     psi := id,
     phi_feasibility := fun _ hx => hx,
@@ -104,7 +104,7 @@ def refl : p ≡ₛ p :=
     phi_optimality := fun _ _ => le_refl _,
     psi_optimality := fun _ _ => le_refl _ }
 
-def symm (E : p ≡ₛ q) : q ≡ₛ p :=
+def symm (E : p ≡' q) : q ≡' p :=
   { phi := E.psi,
     psi := E.phi,
     phi_feasibility := E.psi_feasibility,
@@ -112,7 +112,7 @@ def symm (E : p ≡ₛ q) : q ≡ₛ p :=
     phi_optimality := E.psi_optimality,
     psi_optimality := E.phi_optimality }
 
-def trans (E₁ : p ≡ₛ q) (E₂ : q ≡ₛ r) : p ≡ₛ r :=
+def trans (E₁ : p ≡' q) (E₂ : q ≡' r) : p ≡' r :=
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
     phi_feasibility := fun x hx => E₂.phi_feasibility (E₁.phi x) (E₁.phi_feasibility x hx),
@@ -158,7 +158,7 @@ end Eq
 variable {p q}
 
 /-- As expected, an `Equivalence` can be built from a `StrongEquivalence`. -/
-def ofStrongEquivalence (E : p ≡ₛ q) : p ≡ q :=
+def ofStrongEquivalence (E : p ≡' q) : p ≡ q :=
   { phi := E.phi,
     psi := E.psi,
     phi_feasibility := E.phi_feasibility,
@@ -196,10 +196,10 @@ namespace StrongEquivalence
 
 open Equivalence
 
-def toFwd (E : p ≡ₛ q) : Solution p → Solution q :=
+def toFwd (E : p ≡' q) : Solution p → Solution q :=
   (ofStrongEquivalence E).toFwd
 
-def toBwd (E : p ≡ₛ q) : Solution q → Solution p :=
+def toBwd (E : p ≡' q) : Solution q → Solution p :=
   (ofStrongEquivalence E).toBwd
 
 end StrongEquivalence
@@ -211,8 +211,7 @@ whole domain by a function with a right inverse. -/
 section Maps
 
 /-- See [BV04,p.131] where `g` is `ψ₀`. -/
-def map_objFun {g : R → R}
-    (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
+def map_objFun {g : R → R} (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
     ⟨f, cs⟩ ≡ ⟨fun x => g (f x), cs⟩ :=
   { phi := id,
     psi := id,
