@@ -472,6 +472,16 @@ def decompose_constraint (g : D → E) (c : D → E → Prop) (hc : ∀ x, cs x 
     phi_optimality := fun {_} _ => le_refl _,
     psi_optimality := fun {_} _ => le_refl _ }
 
+/-- Epigraph form [BV04,p.134]. -/
+def epigraph_form : ⟨f, cs⟩ ≡ ⟨fun (t, _) => t, fun (t, x) => f x ≤ t ∧ cs x⟩ :=
+  Equivalence.ofStrongEquivalence <|
+  { phi := fun x => (f x, x),
+    psi := fun (_, x) => x,
+    phi_feasibility := fun {x} h_feas_x => by simpa [feasible],
+    psi_feasibility := fun (t, x) ⟨_, h_csx⟩ => by simpa [feasible],
+    phi_optimality := fun {_} _ => le_refl _,
+    psi_optimality := fun {_} ⟨h_fx_le_t, _⟩ => by simpa }
+
 /-- Suppose `D ≃ S × E`. Let problem `p := ⟨f, cs⟩` be defined over `D`. Every `x : D` maps
 one-to-one to `(s, y) : S × E`. Assume that `x` is `p`-feasible iff `s = g y` and `c x`. We can
 think of `s` as a new variable. If changing `s` does not change the objective function and the new
