@@ -103,16 +103,17 @@ equivalence eqv₂/p₃ : p₂ := by
 
 open Equivalence
 
+set_option trace.Meta.debug true
+
 equivalence eqv/q :
     optimization (x : ℝ)
       minimize sqrt (x ^ 2)
       subject to
         c₁ : 0 ≤ x := by
-  equivalence_step =>
-    apply rewrite_objFun
-    . intros x c₁
-      exact sqrt_sq c₁
-  
+  rw_objFun =>
+    exact sqrt_sq c₁
+
+
 end Equivalences
 
 end Chapter3
