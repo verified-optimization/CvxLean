@@ -255,6 +255,28 @@ variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
 variable {cs cs' : D → Prop}
 variable {g : D → R}
 
+/-- We assume constraints are joind by `∧`. A problem with several constraints can be written as
+`⟨f, [[c1, ..., cn]]⟩`. -/
+syntax (name := constrNotation) "[ [" term,* "] ]" : term
+
+macro_rules
+  | `([[]]) => `(fun x => True)
+  | `([[$c]]) => `(fun x => $c x)
+  | `([[$c1, $c2]]) => `(fun x => $c1 x ∧ $c2 x)
+  | `([[$c1, $c2, $c3]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x)
+  | `([[$c1, $c2, $c3, $c4]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x)
+  | `([[$c1, $c2, $c3, $c4, $c5]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x)
+  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10]]) =>
+      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x ∧ $c10 x)
+  | `([[$c, $cs,*]]) => `(fun x => $c x ∧ ([[$cs,*]] x))
+
 def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≡ ⟨g, cs⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := id,
@@ -263,6 +285,49 @@ def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≡ ⟨g, cs�
     psi_feasibility := fun _ hx => hx
     phi_optimality := fun {x} hx => le_of_eq (hrw x hx).symm
     psi_optimality := fun {x} hx => le_of_eq (hrw x hx) }
+
+def rewrite_objFun_1 (hrw : ∀ x, c1 x → f x = g x) : ⟨f, c1⟩ ≡ ⟨g, c1⟩ :=
+  rewrite_objFun hrw
+
+def rewrite_objFun_2 (hrw : ∀ x, c1 x → c2 x → f x = g x) : ⟨f, [[c1, c2]]⟩ ≡ ⟨g, [[c1, c2]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_3 (hrw : ∀ x, c1 x → c2 x → c3 x → f x = g x) :
+    ⟨f, [[c1, c2, c3]]⟩ ≡ ⟨g, [[c1, c2, c3]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_4 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4]]⟩ ≡ ⟨g, [[c1, c2, c3, c4]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_5 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4, c5]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_6 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4, c5, c6]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5, c6]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_7 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4, c5, c6, c7]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5, c6, c7]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_8 (hrw :
+    ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5, c6, c7, c8]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_9
+    (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9]]⟩ ≡
+    ⟨g, [[c1, c2, c3, c4, c5, c6, c7, c8, c9]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
+
+def rewrite_objFun_10
+    (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → c10 x → f x = g x) :
+    ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]]⟩ ≡
+    ⟨g, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]]⟩ :=
+  rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
 /- Helper tactics to build equivalences from rewriting constraints in one line. -/
 section EquivalenceOfConstrRw
@@ -285,28 +350,6 @@ macro "equivalence_of_rw_constr" hrw:ident : term =>
       psi_optimality := fun {x} _ => le_refl _ })
 
 end EquivalenceOfConstrRw
-
-/-- We assume constraints are joind by `∧`. A problem with several constraints can be written as
-`⟨f, [[c1, ..., cn]]⟩`. -/
-syntax (name := constrNotation) "[ [" term,* "] ]" : term
-
-macro_rules
-  | `([[]]) => `(fun x => True)
-  | `([[$c]]) => `(fun x => $c x)
-  | `([[$c1, $c2]]) => `(fun x => $c1 x ∧ $c2 x)
-  | `([[$c1, $c2, $c3]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x)
-  | `([[$c1, $c2, $c3, $c4]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x)
-  | `([[$c1, $c2, $c3, $c4, $c5]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x)
-  | `([[$c1, $c2, $c3, $c4, $c5, $c6]]) => `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x)
-  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7]]) =>
-      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x)
-  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]]) =>
-      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x)
-  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9]]) =>
-      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x)
-  | `([[$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8, $c9, $c10]]) =>
-      `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x ∧ $c10 x)
-  | `([[$c, $cs,*]]) => `(fun x => $c x ∧ ([[$cs,*]] x))
 
 def rewrite_constraints (hrw : ∀ x, cs x ↔ cs' x) : ⟨f, [[cs]]⟩ ≡ ⟨f, [[cs']]⟩ :=
   equivalence_of_rw_constr hrw
