@@ -6,10 +6,31 @@ import CvxLean.Lib.Math.Data.Real
 
 namespace Mathlib.Meta.Positivity
 
-open Lean.Meta Qq
+open Lean.Meta Qq Real
+
+lemma Real.log_nonneg_of_ge_one {x : ℝ} : 0 ≤ x - 1 → 0 ≤ log x :=
+  fun h => Real.log_nonneg (by linarith)
+
+lemma Real.log_pos_of_gt_one {x : ℝ} : 0 < x - 1 → 0 < log x :=
+  fun h => Real.log_pos (by linarith)
+
+@[positivity (log (_ : ℝ))]
+def evalLog : PositivityExt where eval {_ _α} zα pα e := do
+  let (.app _log (x : Q(ℝ))) ←
+    withReducible (whnf e) | throwError "not (Real.log x)"
+  -- 0 ≤ x - 1 or 0 < x - 1 ?
+  match ← core zα pα (q($x - (1 : ℝ)) : Q(ℝ)) with
+  | .nonnegative pa =>
+      let pa' ← mkAppM ``Real.log_nonneg_of_ge_one #[pa]
+      pure (.nonnegative pa')
+  | .positive pa =>
+      let pa' ← mkAppM ``Real.log_pos_of_gt_one #[pa]
+      pure (.positive pa')
+  | _ =>
+      pure .none
 
 lemma Real.one_sub_one_div_sq_nonneg_of_le_one {x : ℝ} :
-  0 < x → 0 ≤ 1 - x → 0 ≤ (1 / x ^ (2 : ℝ)) - 1 :=
+    0 < x → 0 ≤ 1 - x → 0 ≤ (1 / x ^ (2 : ℝ)) - 1 :=
   fun h1 h2 => by
     have hx1 : x ≤ 1 := by linarith
     have h0x : 0 ≤ x := by positivity
