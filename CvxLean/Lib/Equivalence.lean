@@ -64,17 +64,15 @@ instance : Trans (@Equivalence D E R _) (@Equivalence E F R _) (@Equivalence D F
 
 /-- An equivalence induces a map between the solution set of `p` and the solution set of `q`. -/
 def toFwd (E : p ≡ q) : Solution p → Solution q :=
-  fun sol => {
-    point := E.phi sol.point,
-    feasibility := E.phi_feasibility sol.point sol.feasibility,
-    optimality := E.phi_optimality sol.point ⟨sol.feasibility, sol.optimality⟩ |>.right }
+  fun sol =>
+    { point := E.phi sol.point,
+      isOptimal := E.phi_optimality sol.point sol.isOptimal }
 
 /-- An equivalence induces a map between the solution set of `q` and the solution set of `p`. -/
 def toBwd (E : p ≡ q) : Solution q → Solution p :=
-  fun sol => {
-    point := E.psi sol.point,
-    feasibility := E.psi_feasibility sol.point sol.feasibility,
-    optimality := E.psi_optimality sol.point ⟨sol.feasibility, sol.optimality⟩ |>.right }
+  fun sol =>
+    { point := E.psi sol.point,
+      isOptimal := E.psi_optimality sol.point sol.isOptimal }
 
 end Equivalence
 

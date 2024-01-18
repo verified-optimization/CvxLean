@@ -47,8 +47,8 @@ instance : Trans (@Reduction D E R _) (@Reduction E F R _) (@Reduction D F R _) 
 
 def toBwd (R : p ≼ q) : Solution q → Solution p :=
   fun sol =>
-    have ⟨feasibility, optimality⟩ := R.psi_optimality sol.point ⟨sol.feasibility, sol.optimality⟩;
-    ⟨R.psi sol.point, feasibility, optimality⟩
+    { point := R.psi sol.point,
+      isOptimal := R.psi_optimality sol.point sol.isOptimal }
 
 def ofEquivalence (E : p ≡ q) : p ≼ q :=
   { psi := E.psi,

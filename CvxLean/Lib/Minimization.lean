@@ -29,11 +29,9 @@ value of `x` is a lower bound to the value of `y`. -/
 @[reducible]
 def optimal (x : D) : Prop := p.feasible x ∧ ∀ y, p.feasible y → p.objFun x ≤ p.objFun y
 
-/-- A solution is simply an optimal point. Note that the `optimality` property is only the second
-half of `optimal`. -/
+/-- A solution is simply an optimal point. -/
 structure Solution where
   point : D
-  feasibility : p.feasible point
-  optimality : ∀ y, p.feasible y → p.objFun point ≤ p.objFun y
+  isOptimal : p.optimal point
 
 end Minimization
