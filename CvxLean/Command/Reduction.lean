@@ -15,8 +15,8 @@ def runReductionTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
 
 /-- Run reduction tactic and return both the right-hand term (`q`) and the reduction proof, of
 type `Reduction p q`. -/
-def elabReductionProof (lhs : Expr) (stx : Syntax) : TermElabM (Expr × Expr) :=
-  elabTransformationProof TransformationGoal.Reduction lhs stx
+def elabReductionProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
+  elabTransformationProof TransformationGoal.Reduction lhs rhsName stx
 
 syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
@@ -40,7 +40,8 @@ def evalReduction : CommandElab := fun stx => match stx with
           mvarId.assign mvarVal }
         catch _ => pure ()
 
-      let (rhs, proof) ← elabReductionProof lhs proofStx.raw
+      let rhsName := probId.getId
+      let (rhs, proof) ← elabReductionProof lhs rhsName proofStx.raw
 
       -- Add reduced problem to the environment.
       let rhs ← instantiateMVars rhs
