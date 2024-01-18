@@ -145,8 +145,11 @@ def runTransformationTactic (transf : TransformationGoal) (mvarId : MVarId) (stx
 
     synthesizeSyntheticMVars (mayPostpone := false)
 
-def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (stx : Syntax) :
-    TermElabM (Expr × Expr) := do
+/-- Wraper that works for all defined transformations, elaborating syntax into the RHS expression
+and a proof of the relation with the LHS. The RHS can be named so that the metavariable displayed
+in the infoview corresponds to a user-defined name. -/
+def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (rhsName : Name)
+    (stx : Syntax) : TermElabM (Expr × Expr) := do
   withRef stx do
     let syntheticMVarsSaved := (← get).syntheticMVars
     modify fun s => { s with syntheticMVars := {} }
@@ -166,7 +169,8 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (stx : Sy
       let E ← Meta.mkFreshTypeMVar
       let R := lhsMinExpr.codomain
       let RPreorder ← Meta.mkFreshExprMVar (mkAppN (Lean.mkConst ``Preorder [levelZero]) #[R])
-      let rhs ← Meta.mkFreshExprMVar (mkAppN (Lean.mkConst ``Minimization) #[E, R])
+      let rhs ← Meta.mkFreshExprMVar (userName := rhsName)
+        (mkAppN (Lean.mkConst ``Minimization) #[E, R])
       let transfTy :=
         match transf with
           | TransformationGoal.Solution =>
