@@ -37,7 +37,9 @@ def applyTransitivity (transf : TransformationGoal) (g : MVarId) : TacticM (MVar
       if gsTrans.length != 4 then
         throwError "Transitivity failed."
       let mut gToChange := gsTrans[0]!
+      gToChange.setTag Name.anonymous
       let gNext := gsTrans[1]!
+      gNext.setTag Name.anonymous
       return (gToChange, gNext)
     else
       return (g, g)
