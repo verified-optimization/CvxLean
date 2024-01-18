@@ -3,6 +3,16 @@ import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Tactic.Basic.ShowVars
 
+/-!
+# Tactics for conditional rewrites
+
+TODO
+
+## TODO
+
+* Clean up.
+-/
+
 namespace CvxLean
 
 open Lean Meta Elab Parser Tactic
@@ -105,8 +115,6 @@ def namesToRintroPat (names : List Name) : MetaM (TSyntax `rcasesPat) := do
 end RIntro
 
 open Term
-
-#check TermElabM.run
 
 /-- -/
 def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) :
