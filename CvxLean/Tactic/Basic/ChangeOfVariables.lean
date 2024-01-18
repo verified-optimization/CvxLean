@@ -66,10 +66,12 @@ end Structural
 
 noncomputable section RealInstances
 
-instance : ChangeOfVariables Real.exp :=
-  { inv := Real.log
+open Real
+
+instance : ChangeOfVariables exp :=
+  { inv := log
     condition := fun x => 0 < x
-    property := fun _ hx => Real.exp_log hx }
+    property := fun _ hx => exp_log hx }
 
 -- NOTE(RFM): x ≠ 0 is technically not necessary as division is defined on all of ℝ, but we want to
 -- avoid division by zero.
