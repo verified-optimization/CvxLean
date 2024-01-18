@@ -24,13 +24,11 @@ noncomputable def linear2 :=
     subject to
       c₁ : 12 ≤ x + y
       c₂ : 16 ≤ 2 * x + y
-      c₃ : 0 ≤ x
-      c₄ : 0 ≤ y
 
 example : linear2 =
     Minimization.mk
       (fun p => 40 * p.1 + 30 * p.2)
-      (fun p => 12 ≤ p.1 + p.2 ∧ 16 ≤ 2 * p.1 + p.2 ∧ 0 ≤ p.1 ∧ 0 ≤ p.2) :=
+      (fun p => 12 ≤ p.1 + p.2 ∧ 16 ≤ 2 * p.1 + p.2) :=
   rfl
 
 lemma linear2Solution : Solution linear2 :=
