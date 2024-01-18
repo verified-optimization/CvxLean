@@ -30,8 +30,8 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D �
   { phi := fun x => cov.inv x
     psi := fun y => c y
     phi_feasibility := fun x hx => by simp [feasible, cov.property x (h x hx)]; exact hx
-    phi_optimality := fun x hx => by simp [cov.property x (h x hx)]
     psi_feasibility := fun y hy => hy
+    phi_optimality := fun x hx => by simp [cov.property x (h x hx)]
     psi_optimality := fun y _ => by simp }
 
 section Structural
@@ -193,7 +193,7 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     let gCondition := gsAfterApply[0]!
     let (_, gCondition) ← gCondition.intros
     let gsFinal ← evalTacticAt
-      (← `(tactic| simp [ChangeOfVariables.condition] <;> positivity!)) gCondition
+      (← `(tactic| simp [ChangeOfVariables.condition] <;> arith)) gCondition
     if gsFinal.length != 0 then
       throwError "Failed to solve change of variables condition."
 
