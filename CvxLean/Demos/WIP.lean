@@ -113,6 +113,24 @@ equivalence eqv/q :
   rw_objFun =>
     exact sqrt_sq c₁
 
+equivalence aaa/bbb :
+    optimization (x : ℝ)
+      minimize sqrt (x ^ 2)
+      subject to
+        a : 0 ≤ x
+        b : 0 ≤ x + 1 + 2 + 34
+        c : 0 ≤ x
+        d : 0 ≤ x
+        e : 0 ≤ x
+        f : 0 ≤ x := by
+  rw_objFun =>
+    exact sqrt_sq a
+  rw_constr b =>
+    ring_nf
+    rfl
+  
+
+
 
 end Equivalences
 
