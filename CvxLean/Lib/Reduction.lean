@@ -64,9 +64,9 @@ instance : Trans (@Equivalence D E R _) (@Reduction E F R _) (@Reduction D F R _
 section Maps
 
 /-- Weaker version of `Equivalence.map_objFun`. For a reduction we only need the map to be
-comonotonic on the image of the objective function. Note that for an equivalence we also need it to
-be monotonic. -/
-def map_objFun_of_comonotonic {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
+order-reflecting on the image of the objective function. Note that for an equivalence we also need
+it to be order-preserving (order-reflecting + order-preserving = order embedding). -/
+def map_objFun_of_order_reflecting {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
     (h : ∀ {r s}, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s) :
     ⟨f, cs⟩ ≼ ⟨fun x => g (f x), cs⟩ :=
   { psi := id,
