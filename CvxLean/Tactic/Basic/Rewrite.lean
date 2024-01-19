@@ -34,7 +34,8 @@ def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   | _  => throwError "`rw_obj` error: can only rewrite problems with up to 10 constraints."
 
 /-- -/
-def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder :=
+def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
+    EquivalenceBuilder :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
@@ -45,9 +46,12 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder
     let mut gToRw := g
     let mut foundGToRw := false
     for g in gs do
-      if (← g.getTag) == `hrw then
+      let tag ← g.getTag
+      if tag == `hrw then
         gToRw := g
         foundGToRw := true
+      if tag == `g && rhs?.isSome then
+        g.assign rhs?.get!
     if !foundGToRw then
       throwError "`rw_obj` error: could not find rewrite goal."
     let (fvarIds, gAfterIntros) ← gToRw.introN (1 + numConstrs) ([`p] ++ constrTags)
@@ -58,33 +62,33 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder
       if let _ :: _ ← evalTacticAt tacStx gAfterShowVars then
         throwError "`rw_objFun` error: could not close all goals."
 
-/-- -/
-def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM Name :=
+/-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. -/
+def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :=
   if rwIdx == numConstrs then
     match rwIdx with
-    | 1  => return ``Minimization.Equivalence.rewrite_constraint_1_last
-    | 2  => return ``Minimization.Equivalence.rewrite_constraint_2_last
-    | 3  => return ``Minimization.Equivalence.rewrite_constraint_3_last
-    | 4  => return ``Minimization.Equivalence.rewrite_constraint_4_last
-    | 5  => return ``Minimization.Equivalence.rewrite_constraint_5_last
-    | 6  => return ``Minimization.Equivalence.rewrite_constraint_6_last
-    | 7  => return ``Minimization.Equivalence.rewrite_constraint_7_last
-    | 8  => return ``Minimization.Equivalence.rewrite_constraint_8_last
-    | 9  => return ``Minimization.Equivalence.rewrite_constraint_9_last
-    | 10 => return ``Minimization.Equivalence.rewrite_constraint_10_last
+    | 1  => return (``Minimization.Equivalence.rewrite_constraint_1_last, `c1')
+    | 2  => return (``Minimization.Equivalence.rewrite_constraint_2_last, `c2')
+    | 3  => return (``Minimization.Equivalence.rewrite_constraint_3_last, `c3')
+    | 4  => return (``Minimization.Equivalence.rewrite_constraint_4_last, `c4')
+    | 5  => return (``Minimization.Equivalence.rewrite_constraint_5_last, `c5')
+    | 6  => return (``Minimization.Equivalence.rewrite_constraint_6_last, `c6')
+    | 7  => return (``Minimization.Equivalence.rewrite_constraint_7_last, `c7')
+    | 8  => return (``Minimization.Equivalence.rewrite_constraint_8_last, `c8')
+    | 9  => return (``Minimization.Equivalence.rewrite_constraint_9_last, `c9')
+    | 10 => return (``Minimization.Equivalence.rewrite_constraint_10_last, `c10')
     | _  => throwError "`rw_constr` error: can only rewrite problems with up to 10 constraints."
   else
     match rwIdx with
-    | 1  => return ``Minimization.Equivalence.rewrite_constraint_1
-    | 2  => return ``Minimization.Equivalence.rewrite_constraint_2
-    | 3  => return ``Minimization.Equivalence.rewrite_constraint_3
-    | 4  => return ``Minimization.Equivalence.rewrite_constraint_4
-    | 5  => return ``Minimization.Equivalence.rewrite_constraint_5
-    | 6  => return ``Minimization.Equivalence.rewrite_constraint_6
-    | 7  => return ``Minimization.Equivalence.rewrite_constraint_7
-    | 8  => return ``Minimization.Equivalence.rewrite_constraint_8
-    | 9  => return ``Minimization.Equivalence.rewrite_constraint_9
-    | 10 => return ``Minimization.Equivalence.rewrite_constraint_10
+    | 1  => return (``Minimization.Equivalence.rewrite_constraint_1, `c1')
+    | 2  => return (``Minimization.Equivalence.rewrite_constraint_2, `c2')
+    | 3  => return (``Minimization.Equivalence.rewrite_constraint_3, `c3')
+    | 4  => return (``Minimization.Equivalence.rewrite_constraint_4, `c4')
+    | 5  => return (``Minimization.Equivalence.rewrite_constraint_5, `c5')
+    | 6  => return (``Minimization.Equivalence.rewrite_constraint_6, `c6')
+    | 7  => return (``Minimization.Equivalence.rewrite_constraint_7, `c7')
+    | 8  => return (``Minimization.Equivalence.rewrite_constraint_8, `c8')
+    | 9  => return (``Minimization.Equivalence.rewrite_constraint_9, `c9')
+    | 10 => return (``Minimization.Equivalence.rewrite_constraint_10, `c10')
     | _  => throwError "`rw_constr` error: can only rewrite problems with up to 10 constraints."
 
 section RIntro
@@ -117,8 +121,8 @@ end RIntro
 open Term
 
 /-- -/
-def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) :
-    EquivalenceBuilder :=
+def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
+    (rhs? : Option Expr) : EquivalenceBuilder :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
@@ -131,13 +135,17 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
         rwIdx := i + 1
     if rwIdx == 0 then
       throwError "`rw_constr` error: could not find constraint to rewrite."
-    let gs ← g.apply (mkConst (← rewriteConstrLemma rwIdx numConstrs))
+    let (lemmaName, rhsName) ← rewriteConstrLemma rwIdx numConstrs
+    let gs ← g.apply (mkConst lemmaName)
     let mut gToRw := g
     let mut foundGToRw := false
     for g in gs do
-      if (← g.getTag) == `hrw then
+      let tag ← g.getTag
+      if tag == `hrw then
         gToRw := g
         foundGToRw := true
+      if tag == rhsName && rhs?.isSome then
+        g.assign rhs?.get!
     if !foundGToRw then
       throwError "`rw_constr` error: could not find rewrite goal."
     -- Intros appropriately.
@@ -175,9 +183,9 @@ syntax (name := rwObj) "rw_obj" "=>" (tacticSeq)? : tactic
 @[tactic rwObj]
 def evalRwObjFun : Tactic := fun stx => match stx with
   | `(tactic|rw_obj => $tacStx) => do
-      (rewriteObjBuilder true tacStx).toTactic
+      (rewriteObjBuilder true tacStx none).toTactic
   | `(tactic|rw_obj =>) => do
-      (rewriteObjBuilder false stx).toTactic
+      (rewriteObjBuilder false stx none).toTactic
   | _ => throwUnsupportedSyntax
 
 syntax (name := rwConstr) "rw_constr" (ident)? "=>" (tacticSeq)? : tactic
@@ -185,9 +193,9 @@ syntax (name := rwConstr) "rw_constr" (ident)? "=>" (tacticSeq)? : tactic
 @[tactic rwConstr]
 def evalRwConstr : Tactic := fun stx => match stx with
   | `(tactic|rw_constr $h => $tacStx) => do
-      (rewriteConstrBuilder true h.getId tacStx).toTactic
+      (rewriteConstrBuilder true h.getId tacStx none).toTactic
   | `(tactic|rw_constr $h =>) => do
-      (rewriteConstrBuilder false h.getId stx).toTactic
+      (rewriteConstrBuilder false h.getId stx none).toTactic
   | _ => throwUnsupportedSyntax
 
 end Tactic
