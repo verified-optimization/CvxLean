@@ -159,6 +159,7 @@ syntax (name := preDCP) "pre_dcp" : tactic
 def evalPreDCP : Tactic := fun stx => match stx with
   | `(tactic| pre_dcp) => withMainContext do
       evalTactic <| ← `(tactic| conv_opt => norm_num1)
+      -- (Conv.convertOpt (fullProb := true) (convTac := Mathlib.Tactic.elabNormNum1Conv mkNullNode)).toTactic
       preDCPBuilder.toTactic
       evalTactic <| ← `(tactic| conv_opt => norm_num1)
       saveTacticInfoForToken stx
