@@ -101,7 +101,6 @@ def gp4 :=
       h6 : x ^ (2 : ℝ) + 6 * y / z <= sqrt x
       h7 : x * y = z
 
-set_option trace.Meta.debug true in
 time_cmd reduction red4/dcp4 : gp4 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
