@@ -1,10 +1,5 @@
 import CvxLean.Syntax.Minimization
-import CvxLean.Tactic.Basic.CleanUpComp
-import CvxLean.Tactic.Basic.RenameVars
-import CvxLean.Tactic.Basic.RenameConstrs
-import CvxLean.Tactic.Basic.ReorderConstrs
-import CvxLean.Tactic.Basic.RemoveConstr
-import CvxLean.Tactic.Basic.ConvOpt
+import CvxLean.Tactic.Basic.All
 import CvxLean.Command.Equivalence
 
 namespace BasicTacticTest
@@ -109,6 +104,22 @@ equivalence eqv/q :
     rw [add_assoc]
   conv_constr c1 =>
     norm_num1
+
+equivalence eqv2/q1 :
+    optimization (x y z a b c : ℝ)
+      minimize sqrt (x ^ 2)
+      subject to
+        c₁ : x ≤ y
+        c₂ : 0 ≤ x + 1 + 2 + 34
+        c₃ : 0 ≤ x
+        c₄ : 0 ≤ b + c
+        c₅ : 0 ≤ z + a
+        c₆ : 0 ≤ x + 2 * z := by
+  rw_obj =>
+    exact sqrt_sq c₃
+  rw_constr c₂ =>
+    ring_nf
+    rfl
 
 end
 

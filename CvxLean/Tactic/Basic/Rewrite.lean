@@ -19,7 +19,7 @@ open Lean Meta Elab Parser Tactic
 
 namespace Meta
 
-def rewriteObjFunLemma (numConstrs : Nat) : MetaM Name :=
+def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   match numConstrs with
   | 1  => return ``Minimization.Equivalence.rewrite_objFun_1
   | 2  => return ``Minimization.Equivalence.rewrite_objFun_2
@@ -31,17 +31,17 @@ def rewriteObjFunLemma (numConstrs : Nat) : MetaM Name :=
   | 8  => return ``Minimization.Equivalence.rewrite_objFun_8
   | 9  => return ``Minimization.Equivalence.rewrite_objFun_9
   | 10 => return ``Minimization.Equivalence.rewrite_objFun_10
-  | _  => throwError "`rw_objFun` error: can only rewrite problems with up to 10 constraints."
+  | _  => throwError "`rw_obj` error: can only rewrite problems with up to 10 constraints."
 
 /-- -/
-def rewriteObjFunBuilder (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder :=
+def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
       let constrs ← decomposeConstraints constrsBody
       return constrs.map fun (n, _) => n
     let numConstrs := constrTags.length
-    let gs ← g.apply (mkConst (← rewriteObjFunLemma numConstrs))
+    let gs ← g.apply (mkConst (← rewriteObjLemma numConstrs))
     let mut gToRw := g
     let mut foundGToRw := false
     for g in gs do
@@ -49,10 +49,10 @@ def rewriteObjFunBuilder (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuil
         gToRw := g
         foundGToRw := true
     if !foundGToRw then
-      throwError "`rw_objFun` error: could not find rewrite goal."
+      throwError "`rw_obj` error: could not find rewrite goal."
     let (fvarIds, gAfterIntros) ← gToRw.introN (1 + numConstrs) ([`p] ++ constrTags)
     if fvarIds.size == 0 then
-      throwError "`rw_objFun` error: could not introduce optimization variables."
+      throwError "`rw_obj` error: could not introduce optimization variables."
     let gAfterShowVars ← showVars gAfterIntros (fvarIds.get! 0)
     if shouldEval then
       if let _ :: _ ← evalTacticAt tacStx gAfterShowVars then
@@ -170,14 +170,14 @@ end Meta
 
 namespace Tactic
 
-syntax (name := rwObjFun) "rw_objFun" "=>" (tacticSeqIndentGt)? : tactic
+syntax (name := rwObj) "rw_obj" "=>" (tacticSeq)? : tactic
 
-@[tactic rwObjFun]
+@[tactic rwObj]
 def evalRwObjFun : Tactic := fun stx => match stx with
-  | `(tactic|rw_objFun => $tacStx) => do
-      (rewriteObjFunBuilder true tacStx).toTactic
-  | `(tactic|rw_objFun =>) => do
-      (rewriteObjFunBuilder false stx).toTactic
+  | `(tactic|rw_obj => $tacStx) => do
+      (rewriteObjBuilder true tacStx).toTactic
+  | `(tactic|rw_obj =>) => do
+      (rewriteObjBuilder false stx).toTactic
   | _ => throwUnsupportedSyntax
 
 syntax (name := rwConstr) "rw_constr" (ident)? "=>" (tacticSeq)? : tactic
