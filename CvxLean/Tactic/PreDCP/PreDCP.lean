@@ -5,6 +5,7 @@ import CvxLean.Tactic.PreDCP.RewriteMapExt
 import CvxLean.Tactic.PreDCP.RewriteMapLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
 import CvxLean.Tactic.Basic.ConvOpt
+import CvxLean.Tactic.Basic.NormNumOpt
 import CvxLean.Tactic.Basic.RewriteOpt
 
 /-!
@@ -158,10 +159,9 @@ syntax (name := preDCP) "pre_dcp" : tactic
 @[tactic preDCP]
 def evalPreDCP : Tactic := fun stx => match stx with
   | `(tactic| pre_dcp) => withMainContext do
-      evalTactic <| ← `(tactic| conv_opt => norm_num1)
-      -- (Conv.convertOpt (fullProb := true) (convTac := Mathlib.Tactic.elabNormNum1Conv mkNullNode)).toTactic
+      normNumOptBuilder.toTactic
       preDCPBuilder.toTactic
-      evalTactic <| ← `(tactic| conv_opt => norm_num1)
+      normNumOptBuilder.toTactic
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
