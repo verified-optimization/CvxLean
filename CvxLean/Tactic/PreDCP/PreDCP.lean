@@ -5,7 +5,7 @@ import CvxLean.Tactic.PreDCP.RewriteMapExt
 import CvxLean.Tactic.PreDCP.RewriteMapLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
 import CvxLean.Tactic.Basic.ConvOpt
-import CvxLean.Tactic.Basic.Rewrite
+import CvxLean.Tactic.Basic.RewriteOpt
 
 /-!
 # Atomatic transformation to DCP form
@@ -85,7 +85,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String ‚Ñ
     if let _ :: _ ‚Üê evalTacticAt tacStx g then
       throwError "`pre_dcp` error: failed to apply {step.rewriteName}."
   else
-    -- Rewrites use the machinery from `Tactic.Basic.Rewrite`.
+    -- Rewrites use the machinery from `Tactic.Basic.RewriteOpt`.
     if atObjFun then
       rewriteObjBuilder true tacStx (some expectedExpr) eqvExpr g
     else

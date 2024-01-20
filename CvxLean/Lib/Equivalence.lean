@@ -116,15 +116,15 @@ def trans (E₁ : p ≡' q) (E₂ : q ≡' r) : p ≡' r :=
     phi_feasibility := fun x hx => E₂.phi_feasibility (E₁.phi x) (E₁.phi_feasibility x hx),
     psi_feasibility := fun y hy => E₁.psi_feasibility (E₂.psi y) (E₂.psi_feasibility y hy),
     phi_optimality := fun x hx =>
-      -- h(φ₂(φ₁(x))) ≤ g(φ₁(x))
+      -- `h(φ₂(φ₁(x))) ≤ g(φ₁(x))`
       have h₁ := E₂.phi_optimality (E₁.phi x) (E₁.phi_feasibility x hx)
-      -- g(φ₁(x)) ≤ f(x)
+      -- `g(φ₁(x)) ≤ f(x)`
       have h₂ := E₁.phi_optimality x hx
       le_trans h₁ h₂,
     psi_optimality := fun y hy =>
-      -- f(ψ₁(ψ₂(y))) ≤ g(ψ₂(y))
+      -- `f(ψ₁(ψ₂(y))) ≤ g(ψ₂(y))`
       have h₁ := E₁.psi_optimality (E₂.psi y) (E₂.psi_feasibility y hy)
-      -- g(ψ₂(y)) ≤ h(y)
+      -- `g(ψ₂(y)) ≤ h(y)`
       have h₂ := E₂.psi_optimality y hy
       le_trans h₁ h₂ }
 
@@ -141,7 +141,7 @@ section Eq
 variable {p q : Minimization D R}
 
 /-- Equal problems are equivalent. Note that the domain needs to be the same. We intentionally do
-not definet his as `h ▸ Equivalence.refl (p := p)` so that `phi` and `psi` can be easily
+not define this as `h ▸ Equivalence.refl (p := p)` so that `phi` and `psi` can be easily
 extracted. -/
 def ofEq (h : p = q) : p ≡ q :=
   { phi := id,
@@ -164,22 +164,22 @@ def ofStrongEquivalence (E : p ≡' q) : p ≡ q :=
     phi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
       ⟨E.phi_feasibility x h_feas_x,
        fun y h_feas_y =>
-        -- g(φ(x)) ≤ f(x)
+        -- `g(φ(x)) ≤ f(x)`
         have h₁ := E.phi_optimality x h_feas_x
-        -- f(x) ≤ f(ψ(y))
+        -- `f(x) ≤ f(ψ(y))`
         have h₂ := h_opt_x (E.psi y) (E.psi_feasibility y h_feas_y)
-        -- f(ψ(y)) ≤ g(y)
+        -- `f(ψ(y)) ≤ g(y)`
         have h₃ := E.psi_optimality y h_feas_y
         le_trans (le_trans h₁ h₂) h₃⟩,
     psi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
       ⟨E.psi_feasibility x h_feas_x,
        fun y h_feas_y =>
         have h₁ := E.psi_optimality x h_feas_x
-        -- f(ψ(x)) ≤ g(x)
+        -- `f(ψ(x)) ≤ g(x)`
         have h₂ := h_opt_x (E.phi y) (E.phi_feasibility y h_feas_y)
-        -- g(x) ≤ g(φ(y))
+        -- `g(x) ≤ g(φ(y))`
         have h₃ := E.phi_optimality y h_feas_y
-        -- g(φ(y)) ≤ f(y)
+        -- `g(φ(y)) ≤ f(y)`
         le_trans (le_trans h₁ h₂) h₃⟩ }
 
 instance : Trans (@StrongEquivalence D E R _) (@Equivalence E F R _) (@Equivalence D F R _) :=
