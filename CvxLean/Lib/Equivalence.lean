@@ -506,10 +506,10 @@ noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {cs' : D �
 
 /-- Decompose constraint by introducing another equality constraint [BV04,p.132]. -/
 def decompose_constraint (g : D → E) (cs' : D → E → Prop) (hc : ∀ x, cs x ↔ cs' x (g x)) :
-    ⟨f, cs⟩ ≡ ⟨fun (_, y) => f y, fun (x, y) => x = g y ∧ cs' y x⟩ :=
+    ⟨f, cs⟩ ≡ ⟨fun (x, _) => f x, fun (x, y) => y = g x ∧ cs' x y⟩ :=
   Equivalence.ofStrongEquivalence <|
-  { phi := fun x => (g x, x),
-    psi := fun (_, y) => y,
+  { phi := fun x => (x, g x),
+    psi := fun (x, _) => x,
     phi_feasibility := fun {x} h_feas_x => by simpa [feasible, ← hc, h_feas_x],
     psi_feasibility := fun (x, y) ⟨h_x_eq_gy, h_cyx⟩ => by simp [feasible, hc, h_x_eq_gy ▸ h_cyx],
     phi_optimality := fun {_} _ => le_refl _,
