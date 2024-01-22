@@ -455,21 +455,21 @@ section Other
 variable {cs : D → Prop} {f : D → R}
 
 /-- See [BV04,p.131] where `g` is `ψᵢ`. -/
-def map_le_constraint_standard_form [Zero R] {c : D → Prop} {fi : D → R} {g : R → R}
-    (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ c x) (hg : ∀ x, g x ≤ 0 ↔ x ≤ 0) :
-    ⟨f, cs⟩ ≡ ⟨f, fun x => g (fi x) ≤ 0 ∧ c x⟩ := by
+def map_le_constraint_standard_form [Zero R] {cs' : D → Prop} {fi : D → R} {g : R → R}
+    (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ cs' x) (hg : ∀ x, g x ≤ 0 ↔ x ≤ 0) :
+    ⟨f, cs⟩ ≡ ⟨f, fun x => g (fi x) ≤ 0 ∧ cs' x⟩ := by
   apply rewrite_constraints; intros x; rw [hcs x, hg (fi x)]
 
 /-- See [BV04,p.131] where `g` is `ψₘ₊ᵢ`. -/
-def map_eq_constraint_standard_form [Zero R] {c : D → Prop} {hi : D → R} {g : R → R}
-    (hcs : ∀ x, cs x ↔ hi x = 0 ∧ c x) (hg : ∀ x, g x = 0 ↔ x = 0) :
-    ⟨f, cs⟩ ≡ ⟨f, fun x => g (hi x) = 0 ∧ c x⟩ := by
+def map_eq_constraint_standard_form [Zero R] {cs' : D → Prop} {hi : D → R} {g : R → R}
+    (hcs : ∀ x, cs x ↔ hi x = 0 ∧ cs' x) (hg : ∀ x, g x = 0 ↔ x = 0) :
+    ⟨f, cs⟩ ≡ ⟨f, fun x => g (hi x) = 0 ∧ cs' x⟩ := by
   apply rewrite_constraints; intros x; rw [hcs x, hg (hi x)]
 
 /-- Adding a slack variable [BV04,p.131]. -/
-def add_slack_variable_standard_form {c : D → Prop} {fi : D → ℝ}
-    (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ c x) :
-    ⟨f, cs⟩ ≡ ⟨fun (_, x) => f x, fun (si, x) => 0 ≤ (si : ℝ) ∧ fi x + si = 0 ∧ c x⟩ :=
+def add_slack_variable_standard_form {cs' : D → Prop} {fi : D → ℝ}
+    (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ cs' x) :
+    ⟨f, cs⟩ ≡ ⟨fun (_, x) => f x, fun (si, x) => 0 ≤ (si : ℝ) ∧ fi x + si = 0 ∧ cs' x⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => (-fi x, x),
     psi := fun (_, x) => x,
@@ -481,9 +481,9 @@ def add_slack_variable_standard_form {c : D → Prop} {fi : D → ℝ}
     psi_optimality := fun (_, x) _ => by simp }
 
 /-- Eliminate equality constraints [BV04,p.132]. -/
-noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {c : D → Prop} {hi : D → ℝ}
-    {g : E → D} (hcs : ∀ x, cs x ↔ hi x = 0 ∧ c x) (hg : ∀ x, hi x = 0 ↔ ∃ z, x = g z) :
-    ⟨f, cs⟩ ≡ ⟨fun x => f (g x), fun x => c (g x)⟩ :=
+noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {cs' : D → Prop} {hi : D → ℝ}
+    {g : E → D} (hcs : ∀ x, cs x ↔ hi x = 0 ∧ cs' x) (hg : ∀ x, hi x = 0 ↔ ∃ z, x = g z) :
+    ⟨f, cs⟩ ≡ ⟨fun x => f (g x), fun x => cs' (g x)⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => if h : hi x = 0 then Classical.choose ((hg x).mp h) else default,
     psi := g,
@@ -505,8 +505,8 @@ noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {c : D →
     psi_optimality := fun x _ => by simp }
 
 /-- Decompose constraint by introducing another equality constraint [BV04,p.132]. -/
-def decompose_constraint (g : D → E) (c : D → E → Prop) (hc : ∀ x, cs x = c x (g x)) :
-    ⟨f, cs⟩ ≡ ⟨fun (_, y) => f y, fun (x, y) => x = g y ∧ c y x⟩ :=
+def decompose_constraint (g : D → E) (cs' : D → E → Prop) (hc : ∀ x, cs x ↔ cs' x (g x)) :
+    ⟨f, cs⟩ ≡ ⟨fun (_, y) => f y, fun (x, y) => x = g y ∧ cs' y x⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => (g x, x),
     psi := fun (_, y) => y,
@@ -526,41 +526,41 @@ def epigraph_form : ⟨f, cs⟩ ≡ ⟨fun (t, _) => t, fun (t, x) => f x ≤ t 
     psi_optimality := fun {_} ⟨h_fx_le_t, _⟩ => by simpa }
 
 /-- Suppose `D ≃ S × E`. Let problem `p := ⟨f, cs⟩` be defined over `D`. Every `x : D` maps
-one-to-one to `(s, y) : S × E`. Assume that `x` is `p`-feasible iff `s = g y` and `c x`. We can
+one-to-one to `(s, y) : S × E`. Assume that `x` is `p`-feasible iff `s = g y` and `cs' x`. We can
 think of `s` as a new variable. If changing `s` does not change the objective function and the new
 constraints `c` respect monotonicity in `S`, we have that `p` is equivalent to the problem
-`⟨f, s ≤ g y ∧ c x⟩`. -/
-def eq_to_le_left {S} [Preorder S] (e : D ≃ S × E) (g : E → S) (c : D → Prop)
-    (hcs : ∀ {x}, cs x ↔ ((e x).1 = g (e x).2 ∧ c x))
+`⟨f, s ≤ g y ∧ cs' x⟩`. -/
+def eq_to_le_left {S} [Preorder S] (e : D ≃ S × E) (g : E → S) (cs' : D → Prop)
+    (hcs : ∀ {x}, cs x ↔ ((e x).1 = g (e x).2 ∧ cs' x))
     (hf : ∀ y r s, f (e.symm (r, y)) = f (e.symm (s, y)))
-    (h_mono: ∀ y r s, r ≤ s → c (e.symm (r, y)) → c (e.symm (s, y))) :
-    ⟨f, cs⟩ ≡ ⟨f, fun x => (e x).1 ≤ g (e x).2 ∧ c x⟩ :=
+    (h_mono: ∀ y r s, r ≤ s → cs' (e.symm (r, y)) → cs' (e.symm (s, y))) :
+    ⟨f, cs⟩ ≡ ⟨f, fun x => (e x).1 ≤ g (e x).2 ∧ cs' x⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => x,
     psi := fun x => e.symm (g (e x).2, (e x).2),
     phi_feasibility := fun {x} h_feas_x => ⟨le_of_eq (hcs.1 h_feas_x).1, (hcs.1 h_feas_x).2⟩,
     psi_feasibility := fun {x} h_feas_x => by
-      have hcx : c x := h_feas_x.2
-      have hcegex : c (e.symm (g (e x).2, (e x).2)) := by
+      have hcx : cs' x := h_feas_x.2
+      have hcegex : cs' (e.symm (g (e x).2, (e x).2)) := by
         apply h_mono (e x).2 (e x).1 _ h_feas_x.1; simp [hcx]
       simp [feasible, hcs, hcegex]
     phi_optimality := fun {x} _ => le_refl _,
     psi_optimality := fun {x} _ => by simp; rw [hf _ _ (e x).1]; simp [le_of_eq] }
 
 /-- Similar to `eq_to_le_left` with the monotonicity condition on `c` flipped. In this case we have
-that `P` is equivalent to `⟨f, g y ≤ s ∧ c x⟩`. -/
-def eq_to_le_right {S} [Preorder S] (e : Equiv D (S × E)) (g : E → S) (c : D → Prop)
-    (hcs : ∀ {x}, cs x ↔ (g (e x).2 = (e x).1 ∧ c x))
+that `P` is equivalent to `⟨f, g y ≤ s ∧ cs' x⟩`. -/
+def eq_to_le_right {S} [Preorder S] (e : Equiv D (S × E)) (g : E → S) (cs' : D → Prop)
+    (hcs : ∀ {x}, cs x ↔ (g (e x).2 = (e x).1 ∧ cs' x))
     (hf : ∀ x r s, f (e.symm ⟨r, x⟩) = f (e.symm ⟨s, x⟩))
-    (h_mono: ∀ x r s, r ≤ s → c (e.symm (s, x)) → c (e.symm ⟨r, x⟩)) :
-    ⟨f, cs⟩ ≡  ⟨f, fun x => g (e x).2 ≤ (e x).1 ∧ c x⟩ :=
+    (h_mono: ∀ x r s, r ≤ s → cs' (e.symm (s, x)) → cs' (e.symm ⟨r, x⟩)) :
+    ⟨f, cs⟩ ≡  ⟨f, fun x => g (e x).2 ≤ (e x).1 ∧ cs' x⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => x,
     psi := fun x => e.symm ⟨g (e x).2, (e x).2⟩,
     phi_feasibility := fun {x} h_feas_x => ⟨le_of_eq (hcs.1 h_feas_x).1, (hcs.1 h_feas_x).2⟩,
     psi_feasibility := fun {x} h_feas_x => by
-      have hcx : c x := h_feas_x.2
-      have hcegex : c (e.symm ⟨g (e x).2, (e x).2⟩) := by
+      have hcx : cs' x := h_feas_x.2
+      have hcegex : cs' (e.symm ⟨g (e x).2, (e x).2⟩) := by
         apply h_mono (e x).2 _ (e x).1 h_feas_x.1; simp [hcx]
       simp [feasible, hcs, hcegex]
     phi_optimality := fun {x} _ => le_refl _,
