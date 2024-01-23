@@ -19,7 +19,7 @@ def const (n : ℕ) (k : α) : Fin n → α  :=
   fun _ => k
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.VecToMatrix`. -/
-def toMatrix {n : ℕ} (x : Fin n → α) : Fin n → Fin 1 → α :=
+def toMatrix {n : ℕ} (x : Fin n → α) : Matrix (Fin n) (Fin 1) α :=
   fun i => ![x i]
 
 section AddCommMonoid

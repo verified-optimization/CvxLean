@@ -130,7 +130,62 @@ def p₂ :=
     subject to
       c₁ : 0 ≤ x
 
-def Rx₁₂ : p₁ ≽' p₂ 
+def Rx₁₂ : p₁ ≽' p₂ :=
+  { phi := fun (x, _) => x,
+    phi_feasibility := fun _ ⟨hx, _⟩ => hx,
+    phi_optimality := fun _ ⟨_, hy⟩ => by simpa [objFun, p₁, p₂] }
+
+open Real Matrix
+
+lemma PosSemiDef_is_symmetric {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A) :
+  ∀ i j, A i j = A j i := by
+  let h_A_IsHermitian := hA.1
+  rw [Matrix.isHermitian_iff_isSymmetric] at h_A_IsHermitian
+  simp [LinearMap.IsSymmetric, toEuclideanLin] at h_A_IsHermitian
+  intros i j
+  have hAij := h_A_IsHermitian (fun k => if k = i then 1 else 0) (fun k => if k = j then 1 else 0)
+  have hi : (Finset.sum Finset.univ fun x => A j x * (Equiv.refl (WithLp 2 (Fin n → ℝ)))
+    (fun k => if k = i then 1 else 0) x) = A j i := by simp
+  have hj : (Finset.sum Finset.univ fun x => A i x * (Equiv.refl (WithLp 2 (Fin n → ℝ)))
+    (fun k => if k = j then 1 else 0) x) = A i j := by simp
+  simp [WithLp.equiv, mulVec, dotProduct] at hAij
+  erw [hi, hj] at hAij
+  rw [hAij]
+
+lemma trace_mul_transpose_self_eq_quad_of_symm {n} (A : Matrix (Fin n) (Fin n) ℝ) (x : Fin n → ℝ)
+    (h_A_symm : ∀ i j, A i j = A j i) :
+    trace (A * (Vec.toMatrix x * (Vec.toMatrix x)ᵀ)) = vecMul x A ⬝ᵥ x := by
+  simp [trace, dotProduct]
+  congr; funext i;
+  simp [Matrix.mul_apply, vecMul, dotProduct, Finset.sum_mul]
+  congr; funext j;
+  simp [Vec.toMatrix]
+  rw [h_A_symm i j]
+  ring
+
+def sdr {n} {A C : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A) (hC : PosSemidef C) (b : ℝ) :
+  (optimization (x : Fin n → ℝ)
+    minimize (vecMul x C) ⬝ᵥ x
+    subject to
+      c₁ : (vecMul x A) ⬝ᵥ x ≥ b) ≽'
+  (optimization (X : Matrix (Fin n) (Fin n) ℝ)
+    minimize trace (C * X)
+    subject to
+      c₁ : trace (A * X) ≥ b
+      c₂ : PosSemidef X) :=
+  { phi := fun x => (Vec.toMatrix x) * (Vec.toMatrix x)ᵀ,
+    phi_feasibility := fun x h_feas_x => by
+      simp [objFun, feasible, constraints, p₁, p₂, Vec.toMatrix] at *
+      have h_A_symm := PosSemiDef_is_symmetric hA
+      rw [trace_mul_transpose_self_eq_quad_of_symm A x h_A_symm]
+      refine ⟨h_feas_x, ?_⟩
+      rw [← conjTranspose_eq_transpose]
+      exact posSemidef_conjTranspose_mul_self _,
+    phi_optimality := fun x h_feas_x => by
+      simp [objFun, feasible, constraints, p₁, p₂] at *
+      have h_C_symm := PosSemiDef_is_symmetric hC
+      rw [trace_mul_transpose_self_eq_quad_of_symm C x h_C_symm] }
+
 
 end Relaxations
 
