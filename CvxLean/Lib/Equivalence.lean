@@ -504,6 +504,29 @@ noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {cs' : D �
       rw [congr_arg f <| Classical.choose_spec ((hg x).mp h_hix_eq_0)],
     psi_optimality := fun x _ => by simp }
 
+/-- Same as `eliminate_eq_constraint_standard_form` but without choice. -/
+def eliminate_eq_constraint_standard_form' [Inhabited E] {cs' : D → Prop} {hi : D → ℝ}
+    {g : E → D} {ginv : D → E} (hcs : ∀ x, cs x ↔ hi x = 0 ∧ cs' x)
+    (hg : ∀ x, hi x = 0 ↔ g (ginv x) = x) (hg' : ∀ y, hi (g y) = 0) :
+    ⟨f, cs⟩ ≡ ⟨fun x => f (g x), fun x => cs' (g x)⟩ :=
+  Equivalence.ofStrongEquivalence <|
+  { phi := ginv,
+    psi := g,
+    phi_feasibility := fun {x} h_feas_x => by
+      simp [feasible, hcs x] at h_feas_x ⊢
+      replace ⟨h_hix_eq_0, h_cx⟩ := h_feas_x
+      simpa [(hg x).mp h_hix_eq_0]
+    psi_feasibility := fun x h_feas_x => by
+      simp [feasible, hcs (g x)]
+      refine ⟨?_, h_feas_x⟩
+      exact hg' x
+    phi_optimality := fun {x} h_feas_x => by
+      simp [feasible, hcs x] at h_feas_x ⊢
+      replace ⟨h_hix_eq_0, _⟩ := h_feas_x
+      simp [h_hix_eq_0]
+      rw [(hg x).mp h_hix_eq_0],
+    psi_optimality := fun x _ => by simp }
+
 /-- Decompose constraint by introducing another equality constraint [BV04,p.132]. -/
 def decompose_constraint (g : D → E) (cs' : D → E → Prop) (hc : ∀ x, cs x ↔ cs' x (g x)) :
     ⟨f, cs⟩ ≡ ⟨fun (x, _) => f x, fun (x, y) => y = g x ∧ cs' x y⟩ :=
