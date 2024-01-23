@@ -452,7 +452,7 @@ directly. They provide evidence that our notion of equivalence captures the expe
 transformations. -/
 section Other
 
-variable {cs : D → Prop} {f : D → R}
+variable {f : D → R} {cs : D → Prop}
 
 /-- See [BV04,p.131] where `g` is `ψᵢ`. -/
 def map_le_constraint_standard_form [Zero R] {cs' : D → Prop} {fi : D → R} {g : R → R}
