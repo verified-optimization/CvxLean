@@ -115,6 +115,25 @@ equivalence eqv/q :
 
 end Equivalences
 
+namespace Relaxations
+
+def p₁ :=
+  optimization (x y : ℝ)
+    minimize x + y
+    subject to
+      c₁ : 0 ≤ x
+      c₂ : 0 ≤ y
+
+def p₂ :=
+  optimization (x : ℝ)
+    minimize x
+    subject to
+      c₁ : 0 ≤ x
+
+def Rx₁₂ : p₁ ≽' p₂ 
+
+end Relaxations
+
 end Chapter3
 
 end
