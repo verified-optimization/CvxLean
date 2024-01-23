@@ -22,9 +22,9 @@ syntax (name := relaxation)
   "relaxation" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
 /-- Relaxation command. -/
-@[command_elab «Relaxation»]
+@[command_elab «relaxation»]
 def evalRelaxation : CommandElab := fun stx => match stx with
-| `(Relaxation $eqvId / $probId $declSig := $proofStx) => do
+| `(relaxation $relId / $probId $declSig := $proofStx) => do
   liftTermElabM do
     let (binders, lhsStx) := expandDeclSig declSig.raw
     elabBindersEx binders.getArgs fun xs => do
@@ -43,7 +43,7 @@ def evalRelaxation : CommandElab := fun stx => match stx with
       let rhsName := probId.getId
       let (rhs, proof) ← elabRelaxationProof lhs rhsName proofStx.raw
 
-      -- Add reduced problem to the environment.
+      -- Add relaxed problem to the environment.
       let rhs ← instantiateMVars rhs
       let rhs ← mkLambdaFVars (xs.map Prod.snd) rhs
       let rhs ← instantiateMVars rhs
@@ -55,7 +55,7 @@ def evalRelaxation : CommandElab := fun stx => match stx with
           rhs
           (Lean.ReducibilityHints.regular 0)
           (DefinitionSafety.safe)
-          [probId.getId])
+          [])
 
       -- Add Relaxation proof to the environment.
       let proofTy ← inferType proof
@@ -65,13 +65,13 @@ def evalRelaxation : CommandElab := fun stx => match stx with
       let proof ← instantiateMVars proof
       Lean.addDecl <|
         Declaration.defnDecl
-          (mkDefinitionValEx eqvId.getId
+          (mkDefinitionValEx relId.getId
           []
           proofTy
           proof
           (Lean.ReducibilityHints.regular 0)
           (DefinitionSafety.safe)
-          [probId.getId])
+          [])
   | _ => throwUnsupportedSyntax
 
 end CvxLean

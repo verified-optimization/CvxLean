@@ -1,5 +1,6 @@
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.Reduction
+import CvxLean.Meta.Relaxation
 
 namespace CvxLean
 
@@ -7,8 +8,9 @@ namespace Meta
 
 open Lean Meta Elab Tactic Term Command Minimization
 
+-- TODO: `StrongEquivalence`
 inductive TransformationGoal
-  | Solution | Equivalence | Reduction
+  | Solution | Equivalence | Reduction | Relaxation
 
 namespace TransformationGoal
 
@@ -23,14 +25,17 @@ def fromExpr (e : Expr) : MetaM TransformationGoal := do
     return TransformationGoal.Equivalence
   else if e.isAppOf `Minimization.Reduction then
     return TransformationGoal.Reduction
+  else if e.isAppOf `Minimization.Relaxation then
+    return TransformationGoal.Relaxation
   else
-    throwError "Expected a `Solution`, `Equivalence` or `Reduction` goal, got {e}."
+    throwError "Expected a `Solution`, `Equivalence`, `Reduction` or `Relaxation` goal, got {e}."
 
 def applyTransitivity (transf : TransformationGoal) (g : MVarId) : TacticM (MVarId × MVarId) :=
   g.withContext do
     if transf.isTransitive then
       let gsTrans ←
         match transf with
+          | TransformationGoal.Relaxation => evalTacticAt (← `(tactic| relaxation_trans)) g
           | TransformationGoal.Reduction => evalTacticAt (← `(tactic| reduction_trans)) g
           | TransformationGoal.Equivalence => evalTacticAt (← `(tactic| equivalence_trans)) g
           | _ => pure []
@@ -45,6 +50,39 @@ def applyTransitivity (transf : TransformationGoal) (g : MVarId) : TacticM (MVar
       return (g, g)
 
 end TransformationGoal
+
+/-- -/
+def RelaxationBuilder := RelaxationExpr → MVarId → TacticM Unit
+
+namespace RelaxationBuilder
+
+def toTactic (builder : RelaxationBuilder) : TacticM Unit := withMainContext do
+  let transf ← TransformationGoal.fromExpr (← getMainTarget)
+
+  -- Apply transitivity.
+  let (gToChange, gNext) ← transf.applyTransitivity <| ← getMainGoal
+  let mut gToChange := gToChange
+  let mut gNext := gNext
+
+  match transf with
+    | TransformationGoal.Solution =>
+        throwError "Relaxation tactic does not apply to `Solution`."
+    | TransformationGoal.Equivalence => do
+        throwError "Relaxation tactic does not apply to `Equivalence`."
+    | TransformationGoal.Reduction => do
+        throwError "Relaxation tactic does not apply to `Reduction`."
+    | TransformationGoal.Relaxation => do
+        pure ()
+
+  -- Run builder.
+  let relExpr ← RelaxationExpr.fromExpr (← gToChange.getType)
+  builder relExpr gToChange
+
+  -- Set next goal.
+  gNext.setTag Name.anonymous
+  setGoals [gNext]
+
+end RelaxationBuilder
 
 /-- -/
 def ReductionBuilder := ReductionExpr → MVarId → Tactic
@@ -70,6 +108,8 @@ def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
           throwError "Could not apply reduction tactic to `Solution`."
     | TransformationGoal.Equivalence => do
         throwError "Expected `Reduction`, found `Equivalence`."
+    | TransformationGoal.Relaxation => do
+        throwError "Expected `Reduction`, found `Relaxation`."
     | TransformationGoal.Reduction => do
         pure ()
 
@@ -112,6 +152,8 @@ def toTactic (builder : EquivalenceBuilder) : TacticM Unit := withMainContext do
           gToChange := eqv
         else
           throwError "Could not apply equivalence tactic to `Reduction`."
+    | TransformationGoal.Relaxation => do
+        throwError "Equivalence tactic does not apply to `Relaxation`."
 
   -- Run builder.
   let eqvExpr ← EquivalenceExpr.fromExpr (← gToChange.getType)
@@ -133,6 +175,7 @@ def runTransformationTactic (transf : TransformationGoal) (mvarId : MVarId) (stx
       | TransformationGoal.Solution => `(tactic| skip)
       | TransformationGoal.Equivalence => `(tactic| equivalence_rfl)
       | TransformationGoal.Reduction => `(tactic| reduction_rfl)
+      | TransformationGoal.Relaxation => `(tactic| relaxation_rfl)
   let code ← `(tactic| $tacticStx <;> $rflTacticStx)
 
   instantiateMVarDeclMVars mvarId
@@ -181,6 +224,8 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (rhsName 
               mkAppN (mkConst ``Minimization.Equivalence) #[D, E, R, RPreorder, lhs, rhs]
           | TransformationGoal.Reduction =>
               mkAppN (mkConst ``Minimization.Reduction) #[D, E, R, RPreorder, lhs, rhs]
+          | TransformationGoal.Relaxation =>
+              mkAppN (mkConst ``Minimization.Relaxation) #[D, E, R, RPreorder, lhs, rhs]
 
       -- Proof from `stx`.
       let proof ← elabTerm stx (some transfTy)
