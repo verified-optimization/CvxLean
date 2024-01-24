@@ -105,7 +105,7 @@ namespace CvxLean
 
 def runEggRequestRaw (requestJson : String) : MetaM String := do
     let eggProcess ← IO.Process.spawn {
-        cmd    := "egg-convexify/utils/egg-convexify",
+        cmd    := "egg-pre-dcp/utils/egg-pre-dcp",
         stdout := IO.Process.Stdio.piped,
         stdin  := IO.Process.Stdio.piped,
         stderr := IO.Process.Stdio.null
