@@ -20,7 +20,7 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
   problem n N α y := by
   -- Change objective function.
   reduction_step =>
-    apply Reduction.map_objFun_of_comonotonic (g := fun x => -log (-x))
+    apply Reduction.map_objFun_of_order_reflecting (g := fun x => -log (-x))
     · intros R S hR hS h
       apply neg_le_neg
       simp only [maximizeNeg] at h
