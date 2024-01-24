@@ -1,7 +1,6 @@
 import CvxLean.Command.Equivalence
 import CvxLean.Command.Solve
-import CvxLean.Tactic.Basic.ChangeOfVariables
-import CvxLean.Tactic.Basic.RenameVars
+import CvxLean.Tactic.Basic.All
 
 noncomputable section
 
@@ -41,15 +40,17 @@ def optimalVehicleSpeed (_ : Fact (0 < n)) :=
   optimization (s : Fin n → ℝ)
     minimize ∑ i, (d i / s i) * F (s i)
     subject to
-      hsmin : ∀ i, smin i ≤ s i
-      hsmax : ∀ i, s i ≤ smax i
-      hτmin : ∀ i, τmin i ≤ ∑ j in [[0, i]], d j / s j
-      hτmax : ∀ i, ∑ j in [[0, i]], d j / s j ≤ τmax i
+      c_smin : ∀ i, smin i ≤ s i
+      c_smax : ∀ i, s i ≤ smax i
+      c_τmin : ∀ i, τmin i ≤ ∑ j in [[0, i]], d j / s j
+      c_τmax : ∀ i, ∑ j in [[0, i]], d j / s j ≤ τmax i
 
 private lemma simp_vec_fraction : ∀ s : Fin n → ℝ, ∀ i, d i / (d i / s i) = s i := by
   intros s i
   have h : d i ≠ 0 := by linarith [d_pos i]
   rw [← div_mul, div_self h, one_mul]
+
+#check Finset.sum
 
 equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n → ℝ)
     (d_pos : ∀ i, 0 < d i) (τmin τmax : Fin n → ℝ) (smin smax : Fin n → ℝ)
@@ -59,18 +60,31 @@ equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n �
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence (fun t => d / t)
-    . rintro s ⟨hsmin, _⟩ i; split_ands <;> linarith [smin_pos i, hsmin i, d_pos i]
+    . rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [smin_pos i, c_smin i, d_pos i]
   rename_vars [t]
   -- Clean up divisions introduced by the change of variables.
   conv_obj =>
     simp only [Pi.div_apply, simp_vec_fraction d d_pos]
-  conv_constr hτmin =>
+  conv_constr c_τmin =>
     simp only [Pi.div_apply, simp_vec_fraction d d_pos]
-  conv_constr hτmax =>
+  conv_constr c_τmax =>
     simp only [Pi.div_apply, simp_vec_fraction d d_pos]
   -- Write in matrix form.
-
-
+  equivalence_step =>
+    apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (t * (Vec.map F (d / t))))
+    . intro t _; simp [Vec.sum]; congr
+  equivalence_step =>
+    apply Equivalence.rewrite_constraint_4_last
+      (c4' := fun t => (Matrix.toUpperTri (Matrix.const 1)).mulVec t ≤ τmax)
+    . intro t _ _ _
+      constructor
+      . intros h i
+        simp [Matrix.toUpperTri, Matrix.const, Matrix.mulVec]
+        convert (h i)
+        unfold Matrix.dotProduct Finset.sum
+        ext j
+        simp [Finset.uIcc, Finset.mem_Icc]
+      . sorry
 
 #print optimalVehicleSpeedConvex
 

@@ -8,6 +8,9 @@ import CvxLean.Lib.Math.Data.List
 
 namespace Matrix
 
+def const (k : α) : Matrix m n α :=
+  fun _ _ => k
+
 instance [Preorder α] : Preorder (Matrix m n α) where
   le := fun A B => ∀ i j, A i j ≤ B i j
   le_refl := fun _ _ _ => le_refl _

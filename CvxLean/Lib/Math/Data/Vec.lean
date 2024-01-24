@@ -22,6 +22,9 @@ def const (n : ℕ) (k : α) : Fin n → α  :=
 def toMatrix {n : ℕ} (x : Fin n → α) : Matrix (Fin n) (Fin 1) α :=
   fun i => ![x i]
 
+def map {β} (f : α → β) (v : m → α) : m → β :=
+  fun i => f (v i)
+
 section AddCommMonoid
 
 variable [AddCommMonoid α] {m : Nat} {n : Nat} (x : Fin m → α) (y : Fin n → α)
