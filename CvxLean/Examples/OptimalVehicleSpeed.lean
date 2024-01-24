@@ -1,6 +1,4 @@
-import CvxLean.Command.Equivalence
-import CvxLean.Command.Solve
-import CvxLean.Tactic.Basic.All
+import CvxLean
 
 noncomputable section
 
@@ -36,7 +34,7 @@ open FinsetInterval
 
 instance [i : Fact (0 < n)] : OfNat (Fin n) 0 := ⟨⟨0, i.out⟩⟩
 
-def optimalVehicleSpeed (_ : Fact (0 < n)) :=
+def optimalVehicleSpeed [i : Fact (0 < n)] :=
   optimization (s : Fin n → ℝ)
     minimize ∑ i, (d i / s i) * F (s i)
     subject to
@@ -50,7 +48,7 @@ private lemma simp_vec_fraction (s : Fin n → ℝ) (i : Fin n) : d i / (d i / s
   rw [← div_mul, div_self h, one_mul]
 
 private lemma fold_partial_sum [Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
-    ∑ j in [[0, i]], t j = mulVec (toUpperTri (const 1))ᵀ t i := by
+    ∑ j in [[0, i]], t j = ((const 1).toUpperTri)ᵀ.mulVec t i := by
   simp [toUpperTri, const, mulVec, Matrix.dotProduct, Finset.sum]
   apply Finset.sum_subset_zero_on_sdiff
   . simp
@@ -70,7 +68,7 @@ private lemma fold_partial_sum [Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
 equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n → ℝ)
     (d_pos : ∀ i, 0 < d i) (τmin τmax : Fin n → ℝ) (smin smax : Fin n → ℝ)
     (smin_pos : ∀ i, 0 < smin i) (F : ℝ → ℝ) :
-    optimalVehicleSpeed d τmin τmax smin smax F ⟨n_pos⟩ := by
+    optimalVehicleSpeed d τmin τmax smin smax F (i := ⟨n_pos⟩) := by
   haveI : Fact (0 < n) := ⟨n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
@@ -85,10 +83,10 @@ equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n �
     simp only [Pi.div_apply, simp_vec_fraction d d_pos]
   conv_constr c_τmax =>
     simp only [Pi.div_apply, simp_vec_fraction d d_pos]
-  -- Write in matrix form.
+  -- Put in matrix form.
   equivalence_step =>
     apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (t * (Vec.map F (d / t))))
-    . intro t _; simp [Vec.sum]; congr
+    . intro t _; simp [Vec.sum]; rfl
   equivalence_step =>
     apply Equivalence.rewrite_constraint_1 (c1' := fun t => smin ≤ d / t)
     . intro t _; rfl
@@ -97,15 +95,47 @@ equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n �
     . intro t _ _; rfl
   equivalence_step =>
     apply Equivalence.rewrite_constraint_3
-      (c3' := fun t => τmin ≤ ((toUpperTri (const 1)).transpose).mulVec t)
+      (c3' := fun t => τmin ≤ ((const 1).toUpperTri)ᵀ.mulVec t)
     . intro t _ _ _
       simp [fold_partial_sum t]; rfl
   equivalence_step =>
     apply Equivalence.rewrite_constraint_4_last
-      (c4' := fun t => ((toUpperTri (const 1)).transpose).mulVec t ≤ τmax)
+      (c4' := fun t => ((const 1).toUpperTri )ᵀ.mulVec t ≤ τmax)
     . intro t _ _ _
       simp [fold_partial_sum t]; rfl
-  
+  rename_vars [t]
+
+#print optimalVehicleSpeedConvex
+
+-- The problem is technically in DCP form. The only issue is that we do not have an atom for the
+-- perspective function, so the objective function `Vec.sum (t * Vec.map F (d / t))` cannot be
+-- reduced directly.
+
+-- We fix `F` and declare an atom for this particular application of the perspective function.
+-- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
+
+set_option trace.Meta.debug true in
+declare_atom perspectiveF [convex] (n : ℕ)& (a : ℝ)& (b : ℝ)& (c : ℝ)& (d : Fin n → ℝ)?
+    (t : Fin n → ℝ)? : Vec.sum (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)) :=
+bconditions
+  (ha : 0 ≤ a)
+  (hc : 0 ≤ c)
+vconditions
+  (ht : 1 / 1000 ≤ t)
+implementationVars (v : Fin n → ℝ)
+implementationObjective Vec.sum v
+implementationConstraints
+  (h : a • (d ^ (2 : ℝ) / t) + b • d + c • (1 / t) ≤ v)
+solution (v := (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)))
+solutionEqualsAtom by
+  rfl;
+feasibility
+  (h : by sorry)
+optimality by
+  sorry
+vconditionElimination
+  (ht : sorry)
+
 
 end OptimalVehicleSpeed
 
