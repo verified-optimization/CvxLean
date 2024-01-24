@@ -6,6 +6,8 @@ import CvxLean.Tactic.DCP.AtomLibrary.All
 import CvxLean.Command.Reduction
 import CvxLean.Command.Solve
 
+namespace CovarianceEstimation
+
 open CvxLean Minimization
 open Real BigOperators Matrix
 
@@ -67,3 +69,5 @@ solve problem₂ 2 4 1 ![![0,2],![2,0],![-2,0],![0,-2]]
 #eval problem₂.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval problem₂.value    -- 14.124098
 #eval problem₂.solution -- ![![0.499903, 0.000000], ![0.000000, 0.499905]]
+
+end CovarianceEstimation
