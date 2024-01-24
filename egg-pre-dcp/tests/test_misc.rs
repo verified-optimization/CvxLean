@@ -2,9 +2,9 @@
 Miscellaneous tests that do not fit in any other category.
 !*/
 
-use egg_convexify::domain;
+use egg_pre_dcp::domain;
 
-use egg_convexify::test_util::{*};
+use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_norm2_with_one() {

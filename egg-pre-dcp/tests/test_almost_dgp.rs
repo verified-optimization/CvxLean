@@ -2,7 +2,7 @@
 Tests from geometric programming that do not follow the DGP rules.
 !*/
 
-use egg_convexify::test_util::{*};
+use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_agp2() {

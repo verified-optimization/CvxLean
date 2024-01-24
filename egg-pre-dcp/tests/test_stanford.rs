@@ -5,8 +5,8 @@ https://github.com/cvxgrp/cvxbook_additional_exercises
 
 use std::time::Instant;
 
-use egg_convexify::domain;
-use egg_convexify::test_util::{*};
+use egg_pre_dcp::domain;
+use egg_pre_dcp::test_util::{*};
 
 // TODO: Failing because of qol curvature check simplification.
 #[test]

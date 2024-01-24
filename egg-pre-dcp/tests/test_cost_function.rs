@@ -2,7 +2,7 @@
 Tests for cost function minimization.
 !*/
 
-use egg_convexify::test_util::{*};
+use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_cost_function_number_of_variable_occurences() {

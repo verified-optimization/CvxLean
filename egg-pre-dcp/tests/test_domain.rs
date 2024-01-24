@@ -2,9 +2,9 @@
 Tests for extended interval arithmetic.
 !*/
 
-use egg_convexify;
+use egg_pre_dcp;
 
-use egg_convexify::domain;
+use egg_pre_dcp::domain;
 use domain::Domain as Domain; 
 
 
