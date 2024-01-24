@@ -109,6 +109,7 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_sq
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_domain
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.add_constraint
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraints
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1
@@ -137,15 +138,15 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       simpCtx := { simpCtx with simpTheorems := #[simpThms] }
 
       let (res, _) ← simp psi simpCtx
-      -- NOTE: Technically, it should be `← mkLambdaFVars (xs.map Prod.snd) res.expr`, but that
-      -- makes the real-to-float conversion fail, in general. So we ignore the arguments of the
-      -- equivalence.
-      --let psi := res.expr
-      let psi ← mkLambdaFVars eqvArgs res.expr
+
+      -- NOTE: We ignore arguments with `Prop`s here as keeping them would only mean requiring
+      -- proofs about floats.
+      let eqvNonPropArgs ← eqvArgs.filterM fun arg => do
+        return !(← inferType (← inferType arg)).isProp
+      let psi ← mkLambdaFVars eqvNonPropArgs res.expr
 
       try
         let psiF ← realToFloat psi
-        trace[Meta.debug] "psiF: {psiF}"
         Lean.addAndCompile <|
           Declaration.defnDecl
             (mkDefinitionValEx (eqvId ++ `backward_map)
