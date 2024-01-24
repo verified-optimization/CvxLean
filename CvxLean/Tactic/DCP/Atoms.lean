@@ -145,7 +145,13 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
       trace[Meta.debug] "before PAT "
       trace[Meta.debug] "abo : {atomData.impConstrs}"
       trace[Meta.debug] "constrs: {constraints}"
-      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls (extraVars := xsVars)
+      -- Add bconds declarations.
+      let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+      let pat ← withLocalDeclsDNondep bconds fun bs => do
+        let bcondsDecls ← bs.mapM (·.fvarId!.getDecl)
+        DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
+          (extraVars := xsVars) (extraDecls := bcondsDecls)
+
       trace[Meta.debug] "after PAT "
       -- `pat` is the atom tree resulting from the DCP procedure.
 
