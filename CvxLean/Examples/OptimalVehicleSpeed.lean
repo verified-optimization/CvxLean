@@ -65,10 +65,11 @@ private lemma fold_partial_sum [Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
     rw [Finset.mem_uIcc, sup_of_le_right hi_nonneg] at hj
     rw [if_pos hj.2]
 
-equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n → ℝ)
-    (d_pos : ∀ i, 0 < d i) (τmin τmax : Fin n → ℝ) (smin smax : Fin n → ℝ)
-    (smin_pos : ∀ i, 0 < smin i) (F : ℝ → ℝ) :
-    optimalVehicleSpeed d τmin τmax smin smax F (i := ⟨n_pos⟩) := by
+set_option trace.Meta.debug true
+
+equivalence' eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) {d : Fin n → ℝ}
+    (d_pos : ∀ i, 0 < d i) (τmin τmax smin smax : Fin n → ℝ) (smin_pos : ∀ i, 0 < smin i)
+    (F : ℝ → ℝ) : optimalVehicleSpeed d τmin τmax smin smax F (i := ⟨n_pos⟩) := by
   haveI : Fact (0 < n) := ⟨n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
@@ -107,35 +108,58 @@ equivalence eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) (d : Fin n �
 
 #print optimalVehicleSpeedConvex
 
+#check eqv.backward_map
+
 -- The problem is technically in DCP form. The only issue is that we do not have an atom for the
 -- perspective function, so the objective function `Vec.sum (t * Vec.map F (d / t))` cannot be
 -- reduced directly.
 
 -- We fix `F` and declare an atom for this particular application of the perspective function.
--- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
+-- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a` nad `0 ≤ c`.
 
-set_option trace.Meta.debug true in
-declare_atom perspectiveF [convex] (n : ℕ)& (a : ℝ)& (b : ℝ)& (c : ℝ)& (d : Fin n → ℝ)?
-    (t : Fin n → ℝ)? : Vec.sum (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)) :=
-bconditions
-  (ha : 0 ≤ a)
-  (hc : 0 ≤ c)
-vconditions
-  (ht : 1 / 1000 ≤ t)
-implementationVars (v : Fin n → ℝ)
-implementationObjective Vec.sum v
-implementationConstraints
-  (h : a • (d ^ (2 : ℝ) / t) + b • d + c • (1 / t) ≤ v)
-solution (v := (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)))
-solutionEqualsAtom by
-  rfl;
-feasibility
-  (h : by sorry)
-optimality by
-  sorry
-vconditionElimination
-  (ht : sorry)
+#check div_pos_iff
 
+equivalence eqv'/optimalVehicleSpeedConvex' {n : ℕ} (n_pos : 0 < n) {d : Fin n → ℝ}
+    (d_pos : ∀ i, 0 < d i) (τmin τmax smin smax : Fin n → ℝ) (smin_pos : ∀ i, 0 < smin i)
+    (a b c : ℝ) (ha : 0 ≤ a) (hc : 0 ≤ c) :
+    optimalVehicleSpeedConvex n_pos d_pos τmin τmax smin smax smin_pos
+      (fun s => a * s ^ (2 : ℝ) + b * s + c) := by
+  equivalence_step =>
+    apply Equivalence.rewrite_objFun
+      (g := fun t => Vec.sum (a • (d ^ (2 : ℝ) / t) + b • d + c • (1 / t)))
+    . rintro t ⟨c_smin, c_smax, c_τmin, c_τmax⟩
+      congr; funext i; simp [Vec.map]
+      have c_smin_i := c_smin i
+      simp at c_smin_i
+      have h_di_div_ti_pos := lt_of_lt_of_le (smin_pos i) c_smin_i
+      have h_ti_pos : 0 < t i := by
+        cases div_pos_iff.mp h_di_div_ti_pos with
+        | inl h_pos => sorry
+        | inr h_neg => sorry
+
+
+
+-- set_option trace.Meta.debug true in
+-- declare_atom perspectiveF [convex] (n : ℕ)& (a : ℝ)& (b : ℝ)& (c : ℝ)& (d : Fin n → ℝ)?
+--     (t : Fin n → ℝ)? : Vec.sum (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)) :=
+-- bconditions
+--   (ha : 0 ≤ a)
+--   (hc : 0 ≤ c)
+-- vconditions
+--   (ht : 1 / 1000 ≤ t)
+-- implementationVars (v : Fin n → ℝ)
+-- implementationObjective Vec.sum v
+-- implementationConstraints
+--   (h : a • (d ^ (2 : ℝ) / t) + b • d + c • (1 / t) ≤ v)
+-- solution (v := (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)))
+-- solutionEqualsAtom by
+--   rfl;
+-- feasibility
+--   (h : by sorry)
+-- optimality by
+--   sorry
+-- vconditionElimination
+--   (ht : sorry)
 
 end OptimalVehicleSpeed
 

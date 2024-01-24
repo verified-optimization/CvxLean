@@ -106,6 +106,12 @@ addRealToFloat : Real.instOneReal :=
 addRealToFloat : Real.instLEReal :=
   instLEFloat
 
+addRealToFloat : Real.instLTReal :=
+  instLTFloat
+
+addRealToFloat : Real.instDivReal  :=
+  instDivFloat
+
 addRealToFloat (n : Nat) (i) : @OfNat.ofNat Real n i :=
   Float.ofNat n
 
