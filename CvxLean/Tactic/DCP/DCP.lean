@@ -205,20 +205,6 @@ partial def mkReducedExprs : GraphAtomDataTree → NewVarsTree → MetaM (Tree E
 
 abbrev NewConstrsTree := Tree (Array Expr) Unit
 
-/-- -/
-partial def mkNewConstrs : GraphAtomDataTree → NewVarsTree → ReducedExprsTree → MetaM NewConstrsTree
-  | Tree.node atom childAtoms, Tree.node newVars childNewVars, Tree.node reducedExprs childReducedExprs => do
-    let mut childNewConstrs := #[]
-    for i in [:childAtoms.size] do
-      childNewConstrs := childNewConstrs.push <| ← mkNewConstrs childAtoms[i]! childNewVars[i]! childReducedExprs[i]!
-    let newConstrs := atom.impConstrs
-    let newConstrs := newConstrs.map (mkAppNBeta · (childReducedExprs.map Tree.val))
-    let newConstrs := newConstrs.map (mkAppNBeta · (newVars.map (mkFVar ·.fvarId)))
-    return Tree.node newConstrs childNewConstrs
-  | Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
-  | _, _, _ => throwError "Tree mismatch"
-
-
 abbrev PreVCond := ℕ ⊕ Expr
 abbrev PreVConds := Array PreVCond
 abbrev PreVCondsTree := Tree PreVConds Unit
@@ -226,6 +212,20 @@ abbrev PreVCondsTree := Tree PreVConds Unit
 abbrev VCond := Expr
 abbrev VConds := Array VCond
 abbrev VCondsTree := Tree VConds Unit
+
+/-- -/
+partial def mkNewConstrs : GraphAtomDataTree → BCondsTree → NewVarsTree → ReducedExprsTree → MetaM NewConstrsTree
+  | Tree.node atom childAtoms, Tree.node bconds childBConds, Tree.node newVars childNewVars, Tree.node reducedExprs childReducedExprs => do
+    let mut childNewConstrs := #[]
+    for i in [:childAtoms.size] do
+      childNewConstrs := childNewConstrs.push <| ← mkNewConstrs childAtoms[i]! childBConds[i]! childNewVars[i]! childReducedExprs[i]!
+    let newConstrs := atom.impConstrs
+    let newConstrs := newConstrs.map (mkAppNBeta · (childReducedExprs.map Tree.val))
+    let newConstrs := newConstrs.map (mkAppNBeta · bconds)
+    let newConstrs := newConstrs.map (mkAppNBeta · (newVars.map (mkFVar ·.fvarId)))
+    return Tree.node newConstrs childNewConstrs
+  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
+  | _, _, _, _ => throwError "Tree mismatch"
 
 /-- Returns index of constraint if vcondition corresponds exactly to a constraint
 (this is needed for condition elimination). If not, it tries to deduce the condition
@@ -757,11 +757,12 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkNewConstrsOC (originalVarsDecls : Array LocalDecl) (newVarDecls : List LocalDecl)
- (atoms : OC (Tree GraphAtomData Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (reducedExprs : OC (Tree Expr Expr))
+    (bconds : OC BCondsTree)
+    (atoms : OC (Tree GraphAtomData Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (reducedExprs : OC (Tree Expr Expr))
  : MetaM (Array Expr × OC (Tree (Array LocalDecl) Unit) × Array LocalDecl):=
 withExistingLocalDecls (originalVarsDecls.toList) do
   withExistingLocalDecls newVarDecls do
-    let newConstrs ← OC.map3M mkNewConstrs atoms newVars reducedExprs
+    let newConstrs ← OC.map4M mkNewConstrs atoms bconds newVars reducedExprs
     trace[Meta.debug] "newConstrs {newConstrs}"
     let newConstrVars ← OC.mapM mkNewConstrVars newConstrs
     trace[Meta.debug] "newConstrs {newConstrs}"
@@ -839,7 +840,7 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
     originalConstrVars solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
   let (newConstrs, newConstrVars, newConstrVarsArray)
-    ← mkNewConstrsOC originalVarsDecls newVarDecls atoms newVars reducedExprs
+    ← mkNewConstrsOC originalVarsDecls newVarDecls bconds atoms newVars reducedExprs
   let (optimality, vcondElimMap) ← mkOptimalityAndVCondElimOC originalVarsDecls newVarDecls
     newConstrVarsArray atoms args reducedExprs newVars newConstrVars curvature bconds vcondIdx
 
