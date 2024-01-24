@@ -22,15 +22,15 @@ def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
 
 instance : Abs (Matrix m n ℝ) := ⟨abs⟩
 
-theorem vecCons_zero_zero {n} : vecCons (0 : ℝ) (0 : Fin n → ℝ) = 0 := by
+theorem vecCons_zero_zero {n} [Zero R] : vecCons (0 : R) (0 : Fin n → R) = 0 := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem smul_vecCons {n} (x : ℝ) (y : ℝ) (v : Fin n → ℝ) :
+theorem smul_vecCons {n} [Zero R] [SMulZeroClass ℝ R] (x : ℝ) (y : R) (v : Fin n → R) :
     x • vecCons y v = vecCons (x • y) (x • v) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem add_vecCons {n} (x : ℝ) (v : Fin n → ℝ) (y : ℝ) (w : Fin n → ℝ) :
-    vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
+theorem add_vecCons {n} [Zero R] [SMulZeroClass ℝ R] [Add R] (x : R) (v : Fin n → R) (y : R)
+    (w : Fin n → R) : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 open BigOperators
