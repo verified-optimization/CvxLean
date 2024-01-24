@@ -2,9 +2,9 @@
 Test motivating example.
 !*/
 
-use egg_convexify::domain;
+use egg_pre_dcp::domain;
 
-use egg_convexify::test_util::{*};
+use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_main_example() {

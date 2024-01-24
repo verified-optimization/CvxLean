@@ -181,7 +181,8 @@ def powTwoLePowTwoRevConstr :=
       hy : 0 ≤ y
       h : sqrt x ≤ sqrt y
 
-time_cmd equivalence powTwoLePowTwoRevConstrRed/powTwoLePowTwoRevConstrAuto : powTwoLePowTwoRevConstr := by
+time_cmd equivalence powTwoLePowTwoRevConstrRed/powTwoLePowTwoRevConstrAuto :
+    powTwoLePowTwoRevConstr := by
   pre_dcp
 
 #print powTwoLePowTwoRevConstrAuto
@@ -1010,7 +1011,8 @@ def divPowEqMulPowNegConstr :=
       hx : 0 < x
       h : 1 / (x ^ (2 : ℝ)) ≤ 1
 
-time_cmd equivalence divPowEqMulPowNegConstrRed/divPowEqMulPowNegConstrAuto : divPowEqMulPowNegConstr := by
+time_cmd equivalence divPowEqMulPowNegConstrRed/divPowEqMulPowNegConstrAuto :
+    divPowEqMulPowNegConstr := by
   pre_dcp
 
 #print divPowEqMulPowNegConstrAuto
@@ -1035,7 +1037,8 @@ def oneDivEqPowNegOneConstr :=
       hx : 0 < x
       h : 1 / (sqrt x) ≤ 1
 
-time_cmd equivalence oneDivEqPowNegOneConstrRed/oneDivEqPowNegOneConstrAuto : oneDivEqPowNegOneConstr := by
+time_cmd equivalence oneDivEqPowNegOneConstrRed/oneDivEqPowNegOneConstrAuto :
+    oneDivEqPowNegOneConstr := by
   pre_dcp
 
 #print oneDivEqPowNegOneConstrAuto
@@ -1286,7 +1289,8 @@ def expNegEqOneDivRevConstr :=
     subject to
       h : 1 / (exp x) ≤ 1
 
-time_cmd equivalence expNegEqOneDivRevConstrRed/expNegEqOneDivRevConstrAuto : expNegEqOneDivRevConstr := by
+time_cmd equivalence expNegEqOneDivRevConstrRed/expNegEqOneDivRevConstrAuto :
+    expNegEqOneDivRevConstr := by
   pre_dcp
 
 #print expNegEqOneDivRevConstrAuto

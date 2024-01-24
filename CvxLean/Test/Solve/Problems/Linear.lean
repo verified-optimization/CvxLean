@@ -20,12 +20,24 @@ solve linear1
 
 noncomputable def linear2 :=
   optimization (x y : ℝ)
-    maximize (40 * x + 30 * y)
+    minimize 40 * x + 30 * y
     subject to
-      h₁ : x + y ≤ 12
-      h₂ : 2 * x + y ≤ 16
-      h₃ : 0 ≤ x
-      h₄ : 0 ≤ y
+      c₁ : 12 ≤ x + y
+      c₂ : 16 ≤ 2 * x + y
+
+example : linear2 =
+    Minimization.mk
+      (fun p => 40 * p.1 + 30 * p.2)
+      (fun p => 12 ≤ p.1 + p.2 ∧ 16 ≤ 2 * p.1 + p.2) :=
+  rfl
+
+lemma linear2Solution : Solution linear2 :=
+  { point := ⟨4, 8⟩,
+    isOptimal := by
+      split_ands <;> try norm_num
+      intros x' y' h_feas
+      simp [feasible, linear2] at h_feas ⊢
+      linarith }
 
 solve linear2
 

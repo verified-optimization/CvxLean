@@ -19,6 +19,7 @@ def p :=
 time_cmd equivalence eq/q : p := by
   pre_dcp
 
+
 #print q
 -- def q : Minimization ℝ ℝ :=
 -- optimization (x : ℝ)

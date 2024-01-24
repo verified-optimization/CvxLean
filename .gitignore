@@ -4,8 +4,8 @@
 /build
 /solver/*.cbf
 /solver/*.sol
-/egg-convexify/*.dot 
-/egg-convexify/*.svg
+/egg-pre-dcp/*.dot 
+/egg-pre-dcp/*.svg
 *.olean
 
 /playground

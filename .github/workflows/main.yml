@@ -35,15 +35,13 @@ jobs:
           sh rustup-init.sh -y --default-toolchain none
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Build CvxLean
+      - name: Build egg-pre-dcp and CvxLean
         run: |
-          set -o pipefail
-          lake update
-          lake exe cache get
-          lake run EggClean
-          lake build EggConvexify
-          lake build CvxLean
+          ./build.sh
+      - name: Test egg-pre-dcp 
+        working-directory: egg-pre-dcp
+        run: | 
+          cargo test
       - name: Test CvxLean 
         run: |
           lake build CvxLeanTest
-          

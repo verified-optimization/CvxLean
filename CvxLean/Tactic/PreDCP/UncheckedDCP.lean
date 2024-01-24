@@ -1,6 +1,6 @@
 import CvxLean.Syntax.OptimizationParam
 import CvxLean.Meta.Util.Expr
-import CvxLean.Tactic.DCP.Algorithm
+import CvxLean.Tactic.DCP.DCP
 
 namespace CvxLean
 

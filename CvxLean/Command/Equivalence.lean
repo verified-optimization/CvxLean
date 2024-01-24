@@ -17,8 +17,8 @@ partial def runEquivalenceTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Un
 
 /-- Run equivalence tactic and return both the right-hand term (`q`) and the equivalence proof, of
 type `Equivalence p q`. -/
-def elabEquivalenceProof (lhs : Expr) (stx : Syntax) : TermElabM (Expr × Expr) := do
-  elabTransformationProof TransformationGoal.Equivalence lhs stx
+def elabEquivalenceProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
+  elabTransformationProof TransformationGoal.Equivalence lhs rhsName stx
 
 syntax (name := equivalence)
   "equivalence" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
@@ -42,7 +42,8 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       mvarId.assign mvarVal }
     catch _ => pure ()
 
-  let (rhs, eqv) ← elabEquivalenceProof lhs proofStx.raw
+  let rhsName := probIdStx.getId
+  let (rhs, eqv) ← elabEquivalenceProof lhs rhsName proofStx
 
   -- Names for new definitions.
   let currNamespace ← getCurrNamespace

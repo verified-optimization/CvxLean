@@ -5,16 +5,14 @@ import CvxLean.Tactic.PreDCP.RewriteMapExt
 import CvxLean.Tactic.PreDCP.RewriteMapLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
 import CvxLean.Tactic.Basic.ConvOpt
+import CvxLean.Tactic.Basic.NormNumOpt
+import CvxLean.Tactic.Basic.RewriteOpt
 
 /-!
 # Atomatic transformation to DCP form
 
 This file defines the tactic `pre_dcp`, which calls `egg` to find a sequence of rewrites that
 turns an optimization problem into DCP form.
-
-## TODO
-
-* Use `conv` tactics instead of rewrite lemmas.
 -/
 
 namespace CvxLean
@@ -46,53 +44,6 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
             return (← `(tactic| (rw [Iff.comm]; $tac)), false)
   | _ => throwError "Unknown rewrite name {rewriteName}({direction})."
 
-/-- Given the rewrite index (`0` for objective function, `1` to `numConstr` for for for
-constraints), return the rewrite lemma that needs to be applied. Also return the number of arguments
-of each rewrite lemma to be able to build an expression in `rewriteWrapperApplyExpr`. -/
-def rewriteWrapperLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Nat) :=
-  if rwIdx == 0 then
-    return (``Minimization.Equivalence.rewrite_objFun, 1)
-  else if rwIdx == numConstrs then
-    match rwIdx with
-    | 1  => return (``Minimization.Equivalence.rewrite_constraint_1_last,  1)
-    | 2  => return (``Minimization.Equivalence.rewrite_constraint_2_last,  2)
-    | 3  => return (``Minimization.Equivalence.rewrite_constraint_3_last,  3)
-    | 4  => return (``Minimization.Equivalence.rewrite_constraint_4_last,  4)
-    | 5  => return (``Minimization.Equivalence.rewrite_constraint_5_last,  5)
-    | 6  => return (``Minimization.Equivalence.rewrite_constraint_6_last,  6)
-    | 7  => return (``Minimization.Equivalence.rewrite_constraint_7_last,  7)
-    | 8  => return (``Minimization.Equivalence.rewrite_constraint_8_last,  8)
-    | 9  => return (``Minimization.Equivalence.rewrite_constraint_9_last,  9)
-    | 10 => return (``Minimization.Equivalence.rewrite_constraint_10_last, 10)
-    | _  => throwError "`pre_dcp` error: can only rewrite problems with up to 10 constraints."
-  else
-    match rwIdx with
-    | 1  => return (``Minimization.Equivalence.rewrite_constraint_1,  1)
-    | 2  => return (``Minimization.Equivalence.rewrite_constraint_2,  2)
-    | 3  => return (``Minimization.Equivalence.rewrite_constraint_3,  3)
-    | 4  => return (``Minimization.Equivalence.rewrite_constraint_4,  4)
-    | 5  => return (``Minimization.Equivalence.rewrite_constraint_5,  5)
-    | 6  => return (``Minimization.Equivalence.rewrite_constraint_6,  6)
-    | 7  => return (``Minimization.Equivalence.rewrite_constraint_7,  7)
-    | 8  => return (``Minimization.Equivalence.rewrite_constraint_8,  8)
-    | 9  => return (``Minimization.Equivalence.rewrite_constraint_9,  9)
-    | 10 => return (``Minimization.Equivalence.rewrite_constraint_10, 10)
-    | _  => throwError "`pre_dcp` error: can only rewrite problems with up to 10 constraints."
-
-/-- -/
-def rewriteWrapperApplyExpr (givenRange : Bool) (rwName : Name) (numArgs : Nat) (expected : Expr) :
-    MetaM Expr := do
-  -- Distinguish between lemmas that have `{D R} [Preorder R]` and those that
-  -- only have `{D}` because `R` is fixed.
-  let signature :=
-    if givenRange then
-      #[← mkFreshExprMVar none]
-    else
-      #[← mkFreshExprMVar none, Lean.mkConst `Real, ← mkFreshExprMVar none]
-  -- One extra argument for the objective function.
-  let args ← Array.range (numArgs + 1) |>.mapM fun _ => mkFreshExprMVar none
-  return mkAppN (mkConst rwName) (signature ++ args ++ #[expected])
-
 /-- Given an egg rewrite and a current goal with all the necessary information about the
 minimization problem, we find the appropriate rewrite to apply, and output the remaining goals. -/
 def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String ℕ) :
@@ -123,31 +74,23 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
 
   let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
 
-  let (rwWrapper, numArgs) ← rewriteWrapperLemma tagNum (tagsMap.size - 1)
-  let gToChange := ← do
-    if isMap then return g else
-      let toApply ← rewriteWrapperApplyExpr isMap rwWrapper numArgs expectedExpr
-      let gsAfterApply ← g.apply toApply
-      if gsAfterApply.length != 1 then
-        throwError ("`pre_dcp` error: expected 1 goal after applying rewrite wrapper, got "
-          ++ s!"{gsAfterApply.length}.")
-      return gsAfterApply[0]!
-
   -- Finally, apply the tactic that should solve all proof obligations. A mix of approaches using
   -- `norm_num` in combination with the tactic provided by the user for this particular rewrite.
-  let fullTac : Syntax ← `(tactic| intros;
+  let tacStx : Syntax ← `(tactic| intros;
     try { norm_num_clean_up; $tacStx <;> norm_num_simp_pow } <;>
     try { $tacStx <;> norm_num_simp_pow } <;>
     try { norm_num_simp_pow })
-  let gsAfterRw ← evalTacticAt fullTac gToChange
 
-  if gsAfterRw.length == 0 then
-    pure ()
+  if isMap then
+    -- Maps, e.g., `map_objFun_log` are applied directly to the equivalence goal.
+    if let _ :: _ ← evalTacticAt tacStx g then
+      throwError "`pre_dcp` error: failed to apply {step.rewriteName}."
   else
-    throwError "`pre_dcp` error: failed to rewrite {step.rewriteName}."
-    -- for g in gsAfterRw do
-    --   dbg_trace s!"Could not prove {← Meta.ppGoal g}."
-    -- dbg_trace s!"Tactic : {Syntax.prettyPrint fullTac}"
+    -- Rewrites use the machinery from `Tactic.Basic.RewriteOpt`.
+    if atObjFun then
+      rewriteObjBuilder true tacStx (some expectedExpr) eqvExpr g
+    else
+      rewriteConstrBuilder true (Name.mkSimple tag) tacStx (some expectedExpr) eqvExpr g
 
 def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
@@ -216,10 +159,10 @@ syntax (name := preDCP) "pre_dcp" : tactic
 @[tactic preDCP]
 def evalPreDCP : Tactic := fun stx => match stx with
   | `(tactic| pre_dcp) => withMainContext do
-      evalTactic <| ← `(tactic| conv_opt => norm_num1)
+      normNumOptBuilder.toTactic
       preDCPBuilder.toTactic
-      evalTactic <| ← `(tactic| conv_opt => norm_num1)
-      -- saveTacticInfoForToken stx
+      normNumOptBuilder.toTactic
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end CvxLean

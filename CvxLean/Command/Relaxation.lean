@@ -1,8 +1,8 @@
 import Lean
-import CvxLean.Lib.Reduction
+import CvxLean.Lib.Relaxation
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
-import CvxLean.Meta.Reduction
+import CvxLean.Meta.Relaxation
 import CvxLean.Meta.TacticBuilder
 
 namespace CvxLean
@@ -10,21 +10,21 @@ namespace CvxLean
 open Lean Elab Meta Tactic Term Command Minimization
 
 /--  -/
-def runReductionTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
-  runTransformationTactic TransformationGoal.Reduction mvarId stx
+def runRelaxationTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
+  runTransformationTactic TransformationGoal.Relaxation mvarId stx
 
-/-- Run reduction tactic and return both the right-hand term (`q`) and the reduction proof, of
-type `Reduction p q`. -/
-def elabReductionProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
-  elabTransformationProof TransformationGoal.Reduction lhs rhsName stx
+/-- Run Relaxation tactic and return both the right-hand term (`q`) and the relaxation proof, of
+type `Relaxation p q`. -/
+def elabRelaxationProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
+  elabTransformationProof TransformationGoal.Relaxation lhs rhsName stx
 
-syntax (name := reduction)
-  "reduction" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
+syntax (name := relaxation)
+  "relaxation" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
-/-- Reduction command. -/
-@[command_elab «reduction»]
-def evalReduction : CommandElab := fun stx => match stx with
-| `(reduction $redId / $probId $declSig := $proofStx) => do
+/-- Relaxation command. -/
+@[command_elab «relaxation»]
+def evalRelaxation : CommandElab := fun stx => match stx with
+| `(relaxation $relId / $probId $declSig := $proofStx) => do
   liftTermElabM do
     let (binders, lhsStx) := expandDeclSig declSig.raw
     elabBindersEx binders.getArgs fun xs => do
@@ -41,9 +41,9 @@ def evalReduction : CommandElab := fun stx => match stx with
         catch _ => pure ()
 
       let rhsName := probId.getId
-      let (rhs, proof) ← elabReductionProof lhs rhsName proofStx.raw
+      let (rhs, proof) ← elabRelaxationProof lhs rhsName proofStx.raw
 
-      -- Add reduced problem to the environment.
+      -- Add relaxed problem to the environment.
       let rhs ← instantiateMVars rhs
       let rhs ← mkLambdaFVars (xs.map Prod.snd) rhs
       let rhs ← instantiateMVars rhs
@@ -57,7 +57,7 @@ def evalReduction : CommandElab := fun stx => match stx with
           (DefinitionSafety.safe)
           [])
 
-      -- Add reduction proof to the environment.
+      -- Add Relaxation proof to the environment.
       let proofTy ← inferType proof
       let proofTy ← mkForallFVars (xs.map Prod.snd) proofTy
       let proofTy ← instantiateMVars proofTy
@@ -65,7 +65,7 @@ def evalReduction : CommandElab := fun stx => match stx with
       let proof ← instantiateMVars proof
       Lean.addDecl <|
         Declaration.defnDecl
-          (mkDefinitionValEx redId.getId
+          (mkDefinitionValEx relId.getId
           []
           proofTy
           proof

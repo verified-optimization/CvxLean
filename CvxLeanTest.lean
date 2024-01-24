@@ -1,2 +1,2 @@
 import CvxLean.Test.All
-import CvxLean.Examples.CovarianceEstimation
+import CvxLean.Examples.All

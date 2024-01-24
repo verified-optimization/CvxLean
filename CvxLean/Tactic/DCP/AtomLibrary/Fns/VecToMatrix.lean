@@ -1,5 +1,6 @@
 import CvxLean.Tactic.DCP.Atoms
 import CvxLean.Lib.Math.Data.Vec
+import CvxLean.Lib.Math.Data.Matrix
 
 namespace CvxLean
 

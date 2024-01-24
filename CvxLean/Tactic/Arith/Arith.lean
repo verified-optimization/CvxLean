@@ -101,4 +101,4 @@ syntax "arith" : tactic
 
 macro_rules
   | `(tactic| arith) =>
-    `(tactic| (first | linarith | positivity! | norm_num_simp_pow))
+    `(tactic| (positivity! <;> linarith <;> norm_num_simp_pow))
