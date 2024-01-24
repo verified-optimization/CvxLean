@@ -68,8 +68,11 @@ private lemma fold_partial_sum [Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
 set_option trace.Meta.debug true
 
 equivalence' eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) {d : Fin n → ℝ}
-    (d_pos : ∀ i, 0 < d i) (τmin τmax smin smax : Fin n → ℝ) (smin_pos : ∀ i, 0 < smin i)
-    (F : ℝ → ℝ) : optimalVehicleSpeed d τmin τmax smin smax F (i := ⟨n_pos⟩) := by
+    (d_ε_nonneg : ∀ i, 1 / 100000 ≤ d i) (τmin τmax smin smax : Fin n → ℝ)
+    (smin_ε_nonneg : ∀ i, 1 / 100000 ≤ smin i) (F : ℝ → ℝ) :
+    optimalVehicleSpeed d τmin τmax smin smax F (i := ⟨n_pos⟩) := by
+  have d_pos : ∀ i, 0 < d i := fun i => by linarith [d_ε_nonneg i]
+  have smin_pos : ∀ i, 0 < smin i := fun i => by linarith [smin_ε_nonneg i]
   haveI : Fact (0 < n) := ⟨n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
@@ -115,51 +118,67 @@ equivalence' eqv/optimalVehicleSpeedConvex {n : ℕ} (n_pos : 0 < n) {d : Fin n 
 -- reduced directly.
 
 -- We fix `F` and declare an atom for this particular application of the perspective function.
--- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a` nad `0 ≤ c`.
-
-#check div_pos_iff
+-- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
 equivalence eqv'/optimalVehicleSpeedConvex' {n : ℕ} (n_pos : 0 < n) {d : Fin n → ℝ}
-    (d_pos : ∀ i, 0 < d i) (τmin τmax smin smax : Fin n → ℝ) (smin_pos : ∀ i, 0 < smin i)
-    (a b c : ℝ) (ha : 0 ≤ a) (hc : 0 ≤ c) :
-    optimalVehicleSpeedConvex n_pos d_pos τmin τmax smin smax smin_pos
-      (fun s => a * s ^ (2 : ℝ) + b * s + c) := by
+    (d_ε_nonneg : ∀ i, 1 / 100000 ≤ d i) (τmin τmax smin smax : Fin n → ℝ)
+    (smin_ε_nonneg : ∀ i, 1 / 100000 ≤ smin i) (smin_le_max : smin ≤ smax)
+    (smax_le_one : ∀ i, smax i ≤ 1) (a b c : ℝ) (ha : 0 ≤ a) :
+    optimalVehicleSpeedConvex n_pos d_ε_nonneg τmin τmax smin smax smin_ε_nonneg
+      (fun s => a • s ^ (2 : ℝ) + b • s + c) := by
+  have d_pos : StrongLT 0 d := fun i => by simp; linarith [d_ε_nonneg i]
+  have smin_pos : StrongLT 0 smin := fun i => by simp; linarith [smin_ε_nonneg i]
+  have smin_nonneg := le_of_strongLT smin_pos
+  have smax_nonneg := le_trans smin_nonneg smin_le_max
+  have t_pos_of_c_smin : ∀ t, smin ≤ d / t → StrongLT 0 t := fun t h i => by
+    have h_di_div_ti_pos := lt_of_lt_of_le (smin_pos i) (h i)
+    cases div_pos_iff.mp h_di_div_ti_pos with
+    | inl h_pos => exact h_pos.2
+    | inr h_neg => have d_pos_i := d_pos i; simp at d_pos_i ⊢; linarith [h_neg.1, d_pos_i]
+  -- Add constraint to tell the system that `t` is `ε`-nonnegative.
   equivalence_step =>
-    apply Equivalence.rewrite_objFun
-      (g := fun t => Vec.sum (a • (d ^ (2 : ℝ) / t) + b • d + c • (1 / t)))
-    . rintro t ⟨c_smin, c_smax, c_τmin, c_τmax⟩
-      congr; funext i; simp [Vec.map]
-      have c_smin_i := c_smin i
-      simp at c_smin_i
-      have h_di_div_ti_pos := lt_of_lt_of_le (smin_pos i) c_smin_i
-      have h_ti_pos : 0 < t i := by
-        cases div_pos_iff.mp h_di_div_ti_pos with
-        | inl h_pos => sorry
-        | inr h_neg => sorry
-
-
-
--- set_option trace.Meta.debug true in
--- declare_atom perspectiveF [convex] (n : ℕ)& (a : ℝ)& (b : ℝ)& (c : ℝ)& (d : Fin n → ℝ)?
---     (t : Fin n → ℝ)? : Vec.sum (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)) :=
--- bconditions
---   (ha : 0 ≤ a)
---   (hc : 0 ≤ c)
--- vconditions
---   (ht : 1 / 1000 ≤ t)
--- implementationVars (v : Fin n → ℝ)
--- implementationObjective Vec.sum v
--- implementationConstraints
---   (h : a • (d ^ (2 : ℝ) / t) + b • d + c • (1 / t) ≤ v)
--- solution (v := (t * Vec.map (fun s => a * s ^ (2 : ℝ) + b * s + c) (d / t)))
--- solutionEqualsAtom by
---   rfl;
--- feasibility
---   (h : by sorry)
--- optimality by
---   sorry
--- vconditionElimination
---   (ht : sorry)
+    apply Equivalence.add_constraint (cs' := fun t => 1 / 100000 ≤ t)
+    . rintro t ⟨c_smin, c_smax, _, _⟩ i
+      have h_ti_pos : 0 < t i := t_pos_of_c_smin t c_smin i
+      have h_di_ti := le_trans (c_smax i) (smax_le_one i)
+      simp at h_di_ti
+      rw [div_le_iff h_ti_pos, one_mul] at h_di_ti
+      exact le_trans (d_ε_nonneg i) h_di_ti
+  rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
+  -- Arithmetic simplification in the objective function.
+  equivalence_step =>
+    apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (a • (d ^ (2 : ℝ) / t) + b • d + c • t))
+    . rintro t ⟨_, c_smin, _, _, _⟩
+      congr; funext i; unfold Vec.map; dsimp
+      have h_ti_pos : 0 < t i := t_pos_of_c_smin t c_smin i
+      field_simp; ring
+  rename_vars [t]
+  rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
+  -- Rewrite linear constraints.
+  equivalence_step =>
+    apply Equivalence.rewrite_constraint_2 (c2' := fun t => smin * t ≤ d)
+    . rintro t c_t _; constructor
+      . intro h i; have hi := h i; simp at hi;
+        have h_ti_pos : 0 < t i := lt_of_lt_of_le (by norm_num) (c_t i)
+        rw [le_div_iff h_ti_pos] at hi; exact hi
+      . intro h i; have hi := h i; simp at hi;
+        have h_ti_pos : 0 < t i := lt_of_lt_of_le (by norm_num) (c_t i)
+        dsimp; rw [le_div_iff h_ti_pos]; exact hi
+  rename_vars [t]
+  rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
+  equivalence_step =>
+    apply Equivalence.rewrite_constraint_3 (c3' := fun t => d ≤ smax * t)
+    . rintro t c_t _ _; constructor
+      . intro h i; have hi := h i; simp at hi;
+        have h_ti_pos : 0 < t i := lt_of_lt_of_le (by norm_num) (c_t i)
+        rw [div_le_iff h_ti_pos] at hi; exact hi
+      . intro h i; have hi := h i; simp at hi;
+        have h_ti_pos : 0 < t i := lt_of_lt_of_le (by norm_num) (c_t i)
+        dsimp; rw [div_le_iff h_ti_pos]; exact hi
+  rename_vars [t]
+  rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
+  -- Finally, we can apply DCP!
+  dcp
 
 end OptimalVehicleSpeed
 

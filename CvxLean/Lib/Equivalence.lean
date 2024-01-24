@@ -454,6 +454,17 @@ section Other
 
 variable {f : D → R} {cs : D → Prop}
 
+/-- We can always add a redundant constraint. This might be useful to help the reduction algorithm
+infer some constraints that cannot be easily infered by `arith`. -/
+def add_constraint {cs' : D → Prop} (h : ∀ x, cs x → cs' x) : ⟨f, cs⟩ ≡ ⟨f, [[cs', cs]]⟩ :=
+  Equivalence.ofStrongEquivalence <|
+  { phi := id,
+    psi := id,
+    phi_feasibility := fun _ hcs => ⟨h _ hcs, hcs⟩,
+    psi_feasibility := fun _ ⟨_, hcs⟩ => hcs,
+    phi_optimality := fun _ _ => le_refl _,
+    psi_optimality := fun _ _ => le_refl _ }
+
 /-- See [BV04,p.131] where `g` is `ψᵢ`. -/
 def map_le_constraint_standard_form [Zero R] {cs' : D → Prop} {fi : D → R} {g : R → R}
     (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ cs' x) (hg : ∀ x, g x ≤ 0 ↔ x ≤ 0) :
