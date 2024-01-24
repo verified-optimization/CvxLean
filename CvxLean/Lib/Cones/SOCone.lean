@@ -2,6 +2,7 @@ import Mathlib.Data.Real.Sqrt
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import CvxLean.Lib.Math.Data.Real
+import CvxLean.Lib.Math.Data.Vec
 
 /-!
 We follow the MOSEK modeling cookbook:
@@ -108,8 +109,18 @@ lemma soCone_sub_add_two_mul_of_nonneg {x y : ℝ} (z : ℝ) :
   soCone (x - y) ![x + y, 2 * z] ↔ y ≤ x ∧ z ^ (2 : ℝ) ≤ -(x * y) := by
   conv => lhs; unfold soCone; simp [sqrt_le_iff, ←le_sub_iff_add_le']
   apply Iff.and
-  { rfl }
-  { ring_nf!; rw [←neg_mul, ←div_le_iff (by norm_num)]; simp }
+  . rfl
+  . ring_nf!; rw [←neg_mul, ←div_le_iff (by norm_num)]; simp
+
+open Real Matrix
+
+lemma vec_soCone_apply_to_soCone_add_sub_two_mul {n : ℕ} (x y z : Fin n → ℝ) (i : Fin n) :
+    (soCone ((x + y) i) ((![x - y, 2 • z]ᵀ) i)) ↔ (soCone (x i + y i) ![x i - y i, 2 * z i]) := by
+  dsimp; convert Iff.rfl; funext j; fin_cases j <;> simp
+
+lemma vec_soCone_apply_to_soCone_add_sub_two {n : ℕ} (x y : Fin n → ℝ) (i : Fin n) :
+    (soCone ((x + y) i) ((![x - y, 2]ᵀ) i)) ↔ (soCone (x i + y i) ![x i - y i, 2]) := by
+  dsimp; convert Iff.rfl; funext j; fin_cases j <;> simp
 
 end Lemmas
 

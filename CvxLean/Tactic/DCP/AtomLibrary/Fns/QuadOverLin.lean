@@ -80,10 +80,9 @@ feasibility
       intros i; dsimp
       rw [rpow_two]; exact div_nonneg (pow_two_nonneg (x i)) (hynn i)
     intros t i;
-    have h_suff : soCone (y i + t i) (![y i - t i, 2 * x i]) := by
-      rw [soCone_add_sub_two_mul_of_nonneg _ (hynn i) (hx2ynn i)]; dsimp
-      rw [mul_div, mul_comm, ←mul_div, div_self (ne_of_gt (hypos i)), mul_one]
-    convert h_suff; funext j; fin_cases j <;> simp)
+    rw [vec_soCone_apply_to_soCone_add_sub_two_mul]
+    rw [soCone_add_sub_two_mul_of_nonneg _ (hynn i) (hx2ynn i)]; dsimp
+    rw [mul_div, mul_comm, ←mul_div, div_self (ne_of_gt (hypos i)), mul_one])
   (c2 : by
     have hynn : 0 ≤ y := fun i => by
       have hyi := hy i
@@ -102,8 +101,7 @@ optimality by
   have hynn : 0 ≤ y := le_of_strongLT hy
   intros i; dsimp
   have c1i := c1 i
-  replace c1i : soCone (y i + t i) (![y i - t i, 2 * x i]) := by
-    convert c1i; funext j; fin_cases j <;> simp
+  rw [vec_soCone_apply_to_soCone_add_sub_two_mul] at c1i
   rw [soCone_add_sub_two_mul_of_nonneg (x i) (hynn i) (c2 i)] at c1i
   have hz := lt_of_lt_of_le (hy i) (hyz i)
   rw [div_le_iff' hz]
