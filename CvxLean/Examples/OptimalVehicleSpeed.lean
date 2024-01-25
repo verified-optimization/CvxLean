@@ -48,10 +48,12 @@ private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin 
 
 equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n)
-    (h_d_ε_nonneg : ∀ i, 1 / 10000 ≤ d i) (h_smin_ε_nonneg : ∀ i, 1 / 10000 ≤ smin i) :
+    (h_d_ε_nonneg : 1 / 10000 ≤ d) (h_smin_ε_nonneg : 1 / 10000 ≤ smin) :
     @optimalVehicleSpeed n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
-  have d_pos : ∀ i, 0 < d i := fun i => by linarith [h_d_ε_nonneg i]
-  have smin_pos : ∀ i, 0 < smin i := fun i => by linarith [h_smin_ε_nonneg i]
+  have d_pos : ∀ i, 0 < d i := fun i => by
+    have := h_d_ε_nonneg i; dsimp at this; norm_cast at this; linarith
+  have smin_pos : ∀ i, 0 < smin i := fun i => by
+    have := h_smin_ε_nonneg i; dsimp at this; norm_cast at this; linarith
   haveI : Fact (0 < n) := ⟨h_n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
@@ -94,12 +96,14 @@ equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
 
 equivalence' eqv₂/optimalVehicleSpeedConvexQuadratic (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ)  (h_n_pos : 0 < n)
-    (h_d_ε_nonneg : ∀ i, 1 / 10000 ≤ d i) (h_smin_ε_nonneg : ∀ i, 1 / 10000 ≤ smin i)
-    (h_smax_upper_bound : ∀ i, smax i ≤ 10) :
+    (h_d_ε_nonneg : 1 / 10000 ≤ d) (h_smin_ε_nonneg : 1 / 10000 ≤ smin)
+    (h_smax_upper_bound : smax ≤ 10) :
     optimalVehicleSpeedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)
       h_n_pos h_d_ε_nonneg h_smin_ε_nonneg := by
-  have d_pos : StrongLT 0 d := fun i => by simp; linarith [h_d_ε_nonneg i]
-  have smin_pos : StrongLT 0 smin := fun i => by simp; linarith [h_smin_ε_nonneg i]
+  have d_pos : StrongLT 0 d := fun i => by
+    have := h_d_ε_nonneg i; dsimp at this ⊢; norm_cast at this; linarith
+  have smin_pos : StrongLT 0 smin := fun i => by
+    have := h_smin_ε_nonneg i; dsimp at this ⊢; norm_cast at this; linarith
   have t_pos_of_c_smin : ∀ t, smin ≤ d / t → StrongLT 0 t := fun t h i => by
     have h_di_div_ti_pos := lt_of_lt_of_le (smin_pos i) (h i)
     cases div_pos_iff.mp h_di_div_ti_pos with
