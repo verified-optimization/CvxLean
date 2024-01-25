@@ -1,5 +1,6 @@
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Abs
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Add
+import CvxLean.Tactic.DCP.AtomLibrary.Fns.CumSum
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Diag
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Diagonal
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Div
