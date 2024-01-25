@@ -245,7 +245,20 @@ def bₚ : ℝ := 6
 @[optimization_param]
 def cₚ : ℝ := 10
 
-solve optimalVehicleSpeedConvex' nₚ_pos dₚ_ε_nonneg τminₚ τmaxₚ sminₚ smaxₚ sminₚ_ε_nonneg sminₚ_le_smaxₚ smaxₚ_le_one aₚ bₚ cₚ aₚ_nonneg
+def p := optimalVehicleSpeedConvex' nₚ_pos dₚ_ε_nonneg τminₚ τmaxₚ sminₚ smaxₚ sminₚ_ε_nonneg
+  sminₚ_le_smaxₚ smaxₚ_le_one aₚ bₚ cₚ aₚ_nonneg
+
+set_option trace.Meta.debug true
+
+solve p
+
+#eval p.status
+#eval p.value
+#eval p.solution
+
+-- def sol := eqv.backward_map (eqv'.backward_map (p.solution))
+
+-- #eval sol
 
 end OptimalVehicleSpeed
 

@@ -202,6 +202,9 @@ addRealToFloat : @Real.log :=
 addRealToFloat (i) : @OfScientific.ofScientific Real i :=
   Float.ofScientific
 
+addRealToFloat : Real.natCast :=
+  NatCast.mk Float.ofNat
+
 end Basic
 
 section Matrix
@@ -210,9 +213,20 @@ addRealToFloat (n m k) :
   @HSMul.hSMul ℕ (Matrix (Fin n) (Fin m) ℝ) (Matrix (Fin n) (Fin m) ℝ) instHSMul k :=
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
+addRealToFloat (n k i) :
+  @HSMul.hSMul ℕ ((Fin n) → ℝ) ((Fin n) → ℝ) i k :=
+  (fun (x : (Fin n) → Float) i => (OfNat.ofNat k) * (x i))
+
 addRealToFloat (n m k : Nat) :
   @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.toNatSMul k :=
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
+
+addRealToFloat (n k i) :
+  @SMul.smul ℕ ((Fin n) → ℝ) i k :=
+  (fun (x : (Fin n) → Float) i => (OfNat.ofNat k) * (x i))
+
+addRealToFloat (i1 i2 i3) : @Algebra.toSMul ℝ ℝ i1 i2 i3 :=
+  SMul.mk Float.mul
 
 addRealToFloat : @Matrix.vecEmpty Real :=
   fun (x : Fin 0) => ((False.elim (Nat.not_lt_zero x.1 x.2)) : Float)
