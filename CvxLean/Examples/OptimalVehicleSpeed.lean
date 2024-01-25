@@ -47,24 +47,21 @@ private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin 
   . linarith [hn.out]
 
 equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
-    (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n)
-    (h_d_ε_nonneg : 1 / 10000 ≤ d) (h_smin_ε_nonneg : 1 / 10000 ≤ smin) :
-    @optimalVehicleSpeed n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
-  have d_pos : ∀ i, 0 < d i := fun i => by
-    have := h_d_ε_nonneg i; dsimp at this; norm_cast at this; linarith
-  have smin_pos : ∀ i, 0 < smin i := fun i => by
-    have := h_smin_ε_nonneg i; dsimp at this; norm_cast at this; linarith
+    (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
+    (h_smin_pos : StrongLT 0 smin) : @optimalVehicleSpeed n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
+  replace h_d_pos : ∀ i, 0 < d i := fun i => h_d_pos i
+  replace h_smin_pos : ∀ i, 0 < smin i := fun i => h_smin_pos i
   haveI : Fact (0 < n) := ⟨h_n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence (fun t => d / t)
-    . rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [smin_pos i, c_smin i, d_pos i]
+    . rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [h_smin_pos i, c_smin i, h_d_pos i]
   rename_vars [t]
   -- Clean up divisions introduced by the change of variables.
-  conv_obj => simp only [Pi.div_apply, simp_vec_fraction d d_pos]
-  conv_constr c_τmin => simp only [Pi.div_apply, simp_vec_fraction d d_pos]
-  conv_constr c_τmax => simp only [Pi.div_apply, simp_vec_fraction d d_pos]
+  conv_obj => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
+  conv_constr c_τmin => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
+  conv_constr c_τmax => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
   -- Put in matrix form.
   equivalence_step =>
     apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (t * (Vec.map F (d / t))))
@@ -95,50 +92,37 @@ equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
 -- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
 equivalence' eqv₂/optimalVehicleSpeedConvexQuadratic (n : ℕ) (d : Fin n → ℝ)
-    (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ)  (h_n_pos : 0 < n)
-    (h_d_ε_nonneg : 1 / 10000 ≤ d) (h_smin_ε_nonneg : 1 / 10000 ≤ smin)
-    (h_smax_upper_bound : smax ≤ 10) :
+    (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ)  (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
+    (h_smin_pos : StrongLT 0 smin) :
     optimalVehicleSpeedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)
-      h_n_pos h_d_ε_nonneg h_smin_ε_nonneg := by
-  have d_pos : StrongLT 0 d := fun i => by
-    have := h_d_ε_nonneg i; dsimp at this ⊢; norm_cast at this; linarith
-  have smin_pos : StrongLT 0 smin := fun i => by
-    have := h_smin_ε_nonneg i; dsimp at this ⊢; norm_cast at this; linarith
+      h_n_pos h_d_pos h_smin_pos := by
   have t_pos_of_c_smin : ∀ t, smin ≤ d / t → StrongLT 0 t := fun t h i => by
-    have h_di_div_ti_pos := lt_of_lt_of_le (smin_pos i) (h i)
+    have h_di_div_ti_pos := lt_of_lt_of_le (h_smin_pos i) (h i)
     cases div_pos_iff.mp h_di_div_ti_pos with
     | inl h_pos => exact h_pos.2
-    | inr h_neg => have d_pos_i := d_pos i; simp at d_pos_i ⊢; linarith [h_neg.1, d_pos_i]
+    | inr h_neg => have d_pos_i := h_d_pos i; simp at d_pos_i ⊢; linarith [h_neg.1, d_pos_i]
   -- Add constraint to tell the system that `t` is `ε`-nonnegative.
   equivalence_step =>
-    apply Equivalence.add_constraint (cs' := fun t => 1 / 100000 ≤ t)
-    . rintro t ⟨c_smin, c_smax, _, _⟩ i
-      have h_ti_pos : 0 < t i := t_pos_of_c_smin t c_smin i
-      have h_di_ti := le_trans (c_smax i) (h_smax_upper_bound i)
-      simp at h_di_ti
-      rw [div_le_iff h_ti_pos] at h_di_ti
-      have h_ti := le_trans (h_d_ε_nonneg i) h_di_ti
-      rw [← div_le_iff' (by norm_num)] at h_ti
-      exact le_trans (by norm_num) h_ti
+    apply Equivalence.add_constraint (cs' := fun t => StrongLT 0 t)
+    . rintro t ⟨c_smin, _⟩ i
+      exact t_pos_of_c_smin t c_smin i
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   -- Arithmetic simplification in the objective function.
-  have t_pos_of_c_t : ∀ t : Fin n → ℝ, 1 / 100000 ≤ t → StrongLT 0 t := fun t h i =>
-    lt_of_lt_of_le (by norm_num) (h i)
   equivalence_step =>
-    apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (a • (d ^ (2 : ℝ) / t) + b • d + c • t))
+    apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (a • (d ^ (2 : ℝ)) * (1 / t) + b • d + c • t))
     . rintro t ⟨c_t, _⟩
       congr; funext i; unfold Vec.map; dsimp
-      have h_ti_pos : 0 < t i := t_pos_of_c_t t c_t i
+      have h_ti_pos : 0 < t i := c_t i
       field_simp; ring
   -- Rewrite linear constraints.
   equivalence_step =>
     apply Equivalence.rewrite_constraint_2 (c2' := fun t => smin * t ≤ d)
-    . intro t c_t _; rw [Vec.le_div_iff (t_pos_of_c_t t c_t)]
+    . intro t c_t _; rw [Vec.le_div_iff c_t]
   rename_vars [t]
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   equivalence_step =>
     apply Equivalence.rewrite_constraint_3 (c3' := fun t => d ≤ smax * t)
-    . intro t c_t _ _; rw [Vec.div_le_iff (t_pos_of_c_t t c_t)]
+    . intro t c_t _ _; rw [Vec.div_le_iff c_t]
   rename_vars [t]
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
@@ -162,7 +146,7 @@ lemma nₚ_pos : 0 < nₚ := by unfold nₚ; norm_num
 def dₚ : Fin nₚ → ℝ :=
   ![1.9501, 1.2311, 1.6068, 1.4860, 1.8913, 1.7621, 1.4565, 1.0185, 1.8214, 1.4447]
 
-lemma dₚ_ε_nonneg : ∀ i, 1 / 10000 ≤ dₚ i := by
+lemma dₚ_pos : StrongLT 0 dₚ := by
   intro i; fin_cases i <;> (simp [dₚ]; norm_num)
 
 @[optimization_param]
@@ -181,11 +165,11 @@ def sminₚ : Fin nₚ → ℝ :=
 def smaxₚ : Fin nₚ → ℝ :=
   ![1.9624, 1.6036, 1.6439, 1.5641, 1.7194, 1.9090, 1.3193, 1.3366, 1.9470, 2.8803]
 
-lemma sminₚ_ε_nonneg : ∀ i, 1 / 10000 ≤ sminₚ i := by
+lemma sminₚ_pos : StrongLT 0 sminₚ := by
   intro i; fin_cases i <;> (simp [sminₚ]; norm_num)
 
 @[simp]
-lemma sminₚ_nonneg : 0 ≤ sminₚ := fun i => le_trans (by norm_num) (sminₚ_ε_nonneg i)
+lemma sminₚ_nonneg : 0 ≤ sminₚ := le_of_strongLT sminₚ_pos
 
 lemma sminₚ_le_smaxₚ : sminₚ ≤ smaxₚ := by
   intro i; fin_cases i <;> (simp [sminₚ, smaxₚ]; norm_num)
@@ -193,14 +177,15 @@ lemma sminₚ_le_smaxₚ : sminₚ ≤ smaxₚ := by
 @[simp]
 lemma smaxₚ_nonneg : 0 ≤ smaxₚ := le_trans sminₚ_nonneg sminₚ_le_smaxₚ
 
-lemma smaxₚ_upper_bound : ∀ i, smaxₚ i ≤ 10 := by
-  intro i; fin_cases i <;> (simp [smaxₚ]; norm_num)
-
 @[optimization_param]
 def aₚ : ℝ := 1
 
 @[simp]
 lemma aₚ_nonneg : 0 ≤ aₚ := by unfold aₚ; norm_num
+
+@[simp]
+lemma aₚdₚ2_nonneg : 0 ≤ aₚ • (dₚ ^ (2 : ℝ)) := by
+  intros i; fin_cases i <;> (simp [aₚ, dₚ]; norm_num)
 
 @[optimization_param]
 def bₚ : ℝ := 6
@@ -209,7 +194,7 @@ def bₚ : ℝ := 6
 def cₚ : ℝ := 10
 
 def p := optimalVehicleSpeedConvexQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ
-  nₚ_pos dₚ_ε_nonneg sminₚ_ε_nonneg smaxₚ_upper_bound
+  nₚ_pos dₚ_pos sminₚ_pos
 
 set_option trace.Meta.debug true
 

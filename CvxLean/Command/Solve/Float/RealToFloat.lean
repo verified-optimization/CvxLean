@@ -120,6 +120,9 @@ addRealToFloat : Real.instLTReal :=
 addRealToFloat : Real.instDivReal  :=
   instDivFloat
 
+addRealToFloat : Real.instPowReal :=
+  Pow.mk Float.pow
+
 addRealToFloat (n : Nat) (i) : @OfNat.ofNat Real n i :=
   Float.ofNat n
 
