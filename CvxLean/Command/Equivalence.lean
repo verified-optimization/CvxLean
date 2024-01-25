@@ -147,18 +147,10 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
 
       try
         let psiF ← realToFloat psi
-        Lean.addAndCompile <|
-          Declaration.defnDecl
-            (mkDefinitionValEx (eqvId ++ `backward_map)
-            []
-            (← inferType psiF)
-            psiF
-            (Lean.ReducibilityHints.regular 0)
-            (DefinitionSafety.safe)
-            [])
+        Lean.simpleAddAndCompileDefn (eqvId ++ `backward_map) psiF
       catch e =>
         trace[Meta.debug]
-          "`equivalence` error: failed to create `phi_float` - {e.toMessageData}."
+          "`equivalence` error: failed to create `{eqvId}.backward_map`.\n{e.toMessageData}"
 
 /-- Create `equivalence` command. It is similar to the `reduction` command, but requires an
 `Equivalence` instead of a `Reduction`. -/

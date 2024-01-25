@@ -7,36 +7,9 @@ open Lean Lean.Elab Lean.Elab.Term Lean.Elab.Command Lean.Meta
 
 open Minimization
 
--- /-- Equivalent to the `#reduce` command. TODO: Move. -/
--- def reduceExpr (e : Expr) : MetaM Expr :=
---   withTransparency (mode := TransparencyMode.all) <|
---     reduce e (skipProofs := true) (skipTypes := true)
-
-/-- Reduce like `Meta.DiscrTree.whnfDT`. -/
-partial def whnfUntilValue (e : Expr) : MetaM Expr := do
-  let e ← step e
-  match e.etaExpandedStrict? with
-  | some e => whnfUntilValue e
-  | none   => return e
-where
-  step (e : Expr) := do
-    let e ← whnfCore e
-    match (← unfoldDefinition? e) with
-    | some e' => if isBadKey e'.getAppFn then return e else step e'
-    | none    => return e
-  isBadKey (fn : Expr) : Bool :=
-    match fn with
-    | Expr.lit ..   => false
-    | Expr.const .. => false
-    | Expr.fvar ..  => false
-    | Expr.proj ..  => false
-    | Expr.forallE _ _ b _ => b.hasLooseBVars
-    | _ => true
-
-/-- Get problem name. Used to add information about the solution to the
-environment. -/
+/-- Get problem name. Used to add information about the solution to the environment. -/
 def getProblemName (term : Syntax) : MetaM Lean.Name := do
-  -- TODO: Full name with paraemters.
+  -- TODO: Full name with parameters.
   let idStx := match term with
     | Syntax.ident _ _ _ _ => term
     | Syntax.node _ _ args => args.getD 0 Syntax.missing
@@ -49,24 +22,9 @@ def getProblemName (term : Syntax) : MetaM Lean.Name := do
 /-- -/
 def getReducedProblemAndBwdMap (prob : Expr) : MetaM (Meta.MinimizationExpr × Expr) := do
   let ogProb ← Meta.MinimizationExpr.fromExpr prob
-
   let (redProb, eqvProof) ← DCP.canonize ogProb
-
   let backwardMap ← mkAppM ``Minimization.Equivalence.psi #[eqvProof]
-
   return (redProb, backwardMap)
-
-/-- Add problem declaration inferring type. -/
-def addProblemDeclaration (n : Lean.Name) (e : Expr) (compile : Bool) : MetaM Unit := do
-  let ty ← inferType e
-  let reducibility := Lean.ReducibilityHints.regular 0
-  let safety := DefinitionSafety.safe
-  let defVal := mkDefinitionValEx n ([] : List Lean.Name) ty e reducibility safety ([n] : List Lean.Name)
-  let decl := Declaration.defnDecl defVal
-  if compile then
-    Lean.addAndCompile decl
-  else
-    Lean.addDecl decl
 
 syntax (name := solve) "solve " term : command
 
@@ -94,11 +52,12 @@ unsafe def evalSolve : CommandElab := fun stx =>
 
       let probName ← getProblemName probInstance.raw
 
-      addProblemDeclaration (probName ++ `reduced) redProbExpr false
+      simpleAddDefn (probName ++ `reduced) redProbExpr
 
       -- Call the solver on prob.reduced and get a point in E.
       let (coeffsData, sections) ← determineCoeffsFromExpr redProb
       trace[Meta.debug] "coeffsData: {coeffsData}"
+
       let solPointResponse ← Meta.conicSolverFromValues redProb coeffsData sections
       trace[Meta.debug] "solPointResponse: {solPointResponse}"
 
@@ -111,8 +70,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
           trace[Meta.debug] "solPoint.summary: {solPoint.summary}"
 
           -- Add status to the environment.
-          addProblemDeclaration
-            (probName ++ `status) (mkStrLit solPoint.summary.problemStatus) true
+          simpleAddAndCompileDefn (probName ++ `status) (mkStrLit solPoint.summary.problemStatus)
 
           -- TODO: For now, we are only handling this case.
           if solPoint.summary.problemStatus != "PRIMAL_AND_DUAL_FEASIBLE" then
@@ -129,18 +87,20 @@ unsafe def evalSolve : CommandElab := fun stx =>
           trace[Meta.debug] "probSolPointFloat: {probSolPointFloat}"
 
           -- Add the solution point to the environment.
-          addProblemDeclaration (probName ++ `solution) probSolPointFloat true
+          simpleAddAndCompileDefn (probName ++ `solution) probSolPointFloat
 
           -- Also add value of optimal point.
           let probSolValue := mkApp redProb.objFun solPointExpr
           let probSolValueFloat ← realToFloat probSolValue
           trace[Meta.debug] "probSolValueFloat {probSolValueFloat}"
           check probSolValueFloat
+
           let mut probSolValueFloat := Expr.headBeta probSolValueFloat
           trace[Meta.debug] "probSolValueFloat reduced: {probSolValueFloat}"
+
           if probSolValueFloat.getAppFn.isConstOf `CvxLean.maximizeNeg then
             probSolValueFloat := probSolValueFloat.getAppArgs[2]!
-          addProblemDeclaration (probName ++ `value) probSolValueFloat true
+          simpleAddAndCompileDefn (probName ++ `value) probSolValueFloat
 
           pure ()
   | _ => throwUnsupportedSyntax

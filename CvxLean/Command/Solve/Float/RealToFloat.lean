@@ -29,8 +29,7 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
       let args ← mvars.mapM instantiateMVars
       return mkAppNBeta translation.float args
     else
-      trace[Meta.debug] "no match: \n{pattern} \n{e}"
-  -- trace[Meta.debug] "no translation found for {e}"
+      trace[Meta.debug] "`real-to-float` error: no match for \n{pattern} \n{e}"
   match e with
   | Expr.app a b => return mkApp (← realToFloat a) (← realToFloat b)
   | Expr.lam n ty b d => return mkLambda n d (← realToFloat ty) (← realToFloat b)
@@ -38,10 +37,20 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
   | Expr.mdata m e => return mkMData m (← realToFloat e)
   | Expr.letE n ty t b _ => return mkLet n (← realToFloat ty) (← realToFloat t) (← realToFloat b)
   | Expr.proj typeName idx struct => return mkProj typeName idx (← realToFloat struct)
-  | e@(Expr.const n l) => do
+  | e@(Expr.const n _) => do
       if ← isOptimizationParam n then
         let paramExpr ← getOptimizationParamExpr n e
-        return (← realToFloat paramExpr)
+        let paramExprF ← realToFloat paramExpr
+        -- Also add the float the definition of the parameter to the the environment if it is not
+        -- there already.
+        try
+          let nF := n ++ `float
+          if !(← getEnv).contains nF then
+            Lean.simpleAddAndCompileDefn (n ++ `float) paramExprF
+        catch e =>
+          trace[Meta.debug] (s!"`real-to-float` error: failed to create `{n}.float`.\n" ++
+            m!"{e.toMessageData}")
+        return paramExprF
       else
         return e
   | _ => return e

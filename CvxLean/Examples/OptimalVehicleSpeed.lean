@@ -172,8 +172,8 @@ equivalence' eqv₂/optimalVehicleSpeedConvexQuadratic {n : ℕ} (n_pos : 0 < n)
         dsimp; rw [div_le_iff h_ti_pos]; exact hi
   rename_vars [t]
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
-  -- Finally, we can apply DCP!
-  dcp
+  -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
+  -- dcp
 
 #print optimalVehicleSpeedConvexQuadratic
 
@@ -231,6 +231,7 @@ lemma smaxₚ_upper_bound : ∀ i, smaxₚ i ≤ 10 := by
 @[optimization_param]
 def aₚ : ℝ := 1
 
+@[simp]
 lemma aₚ_nonneg : 0 ≤ aₚ := by unfold aₚ; norm_num
 
 @[optimization_param]
@@ -246,41 +247,19 @@ set_option trace.Meta.debug true
 
 solve p
 
-#eval p.status
-#eval p.value
-#eval p.solution
-
--- In order to apply the backward maps, we need these floating-point values.
--- TODO: Generate these directly?
-
-def fdₚ : Fin nₚ → Float :=
-  ![1.9501, 1.2311, 1.6068, 1.4860, 1.8913, 1.7621, 1.4565, 1.0185, 1.8214, 1.4447]
-
-def fτminₚ : Fin nₚ → Float :=
-  ![1.0809, 2.7265, 3.5118, 5.3038, 5.4516, 7.1648, 9.2674, 12.1543, 14.4058, 16.6258]
-
-def fτmaxₚ : Fin nₚ → Float :=
-  ![4.6528, 6.5147, 7.5178, 9.7478, 9.0641, 10.3891, 13.1540, 16.0878, 17.4352, 20.9539]
-
-def fsminₚ : Fin nₚ → Float :=
-  ![0.7828, 0.6235, 0.7155, 0.5340, 0.6329, 0.4259, 0.7798, 0.9604, 0.7298, 0.8405]
-
-def fsmaxₚ : Fin nₚ → Float :=
-  ![1.9624, 1.6036, 1.6439, 1.5641, 1.7194, 1.9090, 1.3193, 1.3366, 1.9470, 2.8803]
-
-def faₚ : Float := 1
-
-def fbₚ : Float := 6
-
-def fcₚ : Float := 10
+#eval p.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
+#eval p.value    -- 275.042133
+#eval p.solution -- ...
 
 -- NOTE: F is not really used here, but it is a parameter of the equivalence, so we must give it a
 -- value.
-def eqv₁.backward_mapₚ := eqv₁.backward_map (n := nₚ) (d := fdₚ) (τmin := fτminₚ) (τmax := fτmaxₚ)
-  (smin := fsminₚ) (smax := fsmaxₚ) (F := fun s => faₚ * s ^ 2 + fbₚ * s + fcₚ)
+def eqv₁.backward_mapₚ := eqv₁.backward_map (n := nₚ) (d := dₚ.float) (τmin := τminₚ.float)
+  (τmax := τmaxₚ.float) (smin := sminₚ.float) (smax := smaxₚ.float)
+  (F := fun s => aₚ.float * s ^ 2 + bₚ.float * s + cₚ.float)
 
-def eqv₂.backward_mapₚ := eqv₂.backward_map (n := nₚ) (d := fdₚ) (τmin := fτminₚ) (τmax := fτmaxₚ)
-  (smin := fsminₚ) (smax := fsmaxₚ) (a := faₚ) (b := fbₚ) (c := fcₚ)
+def eqv₂.backward_mapₚ := eqv₂.backward_map (d := dₚ.float) (τmin := τminₚ.float)
+  (τmax := τmaxₚ.float) (smin := sminₚ.float) (smax := smaxₚ.float) (a := aₚ.float) (b := bₚ.float)
+  (c := cₚ.float)
 
 -- Finally, we can obtain the solution to the original problem.
 
