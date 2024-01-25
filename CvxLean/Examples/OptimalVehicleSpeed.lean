@@ -79,6 +79,7 @@ equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
     apply Equivalence.rewrite_constraint_4_last (c4' := fun t => Vec.cumsum t ≤ τmax)
     . intro t _ _ _; simp [fold_partial_sum t]; rfl
   rename_vars [t]
+  rename_constrs [c_smin, c_smax, c_τmin, c_τmax]
 
 #print optimalVehicleSpeedConvex
 
@@ -91,8 +92,8 @@ equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
 -- We fix `F` and declare an atom for this particular application of the perspective function.
 -- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
-equivalence' eqv₂/optimalVehicleSpeedConvexQuadratic (n : ℕ) (d : Fin n → ℝ)
-    (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ)  (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
+equivalence' eqv₂/optimalVehicleSpeedQuadratic (n : ℕ) (d : Fin n → ℝ)
+    (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) :
     optimalVehicleSpeedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)
       h_n_pos h_d_pos h_smin_pos := by
@@ -109,7 +110,8 @@ equivalence' eqv₂/optimalVehicleSpeedConvexQuadratic (n : ℕ) (d : Fin n → 
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   -- Arithmetic simplification in the objective function.
   equivalence_step =>
-    apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (a • (d ^ (2 : ℝ)) * (1 / t) + b • d + c • t))
+    apply Equivalence.rewrite_objFun
+      (g := fun t => Vec.sum (a • (d ^ (2 : ℝ)) * (1 / t) + b • d + c • t))
     . rintro t ⟨c_t, _⟩
       congr; funext i; unfold Vec.map; dsimp
       have h_ti_pos : 0 < t i := c_t i
@@ -127,7 +129,7 @@ equivalence' eqv₂/optimalVehicleSpeedConvexQuadratic (n : ℕ) (d : Fin n → 
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
 
-#print optimalVehicleSpeedConvexQuadratic
+#print optimalVehicleSpeedQuadratic
 
 #check eqv₂.backward_map
 
@@ -193,8 +195,7 @@ def bₚ : ℝ := 6
 @[optimization_param]
 def cₚ : ℝ := 10
 
-def p := optimalVehicleSpeedConvexQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ
-  nₚ_pos dₚ_pos sminₚ_pos
+def p := optimalVehicleSpeedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
 
 set_option trace.Meta.debug true
 
@@ -206,13 +207,11 @@ solve p
 
 -- NOTE: F is not really used here, but it is a parameter of the equivalence, so we must give it a
 -- value.
-def eqv₁.backward_mapₚ := eqv₁.backward_map (n := nₚ) (d := dₚ.float) (τmin := τminₚ.float)
-  (τmax := τmaxₚ.float) (smin := sminₚ.float) (smax := smaxₚ.float)
-  (F := fun s => aₚ.float * s ^ 2 + bₚ.float * s + cₚ.float)
+def eqv₁.backward_mapₚ := eqv₁.backward_map nₚ dₚ.float τminₚ.float τmaxₚ.float sminₚ.float
+  smaxₚ.float (fun s => aₚ.float * s ^ 2 + bₚ.float * s + cₚ.float)
 
-def eqv₂.backward_mapₚ := eqv₂.backward_map (d := dₚ.float) (τmin := τminₚ.float)
-  (τmax := τmaxₚ.float) (smin := sminₚ.float) (smax := smaxₚ.float) (a := aₚ.float) (b := bₚ.float)
-  (c := cₚ.float)
+def eqv₂.backward_mapₚ := eqv₂.backward_map nₚ dₚ.float τminₚ.float τmaxₚ.float sminₚ.float
+  smaxₚ.float aₚ.float bₚ.float cₚ.float
 
 -- Finally, we can obtain the solution to the original problem.
 
