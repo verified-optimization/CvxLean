@@ -46,14 +46,15 @@ lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ}
   have habsx0t : |x 0| ≤ t := by
     rw [soCone, Fin.sum_univ_succ] at h
     have hS : 0 ≤ ∑ i : Fin n, x (Fin.succ i) ^ 2 :=
-      Finset.sum_nonneg (fun _ _ => sq_nonneg _)
+      Finset.sum_nonneg (fun i _ => (rpow_two (x i.succ)).symm ▸ sq_nonneg (x i.succ))
     exact abs_le_of_sqrt_sq_add_nonneg_le hS h
   have ht : 0 ≤ t := le_trans (abs_nonneg _) habsx0t
   replace ⟨hx0t, hnx0t⟩ := abs_le.mp habsx0t
   split_ands
   { field_simp
-    have hrw : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by ring
+    have hrw : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by norm_cast; ring
     rw [hrw, le_sub_iff_add_le, add_comm]
+    unfold soCone at h; norm_cast at h ⊢
     rw [←Fin.sum_univ_succ (f := fun i => (x i) ^ 2)]
     rw [←sqrt_le_left ht]
     exact h }
@@ -77,7 +78,8 @@ lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ}
     simp [Matrix.vecCons]
     rw [add_comm, ←le_sub_iff_add_le]
     field_simp
-    have hrw : ((v + w) ^ 2 - (v - w) ^ 2) / 2 = v * w * 2 := by ring
+    have hrw : ((v + w) ^ 2 - (v - w) ^ 2) / 2 = v * w * 2 := by norm_cast; ring
+    norm_cast at hrw h
     rwa [hrw] }
 
 -- TODO(RFM): rotate then unrotate?
