@@ -129,32 +129,33 @@ def withDomainBinding [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α
 partial def delabMinimization : Delab := do
   if not (pp.optMinimization.get (← getOptions)) then Alternative.failure
   match ← getExpr with
-  | Expr.app
-      (Expr.app
-        (Expr.app
-          (Expr.app (Expr.const `Minimization.mk _) domain)
-          codomain)
-        objFun) constraints  =>
-    let constraints : Array Syntax := #[]
-    let idents ← withType $ withNaryArg 0 do
+  | .app (.app (.app (.app (.const `Minimization.mk _) domain) codomain) objFun) constraints =>
+    let idents ← withType <| withNaryArg 0 do
       let tys ← delabDomain
-      let tys ← tys.mapM fun (name, stx) => do
-        `(Parser.minimizationVar|($(mkIdent name) : $stx))
+      let tys ← tys.mapM fun (name, stx) => do `(Parser.minimizationVar| ($(mkIdent name) : $stx))
       return tys.toArray
     let (objFun, isMax) ← withNaryArg 2 do withDomainBinding domain do
       match ← getExpr with
-      | Expr.app (Expr.app (Expr.app (Expr.const ``maximizeNeg _) _) _) e =>
-        withExpr e do
-          return (← delab, true)
+      | .app (.app (.app (.const ``maximizeNeg _) _) _) e =>
+          withExpr e do
+            return (← delab, true)
       | _ =>
-        return (← delab, false)
+          return (← delab, false)
+    let noConstrs ← withLambdaBody constraints fun _ constrsBody => do
+      isDefEq constrsBody (mkConst ``True)
     let constraints := ← withNaryArg 3 do
       let cs ← withDomainBinding domain delabConstraints
       return mkNode ``Parser.constraints #[mkNullNode <| cs.toArray.map (·.raw)]
-    if isMax then
-      `(optimization $idents* maximize $objFun subject to $constraints)
+    if noConstrs then
+      if isMax then
+        `(optimization $idents* maximize $objFun)
+      else
+        `(optimization $idents*  minimize $objFun)
     else
-      `(optimization $idents* minimize $objFun subject to $constraints)
+      if isMax then
+        `(optimization $idents* maximize $objFun subject to $constraints)
+      else
+        `(optimization $idents* minimize $objFun subject to $constraints)
   | _ => Alternative.failure
 
 end Delab

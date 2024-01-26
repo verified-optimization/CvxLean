@@ -21,6 +21,10 @@ def fittingSphere :=
 
 #print fittingSphere
 
+equivalence eqv/fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
+  equivalence_rfl
+
+
 end FittingSphere
 
 end
