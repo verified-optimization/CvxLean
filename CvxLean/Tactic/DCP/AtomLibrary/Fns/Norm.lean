@@ -7,6 +7,8 @@ namespace CvxLean
 
 open Real
 
+#check sqrt_eq_rpow
+
 declare_atom norm2 [convex] (n : Nat)& (x : Fin n → ℝ)? : ‖x‖ :=
 vconditions
 implementationVars (t : ℝ)
@@ -18,10 +20,10 @@ solutionEqualsAtom by rfl
 feasibility
   (c : by
     unfold soCone
-    simp [Norm.norm])
+    simp [Norm.norm, sqrt_eq_rpow])
 optimality by
   unfold soCone at c
-  simp [Norm.norm] at c ⊢
+  simp [Norm.norm, sqrt_eq_rpow] at c ⊢
   exact c
 vconditionElimination
 
@@ -41,6 +43,6 @@ optimality by
 vconditionElimination
 
 lemma norm2₂_eq_norm2 {x y : ℝ} : ‖![x, y]‖ = sqrt (x ^ 2 + y ^ 2) :=
-  by simp [Norm.norm]
+  by simp [Norm.norm, sqrt_eq_rpow]
 
 end CvxLean

@@ -1,3 +1,4 @@
+import Mathlib.Analysis.NormedSpace.PiLp
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Fin
 
@@ -55,8 +56,7 @@ Named functions on real vectors, including those defined in
 open Real BigOperators
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Norm2`. -/
-instance : Norm (m → ℝ) where
-  norm x := sqrt (∑ i, (x i) ^ 2)
+instance : Norm (m → ℝ) := PiLp.hasNorm 2 _
 
 variable (x y : m → ℝ)
 
