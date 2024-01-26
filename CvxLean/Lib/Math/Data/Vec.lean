@@ -1,4 +1,5 @@
 import CvxLean.Lib.Math.Data.Real
+import CvxLean.Lib.Math.Data.Fin
 
 namespace Vec
 
@@ -22,14 +23,24 @@ def const (n : ℕ) (k : α) : Fin n → α  :=
 def toMatrix {n : ℕ} (x : Fin n → α) : Matrix (Fin n) (Fin 1) α :=
   fun i => ![x i]
 
+def map {β} (f : α → β) (v : m → α) : m → β :=
+  fun i => f (v i)
+
 section AddCommMonoid
 
 variable [AddCommMonoid α] {m : Nat} {n : Nat} (x : Fin m → α) (y : Fin n → α)
 
 open BigOperators
 
+/-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Sum`. -/
 def sum {m : Type} [Fintype m] (x : m → α) : α :=
   ∑ i, x i
+
+open FinsetInterval
+
+/-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.CumSum`. -/
+def cumsum (t : Fin n → ℝ) : Fin n → ℝ :=
+  fun i => if h : 0 < n then ∑ j in [[⟨0, h⟩, i]], t j else 0
 
 end AddCommMonoid
 
@@ -65,5 +76,46 @@ def huber : m → ℝ := fun i => Real.huber (x i)
 def klDiv : m → ℝ := fun i => Real.klDiv (x i) (y i)
 
 end Real
+
+
+section RealLemmas
+
+variable {a b c : m → ℝ}
+
+lemma div_le_iff (hb : StrongLT 0 b) : a / b ≤ c ↔ a ≤ c * b := by
+  constructor
+  . intro h i; have hi := h i; simp at hi;
+    rw [_root_.div_le_iff (hb i)] at hi; exact hi
+  . intro h i; have hi := h i; simp at hi;
+    dsimp; rw [_root_.div_le_iff (hb i)]; exact hi
+
+lemma le_div_iff (hc : StrongLT 0 c) : a ≤ b / c ↔ a * c ≤ b := by
+  constructor
+  . intro h i; have hi := h i; simp at hi;
+    rw [_root_.le_div_iff (hc i)] at hi; exact hi
+  . intro h i; have hi := h i; simp at hi;
+    dsimp; rw [_root_.le_div_iff (hc i)]; exact hi
+
+end RealLemmas
+
+
+namespace Computable
+
+/-!
+Computable operations on matrices used in `RealToFloat`.
+-/
+
+variable {n : ℕ}
+
+def toArray (x : Fin n → Float) : Array Float :=
+  (Array.range n).map (fun i => if h : i < n then x ⟨i, h⟩ else 0)
+
+def sum (x : Fin n → Float) : Float :=
+  (toArray x).foldl Float.add 0
+
+def cumsum (x : Fin n → Float) : Fin n → Float :=
+  fun i => (((toArray x).toList.take (i.val + 1)).foldl Float.add 0)
+
+end Computable
 
 end Vec

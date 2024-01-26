@@ -155,7 +155,7 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
           let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.zeroCone #[ei])
-    -- Positive orthant cone.
+    -- Vector positive orthant cone.
     | .app (.app (.app (.const ``Real.Vec.posOrthCone _) (.app (.const ``Fin _) n)) _) e =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
@@ -171,6 +171,15 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
           let bi := mkApp b idxExpr
           let ci := mkApp c idxExpr
           res := res.push (← mkAppM ``Real.expCone #[ai, bi, ci])
+    -- Vector second-order cone.
+    | .app (.app (.app (.app (.app (.const ``Real.Vec.soCone _)
+        exprN@(.app (.const ``Fin _) n)) (.app (.const ``Fin _) m)) finTypeN) t) X =>
+        let m : Nat ← evalExpr Nat (mkConst ``Nat) m
+        for i in [:m] do
+          let idxExpr ← mkFinIdxExpr i m
+          let ti := mkApp t idxExpr
+          let Xi := mkApp X idxExpr
+          res := res.push (mkAppN (mkConst ``Real.soCone) #[exprN, finTypeN, ti, Xi])
     | _ =>
         res := res.push c
 

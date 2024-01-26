@@ -107,6 +107,7 @@ where
           m!"Expected {curvature}, but atom is {atom.curvature}"]
     let mut abort := false -- TODO: use exception instead?
     let mut bconds := #[]
+    -- withExistingLocalDecls originalConstrVars.toList do
     for (bcondName, bcondType) in atom.bconds do
       let bcondType := mkAppNBeta bcondType args
       let fvarId? ← (← getLCtx).decls.findSomeM? fun decl => match decl with
@@ -126,9 +127,12 @@ where
         if let some e' := e then
           bconds := bconds.push e'
         else
+          let decls := (← getLCtx).decls.toList.filterMap fun lo => match lo with
+            | some decl => some decl.type
+            | _ => none
           return FindAtomResult.Error
             #[m!"Trying atom {atom.expr} for expression {e}: " ++
-              m!"Background Condition {bcondType} not found."]
+              m!"Background Condition {bcondType} not found. (Local context: {decls})"]
 
     let mut childTrees := #[]
     let mut childArgsTrees := #[]
@@ -205,20 +209,6 @@ partial def mkReducedExprs : GraphAtomDataTree → NewVarsTree → MetaM (Tree E
 
 abbrev NewConstrsTree := Tree (Array Expr) Unit
 
-/-- -/
-partial def mkNewConstrs : GraphAtomDataTree → NewVarsTree → ReducedExprsTree → MetaM NewConstrsTree
-  | Tree.node atom childAtoms, Tree.node newVars childNewVars, Tree.node reducedExprs childReducedExprs => do
-    let mut childNewConstrs := #[]
-    for i in [:childAtoms.size] do
-      childNewConstrs := childNewConstrs.push <| ← mkNewConstrs childAtoms[i]! childNewVars[i]! childReducedExprs[i]!
-    let newConstrs := atom.impConstrs
-    let newConstrs := newConstrs.map (mkAppNBeta · (childReducedExprs.map Tree.val))
-    let newConstrs := newConstrs.map (mkAppNBeta · (newVars.map (mkFVar ·.fvarId)))
-    return Tree.node newConstrs childNewConstrs
-  | Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
-  | _, _, _ => throwError "Tree mismatch"
-
-
 abbrev PreVCond := ℕ ⊕ Expr
 abbrev PreVConds := Array PreVCond
 abbrev PreVCondsTree := Tree PreVConds Unit
@@ -226,6 +216,20 @@ abbrev PreVCondsTree := Tree PreVConds Unit
 abbrev VCond := Expr
 abbrev VConds := Array VCond
 abbrev VCondsTree := Tree VConds Unit
+
+/-- -/
+partial def mkNewConstrs : GraphAtomDataTree → BCondsTree → NewVarsTree → ReducedExprsTree → MetaM NewConstrsTree
+  | Tree.node atom childAtoms, Tree.node bconds childBConds, Tree.node newVars childNewVars, Tree.node reducedExprs childReducedExprs => do
+    let mut childNewConstrs := #[]
+    for i in [:childAtoms.size] do
+      childNewConstrs := childNewConstrs.push <| ← mkNewConstrs childAtoms[i]! childBConds[i]! childNewVars[i]! childReducedExprs[i]!
+    let newConstrs := atom.impConstrs
+    let newConstrs := newConstrs.map (mkAppNBeta · (childReducedExprs.map Tree.val))
+    let newConstrs := newConstrs.map (mkAppNBeta · bconds)
+    let newConstrs := newConstrs.map (mkAppNBeta · (newVars.map (mkFVar ·.fvarId)))
+    return Tree.node newConstrs childNewConstrs
+  | Tree.leaf _, Tree.leaf _, Tree.leaf _, Tree.leaf _ => pure $ Tree.leaf ()
+  | _, _, _, _ => throwError "Tree mismatch"
 
 /-- Returns index of constraint if vcondition corresponds exactly to a constraint
 (this is needed for condition elimination). If not, it tries to deduce the condition
@@ -669,7 +673,7 @@ def mkOCWithNames (objFun : Expr) (constraints : List (Lean.Name × Expr)) (orig
 
 -- TODO: Better error message when discovering a concave atom where convex is expected, and vice versa.
 /-- Construct the atom tree. -/
-def mkAtomTree (objCurv : Curvature) (originalVarsDecls : Array LocalDecl) (oc : OC Expr) (extraVars : Array FVarId := #[]) :
+def mkAtomTree (objCurv : Curvature) (originalVarsDecls extraDecls : Array LocalDecl) (oc : OC Expr) (extraVars : Array FVarId := #[]) :
   MetaM (
     OC Bool ×
     OC (Array MessageData) ×
@@ -678,21 +682,25 @@ def mkAtomTree (objCurv : Curvature) (originalVarsDecls : Array LocalDecl) (oc :
     OC (Tree Curvature Curvature) ×
     OC (Tree (Array Expr) (Array Expr))) := do
 withExistingLocalDecls originalVarsDecls.toList do
-  let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-  trace[Meta.debug] "mkAtomTree xs: {xs}"
-  -- Find atoms.
-  let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!) ++ extraVars) c) oc
-    ⟨objCurv, oc.constr.map (fun _ => Curvature.ConvexSet)⟩
-  let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
-  let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
-  if failedAtom.objFun then
-    throwError "Failure in objective: {failedAtomMsgs.objFun}"
+  withExistingLocalDecls extraDecls.toList do
+    let decls := (← getLCtx).decls.toList.filterMap fun decl? =>
+      if let some decl := decl? then some decl.type else none
+    trace[Meta.debug] "decls in mkAtomTree: {decls}"
+    let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+    trace[Meta.debug] "mkAtomTree xs: {xs}"
+    -- Find atoms.
+    let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!) ++ extraVars) c) oc
+      ⟨objCurv, oc.constr.map (fun _ => Curvature.ConvexSet)⟩
+    let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
+    let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
+    if failedAtom.objFun then
+      throwError "Failure in objective: {failedAtomMsgs.objFun}"
 
-  let atoms := atomsAndArgs.map (·.snd.snd.fst)
-  let args := atomsAndArgs.map (·.snd.snd.snd.fst)
-  let curvature := atomsAndArgs.map (·.snd.snd.snd.snd.fst)
-  let bconds := atomsAndArgs.map (·.snd.snd.snd.snd.snd)
-  return (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds)
+    let atoms := atomsAndArgs.map (·.snd.snd.fst)
+    let args := atomsAndArgs.map (·.snd.snd.snd.fst)
+    let curvature := atomsAndArgs.map (·.snd.snd.snd.snd.fst)
+    let bconds := atomsAndArgs.map (·.snd.snd.snd.snd.snd)
+    return (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds)
 
 /-- Identify vconditions and check that all failed constraints can be used as
 vconditions. -/
@@ -757,11 +765,12 @@ withExistingLocalDecls originalVarsDecls.toList do
 
 /-- -/
 def mkNewConstrsOC (originalVarsDecls : Array LocalDecl) (newVarDecls : List LocalDecl)
- (atoms : OC (Tree GraphAtomData Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (reducedExprs : OC (Tree Expr Expr))
+    (bconds : OC BCondsTree)
+    (atoms : OC (Tree GraphAtomData Expr)) (newVars : OC (Tree (Array LocalDecl) Unit)) (reducedExprs : OC (Tree Expr Expr))
  : MetaM (Array Expr × OC (Tree (Array LocalDecl) Unit) × Array LocalDecl):=
 withExistingLocalDecls (originalVarsDecls.toList) do
   withExistingLocalDecls newVarDecls do
-    let newConstrs ← OC.map3M mkNewConstrs atoms newVars reducedExprs
+    let newConstrs ← OC.map4M mkNewConstrs atoms bconds newVars reducedExprs
     trace[Meta.debug] "newConstrs {newConstrs}"
     let newConstrVars ← OC.mapM mkNewConstrVars newConstrs
     trace[Meta.debug] "newConstrs {newConstrs}"
@@ -819,11 +828,16 @@ structure ProcessedAtomTree where
   (reducedExprs : OC (Tree Expr Expr))
   (optimality : OC (Tree Expr Expr))
 
+instance : Inhabited ProcessedAtomTree :=
+  ⟨⟨#[], #[], [], #[], #[], #[], [], #[], {}, default, default, default, default⟩⟩
+
 /-- -/
-def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl) (extraVars : Array FVarId := #[])
-  : MetaM ProcessedAtomTree := do
+def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr)
+    (constraints : List (Lean.Name × Expr)) (originalVarsDecls : Array LocalDecl)
+    (extraDecls : Array LocalDecl := #[]) (extraVars : Array FVarId := #[]) :
+    MetaM ProcessedAtomTree := do
   let oc ← mkOC objFun constraints originalVarsDecls
-  let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree objCurv originalVarsDecls (extraVars := extraVars) oc
+  let (failedAtom, failedAtomMsgs, atoms, args, curvature, bconds) ← mkAtomTree objCurv originalVarsDecls (extraDecls := extraDecls) (extraVars := extraVars) oc
   let originalConstrVars ← mkOriginalConstrVars originalVarsDecls constraints.toArray
   let (vcondIdx, isVCond, vcondVars) ← mkVConditions originalVarsDecls oc constraints atoms args failedAtom
     failedAtomMsgs originalConstrVars
@@ -839,7 +853,7 @@ def mkProcessedAtomTree (objCurv : Curvature) (objFun : Expr) (constraints : Lis
     originalConstrVars solEqAtom
   let reducedExprs ← mkReducedExprsOC originalVarsDecls newVarDecls atoms newVars
   let (newConstrs, newConstrVars, newConstrVarsArray)
-    ← mkNewConstrsOC originalVarsDecls newVarDecls atoms newVars reducedExprs
+    ← mkNewConstrsOC originalVarsDecls newVarDecls bconds atoms newVars reducedExprs
   let (optimality, vcondElimMap) ← mkOptimalityAndVCondElimOC originalVarsDecls newVarDecls
     newConstrVarsArray atoms args reducedExprs newVars newConstrVars curvature bconds vcondIdx
 

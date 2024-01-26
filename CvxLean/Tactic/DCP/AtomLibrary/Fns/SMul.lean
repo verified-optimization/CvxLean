@@ -48,4 +48,13 @@ optimality by
   intros y' hy
   apply smul_le_smul_of_nonpos hy hk
 
+declare_atom Real.Vec.smul3 [affine] (n : ℕ)& (k : ℝ)& (x : Fin n → ℝ)? :
+  k • x :=
+bconditions
+homogenity by
+  rw [smul_zero, add_zero, smul_zero, add_zero, smul_comm]
+additivity by
+  rw [smul_zero, add_zero, smul_add]
+optimality le_refl _
+
 end CvxLean

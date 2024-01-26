@@ -5,6 +5,12 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 namespace Real
 
+/-- This makes real powers the default, avoiding a mixture of `ℕ` and `ℝ`, which is problematic for
+some components of our automated procedures such as pattern-matching in `dcp` or rewriting in
+`pre_dcp`. -/
+@[default_instance]
+noncomputable instance (priority := high) : HPow ℝ ℝ ℝ := by infer_instance
+
 section Functions
 
 /-!
@@ -56,7 +62,7 @@ lemma abs_le_of_sqrt_sq_add_nonneg_le {a b c : ℝ} (hb : 0 ≤ b)
   rw [sqrt_le_iff] at h
   replace ⟨hc, h⟩ := h
   replace h := le_trans (le_add_of_nonneg_right hb) h
-  rwa [sq_le_sq, abs_of_nonneg hc] at h
+  rwa [rpow_two, sq_le_sq, abs_of_nonneg hc] at h
 
 /- Lemmas used in `CvxLean.Tactic.PreDCP.RewriteMapLibrary`. -/
 

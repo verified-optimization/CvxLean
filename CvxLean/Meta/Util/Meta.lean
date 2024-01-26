@@ -2,7 +2,6 @@ import Lean
 
 namespace Lean.Meta
 
-
 variable [MonadControlT MetaM m] [Monad m]
 
 /-- Open lambda-expression by introducing a new local declaration. Similar to

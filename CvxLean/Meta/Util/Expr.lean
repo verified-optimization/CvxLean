@@ -84,3 +84,17 @@ private def Lean.Expr.mkArrayAux (ty : Expr) (as : List Expr) :
 
 def Lean.Expr.mkArray (ty : Expr) (as : Array Expr) : MetaM Expr :=
   Lean.Expr.mkArrayAux ty as.data.reverse
+
+/-- Wrapper of `Lean.addAndCompile` for definitions with some default values. -/
+def Lean.simpleAddAndCompileDefn (n : Name) (e : Expr) : MetaM Unit := do
+  Lean.addAndCompile <|
+    Declaration.defnDecl <|
+      mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
+      (DefinitionSafety.safe) []
+
+/-- Wrapper of `Lean.addDecl` for definitions with some default values. -/
+def Lean.simpleAddDefn (n : Name) (e : Expr) : MetaM Unit := do
+  Lean.addDecl <|
+    Declaration.defnDecl <|
+      mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
+      (DefinitionSafety.safe) []

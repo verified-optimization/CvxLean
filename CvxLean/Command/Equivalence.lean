@@ -79,80 +79,78 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       [])
 
   if bwdMap then
-    trace[Meta.debug] "HERE"
-    -- Get psi, reduce it appropriately and convert to float.
-    let psi := (← whnf eqv).getArg! 7
+    lambdaTelescope eqv fun eqvArgs eqvBody => do
+      -- Get psi, reduce it appropriately and convert to float.
+      let psi := (← whnf eqvBody).getArg! 7
 
-    let mut simpCtx ← Simp.Context.mkDefault
-    let simpCfg : Simp.Config :=
-      { zeta             := true
-        beta             := true
-        eta              := true
-        iota             := true
-        proj             := true
-        decide           := true
-        arith            := true
-        dsimp            := true
-        unfoldPartialApp := true
-        etaStruct        := .all }
-    simpCtx := { simpCtx with config := simpCfg }
+      let mut simpCtx ← Simp.Context.mkDefault
+      let simpCfg : Simp.Config :=
+        { zeta             := true
+          beta             := true
+          eta              := true
+          iota             := true
+          proj             := true
+          decide           := true
+          arith            := true
+          dsimp            := true
+          unfoldPartialApp := true
+          etaStruct        := .all }
+      simpCtx := { simpCtx with config := simpCfg }
 
-    let mut simpThms := {}
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.mk
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.refl
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.trans
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofStrongEquivalence
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofEq
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.psi
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_log
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_sq
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_domain
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraints
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9_last
-    simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10_last
-    simpThms ← simpThms.addDeclToUnfold ``CvxLean.ChangeOfVariables.toEquivalence
-    simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
-    simpThms ← simpThms.addDeclToUnfold ``Eq.mp
-    simpCtx := { simpCtx with simpTheorems := #[simpThms] }
+      let mut simpThms := {}
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.mk
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.refl
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.trans
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofStrongEquivalence
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofEq
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.psi
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_log
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_sq
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_domain
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.add_constraint
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraints
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9_last
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10_last
+      simpThms ← simpThms.addDeclToUnfold ``CvxLean.ChangeOfVariables.toEquivalence
+      simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
+      simpThms ← simpThms.addDeclToUnfold ``Eq.mp
+      simpCtx := { simpCtx with simpTheorems := #[simpThms] }
 
-    let (res, _) ← simp psi simpCtx
-    let psi := res.expr
+      let (res, _) ← simp psi simpCtx
 
-    try
-      let psiF ← realToFloat psi
-      Lean.addAndCompile <|
-        Declaration.defnDecl
-          (mkDefinitionValEx (eqvId ++ `backward_map)
-          []
-          (← inferType psiF)
-          psiF
-          (Lean.ReducibilityHints.regular 0)
-          (DefinitionSafety.safe)
-          [])
-    catch e =>
-      trace[Meta.debug]
-        "`equivalence` warning: failed to create `phi_float` - {e.toMessageData}."
+      -- NOTE: We ignore arguments with `Prop`s here as keeping them would only mean requiring
+      -- proofs about floats.
+      let eqvNonPropArgs ← eqvArgs.filterM fun arg => do
+        return !(← inferType (← inferType arg)).isProp
+      let psi ← mkLambdaFVars eqvNonPropArgs res.expr
+
+      try
+        let psiF ← realToFloat psi
+        Lean.simpleAddAndCompileDefn (eqvId ++ `backward_map) psiF
+      catch e =>
+        trace[Meta.debug]
+          "`equivalence` error: failed to create `{eqvId}.backward_map`.\n{e.toMessageData}"
 
 /-- Create `equivalence` command. It is similar to the `reduction` command, but requires an
 `Equivalence` instead of a `Reduction`. -/

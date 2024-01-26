@@ -107,7 +107,7 @@ equivalence eqv/q :
 
 equivalence eqv2/q1 :
     optimization (x y z a b c : ℝ)
-      minimize sqrt (x ^ 2)
+      minimize sqrt (x ^ (2 : ℕ))
       subject to
         c₁ : x ≤ y
         c₂ : 0 ≤ x + 1 + 2 + 34

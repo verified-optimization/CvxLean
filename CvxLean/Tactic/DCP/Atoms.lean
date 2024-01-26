@@ -121,17 +121,19 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
       let atomRange ← inferType atomExpr
 
       -- Call DCP on graph implementation.
-      let (objFun, constraints, originalVarsDecls) ←
-        withLocalDeclsD
-          (atomData.impVars.map fun (n, ty) => (n, fun _ => return mkAppNBeta ty xs))
-          fun vs => do
+      let (objFun, constraints, originalVarsDecls) ← do
+        let impVars := atomData.impVars.map fun (n, ty) => (n, mkAppNBeta ty xs)
+        withLocalDeclsDNondep impVars fun vs => do
             let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
-
-            let originalVarsDecls := vsDecls
-            let objFun := mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
-            let constraints := atomData.impConstrs.map
-              fun c => (`_, mkAppNBeta (mkAppNBeta c xs) vs)
-            return (objFun, constraints, originalVarsDecls)
+            let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+            withLocalDeclsDNondep bconds fun bs => do
+              let originalVarsDecls := vsDecls
+              let objFun := mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
+              trace[Meta.debug] "{xs} {bs} {vs}"
+              let constraints := atomData.impConstrs.map
+                fun c => (`_, mkAppNBeta (mkAppNBeta (mkAppNBeta c xs) bs) vs)
+              trace[Meta.debug] "constraints in with: {constraints}"
+              return (objFun, constraints, originalVarsDecls)
 
       let xsVarsPre := xs.map fun x => x.fvarId!
       let mut xsVars := #[]
@@ -141,7 +143,15 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
       trace[Meta.debug] "xsVars: {(← xsVars.mapM (·.getDecl)).map (·.userName)}"
 
       trace[Meta.debug] "before PAT "
-      let pat ← DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls (extraVars := xsVars)
+      trace[Meta.debug] "abo : {atomData.impConstrs}"
+      trace[Meta.debug] "constrs: {constraints}"
+      -- Add bconds declarations.
+      let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+      let pat ← withLocalDeclsDNondep bconds fun bs => do
+        let bcondsDecls ← bs.mapM (·.fvarId!.getDecl)
+        DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
+          (extraVars := xsVars) (extraDecls := bcondsDecls)
+
       trace[Meta.debug] "after PAT "
       -- `pat` is the atom tree resulting from the DCP procedure.
 
@@ -253,6 +263,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                   -- First, apply all constraints.
                   let mut optimalityAfterReduced := optimalityXsBConds
                   for i in [:reducedConstrs.size] do
+                    trace[Meta.debug] "optimalityAfterReduced: {← inferType optimalityAfterReduced}"
                     let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
                     optimalityAfterReduced := mkApp optimalityAfterReduced c
                   -- Then, adjust the condition using `objFunFromReducedObjFun`.
@@ -305,7 +316,9 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               impObjFun := ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $
                   pat.reducedExprs.objFun.val
               impConstrs := ← (reducedConstrs ++ pat.newConstrs).mapM
-                (fun c => do return ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $ c)
+                (fun c => do
+                  withLocalDeclsDNondep bconds fun bs => do
+                    return ← mkLambdaFVars xs <| ← mkLambdaFVars bs <| ← mkLambdaFVars (vs1 ++ vs2) c)
               solution := atomData.solution.append
                 (← pat.forwardImagesNewVars.mapM (fun e => mkLambdaFVars xs
                     (e.replaceFVars vs1 vs1Sol)))
@@ -403,16 +416,20 @@ def elabImpObj (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr)
 
 /-- -/
 def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
-   (impConstrStx : Array Syntax) : TermElabM (Array (Lean.Name × Expr)) := do
+    (bconds : Array (Lean.Name × Expr)) (impConstrStx : Array Syntax) :
+    TermElabM (Array (Lean.Name × Expr)) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
-    withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
-      let mut impConstrs : Array (Lean.Name × Expr) := #[]
-      for stx in impConstrStx do
-        let impConstr ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some $ mkSort levelZero)
-        let impConstr ← mkLambdaFVars xs $ ← mkLambdaFVars vs impConstr
-        impConstrs := impConstrs.push (stx[1].getId, impConstr)
-      return impConstrs
+    let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    withLocalDeclsDNondep bconds fun as => do
+      withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
+        let mut impConstrs : Array (Lean.Name × Expr) := #[]
+        for stx in impConstrStx do
+          let impConstr ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (mkSort levelZero)
+          let impConstr ← mkLambdaFVars xs <| ← mkLambdaFVars as <| ← mkLambdaFVars vs impConstr
+          trace[Meta.debug] "impConstr: {← inferType impConstr}"
+          impConstrs := impConstrs.push (stx[1].getId, impConstr)
+        return impConstrs
 
 /-- -/
 def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
@@ -456,21 +473,22 @@ def elabFeas (argDecls : Array LocalDecl) (vconds bconds : Array (Lean.Name × E
     (impConstrs : Array (Lean.Name × Expr)) (sols : Array Expr) (stx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
-    let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    let bconds := bconds.map fun (n, c) => (n, mkAppNBeta c xs)
     withLocalDeclsDNondep bconds fun as => do
-      let vconds := vconds.map fun (n,c) => (n, mkAppNBeta c xs)
-      let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
-      let sols := sols.map (mkAppNBeta · xs)
+      let vconds := vconds.map fun (n, c) => (n, mkAppNBeta c xs)
       withLocalDeclsDNondep vconds fun cs => do
-        let mut feas := #[]
-        for i in [:impConstrs.size] do
-          if (stx[i]!)[1]!.getId != impConstrs[i]!.1 then
-            throwError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
-          let ty := convertLambdasToLets impConstrs[i]!.2 sols
-          let f ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some ty)
-          let f ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars cs f
-          feas := feas.push f
-        return feas
+      let impConstrs := impConstrs.map fun (n, c) => (n, mkAppNBeta c xs)
+      let impConstrs := impConstrs.map fun (n, c) => (n, mkAppNBeta c as)
+      let sols := sols.map (mkAppNBeta · xs)
+      let mut feas := #[]
+      for i in [:impConstrs.size] do
+        if (stx[i]!)[1]!.getId != impConstrs[i]!.1 then
+          throwError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
+        let ty := convertLambdasToLets impConstrs[i]!.2 sols
+        let f ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some ty)
+        let f ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars cs f
+        feas := feas.push f
+      return feas
 
 /-- -/
 def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → TermElabM Expr) :
@@ -506,7 +524,9 @@ def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bcond
     let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
     withLocalDeclsDNondep bconds fun as => do
       withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
-        let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta (mkAppNBeta c xs) vs)
+        let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
+        let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c as)
+        let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c vs)
         withLocalDeclsDNondep impConstrs fun is => do
           let impObj := mkAppNBeta (mkAppNBeta impObj xs) vs
           let ty ← shiftingArgs curv xs argKinds fun monoXs ys =>
@@ -522,29 +542,33 @@ def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bcond
           return ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars vs $ ← mkLambdaFVars is opt
 
 /-- -/
-def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr)) (vcondMap : Std.HashMap Lean.Name Expr)
+def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds : Array (Lean.Name × Expr)) (vcondMap : Std.HashMap Lean.Name Expr)
     (impVars : Array (Lean.Name × Expr)) (impConstrs : Array (Lean.Name × Expr)) (argKinds : Array ArgKind) (stx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
-    withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
-      let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta (mkAppNBeta c xs) vs)
-      withLocalDeclsDNondep impConstrs fun is => do
-        let mut vcondElimMap : Std.HashMap Lean.Name Expr := {}
-        for i in [:stx.size] do
-          let ty ← shiftingArgs curv xs argKinds fun monoXs ys => do
-            let id ← match vcondMap.find? (stx[i]!)[1]!.getId with
-            | some id => pure id
-            | none => throwError "Unknown vcondition: {(stx[i]!)[1]!.getId}"
-            let body := mkAppNBeta id xs
-            let body := body.replaceFVars monoXs ys
-            return body
-          let vcondElim ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some $ ty)
-          let vcondElim ← mkLambdaFVars xs $ ← mkLambdaFVars vs $ ← mkLambdaFVars is vcondElim
-          vcondElimMap := vcondElimMap.insert (stx[i]!)[1]!.getId vcondElim
-        return ← vconds.mapM
-          fun (n, _) => match vcondElimMap.find? n with
-            | some vcond => pure vcond
-            | none => throwError "vcondition not found: {n}"
+    let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
+    let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    withLocalDeclsDNondep bconds fun as => do
+      let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c as)
+      withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
+        let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c vs)
+        withLocalDeclsDNondep impConstrs fun is => do
+          let mut vcondElimMap : Std.HashMap Lean.Name Expr := {}
+          for i in [:stx.size] do
+            let ty ← shiftingArgs curv xs argKinds fun monoXs ys => do
+              let id ← match vcondMap.find? (stx[i]!)[1]!.getId with
+              | some id => pure id
+              | none => throwError "Unknown vcondition: {(stx[i]!)[1]!.getId}"
+              let body := mkAppNBeta id xs
+              let body := body.replaceFVars monoXs ys
+              return body
+            let vcondElim ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some $ ty)
+            let vcondElim ← mkLambdaFVars xs $ ← mkLambdaFVars vs $ ← mkLambdaFVars is vcondElim
+            vcondElimMap := vcondElimMap.insert (stx[i]!)[1]!.getId vcondElim
+          return ← vconds.mapM
+            fun (n, _) => match vcondElimMap.find? n with
+              | some vcond => pure vcond
+              | none => throwError "vcondition not found: {n}"
 
 /-- -/
 @[command_elab atomCommand] unsafe def elabAtomCommand : CommandElab
@@ -567,12 +591,12 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
     let (impVars, impVarMap) ← elabImpVars argDecls impVars.rawImpl
     let impObj ← elabImpObj argDecls impVars impObj.raw bodyTy
-    let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
+    let impConstrs ← elabImpConstrs argDecls impVars #[] impConstrs.rawImpl
     let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
     let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
     let feas ← elabFeas argDecls vconds #[] impConstrs sols feas.rawImpl
     let opt ← elabOpt curv argDecls expr #[] impVars impObj impConstrs argKinds opt.raw
-    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
+    let vcondElim ← elabVCondElim curv argDecls #[] vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
     let atomData := {
       id := id.getId
@@ -631,12 +655,12 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (vconds : Arra
     let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
     let (impVars, impVarMap) ← elabImpVars argDecls impVars.rawImpl
     let impObj ← elabImpObj argDecls impVars impObj.raw bodyTy
-    let impConstrs ← elabImpConstrs argDecls impVars impConstrs.rawImpl
+    let impConstrs ← elabImpConstrs argDecls impVars bconds impConstrs.rawImpl
     let sols ← elabSols argDecls impVars impVarMap sols.rawImpl
     let solEqAtom ← elabSolEqAtom argDecls vconds impObj sols expr solEqAtom.raw
     let feas ← elabFeas argDecls vconds bconds impConstrs sols feas.rawImpl
     let opt ← elabOpt curv argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
-    let vcondElim ← elabVCondElim curv argDecls vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
+    let vcondElim ← elabVCondElim curv argDecls bconds vconds vcondMap impVars impConstrs argKinds vcondElim.rawImpl
 
     let atomData := {
       id := id.getId
