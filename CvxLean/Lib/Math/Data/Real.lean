@@ -5,6 +5,10 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 namespace Real
 
+/-- This makes sure that `x ^ 2` and alike are treated like `rpow x (2 : ℝ)`. -/
+@[default_instance]
+noncomputable instance (priority := high) : HPow ℝ ℝ ℝ := by infer_instance
+
 section Functions
 
 /-!
