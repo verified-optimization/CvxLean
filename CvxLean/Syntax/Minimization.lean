@@ -30,12 +30,16 @@ partial def elabVars (idents : Array Syntax) : TermElabM (Array (Lean.Name × Ex
       | _ => throwError "Expected identifier: {id}"
   return idents
 
+macro_rules
+| `(optimization $idents* $minOrMax:minOrMax $obj) =>
+    `(optimization $idents* $minOrMax:minOrMax $obj subject to _ : True)
+
 -- TODO: allow dependently typed variables?
 
 /-- Elaborate "optimization" problem syntax. -/
 @[term_elab «optimization»] def elabOptmiziation : Term.TermElab := fun stx expectedType? => do
   match stx with
-  | `(optimization $idents* $minOrMax:minOrMax $obj subject to $constraints ) =>
+  | `(optimization $idents* $minOrMax:minOrMax $obj subject to $constraints) =>
     -- Determine names and types of the variables.
     let vars ← elabVars <| idents.map (·.raw)
     -- Construct domain type.

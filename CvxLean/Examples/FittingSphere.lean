@@ -18,8 +18,8 @@ variable (x : Fin m → Fin n → ℝ)
 def fittingSphere :=
   optimization (c : Fin n → ℝ) (r : ℝ)
     minimize (∑ i, (‖(x i) - c‖ ^ 2 - r ^ 2) ^ 2 : ℝ)
-    subject to
-      _ : True
+
+#print fittingSphere
 
 end FittingSphere
 
