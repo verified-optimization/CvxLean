@@ -3,6 +3,19 @@ import CvxLean.Lib.Cones.All
 import CvxLean.Command.Solve.Float.ProblemData
 import CvxLean.Command.Solve.Float.RealToFloat
 
+
+/-!
+# Extract coefficients from problem to generate problem data
+
+TODO
+
+## TODO
+
+* This is probably a big source of inefficency for the `solve` command. We should come up with
+  a better way to extract the numerical values from the Lean expressions.
+* A first step is to not `unrollVectors` and turn thos expressions into floats directly.
+-/
+
 namespace CvxLean
 
 open Lean Meta Elab Tactic
@@ -173,13 +186,24 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
           res := res.push (← mkAppM ``Real.expCone #[ai, bi, ci])
     -- Vector second-order cone.
     | .app (.app (.app (.app (.app (.const ``Real.Vec.soCone _)
-        exprN@(.app (.const ``Fin _) n)) (.app (.const ``Fin _) m)) finTypeN) t) X =>
+        exprN@(.app (.const ``Fin _) _n)) (.app (.const ``Fin _) m)) finTypeN) t) X =>
         let m : Nat ← evalExpr Nat (mkConst ``Nat) m
         for i in [:m] do
           let idxExpr ← mkFinIdxExpr i m
           let ti := mkApp t idxExpr
           let Xi := mkApp X idxExpr
           res := res.push (mkAppN (mkConst ``Real.soCone) #[exprN, finTypeN, ti, Xi])
+    -- Vector rotated second-order cone.
+    -- Vector second-order cone.
+    | .app (.app (.app (.app (.app (.app (.const ``Real.Vec.rotatedSoCone _)
+        exprN@(.app (.const ``Fin _) _n)) (.app (.const ``Fin _) m)) finTypeN) v) w) X =>
+        let m : Nat ← evalExpr Nat (mkConst ``Nat) m
+        for i in [:m] do
+          let idxExpr ← mkFinIdxExpr i m
+          let vi := mkApp v idxExpr
+          let wi := mkApp w idxExpr
+          let Xi := mkApp X idxExpr
+          res := res.push (mkAppN (mkConst ``Real.rotatedSoCone) #[exprN, finTypeN, vi, wi, Xi])
     | _ =>
         res := res.push c
 
