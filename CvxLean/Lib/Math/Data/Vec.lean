@@ -40,7 +40,7 @@ def sum {m : Type} [Fintype m] (x : m → α) : α :=
 open FinsetInterval
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.CumSum`. -/
-def cumsum (t : Fin n → ℝ) : Fin n → ℝ :=
+def cumsum (t : Fin n → α) : Fin n → α :=
   fun i => if h : 0 < n then ∑ j in [[⟨0, h⟩, i]], t j else 0
 
 end AddCommMonoid
@@ -74,6 +74,10 @@ def huber : m → ℝ := fun i => Real.huber (x i)
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.KLDiv`. -/
 def klDiv : m → ℝ := fun i => Real.klDiv (x i) (y i)
+
+/-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Norm2`. -/
+def norm {n m : ℕ} (x : Fin n → Fin m → ℝ) : Fin n → ℝ :=
+  fun i => ‖x i‖
 
 end Real
 
@@ -115,6 +119,9 @@ def sum (x : Fin n → Float) : Float :=
 
 def cumsum (x : Fin n → Float) : Fin n → Float :=
   fun i => (((toArray x).toList.take (i.val + 1)).foldl Float.add 0)
+
+def norm {n m : ℕ} (x : Fin n → Fin m → Float) : Fin n → Float :=
+  fun i => Float.sqrt (sum (Vec.map (Float.pow · 2) (x i)))
 
 end Computable
 

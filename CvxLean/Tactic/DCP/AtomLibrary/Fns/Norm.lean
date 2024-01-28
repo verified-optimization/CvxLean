@@ -45,4 +45,22 @@ vconditionElimination
 lemma norm2₂_eq_norm2 {x y : ℝ} : ‖![x, y]‖ = sqrt (x ^ 2 + y ^ 2) :=
   by simp [Norm.norm, sqrt_eq_rpow]
 
+declare_atom Vec.norm [convex] (n : Nat)& (m : Nat)&  (x : Fin n → Fin m → ℝ)? : Vec.norm x :=
+vconditions
+implementationVars (t : Fin n → ℝ)
+implementationObjective (t)
+implementationConstraints
+  (c : Vec.soCone t x)
+solution (t := Vec.norm x)
+solutionEqualsAtom by rfl
+feasibility
+  (c : by
+    unfold Vec.soCone soCone; dsimp;
+    intros i; simp [Vec.norm, Norm.norm, sqrt_eq_rpow])
+optimality by
+  unfold Vec.soCone soCone at c
+  intros i; simp [Vec.norm, Norm.norm, sqrt_eq_rpow] at c ⊢
+  exact c i
+vconditionElimination
+
 end CvxLean

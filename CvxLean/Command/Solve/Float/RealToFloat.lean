@@ -210,6 +210,12 @@ addRealToFloat : @Real.sqrt :=
 addRealToFloat : @Real.log :=
   Float.log
 
+def Float.norm {n : ℕ} (x : Fin n → Float) : Float :=
+  Float.sqrt (Vec.Computable.sum (Vec.map (Float.pow · 2) x))
+
+addRealToFloat (n) (i) : @Norm.norm.{0} (Fin n → ℝ) i :=
+  @Float.norm n
+
 addRealToFloat (i) : @OfScientific.ofScientific Real i :=
   Float.ofScientific
 
@@ -260,8 +266,11 @@ addRealToFloat (n) (i) (hn) : @Vec.sum.{0} ℝ i (Fin n) hn :=
 addRealToFloat (n) (i) (hn) : @Matrix.sum (Fin n) Real hn i :=
   @Matrix.Computable.sum n
 
-addRealToFloat (n) : @Vec.cumsum n :=
+addRealToFloat (n) (i) : @Vec.cumsum.{0} ℝ i n :=
   @Vec.Computable.cumsum n
+
+addRealToFloat : @Vec.norm :=
+  @Vec.Computable.norm
 
 addRealToFloat (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) ℝ i1 i2 i3 :=
   @Matrix.Computable.dotProduct n
