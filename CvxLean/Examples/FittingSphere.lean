@@ -2,7 +2,7 @@ import CvxLean
 
 noncomputable section
 
-open CvxLean Minimization Real BigOperators Matrix
+open CvxLean Minimization Real BigOperators Matrix Finset
 
 section LeastSquares
 
@@ -22,14 +22,13 @@ lemma leastSquares_alt_objFun {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : �
   -- 1) Σ (aᵢ - x)² = Σ (aᵢ² - 2aᵢx + x²)
   _ = ∑ i, ((a i) ^ 2 - 2 * (a i) * x + (x ^ 2)) := by
     congr; funext i; simp; ring
-  -- 2) Σ (aᵢ² - 2aᵢx + x²) = Σ aᵢ² - 2xΣ aᵢ + nx²
+  -- 2) ... = Σ aᵢ² - 2xΣ aᵢ + nx²
   _ = ∑ i, ((a i) ^ 2) - 2 * x * ∑ i, (a i) + n * (x ^ 2) := by
-    rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
-    simp [Finset.sum_const]; ring
-  -- 3) Σ aᵢ² - 2xΣ aᵢ + nx² = n{a²} - 2xn{a} + nx²
+    rw [sum_add_distrib, sum_sub_distrib, ← sum_mul, ← mul_sum]; simp [sum_const]; ring
+  -- 3) ... = n{a²} - 2xn{a} + nx²
   _ = n * mean (a ^ 2) - 2 * x * n * mean a + n * (x ^ 2) := by
     simp [mean]; field_simp; ring
-  -- 4) n{a²} - 2xn{a} + nx² = n((x - {a})² + ({a²} - {a}²))
+  -- 4) ... = n((x - {a})² + ({a²} - {a}²))
   _ = n * ((x - mean a) ^ 2 + (mean (a ^ 2) - (mean a) ^ 2)) := by
     simp [mean]; field_simp; ring
 
@@ -43,8 +42,7 @@ lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x
     have h_rw_x := leastSquares_alt_objFun hn a x
     have h_rw_y := leastSquares_alt_objFun hn a y
     simp only [rpow_two] at h_rw_x h_rw_y ⊢
-    rw [h_rw_x, h_rw_y, mul_le_mul_left (by positivity), add_le_add_iff_right] at hy
-    exact hy
+    rwa [h_rw_x, h_rw_y, mul_le_mul_left (by positivity), add_le_add_iff_right] at hy
   have hmean := h (mean a)
   simp at hmean
   have hz := le_antisymm hmean (sq_nonneg _)
@@ -60,7 +58,7 @@ lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ
   apply leastSquares_optimal_eq_mean hn a
   simp [Vec.leastSquares, leastSquares, optimal, feasible] at h ⊢
   intros y
-  simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const] at h
+  simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const, rpow_two] at h
   exact h y
 
 end LeastSquares
@@ -87,9 +85,7 @@ instance : ChangeOfVariables fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (c
     condition := fun (_, t) => 0 ≤ t,
     property := fun ⟨c, t⟩ h => by simp [sqrt_sq h] }
 
-def Vec.norm {m n} (x : Fin m → Fin n → ℝ) : Fin m → ℝ := fun i => ‖x i‖
-
-equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
+equivalence eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
   -- Change of variables.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
@@ -112,9 +108,9 @@ equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fit
       simp [mulVec, inner, dotProduct]
   rename_vars [c, t]
 
-#print fittingSphere₁
+#print fittingSphereT
 
-relaxation rel/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere₁ n m x := by
+relaxation rel/fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphereT n m x := by
   relaxation_step =>
     apply Relaxation.weaken_constraint (cs' := fun _ => True)
     . rintro ⟨c, t⟩ _; trivial
@@ -123,7 +119,7 @@ relaxation rel/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
 lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → ℝ) (x : Fin n → ℝ) :
     ∑ i, ‖a i - x‖ ^ 2 = 0 ↔ ∀ i, a i = x := by
   simp [rpow_two]
-  rw [Finset.sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
+  rw [sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
   constructor
   . intros h i
     have hi := h i (by simp)
@@ -137,23 +133,23 @@ lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → �
 is non-trivial. -/
 lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   (h_nontrivial : x ≠ Vec.const m c)
-  (h : (fittingSphere₂ n m x).optimal (c, t)) : (fittingSphere₁ n m x).optimal (c, t) := by
-  simp [fittingSphere₁, fittingSphere₂, optimal, feasible] at h ⊢
+  (h_opt : (fittingSphereConvex n m x).optimal (c, t)) : (fittingSphereT n m x).optimal (c, t) := by
+  simp [fittingSphereT, fittingSphereConvex, optimal, feasible] at h_opt ⊢
   constructor
   . let a := Vec.norm x ^ 2 - 2 * mulVec x c
     have h_ls : optimal (Vec.leastSquares a) t := by
       refine ⟨trivial, ?_⟩
       intros y _
       simp [objFun, Vec.leastSquares]
-      exact h c y
-    -- Apply key result about least squares.
+      exact h_opt c y
+    -- Apply key result about least squares to `a` and `t`.
     have ht_eq := vec_leastSquares_optimal_eq_mean hm a t h_ls
     have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
-      simp [Finset.sum_const]
+      simp [sum_const]
       field_simp; ring
     have ht : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
       rw [ht_eq]; dsimp [mean]
-      rw [hc2_eq, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+      rw [hc2_eq, mul_sum, mul_sum, mul_sum, ← sum_add_distrib]
       congr; funext i; rw [← mul_add]
       congr; simp [Vec.norm]
       rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
@@ -162,7 +158,7 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
     have h_tc2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
       rw [ht]
       apply mul_nonneg (by norm_num)
-      apply Finset.sum_nonneg
+      apply sum_nonneg
       intros i _
       rw [rpow_two]
       exact sq_nonneg _
@@ -181,9 +177,54 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
         funext i
         exact h_sum_eq_zero i
   . intros c' x' _
-    exact h c' x'
+    exact h_opt c' x'
 
-#print fittingSphere₂
+#print fittingSphereConvex
+
+-- We proceed to solve the problem on a concrete example.
+-- https://github.com/cvxgrp/cvxbook_additional_exercises/blob/main/python/sphere_fit_data.py
+
+def nₚ := 2
+
+def mₚ := 50
+
+def xₚ : Fin mₚ → Fin nₚ → ℝ := Matrix.transpose <| ![
+  ![1.824183228637652032e+00, 1.349093690455489103e+00, 6.966316403935147727e-01,
+    7.599387854623529392e-01, 2.388321695850912363e+00, 8.651370608981923116e-01,
+    1.863922545015865406e+00, 7.099743941474848663e-01, 6.005484882320809570e-01,
+    4.561429569892232472e-01, 5.328296545713475663e-01, 2.138547819234526415e+00,
+    1.906676474276197464e+00, 1.015547309536922516e+00, 8.765948388006337133e-01,
+    1.648147347399247842e+00, 1.027902202451572045e+00, 2.145586297520478691e+00,
+    1.793440421753045744e+00, 1.020535583041398908e+00, 8.977911075271942654e-01,
+    1.530480229262339398e+00, 2.478088034137528872e-01, 2.617415807793897820e+00,
+    2.081978553098443374e+00, 1.891226687205936452e+00, 8.222497927065576251e-01,
+    5.803514604868882376e-01, 1.158670193449639063e+00, 6.016685032455900695e-01,
+    5.605410828151705660e-01, 2.508815467550573164e+00, 2.230201413385580977e+00,
+    1.170848897912992514e+00, 2.256355929901105561e+00, 6.686991510936428629e-01,
+    2.040269595792217672e+00, 3.634166812924328749e-01, 5.418647611079159265e-01,
+    6.631470058399455692e-01, 4.286142597532469622e-01, 2.155925078996823618e+00,
+    2.379380016960549682e+00, 6.343212414048013947e-01, 1.469076407947448981e+00,
+    1.225322035289937439e+00, 1.467602887401966871e+00, 9.345319187253748883e-01,
+    1.985592768641736505e+00, 2.106896115090134636e+00],
+  ![-9.644136284187876385e-01, 1.069547315003422927e+00, 6.733229334437943470e-01,
+    7.788072961810316164e-01, -9.467465278344706636e-01, -8.591303443863639311e-01,
+    1.279527420871080956e+00, 5.314829019311283487e-01, 6.975676079749143499e-02,
+    -4.641873429414754559e-01, -2.094571396598311763e-01, -8.003479827938377866e-01,
+    6.135280782546607137e-01, -9.961307468791747999e-01, -8.765215480412106297e-01,
+    9.655406812422813179e-01, 1.011230180540185541e+00, 6.105416770440197372e-01,
+    9.486552370654932620e-01, -9.863592657836954825e-01, 7.695327845100754516e-01,
+    -1.060072365810699413e+00, -4.041043465424410952e-01, -2.352952920283236105e-01,
+    7.560391050507236921e-01, -9.454246095204003053e-01, -5.303145312191936966e-01,
+    5.979590038743245461e-01, -1.154309511133019717e+00, -6.123184171955468047e-01,
+    -1.464683782538583889e-01, -1.839128688968104386e-01, 4.250070477845909744e-01,
+    8.861864983476224200e-01, 3.927648421593328276e-01, -6.726102374256350824e-01,
+    -1.047252884197514833e+00, 1.825096825995130845e-01, -4.482373962742914886e-01,
+    5.115625649313135792e-01, 7.846201103116770548e-02, 6.006325432819290544e-01,
+    -5.710733714464664157e-01, 4.725559971890586075e-01, -8.440290321502940118e-01,
+    -1.003920890712479475e+00, -1.067089412136528637e+00, 7.909281966910661765e-01,
+    -1.059509163675931065e+00, -7.136351632325785843e-01]]
+
+solve fittingSphereConvex nₚ mₚ xₚ
 
 end FittingSphere
 
