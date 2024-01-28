@@ -10,20 +10,52 @@ def leastSquares {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
     minimize (∑ i, ((a i - x) ^ 2) : ℝ)
 
-lemma leastSquares_optimal_eq_mean {n : ℕ} (a : Fin n → ℝ) (x : ℝ)
-  (h : (leastSquares a).optimal x) : x = (1 / n) * ∑ i, (a i) := by
-  simp [leastSquares]
-  sorry
-  -- if x is optimal then avg(x) = 1
-  -- https://math.stackexchange.com/questions/2554243/understanding-the-mean-minimizes-the-mean-squared-error
+@[reducible]
+def mean {n : ℕ} (a : Fin n → ℝ) : ℝ := (1 / n) * ∑ i, (a i)
+
+lemma leastSquares_alt_objFun {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ) :
+  (∑ i, ((a i - x) ^ 2)) = n * ((x - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2) := by
+  calc
+  _ = ∑ i, ((a i) ^ 2 - 2 * (a i) * x + (x ^ 2)) := by congr; funext i; simp; ring
+  _ = ∑ i, ((a i) ^ 2) - 2 * x * ∑ i, (a i) + n * (x ^ 2) := by
+    rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
+    simp [Finset.sum_const]; ring
+  _ = n * mean (a ^ 2) - 2 * x * n * mean a + n * (x ^ 2) := by
+    simp [mean]; field_simp; ring
+  _ = n * ((x - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2) := by
+    simp [mean]; field_simp; ring
+
+lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
+  (h : (leastSquares a).optimal x) : x = mean a := by
+  simp [optimal, feasible, leastSquares] at h
+  replace h : ∀ y,
+    (x - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2 ≤
+    (y - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2 := by
+    intros y
+    have hy := h y
+    have h_rw_x := leastSquares_alt_objFun hn a x
+    have h_rw_y := leastSquares_alt_objFun hn a y
+    simp only [rpow_two] at h_rw_x h_rw_y ⊢
+    rw [h_rw_x, h_rw_y] at hy
+    rw [mul_le_mul_left (by positivity)] at hy
+    exact hy
+  replace h : ∀ y, (x - mean a) ^ 2 ≤ (y - mean a) ^ 2 := by
+    intros y
+    have hy := h y
+    rw [← add_sub, ← add_sub, add_le_add_iff_right] at hy
+    exact hy
+  have hmean := h (mean a)
+  simp at hmean
+  have hz := le_antisymm hmean (sq_nonneg _)
+  rwa [sq_eq_zero_iff, sub_eq_zero] at hz
 
 def Vec.leastSquares {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
     minimize (Vec.sum ((a - Vec.const n x) ^ 2) : ℝ)
 
-lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (a : Fin n → ℝ) (x : ℝ)
-  (h : (Vec.leastSquares a).optimal x) : x = (1 / n) * ∑ i, (a i) := by
-  apply leastSquares_optimal_eq_mean a
+lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
+  (h : (Vec.leastSquares a).optimal x) : x = mean a := by
+  apply leastSquares_optimal_eq_mean hn a
   simp [Vec.leastSquares, leastSquares, optimal, feasible] at h ⊢
   intros y
   simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const] at h
@@ -122,16 +154,13 @@ equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fit
 
 #print fittingSphere₁
 
--- private lemma nonconvex__implies_relaxed_constraint (c : Fin n → ℝ) (t : ℝ)
---     (h₁ : 1 / 10000 ≤ sqrt (t + ‖c‖ ^ 2)) (h₂ : ‖c‖ ^ 2 ≤ 50) : -50 ≤ t := by
---   rw [le_sqrt' (by norm_num)] at h₁
---   linarith
-
 relaxation red/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere₁ n m x := by
   relaxation_step =>
     apply Relaxation.weaken_constraint (cs' := fun _ => True)
     . rintro ⟨c, t⟩ _; trivial
 
+-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
+-- is non-trivial.
 lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   (h_nontrivial : x ≠ Vec.const m c)
   (h : (fittingSphere₂ n m x).optimal (c, t)) : (fittingSphere₁ n m x).optimal (c, t) := by
@@ -143,12 +172,12 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
       intros y _
       simp [objFun, Vec.leastSquares]
       exact h c y
-    have ht_eq := vec_leastSquares_optimal_eq_mean a t h_ls
+    have ht_eq := vec_leastSquares_optimal_eq_mean hm a t h_ls
     have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
       simp [Finset.sum_const]
       field_simp; ring
     have ht : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
-      rw [ht_eq]; dsimp
+      rw [ht_eq]; dsimp [mean]
       rw [hc2_eq, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
       congr; funext i;
       rw [← mul_add]
