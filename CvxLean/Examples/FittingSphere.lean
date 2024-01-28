@@ -6,6 +6,114 @@ namespace FittingSphere
 
 open CvxLean Minimization Real BigOperators Matrix
 
+def leastSquares (n : ℕ) (a : Fin n → ℝ) :=
+  optimization (x : ℝ)
+    minimize (∑ i, ((x - (a i)) ^ 2) : ℝ)
+
+lemma leastSquares_optimal (n : ℕ) (a : Fin n → ℝ) :
+  (leastSquares n a).optimal ((1 / n) * ∑ i, a i) := by
+  refine ⟨trivial, ?_⟩
+  intros y _
+  simp [leastSquares]
+  sorry
+
+  -- I was using norms here...
+  -- induction n with
+  -- | zero =>
+  --     refine ⟨trivial, ?_⟩
+  --     intro y _
+  --     simp [leastSquares]
+  -- | succ m ih =>
+  --     refine ⟨trivial, ?_⟩
+  --     intro y _
+  --     simp only [leastSquares]
+  --     rw [Fin.sum_univ_succ]
+  --     conv => right; rw [Fin.sum_univ_succ]
+
+      -- apply add_le_add
+      -- . sorry
+      -- . simp [leastSquares, optimal, feasible] at ih
+      --   have ih_applied := ih (fun i => a i.succ) y
+      --   simp at ih_applied
+      --   calc
+      --     -- step 1
+      --     ∑ i : Fin m, ‖(1 / ↑(m.succ)) * ∑ j : Fin m.succ, a j - a i.succ‖ ^ 2 =
+      --     ∑ i : Fin m, ‖(1 / (m.succ : ℝ)) • ∑ j : Fin m.succ, a j - a i.succ‖ ^ 2 := by
+      --       congr
+      --     -- step 2
+      --     _ =
+      --     ∑ i : Fin m, ‖(1 / (m.succ : ℝ)) • ∑ j : Fin m.succ, a j - (1 / (m.succ : ℝ)) • ∑ j : Fin m.succ, a i.succ‖ ^ 2 := by
+      --       congr; funext i; congr
+      --       funext j; simp [Finset.sum_const]; field_simp; ring
+      --     -- step 3
+      --     _ =
+      --     ∑ i : Fin m, ‖(1 / (m.succ : ℝ)) • (∑ j : Fin m.succ, a j - (m.succ : ℝ) • a i.succ)‖ ^ 2 := by
+      --       congr; funext i; congr
+      --       rw [← smul_sub]; congr; funext j; simp [Finset.sum_const]
+      --     -- step 4
+      --     _ =
+      --     ∑ i : Fin m, ((1 / (m.succ : ℝ)) * ‖(∑ j : Fin m.succ, a j - (m.succ : ℝ) • a i.succ)‖) ^ 2 := by
+      --       congr; funext i; congr
+      --       rw [@norm_smul_of_nonneg (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _) (PiLp.normedSpace 2 ℝ _)]
+      --       positivity
+      --     -- step 5 (key)
+      --     _ ≤
+      --     ∑ i : Fin m, ((1 / (m : ℝ)) * ‖(∑ j : Fin m, a j.succ - (m : ℝ) • a i.succ)‖) ^ 2 := by
+      --       apply Finset.sum_le_sum; intros i _
+      --       rw [rpow_two, rpow_two, sq_le_sq, abs_mul, abs_mul]
+      --       rw [@abs_norm (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _)]
+      --       rw [@abs_norm (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _)]
+      --       have : m ≠ 0 := fun h => by rw [h] at i; exact Nat.not_lt_zero _ i.2
+      --       have : m > 0 := Nat.pos_of_ne_zero this
+      --       have : (m : ℝ) > 0 := by norm_num [this]
+      --       have h2 : (m : ℝ) + 1 > 0 := add_pos (this) (by norm_num)
+      --       apply mul_le_mul
+      --       . apply abs_le_abs
+      --         . apply div_le_div
+      --           . norm_num
+      --           . norm_num
+      --           . exact this
+      --           . norm_num
+      --         . apply le_trans (b := 0)
+      --           . simp; exact (le_of_lt h2)
+      --           . simp
+      --       . rw [Fin.sum_univ_succ]
+      --         sorry
+      --       . exact @norm_nonneg _ (PiLp.seminormedAddCommGroup _ _).toSeminormedAddGroup _
+      --     -- step 6
+      --     _ =
+      --     ∑ i : Fin m, ‖((1 / (m : ℝ)) • (∑ j : Fin m, a j.succ - (m : ℝ) • a i.succ))‖ ^ 2 := by
+      --       congr; funext i; congr
+      --       rw [@norm_smul_of_nonneg (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _) (PiLp.normedSpace 2 ℝ _)]
+      --       positivity
+      --     -- step 7
+      --     _ =
+      --     ∑ i : Fin m, ‖((1 / (m : ℝ)) • ∑ j : Fin m, a j.succ) - ((1 / (m : ℝ)) • ∑ j : Fin m, a i.succ)‖ ^ 2 := by
+      --       congr; funext i; congr
+      --       rw [← smul_sub]; congr; funext j; simp [Finset.sum_const]
+      --     -- step 8
+      --     _ =
+      --     ∑ i : Fin m, ‖((1 / (m : ℝ)) • ∑ j : Fin m, a j.succ) - a i.succ‖ ^ 2 := by
+      --       congr; funext i; congr
+      --       funext j; simp [Finset.sum_const]
+      --       have : m ≠ 0 := fun h => by rw [h] at i; exact Nat.not_lt_zero _ i.2
+      --       field_simp; ring
+      --     -- final step (by IH)
+      --     _ ≤
+      --     ∑ i : Fin m, ‖y - a i.succ‖ ^ 2 := by
+      --       simp; convert ih_applied
+      -- apply Finset.sum_le_sum
+      -- intros i _
+      -- rw [rpow_two, rpow_two, sq_le_sq]
+      -- iterate 2 rw [@abs_norm (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _)]
+      -- have hai : a i = (1 / m) * ∑ j : Fin m, a i := by
+      --   funext j; simp [Finset.sum_const]; field_simp; ring
+      -- nth_rewrite 1 [hai]
+      -- rw [← mul_sub,  Finset.sum_sub_distrib]
+      -- rw [norm_mul]
+      -- sorry
+
+
 -- Dimension.
 variable (n : ℕ)
 
