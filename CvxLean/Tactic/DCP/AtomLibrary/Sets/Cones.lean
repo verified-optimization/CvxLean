@@ -77,4 +77,12 @@ optimality le_refl _
 
 end PSDCone
 
+/- Trivial cone. -/
+section Trivial
+
+declare_atom trivial [cone] : True :=
+optimality le_refl _
+
+end Trivial
+
 end CvxLean

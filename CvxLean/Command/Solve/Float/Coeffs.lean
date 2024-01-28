@@ -255,6 +255,8 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
     for c in cs do
       trace[Meta.debug] "Coeffs going through constraint {c}."
       match Expr.consumeMData c with
+      | .const ``True _ => do
+          idx := idx + 1
       | .app (.const ``Real.zeroCone _) e => do
           let e ← realToFloat e
           let res ← determineScalarCoeffsAux e p floatDomain
