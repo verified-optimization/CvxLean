@@ -6,16 +6,20 @@ namespace FittingSphere
 
 open CvxLean Minimization Real BigOperators Matrix
 
-def leastSquares (n : ℕ) (a : Fin n → ℝ) :=
-  optimization (x : ℝ)
-    minimize (∑ i, ((x - (a i)) ^ 2) : ℝ)
+def leastSquares (n : ℕ) (a : ℝ) :=
+  optimization (x : Fin n → ℝ)
+    minimize (∑ i, ((x i - a) ^ 2) : ℝ)
 
-lemma leastSquares_optimal (n : ℕ) (a : Fin n → ℝ) :
-  (leastSquares n a).optimal ((1 / n) * ∑ i, a i) := by
-  refine ⟨trivial, ?_⟩
-  intros y _
+lemma leastSquares_optimal (n : ℕ) (a : ℝ) (x : Fin n → ℝ) :
+  (leastSquares n a).optimal x → (1 / n) * ∑ i, (x i) = a := by
+  intros h
   simp [leastSquares]
   sorry
+  -- if x is optimal then avg(x) = 1
+  -- https://math.stackexchange.com/questions/2554243/understanding-the-mean-minimizes-the-mean-squared-error
+
+
+  -- sorry
 
   -- I was using norms here...
   -- induction n with
