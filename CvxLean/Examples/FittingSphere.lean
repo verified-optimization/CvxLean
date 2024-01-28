@@ -2,121 +2,43 @@ import CvxLean
 
 noncomputable section
 
-namespace FittingSphere
-
 open CvxLean Minimization Real BigOperators Matrix
 
-def leastSquares (n : ℕ) (a : ℝ) :=
-  optimization (x : Fin n → ℝ)
-    minimize (∑ i, ((x i - a) ^ 2) : ℝ)
+section LeastSquares
 
-lemma leastSquares_optimal (n : ℕ) (a : ℝ) (x : Fin n → ℝ) :
-  (leastSquares n a).optimal x → (1 / n) * ∑ i, (x i) = a := by
-  intros h
+def leastSquares {n : ℕ} (a : Fin n → ℝ) (lb : ℝ) :=
+  optimization (x : ℝ)
+    minimize (∑ i, ((a i - x) ^ 2) : ℝ)
+    subject to
+      h₁ : lb ≤ x
+
+lemma leastSquares_optimal_eq_mean {n : ℕ} (a : Fin n → ℝ) (lb : ℝ) (x : ℝ)
+  (h : (leastSquares a lb).optimal x) : x = (1 / n) * ∑ i, (a i) := by
   simp [leastSquares]
   sorry
+
+def Vec.leastSquares {n : ℕ} (a : Fin n → ℝ) (lb : ℝ) :=
+  optimization (x : ℝ)
+    minimize (Vec.sum ((a - Vec.const n x) ^ 2) : ℝ)
+    subject to
+      h₁ : lb ≤ x
+
+lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (a : Fin n → ℝ) (lb : ℝ) (x : ℝ)
+  (h : (Vec.leastSquares a lb).optimal x) : x = (1 / n) * ∑ i, (a i) := by
+  apply leastSquares_optimal_eq_mean a lb
+  simp [Vec.leastSquares, leastSquares, optimal, feasible] at h ⊢
+  have ⟨h, h_opt⟩ := h
+  refine ⟨h, ?_⟩
+  intros y
+  simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const] at h_opt
+  exact h_opt y
+
   -- if x is optimal then avg(x) = 1
   -- https://math.stackexchange.com/questions/2554243/understanding-the-mean-minimizes-the-mean-squared-error
 
+end LeastSquares
 
-  -- sorry
-
-  -- I was using norms here...
-  -- induction n with
-  -- | zero =>
-  --     refine ⟨trivial, ?_⟩
-  --     intro y _
-  --     simp [leastSquares]
-  -- | succ m ih =>
-  --     refine ⟨trivial, ?_⟩
-  --     intro y _
-  --     simp only [leastSquares]
-  --     rw [Fin.sum_univ_succ]
-  --     conv => right; rw [Fin.sum_univ_succ]
-
-      -- apply add_le_add
-      -- . sorry
-      -- . simp [leastSquares, optimal, feasible] at ih
-      --   have ih_applied := ih (fun i => a i.succ) y
-      --   simp at ih_applied
-      --   calc
-      --     -- step 1
-      --     ∑ i : Fin m, ‖(1 / ↑(m.succ)) * ∑ j : Fin m.succ, a j - a i.succ‖ ^ 2 =
-      --     ∑ i : Fin m, ‖(1 / (m.succ : ℝ)) • ∑ j : Fin m.succ, a j - a i.succ‖ ^ 2 := by
-      --       congr
-      --     -- step 2
-      --     _ =
-      --     ∑ i : Fin m, ‖(1 / (m.succ : ℝ)) • ∑ j : Fin m.succ, a j - (1 / (m.succ : ℝ)) • ∑ j : Fin m.succ, a i.succ‖ ^ 2 := by
-      --       congr; funext i; congr
-      --       funext j; simp [Finset.sum_const]; field_simp; ring
-      --     -- step 3
-      --     _ =
-      --     ∑ i : Fin m, ‖(1 / (m.succ : ℝ)) • (∑ j : Fin m.succ, a j - (m.succ : ℝ) • a i.succ)‖ ^ 2 := by
-      --       congr; funext i; congr
-      --       rw [← smul_sub]; congr; funext j; simp [Finset.sum_const]
-      --     -- step 4
-      --     _ =
-      --     ∑ i : Fin m, ((1 / (m.succ : ℝ)) * ‖(∑ j : Fin m.succ, a j - (m.succ : ℝ) • a i.succ)‖) ^ 2 := by
-      --       congr; funext i; congr
-      --       rw [@norm_smul_of_nonneg (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _) (PiLp.normedSpace 2 ℝ _)]
-      --       positivity
-      --     -- step 5 (key)
-      --     _ ≤
-      --     ∑ i : Fin m, ((1 / (m : ℝ)) * ‖(∑ j : Fin m, a j.succ - (m : ℝ) • a i.succ)‖) ^ 2 := by
-      --       apply Finset.sum_le_sum; intros i _
-      --       rw [rpow_two, rpow_two, sq_le_sq, abs_mul, abs_mul]
-      --       rw [@abs_norm (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _)]
-      --       rw [@abs_norm (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _)]
-      --       have : m ≠ 0 := fun h => by rw [h] at i; exact Nat.not_lt_zero _ i.2
-      --       have : m > 0 := Nat.pos_of_ne_zero this
-      --       have : (m : ℝ) > 0 := by norm_num [this]
-      --       have h2 : (m : ℝ) + 1 > 0 := add_pos (this) (by norm_num)
-      --       apply mul_le_mul
-      --       . apply abs_le_abs
-      --         . apply div_le_div
-      --           . norm_num
-      --           . norm_num
-      --           . exact this
-      --           . norm_num
-      --         . apply le_trans (b := 0)
-      --           . simp; exact (le_of_lt h2)
-      --           . simp
-      --       . rw [Fin.sum_univ_succ]
-      --         sorry
-      --       . exact @norm_nonneg _ (PiLp.seminormedAddCommGroup _ _).toSeminormedAddGroup _
-      --     -- step 6
-      --     _ =
-      --     ∑ i : Fin m, ‖((1 / (m : ℝ)) • (∑ j : Fin m, a j.succ - (m : ℝ) • a i.succ))‖ ^ 2 := by
-      --       congr; funext i; congr
-      --       rw [@norm_smul_of_nonneg (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _) (PiLp.normedSpace 2 ℝ _)]
-      --       positivity
-      --     -- step 7
-      --     _ =
-      --     ∑ i : Fin m, ‖((1 / (m : ℝ)) • ∑ j : Fin m, a j.succ) - ((1 / (m : ℝ)) • ∑ j : Fin m, a i.succ)‖ ^ 2 := by
-      --       congr; funext i; congr
-      --       rw [← smul_sub]; congr; funext j; simp [Finset.sum_const]
-      --     -- step 8
-      --     _ =
-      --     ∑ i : Fin m, ‖((1 / (m : ℝ)) • ∑ j : Fin m, a j.succ) - a i.succ‖ ^ 2 := by
-      --       congr; funext i; congr
-      --       funext j; simp [Finset.sum_const]
-      --       have : m ≠ 0 := fun h => by rw [h] at i; exact Nat.not_lt_zero _ i.2
-      --       field_simp; ring
-      --     -- final step (by IH)
-      --     _ ≤
-      --     ∑ i : Fin m, ‖y - a i.succ‖ ^ 2 := by
-      --       simp; convert ih_applied
-      -- apply Finset.sum_le_sum
-      -- intros i _
-      -- rw [rpow_two, rpow_two, sq_le_sq]
-      -- iterate 2 rw [@abs_norm (Fin n → ℝ) (PiLp.seminormedAddCommGroup _ _)]
-      -- have hai : a i = (1 / m) * ∑ j : Fin m, a i := by
-      --   funext j; simp [Finset.sum_const]; field_simp; ring
-      -- nth_rewrite 1 [hai]
-      -- rw [← mul_sub,  Finset.sum_sub_distrib]
-      -- rw [norm_mul]
-      -- sorry
-
+namespace FittingSphere
 
 -- Dimension.
 variable (n : ℕ)
@@ -132,6 +54,7 @@ def fittingSphere :=
     minimize (∑ i, (‖(x i) - c‖ ^ 2 - r ^ 2) ^ 2 : ℝ)
     subject to
       h₁ : 1 / 10000 ≤ r
+      h₂ : ‖c‖ ^ 2 ≤ 50
 
 instance : ChangeOfVariables fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2)) :=
   { inv := fun (c, r) => (c, r ^ 2 - ‖c‖ ^ 2),
@@ -145,7 +68,7 @@ equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fit
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
       (fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2)))
-    . rintro _ h; exact le_trans (by norm_num) h
+    . rintro _ ⟨h, _⟩; exact le_trans (by norm_num) h
   rename_vars [c, t]
   -- Clean up.
   conv_constr h₁ => dsimp
@@ -153,6 +76,7 @@ equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fit
   conv_obj => dsimp
   -- Rewrite objective.
   rw_obj =>
+    -- NOTE: this is why we need strict postivity of `r`, to be able to apply `sq_sqrt`.
     have h' : 0 < t + ‖c‖ ^ 2 := sqrt_pos.mp <| lt_of_lt_of_le (by norm_num) h₁;
     conv =>
       left; congr; congr; ext i; congr; simp;
@@ -169,112 +93,49 @@ equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fit
       congr 2; simp [mulVec, inner, dotProduct, Finset.sum_mul, Finset.mul_sum]
       congr; funext j; ring
   rename_vars [c, t]
-  -- equivalence_step =>
-  --   apply Equivalence.rewrite_constraints
-  --     (cs' := fun (ct : (Fin n → ℝ) × ℝ) => 0 ≤ ct.2 ∧ ‖ct.1‖ ^ 2 ≤ 50)
-  --   . rintro ⟨c, t⟩; dsimp; constructor
-  --     . rintro ⟨h₁, h₂⟩
-  --       refine ⟨?_, h₂⟩
-  --       rw [← neg_le_neg_iff] at h₂
-  --       apply le_trans h₂
-  --       rw [neg_le_iff_add_nonneg]
-  --       apply le_of_lt
-  --       rw [← sqrt_pos]
-  --       exact lt_of_lt_of_le (by norm_num) h₁
-  --     . rintro ⟨h₁, h₂⟩
-  --       refine ⟨?_, h₂⟩
-  --       have h_num : 1 / 10000 = sqrt ((1 / 10000) ^ 2) := by rw [rpow_two, sqrt_sq (by norm_num)]
-  --       rw [h_num]
-  --       apply sqrt_le_sqrt
-  --       sorry
 
-private lemma reduced_constraint (c : Fin n → ℝ) (t : ℝ) (h : 1 / 10000 ≤ t) :
-    1 / 100 ≤ sqrt (t + ‖c‖ ^ 2) := by
-  simp; rw [le_sqrt (by norm_num), ←add_zero (_ ^ 2)]
-  . apply add_le_add _ (sq_nonneg _)
-    exact le_trans (by norm_num) h
-  . exact add_nonneg (le_trans (by norm_num) h) (sq_nonneg _)
+#print fittingSphere₁
 
-#check le_sqrt_of_sq_le
-#check le_sqrt'
+private lemma nonconvex__implies_relaxed_constraint (c : Fin n → ℝ) (t : ℝ)
+    (h₁ : 1 / 10000 ≤ sqrt (t + ‖c‖ ^ 2)) (h₂ : ‖c‖ ^ 2 ≤ 50) : -50 ≤ t := by
+  rw [le_sqrt' (by norm_num)] at h₁
+  linarith
 
-def rrr : Reduction
-    (optimization (c : Fin n → ℝ) (t : ℝ)
-      minimize (Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2) : ℝ)
-      subject to
-        h₁ : 1 / 100 ≤ sqrt (t + ‖c‖ ^ 2)
-        h₂ : ‖c‖ ^ 2 ≤ 50
-    )
-    (optimization (c : Fin n → ℝ) (t : ℝ)
-      minimize (Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2) : ℝ)
-      subject to
-        h₁ : 1 / 10000 ≤ t
-        h₂ : ‖c‖ ^ 2 ≤ 50
-    ) :=
-  { psi := id,
-    psi_feasibility := fun ⟨c, t⟩ ⟨h₁, h₂⟩ => ⟨reduced_constraint n c t h₁, h₂⟩,
-    psi_optimality := fun ⟨c, t⟩ ⟨⟨h₁, h₂⟩, h_opt⟩ =>
-      ⟨⟨reduced_constraint n c t h₁, h₂⟩, by
-        rintro ⟨c', t'⟩ ⟨h₁', h₂'⟩
-        simp [fittingSphere₁, feasible] at h₁ h₂ h₁' h₂' h_opt ⊢
-        have ht' : 1 / 10000 ≤ t' := by
-          simp
-          rw [le_sqrt' (by norm_num)] at h₁'
-          -- have : 0 < t' + ‖c'‖ ^ 2 := by
-          --   by_contra hc
-          --   simp [not_lt] at hc
-          --   simp [sqrt_eq_zero_of_nonpos hc] at h₁'
-          --   linarith [h₁']
+relaxation red/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere₁ n m x := by
+  relaxation_step =>
+    apply Relaxation.weaken_constraint (cs' := fun ct => -50 ≤ ct.2 ∧ ‖ct.1‖ ^ 2 ≤ 50)
+    . rintro ⟨c, t⟩ ⟨h₁, h₂⟩
+      exact ⟨nonconvex__implies_relaxed_constraint n c t h₁ h₂, h₂⟩
 
-          sorry
-        simp at ht'
-        exact h_opt c' t' ht' h₂'⟩  }
-
--- def fittingSphere₁InitialRed :
---     fittingSphere₁ n m x ≼
---     optimization (c : Fin n → ℝ) (t : ℝ)
---       minimize (∑ i, (‖(x i) - c‖ ^ 2 - sqrt (t + ‖c‖ ^ 2) ^ 2) ^ 2 : ℝ)
---       subject to
---         h : 1 / 10000 ≤ t :=
---   { psi := id,
---     psi_feasibility := fun ⟨c, t⟩ h => reduced_constraint n c t h
---     psi_optimality := fun ⟨c, t⟩ ⟨h_feas, h_opt⟩ =>
---       ⟨reduced_constraint n c t h_feas, by
---         rintro ⟨c', t'⟩ h_feas'
---         have h₁ := reduced_constraint n c t h_feas
---         simp [fittingSphere₁, feasible] at h₁ h_feas h_feas' h_opt ⊢
---         have ht' : 1 / 10000 ≤ t' := by
---           simp
---           apply le_trans h_feas'
---           sorry
---         simp at ht'
---         exact h_opt c' t' ht'
---         ⟩ }
-
--- reduction red/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere₁ n m x := by
---   reduction_step =>
---     sorry
---     -- apply Reduction.rewrite_objFun
---     --   (g := fun (ct : (Fin n → ℝ) × ℝ) =>
---     --     Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x ct.1) - Vec.const m ct.2) ^ 2))
---     -- rintro ⟨c, t⟩ h
---     -- simp at h
---     -- simp [Vec.sum]
---     -- congr <;> ext i <;> congr 1
---     -- rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
---     -- simp [Vec.norm, Vec.const]
-
---     -- by_cases (0 < t + ‖c‖ ^ 2)
-
--- -- rw_obj =>
--- --   have h' : 0 < t + ‖c‖ ^ 2 := sqrt_pos.mp <| h;
--- --   conv =>
--- --     left; congr; congr; ext i; congr; simp;
--- --     rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
--- --     rw [sq_sqrt (rpow_two _ ▸ le_of_lt h')]
--- --     ring_nf; simp
-
-#print eqv
+lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
+  (h : (fittingSphere₂ n m x).optimal (c, t)) : (fittingSphere₁ n m x).optimal (c, t) := by
+  simp [fittingSphere₁, fittingSphere₂, optimal, feasible] at h ⊢
+  have ⟨⟨h₁, h₂⟩, h_opt⟩ := h
+  constructor
+  . constructor
+    . let a := Vec.norm x ^ 2 - 2 * mulVec x c
+      have h_ls : optimal (Vec.leastSquares a (-50)) t := by
+        refine ⟨h₁, ?_⟩
+        intros y hy
+        simp [objFun, Vec.leastSquares]
+        exact h_opt c y hy h₂
+      have ht_eq := vec_leastSquares_optimal_eq_mean a (-50) t h_ls
+      have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
+        simp [Finset.sum_const]
+        field_simp; ring
+      have ht : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
+        rw [ht_eq]; dsimp
+        rw [hc2_eq, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+        congr; funext i;
+        rw [← mul_add]
+        congr; simp [Vec.norm]
+        rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
+        congr
+      
+      sorry
+    . exact h₂
+  . intros c' x' h₁' h₂'
+    sorry
 
 end FittingSphere
 
