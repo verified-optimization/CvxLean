@@ -13,36 +13,37 @@ def leastSquares {n : ℕ} (a : Fin n → ℝ) :=
 @[reducible]
 def mean {n : ℕ} (a : Fin n → ℝ) : ℝ := (1 / n) * ∑ i, (a i)
 
+/-- It is useful to rewrite the sum of squares in the following way to prove
+`leastSquares_optimal_eq_mean`, following Marty Cohen's answer in
+https://math.stackexchange.com/questions/2554243. -/
 lemma leastSquares_alt_objFun {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ) :
-  (∑ i, ((a i - x) ^ 2)) = n * ((x - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2) := by
+  (∑ i, ((a i - x) ^ 2)) = n * ((x - mean a) ^ 2 + (mean (a ^ 2) - (mean a) ^ 2)) := by
   calc
-  _ = ∑ i, ((a i) ^ 2 - 2 * (a i) * x + (x ^ 2)) := by congr; funext i; simp; ring
+  -- 1) Σ (aᵢ - x)² = Σ (aᵢ² - 2aᵢx + x²)
+  _ = ∑ i, ((a i) ^ 2 - 2 * (a i) * x + (x ^ 2)) := by
+    congr; funext i; simp; ring
+  -- 2) Σ (aᵢ² - 2aᵢx + x²) = Σ aᵢ² - 2xΣ aᵢ + nx²
   _ = ∑ i, ((a i) ^ 2) - 2 * x * ∑ i, (a i) + n * (x ^ 2) := by
     rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
     simp [Finset.sum_const]; ring
+  -- 3) Σ aᵢ² - 2xΣ aᵢ + nx² = n{a²} - 2xn{a} + nx²
   _ = n * mean (a ^ 2) - 2 * x * n * mean a + n * (x ^ 2) := by
     simp [mean]; field_simp; ring
-  _ = n * ((x - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2) := by
+  -- 4) n{a²} - 2xn{a} + nx² = n((x - {a})² + ({a²} - {a}²))
+  _ = n * ((x - mean a) ^ 2 + (mean (a ^ 2) - (mean a) ^ 2)) := by
     simp [mean]; field_simp; ring
 
+/-- Key result about least squares: `x* = mean a`. -/
 lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
   (h : (leastSquares a).optimal x) : x = mean a := by
   simp [optimal, feasible, leastSquares] at h
-  replace h : ∀ y,
-    (x - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2 ≤
-    (y - mean a) ^ 2 + mean (a ^ 2) - (mean a) ^ 2 := by
+  replace h : ∀ y, (x - mean a) ^ 2 ≤ (y - mean a) ^ 2  := by
     intros y
     have hy := h y
     have h_rw_x := leastSquares_alt_objFun hn a x
     have h_rw_y := leastSquares_alt_objFun hn a y
     simp only [rpow_two] at h_rw_x h_rw_y ⊢
-    rw [h_rw_x, h_rw_y] at hy
-    rw [mul_le_mul_left (by positivity)] at hy
-    exact hy
-  replace h : ∀ y, (x - mean a) ^ 2 ≤ (y - mean a) ^ 2 := by
-    intros y
-    have hy := h y
-    rw [← add_sub, ← add_sub, add_le_add_iff_right] at hy
+    rw [h_rw_x, h_rw_y, mul_le_mul_left (by positivity), add_le_add_iff_right] at hy
     exact hy
   have hmean := h (mean a)
   simp at hmean
@@ -53,6 +54,7 @@ def Vec.leastSquares {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
     minimize (Vec.sum ((a - Vec.const n x) ^ 2) : ℝ)
 
+/-- Same as `leastSquares_optimal_eq_mean` in vector notation. -/
 lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
   (h : (Vec.leastSquares a).optimal x) : x = mean a := by
   apply leastSquares_optimal_eq_mean hn a
@@ -60,40 +62,6 @@ lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ
   intros y
   simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const] at h
   exact h y
-
-lemma squared_error_eq_zero_iff {n : ℕ} (a : Fin n → ℝ) (x : ℝ) :
-    ∑ i, (a i - x) ^ 2 = 0 ↔ ∀ i, a i = x := by
-  simp [rpow_two]
-  constructor
-  . intros h i
-    rw [Finset.sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)] at h
-    have hi := h i (by simp)
-    rw [sq_eq_zero_iff, sub_eq_zero] at hi
-    exact hi
-  . intros h
-    rw [Finset.sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
-    intros i _
-    simp [sq_eq_zero_iff, sub_eq_zero]
-    exact h i
-
-lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → ℝ) (x : Fin n → ℝ) :
-    ∑ i, ‖a i - x‖ ^ 2 = 0 ↔ ∀ i, a i = x := by
-  simp [rpow_two]
-  constructor
-  . intros h i
-    rw [Finset.sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)] at h
-    have hi := h i (by simp)
-    rw [sq_eq_zero_iff] at hi
-    rw [@norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup] at hi
-    rw [sub_eq_zero] at hi
-    exact hi
-  . intros h
-    rw [Finset.sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
-    intros i _
-    rw [sq_eq_zero_iff]
-    rw [@norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup]
-    rw [sub_eq_zero]
-    exact h i
 
 end LeastSquares
 
@@ -130,37 +98,43 @@ equivalence eqv/fittingSphere₁ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fit
   rename_vars [c, t]
   -- Clean up.
   conv_constr h₁ => dsimp
-  -- conv_constr h₂ => dsimp
   conv_obj => dsimp
   -- Rewrite objective.
-  rw_obj =>
-    -- NOTE: this is why we need strict postivity of `r`, to be able to apply `sq_sqrt`.
-    have h' : 0 < t + ‖c‖ ^ 2 := sqrt_pos.mp <| h₁;
-    conv =>
-      left; congr; congr; ext i; congr; simp;
-      rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
-      rw [sq_sqrt (rpow_two _ ▸ le_of_lt h')]
-      ring_nf; simp
   equivalence_step =>
     apply Equivalence.rewrite_objFun
       (g := fun (ct : (Fin n → ℝ) × ℝ) =>
         Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x ct.1) - Vec.const m ct.2) ^ 2))
     . rintro ⟨c, t⟩ h
       dsimp at h ⊢; simp [Vec.sum, Vec.norm, Vec.const]
-      congr; funext i; congr 1; rw [add_sub, ← sub_eq_add_neg]
-      congr 2; simp [mulVec, inner, dotProduct, Finset.sum_mul, Finset.mul_sum]
-      congr; funext j; ring
+      congr; funext i; congr 1;
+      rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
+      rw [sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp <| h))]
+      simp [mulVec, inner, dotProduct]
   rename_vars [c, t]
 
 #print fittingSphere₁
 
-relaxation red/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere₁ n m x := by
+relaxation rel/fittingSphere₂ (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere₁ n m x := by
   relaxation_step =>
     apply Relaxation.weaken_constraint (cs' := fun _ => True)
     . rintro ⟨c, t⟩ _; trivial
 
--- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
--- is non-trivial.
+/-- If the squared error is zero, then `aᵢ = x`. -/
+lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → ℝ) (x : Fin n → ℝ) :
+    ∑ i, ‖a i - x‖ ^ 2 = 0 ↔ ∀ i, a i = x := by
+  simp [rpow_two]
+  rw [Finset.sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
+  constructor
+  . intros h i
+    have hi := h i (by simp)
+    rw [sq_eq_zero_iff, @norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup] at hi
+    rwa [sub_eq_zero] at hi
+  . intros h i _
+    rw [sq_eq_zero_iff, @norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup, sub_eq_zero]
+    exact h i
+
+/-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
+is non-trivial. -/
 lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   (h_nontrivial : x ≠ Vec.const m c)
   (h : (fittingSphere₂ n m x).optimal (c, t)) : (fittingSphere₁ n m x).optimal (c, t) := by
@@ -172,6 +146,7 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
       intros y _
       simp [objFun, Vec.leastSquares]
       exact h c y
+    -- Apply key result about least squares.
     have ht_eq := vec_leastSquares_optimal_eq_mean hm a t h_ls
     have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
       simp [Finset.sum_const]
@@ -179,11 +154,11 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
     have ht : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
       rw [ht_eq]; dsimp [mean]
       rw [hc2_eq, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-      congr; funext i;
-      rw [← mul_add]
+      congr; funext i; rw [← mul_add]
       congr; simp [Vec.norm]
       rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
       congr
+    -- We use the result to establish that `t + ‖c‖ ^ 2` is non-negative.
     have h_tc2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
       rw [ht]
       apply mul_nonneg (by norm_num)
@@ -193,8 +168,10 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
       exact sq_nonneg _
     cases (lt_or_eq_of_le h_tc2_nonneg) with
     | inl h_tc2_lt_zero =>
+        -- If it is positive, we are done.
         convert h_tc2_lt_zero; simp
     | inr h_tc2_eq_zero =>
+        -- Otherwise, it contradicts the non-triviality assumption.
         exfalso
         rw [ht, zero_eq_mul] at h_tc2_eq_zero
         rcases h_tc2_eq_zero with (hc | h_sum_eq_zero)
