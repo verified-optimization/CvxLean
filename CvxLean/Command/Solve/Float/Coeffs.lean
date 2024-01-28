@@ -278,9 +278,10 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
     let mut idx := 0
     for c in cs do
       trace[Meta.debug] "Coeffs going through constraint {c}."
+      let mut isTrivial := false
       match Expr.consumeMData c with
       | .const ``True _ => do
-          pure ()
+          isTrivial := true
       | .app (.const ``Real.zeroCone _) e => do
           let e ← realToFloat e
           let res ← determineScalarCoeffsAux e p floatDomain
@@ -357,7 +358,8 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
               idx := idx + 1
       | _ => throwError "No match: {c}."
       -- New group, add idx.
-      sections := sections.push idx
+      if !isTrivial then
+        sections := sections.push idx
     return (data, sections)
 
   let (objectiveDataA, objectiveDataB) := objectiveData
