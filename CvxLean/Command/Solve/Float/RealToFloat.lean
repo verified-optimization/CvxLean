@@ -186,8 +186,14 @@ addRealToFloat (i) : @HPow.hPow Real Nat Real i :=
 addRealToFloat (i) : @HPow.hPow Real Real Real i :=
   fun f n => Float.pow f n
 
-addRealToFloat (i) : @instHPow Real i :=
+addRealToFloat (β) (i) : @instHPow Real β i :=
   @HPow.mk Float Float Float Float.pow
+
+addRealToFloat (n) (i) : @HPow.hPow (Fin n → Real) Real (Fin n → Real) i :=
+  fun (x : Fin n → Float) (p : Float) (i : Fin n) => Float.pow (x i) p
+
+addRealToFloat (n) (β) (i) : @instHPow (Fin n → Real) β i :=
+  @HPow.mk (Fin n → Float) Float (Fin n → Float) (fun x p i => Float.pow (x i) p)
 
 addRealToFloat (i) : @LE.le Real i :=
   Float.le
