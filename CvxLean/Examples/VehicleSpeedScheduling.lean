@@ -2,7 +2,7 @@ import CvxLean
 
 noncomputable section
 
-namespace OptimalVehicleSpeed
+namespace VehicleSpeedSched
 
 open CvxLean Minimization Real BigOperators Matrix
 
@@ -23,7 +23,7 @@ variable (F : ℝ → ℝ)
 
 open FinsetInterval
 
-def optimalVehicleSpeed [Fact (0 < n)] :=
+def vehSpeedSched [Fact (0 < n)] :=
   optimization (s : Fin n → ℝ)
     minimize ∑ i, (d i / s i) * F (s i)
     subject to
@@ -46,9 +46,9 @@ private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin 
   . rfl
   . linarith [hn.out]
 
-equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
+equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
-    (h_smin_pos : StrongLT 0 smin) : @optimalVehicleSpeed n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
+    (h_smin_pos : StrongLT 0 smin) : @vehSpeedSched n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
   replace h_d_pos : ∀ i, 0 < d i := fun i => h_d_pos i
   replace h_smin_pos : ∀ i, 0 < smin i := fun i => h_smin_pos i
   haveI : Fact (0 < n) := ⟨h_n_pos⟩
@@ -81,7 +81,7 @@ equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
   rename_vars [t]
   rename_constrs [c_smin, c_smax, c_τmin, c_τmax]
 
-#print optimalVehicleSpeedConvex
+#print vehSpeedSchedConvex
 
 #check eqv₁.backward_map
 
@@ -92,10 +92,10 @@ equivalence' eqv₁/optimalVehicleSpeedConvex (n : ℕ) (d : Fin n → ℝ)
 -- We fix `F` and declare an atom for this particular application of the perspective function.
 -- Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
-equivalence' eqv₂/optimalVehicleSpeedQuadratic (n : ℕ) (d : Fin n → ℝ)
+equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) :
-    optimalVehicleSpeedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)
+    vehSpeedSchedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)
       h_n_pos h_d_pos h_smin_pos := by
   have t_pos_of_c_smin : ∀ t, smin ≤ d / t → StrongLT 0 t := fun t h i => by
     have h_di_div_ti_pos := lt_of_lt_of_le (h_smin_pos i) (h i)
@@ -129,7 +129,7 @@ equivalence' eqv₂/optimalVehicleSpeedQuadratic (n : ℕ) (d : Fin n → ℝ)
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
 
-#print optimalVehicleSpeedQuadratic
+#print vehSpeedSchedQuadratic
 
 #check eqv₂.backward_map
 
@@ -195,7 +195,7 @@ def bₚ : ℝ := 6
 @[optimization_param]
 def cₚ : ℝ := 10
 
-def p := optimalVehicleSpeedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
+def p := vehSpeedSchedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
 
 set_option trace.Meta.debug true
 
@@ -221,6 +221,6 @@ def sol := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ p.solution)
 -- ![0.955578, 0.955548, 0.955565, 0.955532, 0.955564, 0.955560, 0.912362, 0.960401, 0.912365,
 --   0.912375]
 
-end OptimalVehicleSpeed
+end VehicleSpeedSched
 
 end
