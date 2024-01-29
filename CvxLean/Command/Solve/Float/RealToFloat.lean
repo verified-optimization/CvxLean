@@ -23,16 +23,29 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
   let translations ← discrTree.getMatch e
   for translation in translations do
     let (mvars, _, pattern) ← lambdaMetaTelescope translation.real
+    trace[Meta.debug] (s!"`real-to-float` trying:\n{pattern}\n{e}")
+    trace[Meta.debug] (s!"`real-to-float` mvars:\n{mvars}")
     if ← isDefEq pattern e then
-    -- TODO: Search for conditions.
+      -- TODO: Search for conditions.
       let args ← mvars.mapM instantiateMVars
+      trace[Meta.debug] (s!"`real-to-float` matched:\n{pattern}\n{e}")
       return mkAppNBeta translation.float args
     else
       trace[Meta.debug] "`real-to-float` error: no match for \n{pattern} \n{e}"
   match e with
   | Expr.app a b => return mkApp (← realToFloat a) (← realToFloat b)
-  | Expr.lam n ty b d => return mkLambda n d (← realToFloat ty) (← realToFloat b)
-  | Expr.forallE n ty b d => return mkForall n d (← realToFloat ty) (← realToFloat b)
+  | Expr.lam n ty b d => do
+      withLocalDecl n d (← realToFloat ty) fun fvar => do
+        let b := b.instantiate1 fvar
+        let bF ← realToFloat b
+        mkLambdaFVars #[fvar] bF
+      -- return mkLambda n d (← realToFloat ty) (← realToFloat b)
+  | Expr.forallE n ty b d => do
+      withLocalDecl n d (← realToFloat ty) fun fvar => do
+        let b := b.instantiate1 fvar
+        let bF ← realToFloat b
+        mkForallFVars #[fvar] bF
+      -- return mkForall n d (← realToFloat ty) (← realToFloat b)
   | Expr.mdata m e => return mkMData m (← realToFloat e)
   | Expr.letE n ty t b _ => return mkLet n (← realToFloat ty) (← realToFloat t) (← realToFloat b)
   | Expr.proj typeName idx struct => return mkProj typeName idx (← realToFloat struct)
@@ -183,7 +196,7 @@ addRealToFloat (i) : @instHDiv Real i :=
 addRealToFloat (i) : @HPow.hPow Real Nat Real i :=
   fun f n => Float.pow f (Float.ofNat n)
 
-addRealToFloat (i) : @HPow.hPow Real Real Real i :=
+addRealToFloat (i) : @HPow.hPow.{0, 0, 0} Real Real Real i :=
   fun f n => Float.pow f n
 
 addRealToFloat (β) (i) : @instHPow Real β i :=
@@ -217,7 +230,7 @@ addRealToFloat : @Real.log :=
   Float.log
 
 def Float.norm {n : ℕ} (x : Fin n → Float) : Float :=
-  Float.sqrt (Vec.Computable.sum (Vec.map (Float.pow · 2) x))
+  Float.sqrt (Vec.Computable.sum (fun i => (Float.pow (x i) 2)))
 
 addRealToFloat (n) (i) : @Norm.norm.{0} (Fin n → ℝ) i :=
   @Float.norm n
