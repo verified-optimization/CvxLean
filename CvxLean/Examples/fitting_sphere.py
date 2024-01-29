@@ -1,5 +1,6 @@
 import numpy as np
 import cvxpy as cp
+import matplotlib.pyplot as plt
 
 n = 2
 
@@ -30,3 +31,19 @@ r = np.sqrt(t.value + (np.linalg.norm(c.value) ** 2))
 print("t* = ", t.value)
 print("c* = ", c.value)
 print("r* = ", r)
+
+def plot_circle_and_points(center, radius, points):
+    theta = np.linspace(0, 2 * np.pi, 100)
+    x_circle = center[0] + radius * np.cos(theta)
+    y_circle = center[1] + radius * np.sin(theta)
+
+    plt.plot(x_circle, y_circle, label='Circle')
+
+    plt.scatter(points[:, 0], points[:, 1], color='red')
+
+    plt.axis('equal')
+    
+    plt.show()
+    plt.savefig('plots/fitting_sphere.png')
+
+plot_circle_and_points(c.value, r, x)

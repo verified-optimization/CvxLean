@@ -85,8 +85,6 @@ instance : ChangeOfVariables fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (c
     condition := fun (_, t) => 0 ≤ t,
     property := fun ⟨c, t⟩ h => by simp [sqrt_sq h] }
 
-set_option trace.Meta.debug true
-
 equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
   -- Change of variables.
   equivalence_step =>
@@ -186,21 +184,21 @@ lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ
     exact h_opt c' x'
 
 /-- We express the nontriviality condition only in terms of `x` so that it can be checked. -/
-lemma non_triviality_condition (hm : 0 < m) (c : Fin n → ℝ)
-  (hx : ∃ i, x i ≠ x ⟨0, hm⟩) : x ≠ Vec.const m c := by
+lemma non_triviality_condition (c : Fin n → ℝ) (hx : ∃ i j, x i ≠ x j) : x ≠ Vec.const m c := by
   intros h
+  conv at hx => congr; ext i; rw [← not_forall]
   rw [← not_forall] at hx
   apply hx
-  intros i
-  rw [congr_fun h i, congr_fun h ⟨0, hm⟩]
+  intros i j
+  rw [congr_fun h i, congr_fun h j]
   simp [Vec.const]
 
 /-- We show that we have a reduction via the identity map. -/
-def red (hm : 0 < m) (hx : ∃ i, x i ≠ x ⟨0, hm⟩) :
-  (fittingSphereT n m x) ≼ (fittingSphereConvex n m x) :=
+def red (hm : 0 < m) (hx : ∃ i j, x i ≠ x j) :
+    (fittingSphereT n m x) ≼ (fittingSphereConvex n m x) :=
   { psi := id,
     psi_optimality := fun (c, t) h_opt => by
-      have h_nontrivial := non_triviality_condition n m x hm c hx
+      have h_nontrivial := non_triviality_condition n m x c hx
       exact optimal_convex_implies_optimal_t n m x hm c t h_nontrivial h_opt }
 
 #print fittingSphereConvex
