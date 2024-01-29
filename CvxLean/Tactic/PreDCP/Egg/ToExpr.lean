@@ -28,7 +28,7 @@ def EggString.toEggTree (s : String) : MetaM (Tree String String) := do
   | Except.error e => throwError s!"{e}"
 
 /-- -/
-partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM Expr
+partial def EggTree.toExpr (vars params : List String) : Tree String String → MetaM Expr
   -- Numbers.
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
@@ -50,122 +50,125 @@ partial def EggTree.toExpr (vars : List String) : Tree String String → MetaM E
           (mkConst ``Real) (mkConst ``Real.instNegReal) num
       else
         return num
-    | _ => throwError "Tree to Expr conversion error: unexpected num {s}."
+    | _ => throwError "`pre_dcp` tree to Expr conversion error: unexpected num {s}."
   -- Variables.
   | Tree.node "var" #[Tree.leaf s] =>
     if s ∈ vars then
       return mkFVar (FVarId.mk (Name.mkSimple s))
     else
-      throwError "Tree to Expr conversion error: unexpected var {s}."
+      throwError "`pre_dcp` tree to Expr conversion error: unexpected var {s}."
   -- Parameters.
   | Tree.node "param" #[Tree.leaf s] =>
-    return mkConst (Name.mkSimple s)
+    if s ∈ params then
+      return mkFVar (FVarId.mk (Name.mkSimple s))
+    else
+      return mkConst (Name.mkSimple s)
   -- Equality.
   | Tree.node "eq" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkAppN (mkConst ``Eq [levelOne]) #[(mkConst `Real), t1, t2]
   -- Less than or equal to.
   | Tree.node "le" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkAppN
       (mkConst ``LE.le [levelZero])
       #[(mkConst `Real), (mkConst `Real.instLEReal), t1, t2]
   -- Negation.
   | Tree.node "neg" #[t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return mkAppN
       (mkConst ``Neg.neg [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instNegReal), t]
   -- Inverse.
   | Tree.node "inv" #[t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return mkAppN
       (mkConst ``Inv.inv [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instInvReal), t]
   -- Absolute value.
   | Tree.node "abs" #[t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return mkAppN
       (mkConst ``Abs.abs [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instAbsReal), t]
   -- Square root.
   | Tree.node "sqrt" #[t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return mkAppN (mkConst ``Real.sqrt) #[t]
   -- Log.
   | Tree.node "log" #[t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return mkAppN (mkConst ``Real.log) #[t]
   -- Exp.
   | Tree.node "exp" #[t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return mkAppN (mkConst ``Real.exp) #[t]
   -- XExp.
   | Tree.node "xexp" #[t] =>
-      EggTree.toExpr vars (Tree.node "mul" #[t, Tree.node "exp" #[t]])
+      EggTree.toExpr vars params (Tree.node "mul" #[t, Tree.node "exp" #[t]])
   -- Entr.
   | Tree.node "entr" #[t] =>
-      EggTree.toExpr vars (Tree.node "neg" #[Tree.node "mul" #[t, Tree.node "log" #[t]]])
+      EggTree.toExpr vars params (Tree.node "neg" #[Tree.node "mul" #[t, Tree.node "log" #[t]]])
   -- Min.
   | Tree.node "min" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkAppN
       (mkConst ``Min.min [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instMinReal), t1, t2]
   -- Max.
   | Tree.node "max" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkAppN
       (mkConst ``Max.max [levelZero])
       #[(mkConst ``Real), (mkConst ``Real.instMaxReal), t1, t2]
   -- Addition.
   | Tree.node "add" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkRealHBinAppExpr ``HAdd.hAdd ``instHAdd 1 ``Real.instAddReal t1 t2
   -- Subtraction.
   | Tree.node "sub" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkRealHBinAppExpr ``HSub.hSub ``instHSub 1 ``Real.instSubReal t1 t2
   -- Multiplication.
   | Tree.node "mul" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkRealHBinAppExpr ``HMul.hMul ``instHMul 1 ``Real.instMulReal t1 t2
   -- Division.
   | Tree.node "div" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkRealHBinAppExpr ``HDiv.hDiv ``instHDiv 1 ``Real.instDivReal t1 t2
   -- Pow.
   | Tree.node "pow" #[t1, t2] => do
-    let t1 ← toExpr vars t1
-    let t2 ← toExpr vars t2
+    let t1 ← toExpr vars params t1
+    let t2 ← toExpr vars params t2
     return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
   -- Quad over Lin.
   | Tree.node "qol" #[t1, t2] =>
-    EggTree.toExpr vars (Tree.node "div" #[Tree.node "pow" #[t1, Tree.leaf "2"], t2])
+    EggTree.toExpr vars params (Tree.node "div" #[Tree.node "pow" #[t1, Tree.leaf "2"], t2])
   -- Geo mean.
   | Tree.node "geo" #[t1, t2] =>
-    EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "mul" #[t1, t2]])
+    EggTree.toExpr vars params (Tree.node "sqrt" #[Tree.node "mul" #[t1, t2]])
   -- Log sum exp.
   | Tree.node "lse" #[t1, t2] =>
-    EggTree.toExpr vars (Tree.node "log" #[Tree.node "add" #[
+    EggTree.toExpr vars params (Tree.node "log" #[Tree.node "add" #[
       Tree.node "exp" #[t1],
       Tree.node "exp" #[t2]]])
   -- Norm2.
   | Tree.node "norm2" #[t1, t2] =>
-    EggTree.toExpr vars (Tree.node "sqrt" #[Tree.node "add" #[
+    EggTree.toExpr vars params (Tree.node "sqrt" #[Tree.node "add" #[
       Tree.node "pow" #[t1, Tree.leaf "2"],
       Tree.node "pow" #[t2, Tree.leaf "2"]]])
   -- Constr.
   | Tree.node "constr" #[Tree.leaf s, t] => do
-    let t ← toExpr vars t
+    let t ← toExpr vars params t
     return Meta.mkLabel (Name.mkSimple s) t
   -- Error.
   | Tree.node op children =>
@@ -181,8 +184,8 @@ where
       #[R, R, R, inst, e1, e2]
 
 /-- -/
-def EggString.toExpr (vars : List Name) (s : String) : MetaM Expr :=
-  EggString.toEggTree s >>= EggTree.toExpr (vars.map toString)
+def EggString.toExpr (vars params : List Name) (s : String) : MetaM Expr :=
+  EggString.toEggTree s >>= EggTree.toExpr (vars.map toString) (params.map toString)
 
 end Egg.ToExpr
 

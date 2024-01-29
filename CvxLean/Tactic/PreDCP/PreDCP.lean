@@ -41,7 +41,7 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
 
 /-- Given an egg rewrite and a current goal with all the necessary information about the
 minimization problem, we find the appropriate rewrite to apply, and output the remaining goals. -/
-def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String ℕ) :
+def evalStep (step : EggRewrite) (vars params : List Name) (tagsMap : HashMap String ℕ) :
     EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let tag ← liftMetaM <| do
     if step.location == "objFun" then
@@ -56,7 +56,7 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
   -- Build expexcted expression to generate the right rewrite condition. Again, mapping the
   -- objective function is an exception where the expected term is not used.
   let expectedTermStr := step.expectedTerm
-  let mut expectedExpr ← EggString.toExpr vars expectedTermStr
+  let mut expectedExpr ← EggString.toExpr vars params expectedTermStr
   if !atObjFun then
     expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))

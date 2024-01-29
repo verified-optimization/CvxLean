@@ -20,7 +20,8 @@ partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl) (o
       | none => return none)
 where
   findUncheckedAtoms (e : Expr) (vars params : Array FVarId) : MetaM (Tree String String) := do
-    if e.isRelativelyConstant (vars ++ params) then
+    let optParamsIds := (← getAllOptimizationParams).map FVarId.mk
+    if e.isRelativelyConstant (vars ++ params ++ optParamsIds) then
       -- NOTE: There are special cases for constants with negation and
       -- division, but what about something like 2 * 3?
       let mut e := e
@@ -39,12 +40,14 @@ where
       if hasNeg then
         res := Tree.node "neg" #[res]
       return res
-    if e.isFVar ∧ vars.contains e.fvarId! then
+    if e.isFVar && vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.node "var" #[Tree.leaf (toString n)]
     if e.isFVar ∧ params.contains e.fvarId! then
       let n := (paramsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.node "param" #[Tree.leaf (toString n)]
+    if e.isConst && (← isOptimizationParam e.constName) then
+      return Tree.node "param" #[Tree.leaf (toString e.constName)]
 
     -- Special support for less-than.
     if e.getAppFn.constName == `LT.lt then
