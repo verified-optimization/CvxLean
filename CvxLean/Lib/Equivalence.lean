@@ -19,13 +19,10 @@ variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 /- Let `p := ⟨f, cs⟩`, `q := ⟨g, ds⟩` and `r := ⟨h, es⟩`. -/
 
 /-- Regular notion of equivalence between optimization problems. We require maps `(φ, ψ)` between
-teh domains of `p` and `q` such that they map feasible points to feasible points and optimal points
-to optimal points. -/
+teh domains of `p` and `q` such that they map optimal points to optimal points. -/
 structure Equivalence where
   phi : D → E
   psi : E → D
-  phi_feasibility : ∀ x, p.feasible x → q.feasible (phi x)
-  psi_feasibility : ∀ y, q.feasible y → p.feasible (psi y)
   phi_optimality : ∀ x, p.optimal x → q.optimal (phi x)
   psi_optimality : ∀ x, q.optimal x → p.optimal (psi x)
 
@@ -38,24 +35,18 @@ notation p " ≡ " q => Equivalence p q
 def refl : p ≡ p :=
   { phi := id,
     psi := id,
-    phi_feasibility := fun _ hx => hx,
-    psi_feasibility := fun _ hy => hy,
     phi_optimality := fun _ hx => hx,
     psi_optimality := fun _ hx => hx }
 
 def symm (E : p ≡ q) : q ≡ p :=
   { phi := E.psi,
     psi := E.phi,
-    phi_feasibility := E.psi_feasibility,
-    psi_feasibility := E.phi_feasibility,
     phi_optimality := E.psi_optimality,
     psi_optimality := E.phi_optimality }
 
 def trans (E₁ : p ≡ q) (E₂ : q ≡ r) : p ≡ r :=
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
-    phi_feasibility := fun x hx => E₂.phi_feasibility (E₁.phi x) (E₁.phi_feasibility x hx),
-    psi_feasibility := fun y hy => E₁.psi_feasibility (E₂.psi y) (E₂.psi_feasibility y hy),
     phi_optimality := fun x hx => E₂.phi_optimality (E₁.phi x) (E₁.phi_optimality x hx),
     psi_optimality := fun y hy => E₁.psi_optimality (E₂.psi y) (E₂.psi_optimality y hy) }
 
@@ -146,8 +137,6 @@ extracted. -/
 def ofEq (h : p = q) : p ≡ q :=
   { phi := id,
     psi := id,
-    phi_feasibility := fun _ hx => h ▸ hx,
-    psi_feasibility := fun _ hy => h ▸ hy,
     phi_optimality := fun _ hx => h ▸ hx,
     psi_optimality := fun _ hy => h ▸ hy }
 
@@ -159,8 +148,6 @@ variable {p q}
 def ofStrongEquivalence (E : p ≡' q) : p ≡ q :=
   { phi := E.phi,
     psi := E.psi,
-    phi_feasibility := E.phi_feasibility,
-    psi_feasibility := E.psi_feasibility,
     phi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
       ⟨E.phi_feasibility x h_feas_x,
        fun y h_feas_y =>
@@ -213,8 +200,6 @@ def map_objFun {g : R → R} (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f
     ⟨f, cs⟩ ≡ ⟨fun x => g (f x), cs⟩ :=
   { phi := id,
     psi := id,
-    phi_feasibility := fun _ hx => hx,
-    psi_feasibility := fun _ hx => hx,
     phi_optimality := fun _ ⟨h_feas_x, h_opt_x⟩ =>
       ⟨h_feas_x, fun y h_feas_y => (h h_feas_x h_feas_y).mpr (h_opt_x y h_feas_y)⟩,
     psi_optimality := fun _ ⟨h_feas_x, h_opt_x⟩ =>
