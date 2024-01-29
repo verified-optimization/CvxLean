@@ -81,7 +81,7 @@ def positivityMaybeNormNum : TacticM Unit :=
     let fvs := (collectFVars {} t).fvarSet
     let tac ←
       if fvs.isEmpty then
-        `(tactic| (norm_num <;> positivity))
+        `(tactic| (try { norm_num } <;> positivity))
       else
         `(tactic| positivity)
     let [] ← evalTacticAt tac g | throwError "positivity_maybe_norm_num failed"
@@ -101,4 +101,5 @@ syntax "arith" : tactic
 
 macro_rules
   | `(tactic| arith) =>
-    `(tactic| (positivity! <;> linarith <;> norm_num_simp_pow))
+    `(tactic| (
+        try { positivity! } <;> try { linarith } <;> try { norm_num_simp_pow } <;> try { simp }))
