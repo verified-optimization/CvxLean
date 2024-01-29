@@ -225,8 +225,6 @@ def xₚ : Fin mₚ → Fin nₚ → ℝ := Matrix.transpose <| ![
 
 -- We use the `solve` command on the data above.
 
-set_option maxHeartbeats 1000000
-
 solve fittingSphereConvex nₚ mₚ xₚ
 
 -- Finally, we recover the solution to the original problem.
