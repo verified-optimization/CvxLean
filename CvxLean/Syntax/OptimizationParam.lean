@@ -5,15 +5,18 @@ section OptimizationParam
 
 open Lean
 
-initialize optimizationParamAttr : TagAttribute ← 
+initialize optimizationParamAttr : TagAttribute ←
   registerTagAttribute `optimization_param "Optimization parameter."
 
-def isOptimizationParam (n : Name) : MetaM Bool := do 
+def isOptimizationParam (n : Name) : MetaM Bool := do
   return optimizationParamAttr.hasTag (← getEnv) n
 
-def getOptimizationParamExpr (n : Name) (e : Expr) : MetaM Expr := do 
-  match (← getEnv).constants.find! n with 
+def getAllOptimizationParams : MetaM (List Name) := do
+  return (optimizationParamAttr.ext.getState (← getEnv)).toList
+
+def getOptimizationParamExpr (n : Name) (e : Expr) : MetaM Expr := do
+  match (← getEnv).constants.find! n with
   | ConstantInfo.defnInfo defn => return defn.value
   | _ => return e
 
-end OptimizationParam 
+end OptimizationParam

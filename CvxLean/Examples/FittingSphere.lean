@@ -45,18 +45,18 @@ lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x
     rwa [h_rw_x, h_rw_y, mul_le_mul_left (by positivity), add_le_add_iff_right] at hy
   have hmean := h (mean a)
   simp at hmean
-  have hz := le_antisymm hmean (sq_nonneg _)
-  rwa [sq_eq_zero_iff, sub_eq_zero] at hz
+  have h_sq_eq_zero := le_antisymm hmean (sq_nonneg _)
+  rwa [sq_eq_zero_iff, sub_eq_zero] at h_sq_eq_zero
 
-def Vec.leastSquares {n : ℕ} (a : Fin n → ℝ) :=
+def leastSquaresVec {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
     minimize (Vec.sum ((a - Vec.const n x) ^ 2) : ℝ)
 
 /-- Same as `leastSquares_optimal_eq_mean` in vector notation. -/
-lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
-  (h : (Vec.leastSquares a).optimal x) : x = mean a := by
+lemma leastSquaresVec_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
+  (h : (leastSquaresVec a).optimal x) : x = mean a := by
   apply leastSquares_optimal_eq_mean hn a
-  simp [Vec.leastSquares, leastSquares, optimal, feasible] at h ⊢
+  simp [leastSquaresVec, leastSquares, optimal, feasible] at h ⊢
   intros y
   simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const, rpow_two] at h
   exact h y
@@ -85,8 +85,6 @@ instance : ChangeOfVariables fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (c
     condition := fun (_, t) => 0 ≤ t,
     property := fun ⟨c, t⟩ h => by simp [sqrt_sq h] }
 
-set_option trace.Meta.debug true
-
 equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
   -- Change of variables.
   equivalence_step =>
@@ -103,19 +101,21 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
       (g := fun (ct : (Fin n → ℝ) × ℝ) =>
         Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x ct.1) - Vec.const m ct.2) ^ 2))
     . rintro ⟨c, t⟩ h
-      dsimp at h ⊢; simp [Vec.sum, Vec.norm, Vec.const]
-      congr; funext i; congr 1;
-      rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
-      rw [sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp <| h))]
+      dsimp at h ⊢; simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
+      rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp h))]
       simp [mulVec, inner, dotProduct]
   rename_vars [c, t]
 
 #print fittingSphereT
 
-relaxation rel/fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphereT n m x := by
-  relaxation_step =>
-    apply Relaxation.weaken_constraint (cs' := fun _ => True)
-    . rintro ⟨c, t⟩ _; trivial
+-- Next, we proceed to remove the non-convex constraint by arguing that any (non-trivial) point that
+-- minimizes the objective function wihtout the constraint, also satisfies the constraint. We define
+-- the problem directly, bot note that we could also remove the constraint using the `relaxation`
+-- command.
+
+def fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) :=
+  optimization (c : Fin n → ℝ) (t : ℝ)
+    minimize (Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2) : ℝ)
 
 /-- If the squared error is zero, then `aᵢ = x`. -/
 lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → ℝ) (x : Fin n → ℝ) :
@@ -125,54 +125,53 @@ lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → �
   constructor
   . intros h i
     have hi := h i (by simp)
-    rw [sq_eq_zero_iff, @norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup] at hi
-    rwa [sub_eq_zero] at hi
+    rwa [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero] at hi
   . intros h i _
-    rw [sq_eq_zero_iff, @norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup, sub_eq_zero]
+    rw [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero]
     exact h i
 
 /-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
 is non-trivial. -/
-lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
+lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   (h_nontrivial : x ≠ Vec.const m c)
   (h_opt : (fittingSphereConvex n m x).optimal (c, t)) : (fittingSphereT n m x).optimal (c, t) := by
   simp [fittingSphereT, fittingSphereConvex, optimal, feasible] at h_opt ⊢
   constructor
   . let a := Vec.norm x ^ 2 - 2 * mulVec x c
-    have h_ls : optimal (Vec.leastSquares a) t := by
+    have h_ls : optimal (leastSquaresVec a) t := by
       refine ⟨trivial, ?_⟩
       intros y _
-      simp [objFun, Vec.leastSquares]
+      simp [objFun, leastSquaresVec]
       exact h_opt c y
     -- Apply key result about least squares to `a` and `t`.
-    have ht_eq := vec_leastSquares_optimal_eq_mean hm a t h_ls
-    have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
+    have h_t_eq := leastSquaresVec_optimal_eq_mean hm a t h_ls
+    have h_c2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
       simp [sum_const]
       field_simp; ring
-    have ht : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
-      rw [ht_eq]; dsimp [mean]
-      rw [hc2_eq, mul_sum, mul_sum, mul_sum, ← sum_add_distrib]
+    have h_t_add_c2_eq : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
+      rw [h_t_eq]; dsimp [mean]
+      rw [h_c2_eq, mul_sum, mul_sum, mul_sum, ← sum_add_distrib]
       congr; funext i; rw [← mul_add]
       congr; simp [Vec.norm]
-      rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
+      rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ)]
       congr
     -- We use the result to establish that `t + ‖c‖ ^ 2` is non-negative.
-    have h_tc2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
-      rw [ht]
+    have h_t_add_c2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
+      rw [h_t_add_c2_eq]
       apply mul_nonneg (by norm_num)
       apply sum_nonneg
       intros i _
       rw [rpow_two]
       exact sq_nonneg _
-    cases (lt_or_eq_of_le h_tc2_nonneg) with
-    | inl h_tc2_lt_zero =>
+    cases (lt_or_eq_of_le h_t_add_c2_nonneg) with
+    | inl h_t_add_c2_lt_zero =>
         -- If it is positive, we are done.
-        convert h_tc2_lt_zero; simp
-    | inr h_tc2_eq_zero =>
+        convert h_t_add_c2_lt_zero; simp
+    | inr h_t_add_c2_eq_zero =>
         -- Otherwise, it contradicts the non-triviality assumption.
         exfalso
-        rw [ht, zero_eq_mul] at h_tc2_eq_zero
-        rcases h_tc2_eq_zero with (hc | h_sum_eq_zero)
+        rw [h_t_add_c2_eq, zero_eq_mul] at h_t_add_c2_eq_zero
+        rcases h_t_add_c2_eq_zero with (hc | h_sum_eq_zero)
         . simp at hc; linarith
         rw [vec_squared_norm_error_eq_zero_iff] at h_sum_eq_zero
         apply h_nontrivial
@@ -180,6 +179,24 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
         exact h_sum_eq_zero i
   . intros c' x' _
     exact h_opt c' x'
+
+/-- We express the nontriviality condition only in terms of `x` so that it can be checked. -/
+lemma non_triviality_condition (c : Fin n → ℝ) (hx : ∃ i j, x i ≠ x j) : x ≠ Vec.const m c := by
+  intros h
+  conv at hx => congr; ext i; rw [← not_forall]
+  rw [← not_forall] at hx
+  apply hx
+  intros i j
+  rw [congr_fun h i, congr_fun h j]
+  simp [Vec.const]
+
+/-- We show that we have a reduction via the identity map. -/
+def red (hm : 0 < m) (hx : ∃ i j, x i ≠ x j) :
+    (fittingSphereT n m x) ≼ (fittingSphereConvex n m x) :=
+  { psi := id,
+    psi_optimality := fun (c, t) h_opt => by
+      have h_nontrivial := non_triviality_condition n m x c hx
+      exact optimal_convex_implies_optimal_t n m x hm c t h_nontrivial h_opt }
 
 #print fittingSphereConvex
 
@@ -205,15 +222,11 @@ def xₚ : Fin mₚ → Fin nₚ → ℝ := Matrix.transpose <| ![
 
 -- We use the `solve` command on the data above.
 
-set_option maxHeartbeats 1000000
-
 solve fittingSphereConvex nₚ mₚ xₚ
 
 -- Finally, we recover the solution to the original problem.
 
 def sol := eqv.backward_map nₚ mₚ xₚ.float fittingSphereConvex.solution
-
-#print eqv.backward_map
 
 #eval sol -- (![1.664863, 0.031932], 1.159033)
 

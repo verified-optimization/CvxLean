@@ -1,15 +1,8 @@
-import CvxLean.Lib.Math.Data.Vec
-import CvxLean.Lib.Math.CovarianceEstimation
-import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
-import CvxLean.Syntax.Minimization
-import CvxLean.Tactic.DCP.AtomLibrary.All
-import CvxLean.Command.Reduction
-import CvxLean.Command.Solve
+import CvxLean
 
 namespace CovarianceEstimation
 
-open CvxLean Minimization
-open Real BigOperators Matrix
+open CvxLean Minimization Real BigOperators Matrix
 
 noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) :=
   optimization (R : Matrix (Fin n) (Fin n) ℝ)

@@ -19,11 +19,6 @@ namespace CvxLean
 
 open Lean Elab Meta Tactic Term IO
 
-/-- Convert `OC` tree to `EggMinimization`. -/
-def EggMinimization.ofOCTree (oc : OC (String × EggTree)) : EggMinimization :=
-  { objFun := EggTree.toEggString oc.objFun.2,
-    constrs := Array.data <| oc.constr.map fun (h, c) => (h, EggTree.toEggString c) }
-
 /-- Given the rewrite name and direction from egg's output, find the appropriate tactic in the
 environment. It also returns a bool to indicate if the proof needs an intermediate equality step.
 Otherwise, the tactic will be applied directly. -/
@@ -46,8 +41,8 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
 
 /-- Given an egg rewrite and a current goal with all the necessary information about the
 minimization problem, we find the appropriate rewrite to apply, and output the remaining goals. -/
-def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String ℕ) :
-    EquivalenceBuilder := fun eqvExpr g => g.withContext do
+def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List LocalDecl)
+    (tagsMap : HashMap String ℕ) : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let tag ← liftMetaM <| do
     if step.location == "objFun" then
       return "objFun"
@@ -61,16 +56,21 @@ def evalStep (step : EggRewrite) (vars : List Name) (tagsMap : HashMap String �
   -- Build expexcted expression to generate the right rewrite condition. Again, mapping the
   -- objective function is an exception where the expected term is not used.
   let expectedTermStr := step.expectedTerm
-  let mut expectedExpr ← EggString.toExpr vars expectedTermStr
+  let mut expectedExpr ← EggString.toExpr vars params expectedTermStr
   if !atObjFun then
     expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
+  let paramsFvars := Array.mk <| params.map (fun v => mkFVar (FVarId.mk v))
+  let paramsDeclsIds := Array.mk <| paramsDecls.map (fun decl => mkFVar decl.fvarId)
   -- TODO: Why do we need this?
   let D ← instantiateMVars eqvExpr.domainP
-  expectedExpr ← withLocalDeclD `p D fun p => do
-    Meta.withDomainLocalDecls D  p fun xs prs => do
-      let replacedFVars := Expr.replaceFVars expectedExpr fvars xs
-      mkLambdaFVars #[p] (Expr.replaceFVars replacedFVars xs prs)
+  expectedExpr ←
+    withLocalDeclD `p D fun p => do
+      Meta.withDomainLocalDecls D p fun xs prs => do
+        let expectedExpr := Expr.replaceFVars expectedExpr paramsFvars paramsDeclsIds
+        let expectedExpr := Expr.replaceFVars expectedExpr fvars xs
+        let expectedExpr := Expr.replaceFVars expectedExpr xs prs
+        mkLambdaFVars #[p] expectedExpr
 
   let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
 
@@ -96,10 +96,31 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
 
   -- Get optimization variables.
-  let vars ← withLambdaBody lhs.constraints fun p _ => do
+  let varsNames ← withLambdaBody lhs.constraints fun p _ => do
     let pr ← mkProjections lhs.domain p
     return pr.map (Prod.fst)
-  let varsStr := vars.map toString
+  let varsStr := varsNames.map toString
+
+  -- Get optimization parameters. To obtain their domains, we cheat and pretend that any conditions
+  -- on the parameters are constraints and use `mkUncheckedTree`.
+  let declsNamesAndTypes :=
+    (← getLCtx).decls.toList.filterMap (Option.map (fun decl => (decl.userName, decl.type)))
+  let paramsNames :=
+    (← declsNamesAndTypes.filterM (fun (_, ty) => do return (← inferType ty).isType)).map (·.fst)
+  let paramsDecls := (← getLCtx).decls.toList.filterMap (fun decl? =>
+    if let some decl := decl? then
+      if decl.userName ∈ paramsNames then some decl else none
+    else none)
+  let paramsStr := paramsNames.map toString
+  let paramsDomainsExpr :=
+    (← declsNamesAndTypes.filterM (fun (_, ty) => do return (← inferType ty).isProp)).toArray
+  let paramsDomainsOC : OC (Option (Name × Expr)) := OC.mk none (paramsDomainsExpr.map some)
+  let potentialParamDomains ← UncheckedDCP.mkUncheckedTree #[] paramsDecls.toArray paramsDomainsOC
+  let mut paramDomains := #[]
+  for c in potentialParamDomains.constr do
+    if let some (h, t) := c then
+      if let some (_, n, d) := ExtendedEggTree.processDomainExprTree h t paramsStr then
+        paramDomains := paramDomains.push (n, d)
 
   -- Get goal as tree and create tags map.
   let (gStr, domainConstrs) ← ExtendedEggTree.fromMinimization lhs varsStr
@@ -120,7 +141,7 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   -- Prepare egg request.
   let eggMinimization := EggMinimization.ofOCTree gStr
   let eggRequest : EggRequest :=
-    { domains := varDomainConstrs.data,
+    { domains := (varDomainConstrs ++ paramDomains).data,
       target := eggMinimization }
 
   try
@@ -138,7 +159,7 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
     -- Apply steps.
     let mut g := g
     for step in steps do
-      let gs ← Tactic.run g <| (evalStep step vars tagsMap).toTactic
+      let gs ← Tactic.run g <| (evalStep step varsNames paramsNames paramsDecls tagsMap).toTactic
       if gs.length != 1 then
         throwError (s!"`pre_dcp` error: failed to rewrite {step.rewriteName} after evaluating "
           ++ s!"step ({gs.length} goals remaining).")

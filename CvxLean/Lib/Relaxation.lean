@@ -106,7 +106,7 @@ def remove_constraint {c cs' : D → Prop} (hcs : ∀ x, cs x ↔ c x ∧ cs' x)
     phi_feasibility := fun x h_feas_x => ((hcs x).mp h_feas_x).2,
     phi_optimality := fun _ _ => le_refl _ }
 
-def weaken_constraint (cs' : D → Prop) (hcs : ∀ x, cs x → cs' x) : ⟨f, cs⟩ ≽' ⟨f, cs'⟩ :=
+def weaken_constraints (cs' : D → Prop) (hcs : ∀ x, cs x → cs' x) : ⟨f, cs⟩ ≽' ⟨f, cs'⟩ :=
   { phi := id,
     phi_feasibility := fun x h_feas_x => hcs x h_feas_x,
     phi_optimality := fun _ _ => le_refl _ }

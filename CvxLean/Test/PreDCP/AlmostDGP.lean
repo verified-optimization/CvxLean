@@ -83,7 +83,7 @@ time_cmd reduction reda3/dcpa3 : agp3 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
   change_of_variables! (w) (z ↦ Real.exp w)
-  pre_dcp
+  pre_dcp -- TODO: Check this.
 
 #print dcpa3
 -- def dcpa3 : Minimization (ℝ × ℝ × ℝ) ℝ :=

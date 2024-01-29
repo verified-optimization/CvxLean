@@ -8,20 +8,22 @@ open Lean Meta
 
 namespace UncheckedDCP
 
-partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC (Name × Expr)) :
-  MetaM (OC (String × Tree String String)) := do
-  withExistingLocalDecls originalVarsDecls.toList do
-    let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-    oc.mapM (fun (n, e) => do
-      let uncheckedAtomTree ← findUncheckedAtoms e (xs.map (·.fvarId!))
-      return (n.toString, uncheckedAtomTree))
+partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl) (oc : OC (Option (Name × Expr))) :
+  MetaM (OC (Option (String × Tree String String))) := do
+  withExistingLocalDecls (originalVarsDecls ++ paramsDecls).toList do
+    let varsIds := originalVarsDecls.map fun decl => decl.fvarId
+    let paramsIds := paramsDecls.map fun decl => decl.fvarId
+    oc.mapM (fun o => match o with
+      | some (n, e) => do
+          let uncheckedAtomTree ← findUncheckedAtoms e varsIds paramsIds
+          return some (n.toString, uncheckedAtomTree)
+      | none => return none)
 where
-  findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
-    if e.isRelativelyConstant vars then
+  findUncheckedAtoms (e : Expr) (vars params : Array FVarId) : MetaM (Tree String String) := do
+    let optParamsIds := (← getAllOptimizationParams).map FVarId.mk
+    if e.isRelativelyConstant (vars ++ params ++ optParamsIds) then
       -- NOTE: There are special cases for constants with negation and
       -- division, but what about something like 2 * 3?
-      if ← isOptimizationParam e.constName then
-        return Tree.node "param" #[Tree.leaf (toString e.constName)]
       let mut e := e
       let mut res := Tree.leaf "unknown"
       let mut hasNeg := false
@@ -38,14 +40,19 @@ where
       if hasNeg then
         res := Tree.node "neg" #[res]
       return res
-    if e.isFVar ∧ vars.contains e.fvarId! then
+    if e.isFVar && vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
-      return Tree.leaf (toString n)
+      return Tree.node "var" #[Tree.leaf (toString n)]
+    if e.isFVar ∧ params.contains e.fvarId! then
+      let n := (paramsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
+      return Tree.node "param" #[Tree.leaf (toString n)]
+    if e.isConst && (← isOptimizationParam e.constName) then
+      return Tree.node "param" #[Tree.leaf (toString e.constName)]
 
     -- Special support for less-than.
     if e.getAppFn.constName == `LT.lt then
-      let a ← findUncheckedAtoms (e.getArg! 2) vars
-      let b ← findUncheckedAtoms (e.getArg! 3) vars
+      let a ← findUncheckedAtoms (e.getArg! 2) vars params
+      let b ← findUncheckedAtoms (e.getArg! 3) vars params
       return Tree.node "lt" #[a, b]
 
     -- No filter after this, we just take any atoms that are registered.
@@ -53,19 +60,18 @@ where
 
     -- Just get the first one for now.
     let mut res := Tree.leaf "unknown"
-    trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
     for (args, atom) in potentialAtoms do
-      res ← processUncheckedAtom e vars atom args
+      res ← processUncheckedAtom vars params atom args
       break
 
     return res
 
-  processUncheckedAtom (e : Expr) (vars : Array FVarId) (atom : GraphAtomData) (args : Array Expr)
-  : MetaM (Tree String String) := do
+  processUncheckedAtom (vars params : Array FVarId) (atom : GraphAtomData)
+      (args : Array Expr) : MetaM (Tree String String) := do
     let mut childTrees := #[]
     for i in [:args.size] do
       let arg := args[i]!
-      let childTree ← findUncheckedAtoms arg vars
+      let childTree ← findUncheckedAtoms arg vars params
       childTrees := childTrees.push childTree
 
     return Tree.node (toString atom.id) childTrees
@@ -73,27 +79,36 @@ where
 /-- -/
 def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   MetaM (OC (String × Tree String String)) := do
-  let (objFun, constraints, originalVarsDecls)
-    ← withLambdaBody goalExprs.constraints fun p constraints => do
-    let pr := (← Meta.mkProjections goalExprs.domain p).toArray
-    let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
-        fun xs => do
-          return ← xs.mapM fun x => x.fvarId!.getDecl
-    withExistingLocalDecls originalVarsDecls.toList do
-      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ←
-        Meta.decomposeConstraints constraints
-      let constraints ←
-        constraints.mapM (fun ((n : Lean.Name), e) => do
-          return (n, ← Expr.removeMData e))
-      let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
-      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
-      return (objFun, constraints, originalVarsDecls)
+  let (objFun, constraints, originalVarsDecls) ← withLambdaBody goalExprs.constraints
+    fun p constraints => do
+      let pr := (← Meta.mkProjections goalExprs.domain p).toArray
+      let originalVarsDecls ←
+        withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
+          fun xs => xs.mapM fun x => x.fvarId!.getDecl
+      withExistingLocalDecls originalVarsDecls.toList do
+        let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+        let constraints ← Meta.replaceProjections constraints p.fvarId! xs
+        let constraints : List (Lean.Name × Expr) ←
+          Meta.decomposeConstraints constraints
+        let constraints ←
+          constraints.mapM (fun ((n : Lean.Name), e) => do
+            return (n, ← Expr.removeMData e))
+        let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
+        let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
+        return (objFun, constraints, originalVarsDecls)
+
+  let paramsDecls ← (← getLCtx).decls.toArray.filterMapM (fun decl? => do
+    if let some decl := decl? then
+      if (← inferType decl.type).isType then return some decl else return none
+    else return none)
 
   let oc ← DCP.mkOCWithNames objFun constraints originalVarsDecls
-  let tree ← mkUncheckedTree originalVarsDecls oc
+  let tree ← mkUncheckedTree originalVarsDecls paramsDecls (OC.map some oc)
+
+  -- If `mkUncheckedTree` gives any `none` then we throw an error.
+  let tree ← tree.mapM (fun o => match o with
+    | some (n, t) => return (n, t)
+    | none => throwError "`pre_dcp` error: could not create unchecked DCP tree.")
   return tree
 
 end UncheckedDCP

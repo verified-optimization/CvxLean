@@ -23,7 +23,6 @@ variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
 /-- We read `Reduction p q` as `p` reduces to `q` [Pap93,10.1]. -/
 structure Reduction where
   psi : E → D
-  psi_feasibility : ∀ x, q.feasible x → p.feasible (psi x)
   psi_optimality : ∀ x, q.optimal x → p.optimal (psi x)
 
 namespace Reduction
@@ -34,12 +33,10 @@ notation p " ≼  " q => Reduction p q
 
 def refl : p ≼ p :=
   { psi := id,
-    psi_feasibility := fun _ h => h,
     psi_optimality := fun _ hy => hy }
 
 def trans (R₁ : p ≼ q) (R₂ : q ≼ r) : p ≼ r :=
   { psi := R₁.psi ∘ R₂.psi,
-    psi_feasibility := fun x h => R₁.psi_feasibility (R₂.psi x) (R₂.psi_feasibility x h),
     psi_optimality := fun x h => R₁.psi_optimality (R₂.psi x) (R₂.psi_optimality x h) }
 
 instance : Trans (@Reduction D E R _) (@Reduction E F R _) (@Reduction D F R _) :=
@@ -52,7 +49,6 @@ def toBwd (R : p ≼ q) : Solution q → Solution p :=
 
 def ofEquivalence (E : p ≡ q) : p ≼ q :=
   { psi := E.psi,
-    psi_feasibility := E.psi_feasibility,
     psi_optimality := E.psi_optimality }
 
 instance : Trans (@Reduction D E R _) (@Equivalence E F R _) (@Reduction D F R _) :=
@@ -70,7 +66,6 @@ def map_objFun_of_order_reflecting {D R} [Preorder R] {f : D → R} {g : R → R
     (h : ∀ {r s}, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s) :
     ⟨f, cs⟩ ≼ ⟨fun x => g (f x), cs⟩ :=
   { psi := id,
-    psi_feasibility := fun _ h => h,
     psi_optimality := fun x ⟨h_feas_x, h_opt_x⟩ =>
       ⟨h_feas_x,
        fun y h_feas_y =>
@@ -220,8 +215,6 @@ namespace Equivalence
 def ofReductions (R₁ : p ≼ q) (R₂ : q ≼ p) : p ≡ q :=
   { phi := R₂.psi,
     psi := R₁.psi,
-    phi_feasibility := R₂.psi_feasibility,
-    psi_feasibility := R₁.psi_feasibility,
     phi_optimality := R₂.psi_optimality,
     psi_optimality := R₁.psi_optimality }
 
