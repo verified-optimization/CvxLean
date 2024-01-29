@@ -8,35 +8,17 @@ section Egg.FromMinimization
 
 open Lean
 
-/-- Flatten an `EggTree` to a string to send to egg. -/
-partial def _root_.EggTree.toEggString : Tree String String → String
-  | Tree.node n children =>
-    let childrenStr := (children.map EggTree.toEggString).data
-    "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
-  | Tree.leaf n => n
-
-/-- Size of the AST. -/
-partial def _root_.EggTree.size : EggTree → Nat
-  | Tree.node _ children => 1 + (children.map EggTree.size).foldl Nat.add 0
-  | Tree.leaf _ => 1
-
-/-- -/
-def _root_.EggTree.ofOCTree (ocTree : OC (String × Tree String String)) :
-  Tree String String :=
-  let objFun := ocTree.objFun.2
-  let constrs := ocTree.constr.map
-    fun (h, c) => Tree.node "constr" #[Tree.leaf h, c]
-  let objFunNode := Tree.node "objFun" #[objFun]
-  let constrNode := Tree.node "constrs" constrs
-  Tree.node "prob" #[objFunNode, constrNode]
-
 /-- Add the constructor `var` around every variable in the tree. -/
-partial def _root_.EggTree.surroundVars (t : Tree String String) (vars : List String) :=
+partial def EggTree.surroundVars (t : Tree String String) (vars : List String) :=
   match t with
-  | Tree.leaf s => if s ∈ vars then Tree.node "var" #[Tree.leaf s] else t
+  | Tree.leaf s =>
+      if s ∈ vars then
+        Tree.node "var" #[Tree.leaf s]
+      else
+        Tree.node "param" #[Tree.leaf s]
   | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
 
-inductive _root_.EggTree.OpArgTag
+inductive EggTree.OpArgTag
   | arg
   | val (s : String)
 
@@ -44,7 +26,7 @@ inductive _root_.EggTree.OpArgTag
 and their egg counterparts. `prob`, `objFun`, `constr` and `constrs` are special
 cases. The rest of names come from the atom library. It also returns the arity
 of the operation and some extra arguments. -/
-def _root_.EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
+def EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
   HashMap.ofList [
     ("prob",        ("prob",    #[.arg, .arg])),
     ("objFun",      ("objFun",  #[.arg])),
@@ -84,8 +66,7 @@ def _root_.EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
 
 /-- Traverse the tree and use `EggTree.opMap` to align the names of the
 constructors. -/
-partial def _root_.EggTree.adjustOps (t : Tree String String) :
-  MetaM (Tree String String) := do
+partial def EggTree.adjustOps (t : Tree String String) : MetaM (Tree String String) := do
   match t with
   | Tree.node op children =>
       if let some (newOp, argTags) := EggTree.opMap.find? op then
@@ -124,7 +105,7 @@ NOTE(RFM): This is a source of inaccuracy as some operations are approximate,
 however, it does not compromise the soundness of the procedure. If the domains
 sent to egg are incorrect, which may lead to an incorrect sequence of steps to,
 transform the problem, Lean will reject the proof. -/
-partial def _root_.EggTree.getNumericalValue? : EggTree → Option Float
+partial def EggTree.getNumericalValue? : EggTree → Option Float
   | Tree.leaf s =>
       Option.map Float.ofInt s.toInt?
   | Tree.node "neg" #[(t : EggTree)] =>
@@ -148,14 +129,14 @@ partial def _root_.EggTree.getNumericalValue? : EggTree → Option Float
   | _ => none
 
 /-- -/
-def _root_.EggTree.getVariableName? (vars : List String) : EggTree → Option String
+def EggTree.getVariableName? (vars : List String) : EggTree → Option String
   | Tree.leaf s => if s ∈ vars then some s else none
   | _ => none
 
 /-- Given an expression representing a minimization problem, turn it into a
 tree of strings, also extract all the domain information for single varibales,
 in particular positivity and nonnegativity constraints. -/
-def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
+def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
   MetaM (OC (String × EggTree) × Array (String × String × EggDomain)) := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
   -- Detect domain constraints. We capture the following cases:
@@ -219,6 +200,32 @@ def _root_.ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : 
       -- TODO: some constraints may have the same name, so we add the index.
       fun i (h, c) => return (s!"{i}:" ++ h, ← EggTree.adjustOps c) }
   return (ocTree, domainConstrs)
+
+/-- Flatten an `EggTree` to a string to send to egg. -/
+partial def EggTree.toEggString : Tree String String → String
+  | Tree.node n children =>
+    let childrenStr := (children.map EggTree.toEggString).data
+    "(" ++ n ++ " " ++ (" ".intercalate childrenStr) ++ ")"
+  | Tree.leaf n => n
+
+/-- Size of the AST. -/
+partial def EggTree.size : EggTree → Nat
+  | Tree.node _ children => 1 + (children.map EggTree.size).foldl Nat.add 0
+  | Tree.leaf _ => 1
+
+/-- -/
+def EggTree.ofOCTree (ocTree : OC (String × Tree String String)) : Tree String String :=
+  let objFun := ocTree.objFun.2
+  let constrs := ocTree.constr.map
+    fun (h, c) => Tree.node "constr" #[Tree.leaf h, c]
+  let objFunNode := Tree.node "objFun" #[objFun]
+  let constrNode := Tree.node "constrs" constrs
+  Tree.node "prob" #[objFunNode, constrNode]
+
+/-- Convert `OC` tree to `EggMinimization`. -/
+def EggMinimization.ofOCTree (oc : OC (String × EggTree)) : EggMinimization :=
+  { objFun := EggTree.toEggString oc.objFun.2,
+    constrs := Array.data <| oc.constr.map fun (h, c) => (h, EggTree.toEggString c) }
 
 end Egg.FromMinimization
 

@@ -1,6 +1,8 @@
 import Lean
 import CvxLean.Tactic.DCP.Tree
 
+namespace CvxLean
+
 def EggTree := CvxLean.Tree String String
 
 structure EggMinimization where
@@ -13,3 +15,5 @@ structure EggDomain where
   lo : String
   hi_open : String
   lo_open : String
+
+end CvxLean

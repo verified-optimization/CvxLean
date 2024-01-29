@@ -19,11 +19,6 @@ namespace CvxLean
 
 open Lean Elab Meta Tactic Term IO
 
-/-- Convert `OC` tree to `EggMinimization`. -/
-def EggMinimization.ofOCTree (oc : OC (String × EggTree)) : EggMinimization :=
-  { objFun := EggTree.toEggString oc.objFun.2,
-    constrs := Array.data <| oc.constr.map fun (h, c) => (h, EggTree.toEggString c) }
-
 /-- Given the rewrite name and direction from egg's output, find the appropriate tactic in the
 environment. It also returns a bool to indicate if the proof needs an intermediate equality step.
 Otherwise, the tactic will be applied directly. -/

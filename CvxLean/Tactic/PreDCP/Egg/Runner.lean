@@ -1,6 +1,8 @@
 import Lean
 import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
+namespace CvxLean
+
 open Lean
 
 -- Taken from https://github.com/opencompl/egg-tactic-code
@@ -100,8 +102,6 @@ def EggRewrite.toString (e : EggRewrite) : String :=
 
 instance : ToString EggRewrite where
   toString := EggRewrite.toString
-
-namespace CvxLean
 
 def runEggRequestRaw (requestJson : String) : MetaM String := do
     let eggProcess ← IO.Process.spawn {
