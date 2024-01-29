@@ -16,7 +16,9 @@ def hypersonicShapeDesign (a b : ℝ) :=
 
 set_option trace.Meta.debug true
 
-equivalence eqv/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb : b ≤ 1) :
+#check Lean.Expr
+
+equivalence eqv/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb : b < 1) :
     hypersonicShapeDesign a b := by
   pre_dcp
 

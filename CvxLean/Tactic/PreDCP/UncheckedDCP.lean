@@ -10,7 +10,7 @@ namespace UncheckedDCP
 
 partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl) (oc : OC (Option (Name × Expr))) :
   MetaM (OC (Option (String × Tree String String))) := do
-  withExistingLocalDecls originalVarsDecls.toList do
+  withExistingLocalDecls (originalVarsDecls ++ paramsDecls).toList do
     let varsIds := originalVarsDecls.map fun decl => decl.fvarId
     let paramsIds := paramsDecls.map fun decl => decl.fvarId
     oc.mapM (fun o => match o with

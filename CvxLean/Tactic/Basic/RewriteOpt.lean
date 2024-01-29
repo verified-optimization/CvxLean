@@ -171,7 +171,8 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
 
     let gAfterShowVars ← showVars gAfterIntros probFVarId
     if shouldEval then
-      if let _ :: _ ← evalTacticAt tacStx gAfterShowVars then
+      if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
+        trace[Meta.debug] "`rw_constr` could not close {gs} using {tacStx}"
         throwError "`rw_constr` error: could not close all goals."
 
 end Meta
