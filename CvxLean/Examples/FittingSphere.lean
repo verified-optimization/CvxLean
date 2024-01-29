@@ -211,9 +211,11 @@ solve fittingSphereConvex nₚ mₚ xₚ
 
 -- Finally, we recover the solution to the original problem.
 
-#eval fittingSphereConvex.solution
+def sol := eqv.backward_map nₚ mₚ xₚ.float fittingSphereConvex.solution
 
-def sol := eqv.backward_map
+#print eqv.backward_map
+
+#eval sol -- (![1.664863, 0.031932], 1.159033)
 
 end FittingSphere
 

@@ -23,12 +23,9 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
   let translations ← discrTree.getMatch e
   for translation in translations do
     let (mvars, _, pattern) ← lambdaMetaTelescope translation.real
-    trace[Meta.debug] (s!"`real-to-float` trying:\n{pattern}\n{e}")
-    trace[Meta.debug] (s!"`real-to-float` mvars:\n{mvars}")
     if ← isDefEq pattern e then
       -- TODO: Search for conditions.
       let args ← mvars.mapM instantiateMVars
-      trace[Meta.debug] (s!"`real-to-float` matched:\n{pattern}\n{e}")
       return mkAppNBeta translation.float args
     else
       trace[Meta.debug] "`real-to-float` error: no match for \n{pattern} \n{e}"
