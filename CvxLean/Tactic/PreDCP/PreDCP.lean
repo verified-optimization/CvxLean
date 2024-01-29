@@ -110,7 +110,7 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let paramsDomainsExpr :=
     (← declsNamesAndTypes.filterM (fun (_, ty) => do return (← inferType ty).isProp)).toArray
   let paramsDomainsOC : OC (Option (Name × Expr)) := OC.mk none (paramsDomainsExpr.map some)
-  let potentialParamDomains ← UncheckedDCP.mkUncheckedTree paramsDecls paramsDomainsOC
+  let potentialParamDomains ← UncheckedDCP.mkUncheckedTree #[] paramsDecls paramsDomainsOC
   let mut paramDomains := #[]
   for c in potentialParamDomains.constr do
     if let some (h, t) := c then

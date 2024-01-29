@@ -191,11 +191,8 @@ def ExtendedEggTree.fromComponents (objFun : String × Tree String String)
 
   -- Surround variables and adjust operations in the whole tree.
   let ocTree : OC (String × Tree String String) := {
-    objFun := let (ho, o) := objFun; (ho, EggTree.surroundVars o vars params)
-    constr := constr.map (fun (h, c) => (h, EggTree.surroundVars c vars params)) }
-  let ocTree : OC (String × Tree String String) := {
-    objFun := (ocTree.objFun.1, ← EggTree.adjustOps ocTree.objFun.2)
-    constr := ← ocTree.constr.mapIdxM <|
+    objFun := (objFun.1, ← EggTree.adjustOps objFun.2)
+    constr := ← constr.mapIdxM <|
       -- TODO: some constraints may have the same name, so we add the index.
       fun i (h, c) => return (s!"{i}:" ++ h, ← EggTree.adjustOps c) }
   return (ocTree, domainConstrs)
