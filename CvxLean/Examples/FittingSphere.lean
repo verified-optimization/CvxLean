@@ -48,15 +48,15 @@ lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x
   have hz := le_antisymm hmean (sq_nonneg _)
   rwa [sq_eq_zero_iff, sub_eq_zero] at hz
 
-def Vec.leastSquares {n : ℕ} (a : Fin n → ℝ) :=
+def leastSquaresVec {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
     minimize (Vec.sum ((a - Vec.const n x) ^ 2) : ℝ)
 
 /-- Same as `leastSquares_optimal_eq_mean` in vector notation. -/
-lemma vec_leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
-  (h : (Vec.leastSquares a).optimal x) : x = mean a := by
+lemma leastSquaresVec_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
+  (h : (leastSquaresVec a).optimal x) : x = mean a := by
   apply leastSquares_optimal_eq_mean hn a
-  simp [Vec.leastSquares, leastSquares, optimal, feasible] at h ⊢
+  simp [leastSquaresVec, leastSquares, optimal, feasible] at h ⊢
   intros y
   simp only [Vec.sum, Pi.pow_apply, Pi.sub_apply, Vec.const, rpow_two] at h
   exact h y
@@ -114,7 +114,7 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
 
 relaxation rel/fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphereT n m x := by
   relaxation_step =>
-    apply Relaxation.weaken_constraint (cs' := fun _ => True)
+    apply Relaxation.weaken_constraints (cs' := fun _ => True)
     . rintro ⟨c, t⟩ _; trivial
 
 /-- If the squared error is zero, then `aᵢ = x`. -/
@@ -139,13 +139,13 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   simp [fittingSphereT, fittingSphereConvex, optimal, feasible] at h_opt ⊢
   constructor
   . let a := Vec.norm x ^ 2 - 2 * mulVec x c
-    have h_ls : optimal (Vec.leastSquares a) t := by
+    have h_ls : optimal (leastSquaresVec a) t := by
       refine ⟨trivial, ?_⟩
       intros y _
-      simp [objFun, Vec.leastSquares]
+      simp [objFun, leastSquaresVec]
       exact h_opt c y
     -- Apply key result about least squares to `a` and `t`.
-    have ht_eq := vec_leastSquares_optimal_eq_mean hm a t h_ls
+    have ht_eq := leastSquaresVec_optimal_eq_mean hm a t h_ls
     have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
       simp [sum_const]
       field_simp; ring
