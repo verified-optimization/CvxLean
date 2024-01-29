@@ -6,7 +6,13 @@ namespace HypersonicShapeDesign
 
 open CvxLean Minimization Real
 
-def hypersonicShapeDesign (a b : ℝ) :=
+-- Height of rectangle.
+variable (a : ℝ)
+
+-- Width of rectangle.
+variable (b : ℝ)
+
+def hypersonicShapeDesign :=
   optimization (Δx : ℝ)
     minimize sqrt ((1 / Δx ^ 2) - 1)
     subject to
@@ -40,8 +46,20 @@ lemma one_sub_bₚ_nonpos : 0 ≤ 1 - bₚ := by
 
 solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_lt_one
 
-#eval hypersonicShapeDesignConvex.value
-#eval hypersonicShapeDesignConvex.solution
+-- Final width of wedge.
+def width := hypersonicShapeDesignConvex.solution
+
+#eval width
+
+-- Final height of wedge.
+def height := Float.sqrt (1 - width ^ 2)
+
+#eval height
+
+-- Final L/D ratio.
+def ldRatio := 1 / (Float.sqrt ((1 / width ^ 2) - 1))
+
+#eval ldRatio
 
 end HypersonicShapeDesign
 
