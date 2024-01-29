@@ -118,7 +118,7 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
         paramDomains := paramDomains.push (n, d)
 
   -- Get goal as tree and create tags map.
-  let (gStr, domainConstrs) ← ExtendedEggTree.fromMinimization lhs varsStr paramsStr
+  let (gStr, domainConstrs) ← ExtendedEggTree.fromMinimization lhs varsStr
   let mut tagsMap := HashMap.empty
   tagsMap := tagsMap.insert "objFun" 0
   let mut idx := 1
