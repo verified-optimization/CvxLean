@@ -112,10 +112,14 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
 
 #print fittingSphereT
 
-relaxation rel/fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphereT n m x := by
-  relaxation_step =>
-    apply Relaxation.weaken_constraints (cs' := fun _ => True)
-    . rintro ⟨c, t⟩ _; trivial
+-- Next, we proceed to remove the non-convex constraint by arguing that any (non-trivial) point that
+-- minimizes the objective function wihtout the constraint, also satisfies the constraint. We define
+-- the problem directly, bot note that we could also remove the constraint using the `relaxation`
+-- command.
+
+def fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) :=
+  optimization (c : Fin n → ℝ) (t : ℝ)
+    minimize (Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2) : ℝ)
 
 /-- If the squared error is zero, then `aᵢ = x`. -/
 lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → ℝ) (x : Fin n → ℝ) :
@@ -133,7 +137,7 @@ lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → �
 
 /-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
 is non-trivial. -/
-lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
+lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   (h_nontrivial : x ≠ Vec.const m c)
   (h_opt : (fittingSphereConvex n m x).optimal (c, t)) : (fittingSphereT n m x).optimal (c, t) := by
   simp [fittingSphereT, fittingSphereConvex, optimal, feasible] at h_opt ⊢
@@ -181,6 +185,24 @@ lemma optimal_relaxed_implies_optimal (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
   . intros c' x' _
     exact h_opt c' x'
 
+/-- We express the nontriviality condition only in terms of `x` so that it can be checked. -/
+lemma non_triviality_condition (hm : 0 < m) (c : Fin n → ℝ)
+  (hx : ∃ i, x i ≠ x ⟨0, hm⟩) : x ≠ Vec.const m c := by
+  intros h
+  rw [← not_forall] at hx
+  apply hx
+  intros i
+  rw [congr_fun h i, congr_fun h ⟨0, hm⟩]
+  simp [Vec.const]
+
+/-- We show that we have a reduction via the identity map. -/
+def red (hm : 0 < m) (hx : ∃ i, x i ≠ x ⟨0, hm⟩) :
+  (fittingSphereT n m x) ≼ (fittingSphereConvex n m x) :=
+  { psi := id,
+    psi_optimality := fun (c, t) h_opt => by
+      have h_nontrivial := non_triviality_condition n m x hm c hx
+      exact optimal_convex_implies_optimal_t n m x hm c t h_nontrivial h_opt }
+
 #print fittingSphereConvex
 
 -- We proceed to solve the problem on a concrete example.
@@ -212,8 +234,6 @@ solve fittingSphereConvex nₚ mₚ xₚ
 -- Finally, we recover the solution to the original problem.
 
 def sol := eqv.backward_map nₚ mₚ xₚ.float fittingSphereConvex.solution
-
-#print eqv.backward_map
 
 #eval sol -- (![1.664863, 0.031932], 1.159033)
 
