@@ -2,7 +2,6 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
-
 namespace Real
 
 /-- This makes real powers the default, avoiding a mixture of `ℕ` and `ℝ`, which is problematic for

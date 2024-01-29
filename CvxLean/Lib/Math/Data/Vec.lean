@@ -1,8 +1,18 @@
 import Mathlib.Analysis.NormedSpace.PiLp
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Fin
 
 namespace Vec
+
+noncomputable instance (priority := high) : NormedAddCommGroup (Fin n → ℝ) :=
+  PiLp.normedAddCommGroup 2 _
+
+noncomputable instance (priority := high) : NormedAddGroup (Fin n → ℝ) :=
+  (PiLp.normedAddCommGroup 2 _).toNormedAddGroup
+
+noncomputable instance (priority := high) : InnerProductSpace ℝ (Fin n → ℝ) :=
+  PiLp.innerProductSpace _
 
 /-!
 Named functions on vectors. Each of them corresponds to an atom.

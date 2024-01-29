@@ -45,8 +45,8 @@ lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x
     rwa [h_rw_x, h_rw_y, mul_le_mul_left (by positivity), add_le_add_iff_right] at hy
   have hmean := h (mean a)
   simp at hmean
-  have hz := le_antisymm hmean (sq_nonneg _)
-  rwa [sq_eq_zero_iff, sub_eq_zero] at hz
+  have h_sq_eq_zero := le_antisymm hmean (sq_nonneg _)
+  rwa [sq_eq_zero_iff, sub_eq_zero] at h_sq_eq_zero
 
 def leastSquaresVec {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
@@ -101,10 +101,8 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
       (g := fun (ct : (Fin n → ℝ) × ℝ) =>
         Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x ct.1) - Vec.const m ct.2) ^ 2))
     . rintro ⟨c, t⟩ h
-      dsimp at h ⊢; simp [Vec.sum, Vec.norm, Vec.const]
-      congr; funext i; congr 1;
-      rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
-      rw [sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp <| h))]
+      dsimp at h ⊢; simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
+      rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp h))]
       simp [mulVec, inner, dotProduct]
   rename_vars [c, t]
 
@@ -127,10 +125,9 @@ lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → �
   constructor
   . intros h i
     have hi := h i (by simp)
-    rw [sq_eq_zero_iff, @norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup] at hi
-    rwa [sub_eq_zero] at hi
+    rwa [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero] at hi
   . intros h i _
-    rw [sq_eq_zero_iff, @norm_eq_zero _ (PiLp.normedAddCommGroup _ _).toNormedAddGroup, sub_eq_zero]
+    rw [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero]
     exact h i
 
 /-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
@@ -147,34 +144,34 @@ lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ
       simp [objFun, leastSquaresVec]
       exact h_opt c y
     -- Apply key result about least squares to `a` and `t`.
-    have ht_eq := leastSquaresVec_optimal_eq_mean hm a t h_ls
-    have hc2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
+    have h_t_eq := leastSquaresVec_optimal_eq_mean hm a t h_ls
+    have h_c2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
       simp [sum_const]
       field_simp; ring
-    have ht : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
-      rw [ht_eq]; dsimp [mean]
-      rw [hc2_eq, mul_sum, mul_sum, mul_sum, ← sum_add_distrib]
+    have h_t_add_c2_eq : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
+      rw [h_t_eq]; dsimp [mean]
+      rw [h_c2_eq, mul_sum, mul_sum, mul_sum, ← sum_add_distrib]
       congr; funext i; rw [← mul_add]
       congr; simp [Vec.norm]
-      rw [@norm_sub_sq ℝ (Fin n → ℝ) _ (PiLp.normedAddCommGroup _ _) (PiLp.innerProductSpace _)]
+      rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ)]
       congr
     -- We use the result to establish that `t + ‖c‖ ^ 2` is non-negative.
-    have h_tc2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
-      rw [ht]
+    have h_t_add_c2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
+      rw [h_t_add_c2_eq]
       apply mul_nonneg (by norm_num)
       apply sum_nonneg
       intros i _
       rw [rpow_two]
       exact sq_nonneg _
-    cases (lt_or_eq_of_le h_tc2_nonneg) with
-    | inl h_tc2_lt_zero =>
+    cases (lt_or_eq_of_le h_t_add_c2_nonneg) with
+    | inl h_t_add_c2_lt_zero =>
         -- If it is positive, we are done.
-        convert h_tc2_lt_zero; simp
-    | inr h_tc2_eq_zero =>
+        convert h_t_add_c2_lt_zero; simp
+    | inr h_t_add_c2_eq_zero =>
         -- Otherwise, it contradicts the non-triviality assumption.
         exfalso
-        rw [ht, zero_eq_mul] at h_tc2_eq_zero
-        rcases h_tc2_eq_zero with (hc | h_sum_eq_zero)
+        rw [h_t_add_c2_eq, zero_eq_mul] at h_t_add_c2_eq_zero
+        rcases h_t_add_c2_eq_zero with (hc | h_sum_eq_zero)
         . simp at hc; linarith
         rw [vec_squared_norm_error_eq_zero_iff] at h_sum_eq_zero
         apply h_nontrivial
