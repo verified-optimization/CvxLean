@@ -25,13 +25,23 @@ equivalence eqv/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb : b <
 @[optimization_param]
 def aₚ : ℝ := 0.05
 
+lemma aₚ_nonneg : 0 ≤ aₚ := by
+  unfold aₚ; norm_num
+
 @[optimization_param]
 def bₚ : ℝ := 0.65
 
--- solve hypersonicShapeDesignConvex aₚ bₚ
+lemma bₚ_lt_one : bₚ < 1 := by
+  unfold bₚ; norm_num
 
--- #eval dqcp2.value
--- #eval dqcp2.solution
+@[simp high]
+lemma one_sub_bₚ_nonpos : 0 ≤ 1 - bₚ := by
+  unfold bₚ; norm_num
+
+solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_lt_one
+
+#eval hypersonicShapeDesignConvex.value
+#eval hypersonicShapeDesignConvex.solution
 
 end HypersonicShapeDesign
 
