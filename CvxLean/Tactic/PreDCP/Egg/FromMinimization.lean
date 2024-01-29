@@ -9,14 +9,16 @@ section Egg.FromMinimization
 open Lean
 
 /-- Add the constructor `var` around every variable in the tree. -/
-partial def EggTree.surroundVars (t : Tree String String) (vars : List String) :=
+partial def EggTree.surroundVars (t : Tree String String) (vars params : List String) :=
   match t with
   | Tree.leaf s =>
       if s ∈ vars then
         Tree.node "var" #[Tree.leaf s]
-      else
+      else if s ∈ params then
         Tree.node "param" #[Tree.leaf s]
-  | Tree.node n children => Tree.node n (children.map (surroundVars · vars))
+      else
+        t
+  | Tree.node n children => Tree.node n (children.map (surroundVars · vars params))
 
 inductive EggTree.OpArgTag
   | arg
@@ -133,73 +135,77 @@ def EggTree.getVariableName? (vars : List String) : EggTree → Option String
   | Tree.leaf s => if s ∈ vars then some s else none
   | _ => none
 
-/-- Given an expression representing a minimization problem, turn it into a
-tree of strings, also extract all the domain information for single varibales,
-in particular positivity and nonnegativity constraints. -/
-def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars : List String) :
-  MetaM (OC (String × EggTree) × Array (String × String × EggDomain)) := do
-  let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
+/-- Helper function for `fromComponents` that processes a single domain-defining expression. -/
+def ExtendedEggTree.processDomainExprTree (h : String) (c : Tree String String)
+    (vars : List String) : Option (String × String × EggDomain) :=
   -- Detect domain constraints. We capture the following cases:
   -- * x ≤ f and f ≤ x,
   -- * x < f and f < x,
   -- * x = f and f = x,
   -- where "x" is a variable name and "f" is a numerical value.
+  match c with
+  | Tree.node "le" #[(tl : EggTree), (tr : EggTree)] =>
+      match (tl.getVariableName? vars, tr.getNumericalValue?) with
+      -- v ∈ (-inf, f]
+      | (some v, some f) => some (h, v, ⟨"-inf", f.toString, "1", "0"⟩)
+      | _ =>
+        match (tl.getNumericalValue?, tr.getVariableName? vars) with
+        -- v ∈ [f, inf)
+        | (some f, some v) => some (h, v, ⟨f.toString, "inf", "0", "1"⟩)
+        | _ => none
+  | Tree.node "lt" #[(tl : EggTree), (tr : EggTree)] =>
+      match (tl.getVariableName? vars, tr.getNumericalValue?) with
+      -- v ∈ (-inf, f)
+      | (some v, some f) => some (h, v, ⟨"-inf", f.toString, "1", "1"⟩)
+      | _ =>
+        match (tl.getNumericalValue?, tr.getVariableName? vars) with
+        -- v ∈ (f, inf)
+        | (some f, some v) => some (h, v, ⟨f.toString, "inf", "1", "1"⟩)
+        | _ => none
+  | Tree.node "eq" #[(tl : EggTree), (tr : EggTree)] =>
+      match (tl.getVariableName? vars, tr.getNumericalValue?) with
+      -- v ∈ [f, f]
+      | (some v, some f) => some (h, v, ⟨f.toString, f.toString, "0", "0"⟩)
+      | _ =>
+        match (tl.getNumericalValue?, tr.getVariableName? vars) with
+        -- v ∈ [f, f]
+        | (some f, some v) => some (h, v, ⟨f.toString, f.toString, "0", "0"⟩)
+        | _ => none
+  | _ => none
+
+/-- Given an expression representing a minimization problem, turn it into a
+tree of strings, also extract all the domain information for single varibales,
+in particular positivity and nonnegativity constraints. -/
+def ExtendedEggTree.fromComponents (objFun : String × Tree String String)
+  (constr : Array (String × Tree String String)) (vars params : List String) :
+    MetaM (OC (String × EggTree) × Array (String × String × EggDomain)) := do
   let mut domainConstrs := #[]
   let mut i := 0
-  for (h, c) in ocTree.constr do
+  for (h, c) in constr do
     -- NOTE: some constraints may have the same name, so we add the index.
     let h := s!"{i}:" ++ h
-    let res :=
-      match c with
-      | Tree.node "le" #[(tl : EggTree), (tr : EggTree)] =>
-          match (tl.getVariableName? vars, tr.getNumericalValue?) with
-          | (some v, some f) =>
-              -- v ∈ (-inf, f]
-              some (h, v, ⟨"-inf", f.toString, "1", "0"⟩)
-          | _ =>
-            match (tl.getNumericalValue?, tr.getVariableName? vars) with
-            | (some f, some v) =>
-                -- v ∈ [f, inf)
-                some (h, v, ⟨f.toString, "inf", "0", "1"⟩)
-            | _ => none
-      | Tree.node "lt" #[(tl : EggTree), (tr : EggTree)] =>
-          match (tl.getVariableName? vars, tr.getNumericalValue?) with
-          | (some v, some f) =>
-              -- v ∈ (-inf, f)
-              some (h, v, ⟨"-inf", f.toString, "1", "1"⟩)
-          | _ =>
-            match (tl.getNumericalValue?, tr.getVariableName? vars) with
-            | (some f, some v) =>
-                -- v ∈ (f, inf)
-                some (h, v, ⟨f.toString, "inf", "1", "1"⟩)
-            | _ => none
-      | Tree.node "eq" #[(tl : EggTree), (tr : EggTree)] =>
-          match (tl.getVariableName? vars, tr.getNumericalValue?) with
-          | (some v, some f) =>
-              -- v ∈ [f, f]
-              some (h, v, ⟨f.toString, f.toString, "0", "0"⟩)
-          | _ =>
-            match (tl.getNumericalValue?, tr.getVariableName? vars) with
-            | (some f, some v) =>
-                -- v ∈ [f, f]
-                some (h, v, ⟨f.toString, f.toString, "0", "0"⟩)
-            | _ => none
-      | _ => none
-    match res with
+    match processDomainExprTree h c vars with
     | some r => domainConstrs := domainConstrs.push r
     | none => pure ()
     i := i + 1
 
   -- Surround variables and adjust operations in the whole tree.
   let ocTree : OC (String × Tree String String) := {
-    objFun := let (ho, o) := ocTree.objFun; (ho, EggTree.surroundVars o vars)
-    constr := ocTree.constr.map (fun (h, c) => (h, EggTree.surroundVars c vars)) }
+    objFun := let (ho, o) := objFun; (ho, EggTree.surroundVars o vars params)
+    constr := constr.map (fun (h, c) => (h, EggTree.surroundVars c vars params)) }
   let ocTree : OC (String × Tree String String) := {
     objFun := (ocTree.objFun.1, ← EggTree.adjustOps ocTree.objFun.2)
     constr := ← ocTree.constr.mapIdxM <|
       -- TODO: some constraints may have the same name, so we add the index.
       fun i (h, c) => return (s!"{i}:" ++ h, ← EggTree.adjustOps c) }
   return (ocTree, domainConstrs)
+
+/-- Apply `ExtendedEggTree.fromComponents` to a minimization expression, processing it using the
+unchecked DCP procedure. -/
+def ExtendedEggTree.fromMinimization (e : Meta.MinimizationExpr) (vars params : List String) :
+  MetaM (OC (String × EggTree) × Array (String × String × EggDomain)) := do
+  let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
+  fromComponents ocTree.objFun ocTree.constr vars params
 
 /-- Flatten an `EggTree` to a string to send to egg. -/
 partial def EggTree.toEggString : Tree String String → String

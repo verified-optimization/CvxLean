@@ -8,13 +8,15 @@ open Lean Meta
 
 namespace UncheckedDCP
 
-partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC (Name × Expr)) :
-  MetaM (OC (String × Tree String String)) := do
+partial def mkUncheckedTree (originalVarsDecls : Array LocalDecl) (oc : OC (Option (Name × Expr))) :
+  MetaM (OC (Option (String × Tree String String))) := do
   withExistingLocalDecls originalVarsDecls.toList do
     let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-    oc.mapM (fun (n, e) => do
-      let uncheckedAtomTree ← findUncheckedAtoms e (xs.map (·.fvarId!))
-      return (n.toString, uncheckedAtomTree))
+    oc.mapM (fun o => match o with
+      | some (n, e) => do
+          let uncheckedAtomTree ← findUncheckedAtoms e (xs.map (·.fvarId!))
+          return some (n.toString, uncheckedAtomTree)
+      | none => return none)
 where
   findUncheckedAtoms (e : Expr) (vars : Array FVarId) : MetaM (Tree String String) := do
     if e.isRelativelyConstant vars then
@@ -53,7 +55,6 @@ where
 
     -- Just get the first one for now.
     let mut res := Tree.leaf "unknown"
-    trace[Meta.debug] s!"potentialAtoms size: {potentialAtoms.size}"
     for (args, atom) in potentialAtoms do
       res ← processUncheckedAtom e vars atom args
       break
@@ -73,27 +74,31 @@ where
 /-- -/
 def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   MetaM (OC (String × Tree String String)) := do
-  let (objFun, constraints, originalVarsDecls)
-    ← withLambdaBody goalExprs.constraints fun p constraints => do
-    let pr := (← Meta.mkProjections goalExprs.domain p).toArray
-    let originalVarsDecls ←
-      withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
-        fun xs => do
-          return ← xs.mapM fun x => x.fvarId!.getDecl
-    withExistingLocalDecls originalVarsDecls.toList do
-      let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
-      let constraints ← Meta.replaceProjections constraints p.fvarId! xs
-      let constraints : List (Lean.Name × Expr) ←
-        Meta.decomposeConstraints constraints
-      let constraints ←
-        constraints.mapM (fun ((n : Lean.Name), e) => do
-          return (n, ← Expr.removeMData e))
-      let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
-      let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
-      return (objFun, constraints, originalVarsDecls)
+  let (objFun, constraints, originalVarsDecls) ← withLambdaBody goalExprs.constraints
+    fun p constraints => do
+      let pr := (← Meta.mkProjections goalExprs.domain p).toArray
+      let originalVarsDecls ←
+        withLocalDeclsD (pr.map fun (n, ty, _) => (n, fun _ => return ty))
+          fun xs => xs.mapM fun x => x.fvarId!.getDecl
+      withExistingLocalDecls originalVarsDecls.toList do
+        let xs := originalVarsDecls.map fun decl => mkFVar decl.fvarId
+        let constraints ← Meta.replaceProjections constraints p.fvarId! xs
+        let constraints : List (Lean.Name × Expr) ←
+          Meta.decomposeConstraints constraints
+        let constraints ←
+          constraints.mapM (fun ((n : Lean.Name), e) => do
+            return (n, ← Expr.removeMData e))
+        let objFunP := goalExprs.objFun.bindingBody!.instantiate1 p
+        let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
+        return (objFun, constraints, originalVarsDecls)
 
   let oc ← DCP.mkOCWithNames objFun constraints originalVarsDecls
-  let tree ← mkUncheckedTree originalVarsDecls oc
+  let tree ← mkUncheckedTree originalVarsDecls (OC.map some oc)
+
+  -- If `mkUncheckedTree` gives any `none` then we throw an error.
+  let tree ← tree.mapM (fun o => match o with
+    | some (n, t) => return (n, t)
+    | none => throwError "`pre_dcp` error: could not create unchecked DCP tree.")
   return tree
 
 end UncheckedDCP
