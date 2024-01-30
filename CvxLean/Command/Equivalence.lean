@@ -111,6 +111,16 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_domain
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.add_constraint
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_1
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_2
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_3
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_4
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_5
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_6
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_7
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_8
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_9
+      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_10
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraints
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2
@@ -144,6 +154,7 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       let eqvNonPropArgs ← eqvArgs.filterM fun arg => do
         return !(← inferType (← inferType arg)).isProp
       let psi ← mkLambdaFVars eqvNonPropArgs res.expr
+      trace[Meta.debug] "psi: {psi}"
 
       try
         let psiF ← realToFloat psi

@@ -16,21 +16,18 @@ def hypersonicShapeDesign :=
   optimization (Δx : ℝ)
     minimize sqrt ((1 / Δx ^ 2) - 1)
     subject to
-      h1 : 10e-6 ≤ Δx
-      h2 : Δx ≤ 1
-      h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
+      h₁ : 10e-6 ≤ Δx
+      h₂ : Δx ≤ 1
+      h₃ : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 
-set_option trace.Meta.debug true
-
-#check Lean.Expr
-
-equivalence eqv/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb : b < 1) :
+equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb : b < 1) :
     hypersonicShapeDesign a b := by
   pre_dcp
 
 @[optimization_param]
 def aₚ : ℝ := 0.05
 
+@[simp high]
 lemma aₚ_nonneg : 0 ≤ aₚ := by
   unfold aₚ; norm_num
 
@@ -41,25 +38,75 @@ lemma bₚ_lt_one : bₚ < 1 := by
   unfold bₚ; norm_num
 
 @[simp high]
-lemma one_sub_bₚ_nonpos : 0 ≤ 1 - bₚ := by
+lemma one_sub_bₚ_nonneg : 0 ≤ 1 - bₚ := by
   unfold bₚ; norm_num
 
 solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_lt_one
 
 -- Final width of wedge.
-def width := hypersonicShapeDesignConvex.solution
+def width := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
 
-#eval width
+#eval width -- 0.989524
 
 -- Final height of wedge.
 def height := Float.sqrt (1 - width ^ 2)
 
-#eval height
+#eval height -- 0.144368
 
 -- Final L/D ratio.
 def ldRatio := 1 / (Float.sqrt ((1 / width ^ 2) - 1))
 
-#eval ldRatio
+#eval ldRatio -- 6.854156
+
+-- While the above is good enough, we simplify the problem further by performing a change of
+-- variables and simplifying appropriately.
+
+set_option trace.Meta.debug true
+
+equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb : b < 1) :
+    hypersonicShapeDesignConvex a b ha hb := by
+  change_of_variables (z) (Δx ↦ sqrt z)
+  conv_constr h₁ =>
+    rewrite [le_sqrt' (by norm_num)]; norm_num
+  conv_constr h₂ =>
+    rewrite [sqrt_le_iff]; norm_num
+  rw_constr h₃ =>
+    have hz : 0 ≤ z := by arith
+    have h_one_sub_z : 0 ≤ 1 - z := by arith
+    rewrite [rpow_two (sqrt a), sq_sqrt ha, rpow_two (sqrt z), sq_sqrt hz]
+    rewrite [div_le_iff (by arith)]
+    have hlhs : 0 ≤ a / sqrt z := div_nonneg ha (sqrt_nonneg _)
+    have hrhs : 0 ≤ sqrt (1 - z) * (1 - b) := mul_nonneg (sqrt_nonneg _) (by arith)
+    rewrite [← pow_two_le_pow_two hlhs hrhs]
+    rewrite [div_rpow ha (sqrt_nonneg _), rpow_two (sqrt z), sq_sqrt hz]
+    rewrite [mul_rpow (sqrt_nonneg _) (by arith), rpow_two (sqrt (1 - z)), sq_sqrt h_one_sub_z]
+    rewrite [← mul_one_div, ← inv_eq_one_div, mul_comm (1 - z) _]
+    rfl
+  rename_constrs [h₁, h₂, h₃]
+  rw_obj =>
+    rewrite [rpow_neg (sqrt_nonneg _), rpow_two (sqrt z), sq_sqrt (by arith)]
+    rfl
+
+#print hypersonicShapeDesignSimpler
+
+solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_lt_one
+
+-- Final width of wedge.
+def width' :=
+  eqv₁.backward_map aₚ.float bₚ.float <|
+    eqv₂.backward_map aₚ.float bₚ.float hypersonicShapeDesignSimpler.solution
+
+#eval width' -- 0.989524
+
+-- Final height of wedge.
+def height' := Float.sqrt (1 - width' ^ 2)
+
+#eval height' -- 0.144371
+
+-- Final L/D ratio.
+def ldRatio' := 1 / (Float.sqrt ((1 / width' ^ 2) - 1))
+
+#eval ldRatio' -- 6.854031
 
 end HypersonicShapeDesign
 
