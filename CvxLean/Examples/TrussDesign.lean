@@ -208,7 +208,8 @@ lemma F₂ₚ_nonneg : 0 < F₂ₚ := by
 solve trussDesignDCP hminₚ hmaxₚ hminₚ_pos hminₚ_le_hmaxₚ wminₚ wmaxₚ wminₚ_pos wminₚ_le_wmaxₚ Rmaxₚ
   Rmaxₚ_nonneg σₚ σₚ_nonneg F₁ₚ F₁ₚ_nonneg F₂ₚ F₂ₚ_nonneg
 
--- There are two non-trivial backward maps here, so we need to be careful.
+-- There are two non-trivial backward maps here, one from `eqv₁` and one from `eqv₂`, so we need to
+-- apply both of them.
 
 def eqv₁.backward_mapₚ := eqv₁.backward_map hminₚ.float hmaxₚ.float wminₚ.float wmaxₚ.float
   Rmaxₚ.float σₚ.float F₁ₚ.float F₂ₚ.float
@@ -218,16 +219,24 @@ def eqv₂.backward_mapₚ := eqv₂.backward_map hminₚ.float hmaxₚ.float wm
 
 def sol := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ trussDesignDCP.solution)
 
-def h_opt := sol.1
-def w_opt := sol.2.1
-def r_opt := sol.2.2.1
-def R_opt := sol.2.2.2
+-- Finally, we obtain the optimal height, width, inner radius, and outer radius.
 
-#eval h_opt -- 1.000000
-#eval w_opt -- 1.000517
-#eval r_opt -- 0.010162
-#eval R_opt -- 2.121443
+def hₚ_opt := sol.1
+def wₚ_opt := sol.2.1
+def rₚ_opt := sol.2.2.1
+def Rₚ_opt := sol.2.2.2
 
+#eval hₚ_opt -- 1.000000
+#eval wₚ_opt -- 1.000517
+#eval rₚ_opt -- 0.010162
+#eval Rₚ_opt -- 2.121443
+
+def valueₚ :=
+  let pi := 2 * Float.acos 0;
+  let Aₚ_opt := 2 * pi * (Rₚ_opt ^ 2 - rₚ_opt ^ 2);
+  2 * Aₚ_opt * Float.sqrt (wₚ_opt ^ 2 + hₚ_opt ^ 2)
+
+#eval valueₚ -- 79.999976
 
 end TrussDesign
 
