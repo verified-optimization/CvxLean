@@ -16,19 +16,51 @@ namespace Elab
 open Lean.Elab Lean.Elab.Term Lean.Meta Lean.Parser.Term
 
 /-- -/
-partial def decomposeBracketedBinder : Syntax → TermElabM (Array (Syntax × Syntax)) :=
+def decomposeBracketedBinder : Syntax → TermElabM (Array (Syntax × Syntax)) :=
   fun stx => match stx[0] with
     | `(bracketedBinderF|($ids* : $ty)) => return ids.map (·.raw, ty.raw)
     | `(ident|$id) => return #[(id.raw, (←`(_)).raw)]
 
 /-- -/
-partial def elabVars (idents : Array Syntax) : TermElabM (Array (Lean.Name × Expr)) := do
+def elabVars (idents : Array (TSyntax `CvxLean.Parser.minimizationVar)) :
+    TermElabM (Array (Lean.Name × Expr)) := do
   let idents ← idents.concatMapM decomposeBracketedBinder
   let idents ← idents.mapM fun (id, ty) => do
     match id with
       | Syntax.ident _ _ val _ => return (val, ← Term.elabTerm ty none)
-      | _ => throwError "Expected identifier: {id}"
+      | _ => throwError "parser error: expected identifier got {id}."
   return idents
+
+/-- -/
+def preElabLetVars (letVars : Array (TSyntax `CvxLean.Parser.letVar)) :
+    TermElabM (Array (Lean.Name × TSyntax `Lean.Parser.Term.letDecl)) := do
+  letVars.mapM fun stx =>
+    match stx with
+      | `(CvxLean.Parser.letVar| with $letD:letDecl) =>
+          match letD with
+          | `(letDecl| $id:ident := $_) => return (id.getId, letD)
+          | _ => throwError "parser error: expected identified let declaration got {letD}."
+      | _ => throwError "parser error: expected let declaration got {stx}."
+
+/-- -/
+def preElabConstraints (constraints : TSyntax `CvxLean.Parser.constraints) :
+  TermElabM (Array (Lean.Name × TSyntax `term)) := do
+  match constraints with
+  | `(CvxLean.Parser.constraints| $constrs*) => do
+      constrs.mapM fun cDecl =>
+        match cDecl with
+          | `(CvxLean.Parser.constraint| $id:ident : $c) => return (id.getId, c)
+          | `(CvxLean.Parser.constraint| _ : $c) => return (Name.anonymous, c)
+          | _ => throwError "parser error: expected constraint got {cDecl}."
+  | _ => throwError "parser error: expected constraints got {constraints}."
+
+-- TODO: move
+/-- -/
+partial def _root_.Lean.Syntax.gatherIdents : Syntax → Array Lean.Name
+  | .missing => #[]
+  | .ident _ _ n _ => #[n]
+  | .atom _ _ => #[]
+  | .node _ _ stxs => stxs.foldl (init := #[]) fun acc stx => acc ++ stx.gatherIdents
 
 macro_rules
 | `(optimization $idents* $minOrMax:minOrMax $obj) =>
@@ -37,19 +69,27 @@ macro_rules
 -- TODO: allow dependently typed variables?
 
 /-- Elaborate "optimization" problem syntax. -/
-@[term_elab «optimization»] def elabOptmiziation : Term.TermElab := fun stx expectedType? => do
+@[term_elab «optimization»] def elabOptmiziation : Term.TermElab := fun stx _expectedType? => do
   match stx with
-  | `(optimization $idents* $minOrMax:minOrMax $obj subject to $constraints) =>
+  | `(optimization $idents* $lets:letVar* $minOrMax:minOrMax $obj subject to $constraints) =>
     -- Determine names and types of the variables.
-    let vars ← elabVars <| idents.map (·.raw)
+    let vars ← elabVars idents
     -- Construct domain type.
     let domain := Meta.composeDomain vars.data
+    -- Construct let vars syntax.
+    let letsStx ← preElabLetVars lets
     -- Introduce FVar for the domain.
     withLocalDeclD `p domain fun p => do
       -- Introduce FVars for the variables
       Meta.withDomainLocalDecls domain p fun xs prs => do
         -- Elaborate objFun.
-        let mut obj := Expr.replaceFVars (← Term.elabTerm obj.raw none) xs prs
+        let mut objStx := obj
+        let objIdents := Syntax.gatherIdents objStx
+        if letsStx.size > 0 then
+          for (letVar, letD) in letsStx do
+            if letVar ∈ objIdents then
+              objStx := ← `(let $letD:letDecl; $objStx)
+        let mut obj := Expr.replaceFVars (← Term.elabTerm objStx.raw none) xs prs
         -- Add `maximizeNeg` constant to mark maximization problems and to negate the objective.
         let minOrMaxStx := minOrMax.raw[0]!
         if minOrMaxStx.isOfKind `maximize then
@@ -58,9 +98,15 @@ macro_rules
           throwError "expected minimize or maximize, got: {minOrMaxStx.getKind}"
         obj ← mkLambdaFVars #[p] obj
         -- Elaborate constraints.
-        let constraints := constraints.raw[0]!.getArgs
-        let constraints ← constraints.mapM fun c => do
-          return Meta.mkLabel c[0].getId (← Term.elabTerm c[2] none)
+        let constraints ← preElabConstraints constraints
+        let constraints ← constraints.mapM fun (n, cStx) => do
+          let mut cStx := cStx
+          let cIdents := Syntax.gatherIdents cStx
+          if letsStx.size > 0 then
+            for (letVar, letD) in letsStx do
+              if letVar ∈ cIdents then
+                cStx := ← `(let $letD:letDecl; $cStx)
+          return Meta.mkLabel n (← Term.elabTerm cStx none)
         let constraints ← mkLambdaFVars #[p] $
           Expr.replaceFVars (Meta.composeAnd constraints.data) xs prs
         -- Put it all together.
@@ -89,8 +135,8 @@ def delabVar (e : Expr) : DelabM (Lean.Name × Term) := do
 partial def delabDomain : DelabM (List (Lean.Name × Term)) := do
   let e ← getExpr
   match e with
-  | Expr.app (Expr.app (Expr.const `Prod _) ty1) ty2 => do
-      let stx1 ← withNaryArg 0 (do delabVar $ e.getArg! 0)
+  | Expr.app (Expr.app (Expr.const `Prod _) _ty1) _ty2 => do
+      let stx1 ← withNaryArg 0 (do delabVar <| e.getArg! 0)
       let stx2 ← withNaryArg 1 (do delabDomain)
       return stx1 :: stx2
   | _ => return [← delabVar e]
@@ -109,7 +155,7 @@ partial def delabConstraint : DelabM (TSyntax ``Parser.constraint) := do
 partial def delabConstraints : DelabM (List (TSyntax ``Parser.constraint)) := do
   let e ← getExpr
   match e with
-  | Expr.app (Expr.app (Expr.const `And _) l) r =>
+  | Expr.app (Expr.app (Expr.const `And _) _l) _r =>
     let l : TSyntax _ ← withNaryArg 0 delabConstraint
     let r : List (TSyntax _) ← withNaryArg 1 delabConstraints
     return l :: r
@@ -119,7 +165,7 @@ partial def delabConstraints : DelabM (List (TSyntax ``Parser.constraint)) := do
 def withDomainBinding [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α := do
   guard (← getExpr).isLambda
   withBindingBody' `p fun p => do
-    withDomainLocalDecls domain p fun xs prs => do
+    withDomainLocalDecls domain p fun xs _prs => do
       let e ← getExpr
       let e ← replaceProjections e p.fvarId! xs
       withExpr e do x
@@ -129,7 +175,7 @@ def withDomainBinding [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α
 partial def delabMinimization : Delab := do
   if not (pp.optMinimization.get (← getOptions)) then Alternative.failure
   match ← getExpr with
-  | .app (.app (.app (.app (.const `Minimization.mk _) domain) codomain) objFun) constraints =>
+  | .app (.app (.app (.app (.const `Minimization.mk _) domain) _codomain) _objFun) constraints =>
     let idents ← withType <| withNaryArg 0 do
       let tys ← delabDomain
       let tys ← tys.mapM fun (name, stx) => do `(Parser.minimizationVar| ($(mkIdent name) : $stx))
@@ -157,6 +203,9 @@ partial def delabMinimization : Delab := do
       else
         `(optimization $idents* minimize $objFun subject to $constraints)
   | _ => Alternative.failure
+
+set_option trace.Meta.debug true
+set_option pp.rawOnError true
 
 end Delab
 

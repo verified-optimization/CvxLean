@@ -7,8 +7,6 @@ namespace CvxLean
 
 open Real
 
-#check sqrt_eq_rpow
-
 declare_atom norm2 [convex] (n : Nat)& (x : Fin n → ℝ)? : ‖x‖ :=
 vconditions
 implementationVars (t : ℝ)

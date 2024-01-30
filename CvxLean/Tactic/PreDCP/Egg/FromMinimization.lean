@@ -45,6 +45,7 @@ def EggTree.opMap : HashMap String (String × Array EggTree.OpArgTag) :=
     ("max",         ("max",     #[.arg, .arg])),
     ("add",         ("add",     #[.arg, .arg])),
     ("sub",         ("sub",     #[.arg, .arg])),
+    ("mul",         ("mul",     #[.arg, .arg])),
     ("mul1",        ("mul",     #[.arg, .arg])),
     ("mul2",        ("mul",     #[.arg, .arg])),
     ("div",         ("div",     #[.arg, .arg])),

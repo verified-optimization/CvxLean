@@ -36,6 +36,7 @@ define_language! {
         "norm2" = Norm2([Id; 2]),
         "var" = Var(Id),
         "param" = Param(Id),
+        "pi" = Pi([Id; 0]),
         Constant(Constant),
         Symbol(Symbol),
     }
@@ -213,6 +214,10 @@ impl Analysis<Optimization> for Meta {
                 // NOTE(RFM): parameters are treated as constants.
                 is_constant = true;
             } 
+            Optimization::Pi(_) => {
+                domain = Some(Domain::make_singleton(std::f64::consts::PI));
+                is_constant = true;
+            }
             Optimization::Symbol(_) => {}
             Optimization::Constant(f) => {
                 domain = Some(Domain::make_singleton((*f).into_inner()));

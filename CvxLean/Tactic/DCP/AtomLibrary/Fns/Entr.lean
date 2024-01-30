@@ -72,7 +72,7 @@ solutionEqualsAtom by rfl
 feasibility
   (c : by
     unfold Vec.expCone Vec.entr
-    intros t i
+    intros _ i
     exact entr.feasibility0 (x i) (cond i))
 optimality by
   unfold Vec.expCone at c

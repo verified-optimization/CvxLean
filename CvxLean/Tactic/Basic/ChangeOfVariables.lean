@@ -73,6 +73,11 @@ instance : ChangeOfVariables exp :=
     condition := fun x => 0 < x
     property := fun _ hx => exp_log hx }
 
+instance : ChangeOfVariables sqrt :=
+  { inv := (fun x => x ^ 2)
+    condition := fun x => 0 ≤ x
+    property := fun _ hx => sqrt_sq hx }
+
 -- NOTE(RFM): x ≠ 0 is technically not necessary as division is defined on all of ℝ, but we want to
 -- avoid division by zero.
 instance : ChangeOfVariables (fun x : ℝ => x⁻¹) :=

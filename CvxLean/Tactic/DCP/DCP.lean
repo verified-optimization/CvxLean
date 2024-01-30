@@ -127,12 +127,10 @@ where
         if let some e' := e then
           bconds := bconds.push e'
         else
-          let decls := (← getLCtx).decls.toList.filterMap fun lo => match lo with
-            | some decl => some decl.type
-            | _ => none
+          let declsTypes := (← getLCtx).decls.toList.filterMap (Option.map LocalDecl.type)
           return FindAtomResult.Error
             #[m!"Trying atom {atom.expr} for expression {e}: " ++
-              m!"Background Condition {bcondType} not found. (Local context: {decls})"]
+              m!"Background Condition {bcondType} not found. (Local context: {declsTypes})"]
 
     let mut childTrees := #[]
     let mut childArgsTrees := #[]

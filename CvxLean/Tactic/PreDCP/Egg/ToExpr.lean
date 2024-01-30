@@ -29,6 +29,9 @@ def EggString.toEggTree (s : String) : MetaM (Tree String String) := do
 
 /-- -/
 partial def EggTree.toExpr (vars params : List String) : Tree String String → MetaM Expr
+  -- Pi.
+  | Tree.leaf "pi" => do
+      return mkConst ``Real.pi
   -- Numbers.
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
