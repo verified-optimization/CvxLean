@@ -24,6 +24,8 @@ equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb�
     hypersonicShapeDesign a b := by
   pre_dcp
 
+#print hypersonicShapeDesignConvex
+
 @[optimization_param]
 def aₚ : ℝ := 0.05
 
@@ -63,8 +65,6 @@ def ldRatio := 1 / (Float.sqrt ((1 / width ^ 2) - 1))
 
 -- While the above is good enough, we simplify the problem further by performing a change of
 -- variables and simplifying appropriately.
-
-set_option trace.Meta.debug true
 
 equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b)
     (hb₂ : b < 1) : hypersonicShapeDesignConvex a b ha hb₁ hb₂ := by
