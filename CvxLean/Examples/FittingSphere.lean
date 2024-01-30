@@ -80,10 +80,10 @@ def fittingSphere :=
     subject to
       h₁ : 0 < r
 
-instance : ChangeOfVariables fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2)) :=
+instance : ChangeOfVariables fun ((c, t) : (Fin n → ℝ) × ℝ) => (c, sqrt (t + ‖c‖ ^ 2)) :=
   { inv := fun (c, r) => (c, r ^ 2 - ‖c‖ ^ 2),
-    condition := fun (_, t) => 0 ≤ t,
-    property := fun ⟨c, t⟩ h => by simp [sqrt_sq h] }
+    condition := fun (_, r) => 0 ≤ r,
+    property := fun ⟨c, r⟩ h => by simp [sqrt_sq h] }
 
 equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
   -- Change of variables.
