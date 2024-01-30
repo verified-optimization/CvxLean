@@ -57,10 +57,8 @@ instance : ChangeOfVariables
     property := fun (h', w', r', A') ⟨hh', hw', hr', hA'⟩ => by
       simp [exp_log hh', exp_log hw', exp_log hr', exp_log hA'] }
 
-equivalence eqv/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
-    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
-    (Rmax_nonneg : 0 < Rmax) (σ : ℝ) (σ_nonneg : 0 < σ) (F₁ : ℝ) (F₁_nonneg : 0 < F₁) (F₂ : ℝ)
-    (F₂_nonneg : 0 < F₂) : trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
+equivalence eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
+    trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Apply key change of variables.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
@@ -110,6 +108,13 @@ equivalence eqv/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_
       rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
   rename_vars [h, w, r, A]
   rename_constrs [c_r, c_F₁, c_F₂, c_hmin, c_hmax, c_wmin, c_wmax, c_A_lb, c_A_ub]
+
+#print trussDesignGP
+
+equivalence eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
+    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
+    (Rmax_nonneg : 0 < Rmax) (σ : ℝ) (σ_nonneg : 0 < σ) (F₁ : ℝ) (F₁_nonneg : 0 < F₁) (F₂ : ℝ)
+    (F₂_nonneg : 0 < F₂) : trussDesignGP hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Change variables.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
@@ -130,9 +135,64 @@ equivalence eqv/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_
 
 #print trussDesignConvex
 
+-- We provide concrete values and solve the problem.
 
--- hmin = wmin = 1, hmax = wmax = 100, Rmax = 10, σ = 0.5.
--- F1 = 10 F2 = 20
+@[optimization_param]
+def hminₚ : ℝ := 1
+
+@[optimization_param]
+def hmaxₚ : ℝ := 100
+
+@[simp high]
+lemma hminₚ_pos : 0 < hminₚ := by
+  unfold hminₚ; norm_num
+
+lemma hminₚ_le_hmaxₚ : hminₚ ≤ hmaxₚ := by
+  unfold hminₚ hmaxₚ; norm_num
+
+@[optimization_param]
+def wminₚ : ℝ := 1
+
+@[optimization_param]
+def wmaxₚ : ℝ := 100
+
+@[simp high]
+lemma wminₚ_pos : 0 < wminₚ := by
+  unfold wminₚ; norm_num
+
+lemma wminₚ_le_wmaxₚ : wminₚ ≤ wmaxₚ := by
+  unfold wminₚ wmaxₚ; norm_num
+
+@[optimization_param]
+def Rmaxₚ : ℝ := 10
+
+@[simp high]
+lemma Rmaxₚ_nonneg : 0 < Rmaxₚ := by
+  unfold Rmaxₚ; norm_num
+
+@[optimization_param]
+def σₚ : ℝ := 0.5
+
+@[simp high]
+lemma σₚ_nonneg : 0 < σₚ := by
+  unfold σₚ; norm_num
+
+@[optimization_param]
+def F₁ₚ : ℝ := 10
+
+@[simp high]
+lemma F₁ₚ_nonneg : 0 < F₁ₚ := by
+  unfold F₁ₚ; norm_num
+
+@[optimization_param]
+def F₂ₚ : ℝ := 20
+
+@[simp high]
+lemma F₂ₚ_nonneg : 0 < F₂ₚ := by
+  unfold F₂ₚ; norm_num
+
+solve trussDesignConvex hminₚ hmaxₚ hminₚ_pos hminₚ_le_hmaxₚ wminₚ wmaxₚ wminₚ_pos wminₚ_le_wmaxₚ
+  Rmaxₚ Rmaxₚ_nonneg σₚ σₚ_nonneg F₁ₚ F₁ₚ_nonneg F₂ₚ F₂ₚ_nonneg
 
 end TrussDesign
 
