@@ -20,7 +20,7 @@ def hypersonicShapeDesign :=
       h₂ : Δx ≤ 1
       h₃ : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 
-equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb : b < 1) :
+equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b) (hb₂ : b < 1) :
     hypersonicShapeDesign a b := by
   pre_dcp
 
@@ -34,6 +34,9 @@ lemma aₚ_nonneg : 0 ≤ aₚ := by
 @[optimization_param]
 def bₚ : ℝ := 0.65
 
+lemma bₚ_nonneg : 0 ≤ bₚ := by
+  unfold bₚ; norm_num
+
 lemma bₚ_lt_one : bₚ < 1 := by
   unfold bₚ; norm_num
 
@@ -41,7 +44,7 @@ lemma bₚ_lt_one : bₚ < 1 := by
 lemma one_sub_bₚ_nonneg : 0 ≤ 1 - bₚ := by
   unfold bₚ; norm_num
 
-solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_lt_one
+solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
 -- Final width of wedge.
 def width := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
@@ -63,8 +66,8 @@ def ldRatio := 1 / (Float.sqrt ((1 / width ^ 2) - 1))
 
 set_option trace.Meta.debug true
 
-equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb : b < 1) :
-    hypersonicShapeDesignConvex a b ha hb := by
+equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b)
+    (hb₂ : b < 1) : hypersonicShapeDesignConvex a b ha hb₁ hb₂ := by
   change_of_variables (z) (Δx ↦ sqrt z)
   conv_constr h₁ =>
     rewrite [le_sqrt' (by norm_num)]; norm_num
@@ -89,7 +92,7 @@ equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb 
 
 #print hypersonicShapeDesignSimpler
 
-solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_lt_one
+solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
 -- Final width of wedge.
 def width' :=
