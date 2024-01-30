@@ -323,6 +323,11 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 num_vars = 0;
                 term_size = 1;
             }
+            Optimization::Pi(_) => {
+                curvature = Curvature::Constant;
+                num_vars = 0;
+                term_size = 1;
+            }
             Optimization::Symbol(_sym) => {
                 // Irrelevant.
             }
