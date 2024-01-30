@@ -33,10 +33,13 @@ def elabVars (idents : Array (TSyntax `CvxLean.Parser.minimizationVar)) :
 
 /-- -/
 def preElabLetVars (letVars : Array (TSyntax `CvxLean.Parser.letVar)) :
-    TermElabM (Array (TSyntax `Lean.Parser.Term.letDecl)) := do
+    TermElabM (Array (Lean.Name × TSyntax `Lean.Parser.Term.letDecl)) := do
   letVars.mapM fun stx =>
     match stx with
-      | `(CvxLean.Parser.letVar| with $letD:letDecl) => return letD
+      | `(CvxLean.Parser.letVar| with $letD:letDecl) =>
+          match letD with
+          | `(letDecl| $id:ident := $_) => return (id.getId, letD)
+          | _ => throwError "parser error: expected identified let declaration got {letD}."
       | _ => throwError "parser error: expected let declaration got {stx}."
 
 /-- -/
@@ -50,6 +53,14 @@ def preElabConstraints (constraints : TSyntax `CvxLean.Parser.constraints) :
           | `(CvxLean.Parser.constraint| _ : $c) => return (Name.anonymous, c)
           | _ => throwError "parser error: expected constraint got {cDecl}."
   | _ => throwError "parser error: expected constraints got {constraints}."
+
+-- TODO: move
+/-- -/
+partial def _root_.Lean.Syntax.gatherIdents : Syntax → Array Lean.Name
+  | .missing => #[]
+  | .ident _ _ n _ => #[n]
+  | .atom _ _ => #[]
+  | .node _ _ stxs => stxs.foldl (init := #[]) fun acc stx => acc ++ stx.gatherIdents
 
 macro_rules
 | `(optimization $idents* $minOrMax:minOrMax $obj) =>
@@ -73,9 +84,11 @@ macro_rules
       Meta.withDomainLocalDecls domain p fun xs prs => do
         -- Elaborate objFun.
         let mut objStx := obj
+        let objIdents := Syntax.gatherIdents objStx
         if letsStx.size > 0 then
-          for letVar in letsStx do
-            objStx := ← `(let $letVar:letDecl; $objStx)
+          for (letVar, letD) in letsStx do
+            if letVar ∈ objIdents then
+              objStx := ← `(let $letD:letDecl; $objStx)
         let mut obj := Expr.replaceFVars (← Term.elabTerm objStx.raw none) xs prs
         -- Add `maximizeNeg` constant to mark maximization problems and to negate the objective.
         let minOrMaxStx := minOrMax.raw[0]!
@@ -88,9 +101,11 @@ macro_rules
         let constraints ← preElabConstraints constraints
         let constraints ← constraints.mapM fun (n, cStx) => do
           let mut cStx := cStx
+          let cIdents := Syntax.gatherIdents cStx
           if letsStx.size > 0 then
-            for letVar in letsStx do
-              cStx := ← `(let $letVar:letDecl; $cStx)
+            for (letVar, letD) in letsStx do
+              if letVar ∈ cIdents then
+                cStx := ← `(let $letD:letDecl; $cStx)
           return Meta.mkLabel n (← Term.elabTerm cStx none)
         let constraints ← mkLambdaFVars #[p] $
           Expr.replaceFVars (Meta.composeAnd constraints.data) xs prs
