@@ -1,4 +1,5 @@
 import CvxLean
+import CvxLean.Command.Util.TimeCmd
 
 noncomputable section
 
@@ -46,12 +47,17 @@ lemma bₚ_lt_one : bₚ < 1 := by
 lemma one_sub_bₚ_nonneg : 0 ≤ 1 - bₚ := by
   unfold bₚ; norm_num
 
-solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
+time_cmd solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
+
+#print hypersonicShapeDesignConvex.reduced
 
 -- Final width of wedge.
 def width := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
 
 #eval width -- 0.989524
+
+#eval aₚ.float * (1 / width) - (1 - bₚ.float) * Float.sqrt (1 - width ^ 2) ≤ 0
+#eval aₚ.float * (1 / width) - (1 - bₚ.float) * Float.sqrt (1 - width ^ 2) ≤ 0.000001
 
 -- Final height of wedge.
 def height := Float.sqrt (1 - width ^ 2)
@@ -92,7 +98,9 @@ equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb�
 
 #print hypersonicShapeDesignSimpler
 
-solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
+time_cmd solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
+
+#print hypersonicShapeDesignSimpler.reduced
 
 -- Final width of wedge.
 def width' :=
@@ -100,6 +108,8 @@ def width' :=
     eqv₂.backward_map aₚ.float bₚ.float hypersonicShapeDesignSimpler.solution
 
 #eval width' -- 0.989524
+
+#eval aₚ.float * (1 / width') - (1 - bₚ.float) * Float.sqrt (1 - width' ^ 2) ≤ 0
 
 -- Final height of wedge.
 def height' := Float.sqrt (1 - width' ^ 2)
