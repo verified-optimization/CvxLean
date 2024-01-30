@@ -50,14 +50,9 @@ instance : ChangeOfVariables
       simp; rw [mul_comm _ (R ^ 2 - r ^ 2), ← mul_div, div_self (by positivity), mul_one]
       ring_nf; exact sqrt_sq hR }
 
-instance : ChangeOfVariables
-    fun ((h', w', r', A') : ℝ × ℝ × ℝ × ℝ) => (exp h', exp w', exp r', exp A') :=
-  { inv := fun (h, w, r, A) => (log h, log w, log r, log A),
-    condition := fun (h', w', r', A') => 0 < h' ∧ 0 < w' ∧ 0 < r' ∧ 0 < A',
-    property := fun (h', w', r', A') ⟨hh', hw', hr', hA'⟩ => by
-      simp [exp_log hh', exp_log hw', exp_log hr', exp_log hA'] }
+set_option maxHeartbeats 1000000
 
-equivalence eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
+equivalence' eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
     trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Apply key change of variables.
   equivalence_step =>
@@ -68,7 +63,9 @@ equivalence eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
       simp [ChangeOfVariables.condition]
       have h_r_le : r ≤ 1.1 * r := (le_mul_iff_one_le_left c_r).mpr (by norm_num)
       exact le_trans (le_of_lt c_r) (le_trans h_r_le c_R_lb)
-  rename_vars [h, w, r, A]; dsimp
+  rename_vars [h, w, r, A]
+  -- Some cleanup.
+  conv_opt => dsimp
   -- Rewrite contraint `c_R_lb`.
   equivalence_step =>
     apply Equivalence.rewrite_constraint_8
@@ -111,10 +108,16 @@ equivalence eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
 
 #print trussDesignGP
 
-equivalence eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
-    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
-    (Rmax_nonneg : 0 < Rmax) (σ : ℝ) (σ_nonneg : 0 < σ) (F₁ : ℝ) (F₁_nonneg : 0 < F₁) (F₂ : ℝ)
-    (F₂_nonneg : 0 < F₂) : trussDesignGP hmin hmax wmin wmax Rmax σ F₁ F₂ := by
+instance : ChangeOfVariables
+    fun ((h', w', r', A') : ℝ × ℝ × ℝ × ℝ) => (exp h', exp w', exp r', exp A') :=
+  { inv := fun (h, w, r, A) => (log h, log w, log r, log A),
+    condition := fun (h', w', r', A') => 0 < h' ∧ 0 < w' ∧ 0 < r' ∧ 0 < A',
+    property := fun (h', w', r', A') ⟨hh', hw', hr', hA'⟩ => by
+      simp [exp_log hh', exp_log hw', exp_log hr', exp_log hA'] }
+
+equivalence' eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
+    (hmin_le_hmax : hmin ≤ hmax) (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax)
+    (Rmax σ F₁ F₂ : ℝ) : trussDesignGP hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Change variables.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
@@ -127,13 +130,24 @@ equivalence eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hm
       . exact c_r
       . have h_A_div_2π_pos : 0 < A / (2 * π) := lt_of_lt_of_le (by positivity) c_A_lb
         rwa [lt_div_iff (by positivity), zero_mul] at h_A_div_2π_pos
-  dsimp
+  conv_opt => dsimp
   rename_vars [h', w', r', A']
   remove_trivial_constrs
+
+#print trussDesignConvex
+
+-- We split these two steps, to make speed up backward map creation as there are ~80 pre-DCP steps
+-- which need to be simplified into a single map (which should be just `id`).
+
+equivalence eqv₃/trussDesignDCP (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
+    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
+    (Rmax_nonneg : 0 < Rmax) (σ : ℝ) (σ_nonneg : 0 < σ) (F₁ : ℝ) (F₁_nonneg : 0 < F₁) (F₂ : ℝ)
+    (F₂_nonneg : 0 < F₂) : trussDesignConvex hmin hmax hmin_pos hmin_le_hmax wmin wmax wmin_pos
+      wmin_le_wmax Rmax σ F₁ F₂ := by
   -- Apply pre-DCP.
   pre_dcp
 
-#print trussDesignConvex
+#print trussDesignDCP
 
 -- We provide concrete values and solve the problem.
 
@@ -191,8 +205,29 @@ def F₂ₚ : ℝ := 20
 lemma F₂ₚ_nonneg : 0 < F₂ₚ := by
   unfold F₂ₚ; norm_num
 
-solve trussDesignConvex hminₚ hmaxₚ hminₚ_pos hminₚ_le_hmaxₚ wminₚ wmaxₚ wminₚ_pos wminₚ_le_wmaxₚ
-  Rmaxₚ Rmaxₚ_nonneg σₚ σₚ_nonneg F₁ₚ F₁ₚ_nonneg F₂ₚ F₂ₚ_nonneg
+solve trussDesignDCP hminₚ hmaxₚ hminₚ_pos hminₚ_le_hmaxₚ wminₚ wmaxₚ wminₚ_pos wminₚ_le_wmaxₚ Rmaxₚ
+  Rmaxₚ_nonneg σₚ σₚ_nonneg F₁ₚ F₁ₚ_nonneg F₂ₚ F₂ₚ_nonneg
+
+-- There are two non-trivial backward maps here, so we need to be careful.
+
+def eqv₁.backward_mapₚ := eqv₁.backward_map hminₚ.float hmaxₚ.float wminₚ.float wmaxₚ.float
+  Rmaxₚ.float σₚ.float F₁ₚ.float F₂ₚ.float
+
+def eqv₂.backward_mapₚ := eqv₂.backward_map hminₚ.float hmaxₚ.float wminₚ.float wmaxₚ.float
+  Rmaxₚ.float σₚ.float F₁ₚ.float F₂ₚ.float
+
+def sol := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ trussDesignDCP.solution)
+
+def h_opt := sol.1
+def w_opt := sol.2.1
+def r_opt := sol.2.2.1
+def R_opt := sol.2.2.2
+
+#eval h_opt -- 1.000000
+#eval w_opt -- 1.000517
+#eval r_opt -- 0.010162
+#eval R_opt -- 2.121443
+
 
 end TrussDesign
 
