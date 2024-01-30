@@ -28,9 +28,6 @@ variable (F₁ : ℝ)
 -- Horizontal left-to-right force on the joint.
 variable (F₂ : ℝ)
 
-set_option trace.Meta.debug true
-set_option pp.rawOnError true
-
 def trussDesign :=
   optimization (h w r R : ℝ) with A := 2 * π * (R ^ 2 - r ^ 2)
     minimize 2 * A * sqrt (w ^ 2 + h ^ 2)
@@ -61,8 +58,9 @@ instance : ChangeOfVariables
       simp [exp_log hh', exp_log hw', exp_log hr', exp_log hA'] }
 
 equivalence eqv/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
-    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax σ F₁ F₂ : ℝ) :
-    trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
+    (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
+    (Rmax_nonneg : 0 < Rmax) (σ : ℝ) (σ_nonneg : 0 < σ) (F₁ : ℝ) (F₁_nonneg : 0 < F₁) (F₂ : ℝ)
+    (F₂_nonneg : 0 < F₂) : trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Apply key change of variables.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
@@ -127,14 +125,11 @@ equivalence eqv/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_
   dsimp
   rename_vars [h', w', r', A']
   remove_trivial_constrs
+  -- Apply pre-DCP.
   pre_dcp
 
--- time_cmd reduction red8/dcp8 : gp8 := by
---   change_of_variables! (h') (h ↦ exp h')
---   change_of_variables! (w') (w ↦ exp w')
---   change_of_variables! (A') (A ↦ exp A')
---   change_of_variables! (r') (r ↦ exp r')
---   pre_dcp
+#print trussDesignConvex
+
 
 -- hmin = wmin = 1, hmax = wmax = 100, Rmax = 10, σ = 0.5.
 -- F1 = 10 F2 = 20
