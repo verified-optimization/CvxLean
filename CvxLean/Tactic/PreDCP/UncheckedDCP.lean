@@ -20,26 +20,37 @@ partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl) (o
       | none => return none)
 where
   findUncheckedAtoms (e : Expr) (vars params : Array FVarId) : MetaM (Tree String String) := do
+    -- Numerical constants need to be handled separately, as they are ignored by `DCP`.
     let optParamsIds := (← getAllOptimizationParams).map FVarId.mk
     if e.isRelativelyConstant (vars ++ params ++ optParamsIds) then
-      -- NOTE: There are special cases for constants with negation and
-      -- division, but what about something like 2 * 3?
-      let mut e := e
-      let mut res := Tree.leaf "unknown"
-      let mut hasNeg := false
-      if e.getAppFn.constName == `Neg.neg then
-        e := e.getArg! 2
-        hasNeg := true
-      if e.getAppFn.constName == `HDiv.hDiv then
-        let a ← Lean.PrettyPrinter.ppExpr <| e.getArg! 4
-        let b ← Lean.PrettyPrinter.ppExpr <| e.getArg! 5
-        res := Tree.node "div" #[Tree.leaf s!"{a}", Tree.leaf s!"{b}"]
+      -- NOTE: We do not handle everything, e.g., `log(2)`.
+      if e.getAppFn.constName == ``Neg.neg then
+        let a ← findUncheckedAtoms (e.getArg! 4) vars params
+        return Tree.node "neg" #[a]
+      else if e.getAppFn.constName == ``HAdd.hAdd then
+        let a ← findUncheckedAtoms (e.getArg! 4) vars params
+        let b ← findUncheckedAtoms (e.getArg! 5) vars params
+        return Tree.node "add" #[a, b]
+      else if e.getAppFn.constName == ``HSub.hSub then
+        let a ← findUncheckedAtoms (e.getArg! 4) vars params
+        let b ← findUncheckedAtoms (e.getArg! 5) vars params
+        return Tree.node "sub" #[a, b]
+      else if e.getAppFn.constName == ``HMul.hMul then
+        let a ← findUncheckedAtoms (e.getArg! 4) vars params
+        let b ← findUncheckedAtoms (e.getArg! 5) vars params
+        return Tree.node "mul" #[a, b]
+      else if e.getAppFn.constName == ``HDiv.hDiv then
+        let a ← findUncheckedAtoms (e.getArg! 4) vars params
+        let b ← findUncheckedAtoms (e.getArg! 5) vars params
+        return Tree.node "div" #[a, b]
+      else if e.constName == ``Real.pi then
+        return Tree.leaf "pi"
       else
+        -- Otherwise, it's just a number so simply print?
         let ppe ← Lean.PrettyPrinter.ppExpr e
-        res := Tree.leaf s!"{ppe}"
-      if hasNeg then
-        res := Tree.node "neg" #[res]
-      return res
+        return Tree.leaf s!"{ppe}"
+
+    -- Variables and parameters.
     if e.isFVar && vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.node "var" #[Tree.leaf (toString n)]
