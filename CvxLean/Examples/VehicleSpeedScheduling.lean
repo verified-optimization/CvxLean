@@ -109,7 +109,7 @@ equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     cases div_pos_iff.mp h_di_div_ti_pos with
     | inl h_pos => exact h_pos.2
     | inr h_neg => have d_pos_i := h_d_pos i; simp at d_pos_i ⊢; linarith [h_neg.1, d_pos_i]
-  -- Add constraint to tell the system that `t` is `ε`-nonnegative.
+  -- Add constraint to tell the system that `t` is positive.
   equivalence_step =>
     apply Equivalence.add_constraint (cs' := fun t => StrongLT 0 t)
     . rintro t ⟨c_smin, _⟩ i

@@ -163,8 +163,8 @@ equivalence' eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
 
 equivalence eqv₃/trussDesignDCP (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_le_hmax : hmin ≤ hmax)
     (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax) (Rmax : ℝ)
-    (Rmax_nonneg : 0 < Rmax) (σ : ℝ) (σ_nonneg : 0 < σ) (F₁ : ℝ) (F₁_nonneg : 0 < F₁) (F₂ : ℝ)
-    (F₂_nonneg : 0 < F₂) : trussDesignConvex hmin hmax hmin_pos hmin_le_hmax wmin wmax wmin_pos
+    (Rmax_pos : 0 < Rmax) (σ : ℝ) (σ_pos : 0 < σ) (F₁ : ℝ) (F₁_pos : 0 < F₁) (F₂ : ℝ)
+    (F₂_pos : 0 < F₂) : trussDesignConvex hmin hmax hmin_pos hmin_le_hmax wmin wmax wmin_pos
       wmin_le_wmax Rmax σ F₁ F₂ := by
   -- Apply pre-DCP.
   pre_dcp
@@ -213,32 +213,32 @@ lemma wminₚ_le_wmaxₚ : wminₚ ≤ wmaxₚ := by
 def Rmaxₚ : ℝ := 10
 
 @[simp high]
-lemma Rmaxₚ_nonneg : 0 < Rmaxₚ := by
+lemma Rmaxₚ_pos : 0 < Rmaxₚ := by
   unfold Rmaxₚ; norm_num
 
 @[optimization_param]
 def σₚ : ℝ := 0.5
 
 @[simp high]
-lemma σₚ_nonneg : 0 < σₚ := by
+lemma σₚ_pos : 0 < σₚ := by
   unfold σₚ; norm_num
 
 @[optimization_param]
 def F₁ₚ : ℝ := 10
 
 @[simp high]
-lemma F₁ₚ_nonneg : 0 < F₁ₚ := by
+lemma F₁ₚ_pos : 0 < F₁ₚ := by
   unfold F₁ₚ; norm_num
 
 @[optimization_param]
 def F₂ₚ : ℝ := 20
 
 @[simp high]
-lemma F₂ₚ_nonneg : 0 < F₂ₚ := by
+lemma F₂ₚ_pos : 0 < F₂ₚ := by
   unfold F₂ₚ; norm_num
 
 solve trussDesignDCP hminₚ hmaxₚ hminₚ_pos hminₚ_le_hmaxₚ wminₚ wmaxₚ wminₚ_pos wminₚ_le_wmaxₚ Rmaxₚ
-  Rmaxₚ_nonneg σₚ σₚ_nonneg F₁ₚ F₁ₚ_nonneg F₂ₚ F₂ₚ_nonneg
+  Rmaxₚ_pos σₚ σₚ_pos F₁ₚ F₁ₚ_pos F₂ₚ F₂ₚ_pos
 
 -- There are two non-trivial backward maps here, one from `eqv₁` and one from `eqv₂`, so we need to
 -- apply both of them.
