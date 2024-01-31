@@ -1,18 +1,22 @@
-import CvxLean.Syntax.Minimization
+import CvxLean.Lib.Math.Data.Fin
 import CvxLean.Lib.Cones.All
+import CvxLean.Meta.Util.Error
+import CvxLean.Meta.Util.Debug
+import CvxLean.Syntax.Minimization
 import CvxLean.Command.Solve.Float.ProblemData
 import CvxLean.Command.Solve.Float.RealToFloat
-
 
 /-!
 # Extract coefficients from problem to generate problem data
 
-TODO
+This file defines `determineCoeffsFromExpr`, which takes a `MinimizationExpr` and returns
+`ProblemData`. This procedure is used by `Commands/Solve.lean` to be able to call an external
+solver.
 
 ## TODO
 
-* This is probably a big source of inefficency for the `solve` command. We should come up with
-  a better way to extract the numerical values from the Lean expressions.
+* This is probably a big source of inefficency for the `solve` command. We should come up with a
+  better way to extract the numerical values from the Lean expressions.
 * A first step is to not `unrollVectors` and turn thos expressions into floats directly.
 -/
 
@@ -20,8 +24,7 @@ namespace CvxLean
 
 open Lean Meta Elab Tactic
 
-/- Generate Float expression from natural number.
-TODO: Duplicate? Move? -/
+/- Generate Float expression from natural number. -/
 def mkFloat (n : Nat) : Expr :=
   mkApp3 (mkConst ``OfNat.ofNat [levelZero])
     (mkConst ``Float) (mkNatLit n) (mkApp (mkConst ``instOfNatFloat) (mkNatLit n))
@@ -38,7 +41,6 @@ def mkOfNatExpr (i : Nat) (ty : Expr) : MetaM Expr := do
 
 /- Evaluate floating point expressions. -/
 unsafe def evalFloat (e : Expr) : MetaM Float := do
-  check e
   evalExpr Float (mkConst ``Float) e
 
 /-- Generate an array of elements of a finite type -/
@@ -56,16 +58,17 @@ unsafe def elemsOfFintype (ty : Expr) : MetaM (Array Expr) := do
     let elemsr := (← elemsOfFintype tyr).map fun e =>
       mkAppN (mkConst ``Sum.inr lvl) #[tyl, tyr, e]
     return elemsl ++ elemsr
-  | _ => throwError "Unsupported finite type: {ty}"
+  | _ => throwCoeffsError "unsupported finite type ({ty})."
 
 /- Evaluate floating point matrix expressions. -/
 unsafe def evalFloatMatrix (e : Expr) : MetaM (Array (Array Float)) := do
-  let (tyn, tym) ← do (match (← inferType e) with
-  | .forallE _ tyn (.forallE _ tym (.const ``Float _) _) _ =>
-      return (tyn, tym)
-  | .app (.app (.app (.const ``Matrix _) tyn) tym) (.const ``Float _) =>
-      return (tyn, tym)
-  | _ => throwError "Not a float matrix: {e} {e.ctorName}.")
+  let (tyn, tym) ←
+    match (← inferType e) with
+    | .forallE _ tyn (.forallE _ tym (.const ``Float _) _) _ =>
+        pure (tyn, tym)
+    | .app (.app (.app (.const ``Matrix _) tyn) tym) (.const ``Float _) =>
+        pure (tyn, tym)
+    | _ => throwCoeffsError "not a float matrix ({e})."
   let elemsn ← elemsOfFintype tyn
   let elemsm ← elemsOfFintype tym
   let mut res := #[]
@@ -77,9 +80,8 @@ unsafe def evalFloatMatrix (e : Expr) : MetaM (Array (Array Float)) := do
     res := res.push row
   return res
 
-/- Create an expression that consists of an array of zeros of the given type
-shape. Used to evaluate the constant term in a constraint or objective function.
--/
+/- Create an expression that consists of an array of zeros of the given type shape. Used to evaluate
+the constant term in a constraint or objective function. -/
 partial def generateZerosOfShape (ty : Expr) : MetaM Expr :=
   match ty.consumeMData with
   -- 1-dimensional variables.
@@ -87,38 +89,34 @@ partial def generateZerosOfShape (ty : Expr) : MetaM Expr :=
       return (mkFloat 0)
   -- Vectors.
   | .forallE _ ty (.const ``Float _) _ =>
-      return (mkLambda `_ Lean.BinderInfo.default ty (mkFloat 0))
+      return (mkLambda `_ BinderInfo.default ty (mkFloat 0))
   -- Matrices.
   | .app (.app (.app (.const ``Matrix _) tyn) tym)
       (.const ``Float _) => do
-      return (mkLambda `_ Lean.BinderInfo.default tyn
-        ((mkLambda `_ Lean.BinderInfo.default tym) (mkFloat 0)))
+      return (mkLambda `_ BinderInfo.default tyn ((mkLambda `_ BinderInfo.default tym) (mkFloat 0)))
   -- Products.
   | .app (.app (.const ``Prod _) tyl) tyr => do
       let l ← generateZerosOfShape tyl
       let r ← generateZerosOfShape tyr
       return ← mkAppM ``Prod.mk #[l, r]
-  | _ => throwError "Unsupported type: {ty}"
+  | _ => throwCoeffsError "unsupported type ({ty})."
 
-/- Create an array of expressions where each expression is an array of the given
-type shape with zeros everywhere except one place. Serves as a basis and is used
-to evaluate the coefficients in a constraint or objective function. Two arrays
-are returned, one for scalar variables and one for matrix variables. -/
+/- Create an array of expressions where each expression is an array of the given type shape with
+zeros everywhere except one place. Serves as a basis and is used to evaluate the coefficients in a
+constraint or objective function. Two arrays are returned, one for scalar variables and one for
+matrix variables. -/
 unsafe def generateBasisOfShape (ty : Expr) : MetaM (Array Expr × Array Expr) :=
   match ty.consumeMData with
   -- 1-dimensional variables.
   | .const ``Float _ =>
       return (#[], #[mkFloat 1])
   -- Vectors.
-  | .forallE _
-      tyn
-      (.const ``Float _) _ => do
+  | .forallE _ tyn (.const ``Float _) _ => do
       let mut res := #[]
       for i in ← elemsOfFintype tyn do
         let b ← withLocalDeclD `i' tyn fun i' => do
-          let ite ← mkAppM ``ite
-            #[← mkEq i' i, mkFloat 1, mkFloat 0]
-          return ← mkLambdaFVars #[i'] $ ite
+          let ite ← mkAppM ``ite #[← mkEq i' i, mkFloat 1, mkFloat 0]
+          mkLambdaFVars #[i'] ite
         res := res.push b
       return (#[], res)
   -- Matrices.
@@ -129,11 +127,10 @@ unsafe def generateBasisOfShape (ty : Expr) : MetaM (Array Expr × Array Expr) :
         for j in ← elemsOfFintype tym do
           let b ← withLocalDeclD `i' tyn fun i' => do
             withLocalDeclD `j' tym fun j' => do
-              let ite ← mkAppM ``ite
-                #[mkAnd (← mkEq i' i) (← mkEq j' j),
-                  mkFloat 1, mkFloat 0]
-              return ← mkLambdaFVars #[i', j'] $ ite
+              let ite ← mkAppM ``ite #[mkAnd (← mkEq i' i) (← mkEq j' j), mkFloat 1, mkFloat 0]
+              mkLambdaFVars #[i', j'] ite
           res := res.push b
+
       -- TODO: For now we're treating matrices as a bunch of scalars.
       return (#[], res)
   -- Products.
@@ -141,8 +138,6 @@ unsafe def generateBasisOfShape (ty : Expr) : MetaM (Array Expr × Array Expr) :
       let r₀ ← generateZerosOfShape tyr
       let l₀ ← generateZerosOfShape tyl
 
-      -- TODO: This might be wrong. We want all the basis together but identify
-      -- when we put ones on the matrices.
       let (sls₁, mls₁) ← generateBasisOfShape tyl
       let sls ← sls₁.mapM fun l => mkAppM ``Prod.mk #[l, r₀]
       let mls ← mls₁.mapM fun l => mkAppM ``Prod.mk #[l, r₀]
@@ -152,7 +147,7 @@ unsafe def generateBasisOfShape (ty : Expr) : MetaM (Array Expr × Array Expr) :
       let mrs ← mrs₁.mapM fun r => mkAppM ``Prod.mk #[l₀, r]
 
       return (sls ++ srs, mls ++ mrs)
-  | _ => throwError "Unsupported type: {ty}"
+  | _ => throwCoeffsError "unsupported type ({ty})."
 
 /- Generates list of constraints with all the vectors unrolled. -/
 unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
@@ -209,9 +204,8 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
 
   return res
 
-/- Given an expression (scalar constraint or objective function) and a variable
-`p` with type corresponding to the domain, return the coefficients and the
-constant term. -/
+/- Given an expression (scalar constraint or objective function) and a variable `p` with type
+corresponding to the domain, return the coefficients and the constant term. -/
 unsafe def determineScalarCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
     MetaM (Array Float × Float) := do
   -- Constant part.
@@ -227,7 +221,7 @@ unsafe def determineScalarCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
     coeffs := coeffs.push ((← evalFloat coeff) - const)
   return (coeffs, const)
 
-/- Same as above, but for matrix affine constraints. -/
+/- Same as `determineScalarCoeffsAux`, but for matrix affine constraints. -/
 unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
     MetaM (Array (Array (Array Float)) × Array (Array Float)) := do
   -- Constant part.
@@ -249,15 +243,16 @@ unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
     coeffs := coeffs.push floatCoeff
   return (coeffs, const)
 
-instance {n m : ℕ} : OfNat (Fin n.succ ⊕ Fin m.succ) (x) where
-  ofNat := if x <= n then Sum.inl (Fin.ofNat x) else Sum.inr (Fin.ofNat (x - n.succ))
-
-/-- Indices to group constraints together and tag cones with the correct
-dimension when translating the data into CBF format. This happens with the
-exponential cone, quadratic cone and rotated quadratic cone, for instance. -/
+/-- Indices to group constraints together and tag cones with the correct dimension when translating
+the data into CBF format. This happens with the exponential cone, quadratic cone and rotated
+quadratic cone, for instance. -/
 def ScalarAffineSections : Type := Array Nat
 
-unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
+/-- Given a `MinimizationExpr`, representing a problem, assuming that it is in conic form, generate
+a `ProblemData`. The expression is first translated to floats, then we find the coefficients of all
+the affine terms involved in the cone membership constraints by plugging in the appropriate basis
+vectors and matrices and computing. This function also keeps track of how the cones are split. -/
+unsafe def determineCoeffsFromExpr (minExpr : MinimizationExpr) :
     MetaM (ProblemData × ScalarAffineSections) := do
   let floatDomain ← realToFloat minExpr.domain
 
@@ -277,7 +272,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
     -- Coefficients for constraints.
     let mut idx := 0
     for c in cs do
-      trace[Meta.debug] "Coeffs going through constraint {c}."
+      trace[CvxLean.debug] "`coeffs` going through constraint {c}."
       let mut isTrivial := false
       match Expr.consumeMData c with
       | .const ``True _ => do
@@ -289,7 +284,6 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
           idx := idx + 1
       | .app (.const ``Real.posOrthCone _) e => do
           let e ← realToFloat e
-          trace[Meta.debug] "Coeffs going through posOrthCone {e}."
           let res ← determineScalarCoeffsAux e p floatDomain
           data := data.addPosOrthConstraint res.1 res.2
           idx := idx + 1
@@ -297,8 +291,8 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
           let res ← #[a, b, c].mapM fun e => do
             let e ← realToFloat e
             return ← determineScalarCoeffsAux e p floatDomain
-          -- NOTE: The order here is important. In MOSEK, x and z are swapped in
-          -- the definition of the EXP cone.
+          -- NOTE: The order here is important. In MOSEK, x and z are swapped in the definition of
+          -- the EXP cone.
           data := data.addExpConstraint res[2]!.1 res[2]!.2
           data := data.addExpConstraint res[1]!.1 res[1]!.2
           data := data.addExpConstraint res[0]!.1 res[0]!.2
@@ -307,8 +301,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
           (.app (.const ``Fin _) n)) _) v) w) x => do
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n
           -- TODO: This is a common issue with all vectors.
-          let xis ← (Array.range n).mapM
-            (fun i => return (mkApp x (← mkFinIdxExpr i n)))
+          let xis ← (Array.range n).mapM (fun i => return (mkApp x (← mkFinIdxExpr i n)))
           for e in (#[v, w] ++ xis) do
             let e ← realToFloat e
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
@@ -318,8 +311,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
           (.app (.const ``Fin _) n)) _) t) x => do
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n
           -- TODO: This is a common issue with all vectors.
-          let xis ← (Array.range n).mapM
-            (fun i => return (mkApp x (← mkFinIdxExpr i n)))
+          let xis ← (Array.range n).mapM (fun i => return (mkApp x (← mkFinIdxExpr i n)))
           for e in (#[t] ++ xis) do
             let e ← realToFloat e
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
@@ -356,7 +348,7 @@ unsafe def determineCoeffsFromExpr (minExpr : Meta.MinimizationExpr) :
               let (a, b) ← determineScalarCoeffsAux e p floatDomain
               data := data.addZeroConstraint a b
               idx := idx + 1
-      | _ => throwError "No match: {c}."
+      | _ => throwCoeffsError "no match ({c})."
       -- New group, add idx.
       if !isTrivial then
         sections := sections.push idx
