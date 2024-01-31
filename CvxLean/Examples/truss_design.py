@@ -15,19 +15,6 @@ w = cp.Variable(pos=True)
 r = cp.Variable(pos=True)
 A = cp.Variable(pos=True)
 
-#   optimization (h : ℝ) (w : ℝ) (r : ℝ) (A : ℝ) 
-#     minimize 2 * A * sqrt (w ^ 2 + h ^ 2)
-#     subject to
-#       c_r : 0 < r
-#       c_F₁ : F₁ * sqrt (w ^ 2 + h ^ 2) / (2 * h) ≤ σ * A
-#       c_F₂ : F₂ * sqrt (w ^ 2 + h ^ 2) / (2 * w) ≤ σ * A
-#       c_hmin : hmin ≤ h
-#       c_hmax : h ≤ hmax
-#       c_wmin : wmin ≤ w
-#       c_wmax : w ≤ wmax
-#       c_A_lb : 0.21 * r ^ 2 ≤ A / (2 * π)
-#       c_A_ub : sqrt (A / (2 * π) + r ^ 2) ≤ Rmax
-
 p = cp.Problem(
     cp.Minimize(2 * A * cp.sqrt(cp.square(w) + cp.square(h))), [
         f1 * cp.sqrt(cp.square(w) + cp.square(h)) / (2 * h) <= sigma * A,

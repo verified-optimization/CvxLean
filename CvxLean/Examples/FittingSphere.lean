@@ -107,10 +107,14 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
   rename_vars [c, t]
 
 #print fittingSphereT
+-- optimization (c : Fin n → ℝ) (t : ℝ)
+--   minimize Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2)
+--   subject to
+--     h₁ : 0 < sqrt (t + ‖c‖ ^ 2)
 
 -- Next, we proceed to remove the non-convex constraint by arguing that any (non-trivial) point that
--- minimizes the objective function wihtout the constraint, also satisfies the constraint. We define
--- the problem directly, bot note that we could also remove the constraint using the `relaxation`
+-- minimizes the objective function without the constraint, also satisfies the constraint. We define
+-- the problem directly, but note that we could also remove the constraint using the `relaxation`
 -- command.
 
 def fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) :=
@@ -199,6 +203,8 @@ def red (hm : 0 < m) (hx : ∃ i j, x i ≠ x j) :
       exact optimal_convex_implies_optimal_t n m x hm c t h_nontrivial h_opt }
 
 #print fittingSphereConvex
+-- optimization (c : Fin n → ℝ) (t : ℝ)
+--   minimize Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2)
 
 -- We proceed to solve the problem on a concrete example.
 -- https://github.com/cvxgrp/cvxbook_additional_exercises/blob/main/python/sphere_fit_data.py
@@ -228,7 +234,11 @@ solve fittingSphereConvex nₚ mₚ xₚ
 
 def sol := eqv.backward_map nₚ mₚ xₚ.float fittingSphereConvex.solution
 
-#eval sol -- (![1.664863, 0.031932], 1.159033)
+def cₚ_opt := sol.1
+def rₚ_opt := sol.2
+
+#eval cₚ_opt -- ![1.664863, 0.031932]
+#eval rₚ_opt -- 1.159033
 
 end FittingSphere
 

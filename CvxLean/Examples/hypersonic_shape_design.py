@@ -1,9 +1,9 @@
 import cvxpy as cp 
 import numpy as np
 
-a = .05 # height of rectangle
+a = .05
 
-b = .65 # width of rectangle
+b = .65
 
 x = cp.Variable(pos=True)
 
@@ -16,9 +16,9 @@ p = cp.Problem(
 
 p.solve(qcp=True, verbose=True)
 
-print('QCP Final L/D Ratio = ', 1 / obj.value)
-print('QCP Final width of wedge = ', x.value)
-print('QCP Final height of wedge = ', np.sqrt(1 - x.value ** 2))
+print('QCP w* = ', x.value)
+print('QCP h* = ', np.sqrt(1 - x.value ** 2))
+print('QCP L/D Ratio = ', 1 / obj.value)
 
 x = cp.Variable(pos=True)
 
@@ -31,8 +31,6 @@ p = cp.Problem(
 
 p.solve(verbose=True)
 
-print('DCP Final L/D Ratio = ', 1 / np.sqrt(obj.value))
-print('DCP Final width of wedge = ', x.value)
-print('DCP Final height of wedge = ', np.sqrt(1 - x.value ** 2))
-
-
+print('DCP w* = ', x.value)
+print('DCP h* = ', np.sqrt(1 - x.value ** 2))
+print('DCP L/D Ratio = ', 1 / np.sqrt(obj.value))

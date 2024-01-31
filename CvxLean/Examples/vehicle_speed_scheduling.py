@@ -36,14 +36,14 @@ p.solve(verbose=True)
 
 s = d / t.value
 
-def plot(s):
+print("t* = ", t.value)
+print("s* = ", s)
+
+def plot_speed(s):
     plt.step(np.arange(n), s)
     plt.xlabel('$i$')
     plt.ylabel('$s_i$')
     plt.savefig("plots/vehicle_speed_scheduling.png")
     plt.show()
 
-print("t* = ", t.value)
-print("s* = ", s)
-
-plot(s)
+# plot_speed(s)

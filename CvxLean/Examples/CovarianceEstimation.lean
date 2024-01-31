@@ -4,15 +4,15 @@ namespace CovarianceEstimation
 
 open CvxLean Minimization Real BigOperators Matrix
 
-noncomputable def problem (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) :=
+noncomputable def covEstimation (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n →  ℝ) :=
   optimization (R : Matrix (Fin n) (Fin n) ℝ)
     maximize (∏ i, gaussianPdf R (y i))
     subject to
       c_pos_def : R.PosDef
       c_sparse : R⁻¹.abs.sum ≤ α
 
-reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n → ℝ) :
-  problem n N α y := by
+reduction red/covEstimationConvex (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n → ℝ) :
+  covEstimation n N α y := by
   -- Change objective function.
   reduction_step =>
     apply Reduction.map_objFun_of_order_reflecting (g := fun x => -log (-x))
@@ -52,15 +52,23 @@ reduction reduction₁₂/problem₂ (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N �
       intro hR
       rw [nonsing_inv_nonsing_inv R hR.isUnit_det]
 
-#print problem₂
+#print covEstimationConvex
+-- optimization (R : Matrix (Fin n) (Fin n) ℝ)
+--   minimize
+--     -(-(N • log (sqrt ((2 * π) ^ n)) + N • (-log (det R) / 2)) +
+--         -(↑N * trace ((covarianceMatrix fun x => y x) * Rᵀ) / 2))
+--   subject to
+--     c_pos_def : PosDef R
+--     c_sparse : sum (Matrix.abs R) ≤ α
 
 set_option maxHeartbeats 20000000
-solve problem₂ 2 4 1 ![![0,2],![2,0],![-2,0],![0,-2]]
 
-#print problem₂.reduced
+solve covEstimationConvex 2 4 1 ![![0,2],![2,0],![-2,0],![0,-2]]
 
-#eval problem₂.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
-#eval problem₂.value    -- 14.124098
-#eval problem₂.solution -- ![![0.499903, 0.000000], ![0.000000, 0.499905]]
+#print covEstimationConvex.reduced
+
+#eval covEstimationConvex.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
+#eval covEstimationConvex.value    -- 14.124098
+#eval covEstimationConvex.solution -- ![![0.499903, 0.000000], ![0.000000, 0.499905]]
 
 end CovarianceEstimation

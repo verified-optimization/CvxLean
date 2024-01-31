@@ -107,6 +107,17 @@ equivalence' eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) 
   rename_constrs [c_r, c_F₁, c_F₂, c_hmin, c_hmax, c_wmin, c_wmax, c_A_lb, c_A_ub]
 
 #print trussDesignGP
+-- minimize 2 * A * sqrt (w ^ 2 + h ^ 2)
+--   subject to
+--     c_r : 0 < r
+--     c_F₁ : F₁ * sqrt (w ^ 2 + h ^ 2) / (2 * h) ≤ σ * A
+--     c_F₂ : F₂ * sqrt (w ^ 2 + h ^ 2) / (2 * w) ≤ σ * A
+--     c_hmin : hmin ≤ h
+--     c_hmax : h ≤ hmax
+--     c_wmin : wmin ≤ w
+--     c_wmax : w ≤ wmax
+--     c_A_lb : 0.21 * r ^ 2 ≤ A / (2 * π)
+--     c_A_ub : sqrt (A / (2 * π) + r ^ 2) ≤ Rmax
 
 instance : ChangeOfVariables
     fun ((h', w', r', A') : ℝ × ℝ × ℝ × ℝ) => (exp h', exp w', exp r', exp A') :=
@@ -135,6 +146,17 @@ equivalence' eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
   remove_trivial_constrs
 
 #print trussDesignConvex
+-- optimization (h' : ℝ) (w' : ℝ) (r' : ℝ) (A' : ℝ)
+--   minimize 2 * rexp A' * sqrt (rexp w' ^ 2 + rexp h' ^ 2)
+--   subject to
+--     c_F₁ : F₁ * sqrt (rexp w' ^ 2 + rexp h' ^ 2) / (2 * rexp h') ≤ σ * rexp A'
+--     c_F₂ : F₂ * sqrt (rexp w' ^ 2 + rexp h' ^ 2) / (2 * rexp w') ≤ σ * rexp A'
+--     c_hmin : hmin ≤ rexp h'
+--     c_hmax : rexp h' ≤ hmax
+--     c_wmin : wmin ≤ rexp w'
+--     c_wmax : rexp w' ≤ wmax
+--     c_A_lb : 0.21 * rexp r' ^ 2 ≤ rexp A' / (2 * π)
+--     c_A_ub : sqrt (rexp A' / (2 * π) + rexp r' ^ 2) ≤ Rmax
 
 -- We split these two steps, to make speed up backward map creation as there are ~80 pre-DCP steps
 -- which need to be simplified into a single map (which should be just `id`).
@@ -148,6 +170,16 @@ equivalence eqv₃/trussDesignDCP (hmin hmax : ℝ) (hmin_pos : 0 < hmin) (hmin_
   pre_dcp
 
 #print trussDesignDCP
+-- minimize log (rexp (2 * h') + rexp (2 * w')) + 2 * (log 2 + A')
+--   subject to
+--     c_F₁ : 1 / 2 * log (rexp (2 * h') + rexp (2 * w')) ≤ log σ + A' - (log (F₁ / 2) - h')
+--     c_F₂ : 1 / 2 * log (rexp (2 * h') + rexp (2 * w')) ≤ log σ + (w' + A') - log (F₂ / 2)
+--     c_hmin : log hmin ≤ h'
+--     c_hmax : rexp h' ≤ hmax
+--     c_wmin : log wmin ≤ w'
+--     c_wmax : rexp w' ≤ wmax
+--     c_A_lb : log (21 / 100) + 2 * r' ≤ A' - log (2 * π)
+--     c_A_ub : rexp A' ≤ (Rmax * Rmax - rexp (2 * r')) * (2 * π)
 
 -- We provide concrete values and solve the problem.
 

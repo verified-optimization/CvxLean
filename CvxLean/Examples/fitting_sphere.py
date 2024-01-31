@@ -25,10 +25,8 @@ p = cp.Problem(
         ), [])
 p.solve(solver=cp.MOSEK, verbose=True)
 
-# Backward map from change of variables.
 r = np.sqrt(t.value + (np.linalg.norm(c.value) ** 2))
 
-print("t* = ", t.value)
 print("c* = ", c.value)
 print("r* = ", r)
 
@@ -46,4 +44,4 @@ def plot_circle_and_points(center, radius, points):
     plt.show()
     plt.savefig('plots/fitting_sphere.png')
 
-plot_circle_and_points(c.value, r, x)
+# plot_circle_and_points(c.value, r, x)

@@ -82,6 +82,13 @@ equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
   rename_constrs [c_smin, c_smax, c_τmin, c_τmax]
 
 #print vehSpeedSchedConvex
+-- optimization (t : Fin n → ℝ)
+--   minimize Vec.sum (t * Vec.map F (d / t))
+--   subject to
+--     c_smin : smin ≤ d / t
+--     c_smax : d / t ≤ smax
+--     c_τmin : τmin ≤ Vec.cumsum t
+--     c_τmax : Vec.cumsum t ≤ τmax
 
 #check eqv₁.backward_map
 
@@ -130,6 +137,14 @@ equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
   -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
 
 #print vehSpeedSchedQuadratic
+-- optimization (t : Fin n → ℝ)
+--   minimize Vec.sum (a • d ^ 2 * (1 / t) + b • d + c • t)
+--   subject to
+--     c_t : StrongLT 0 t
+--     c_smin : smin * t ≤ d
+--     c_smax : d ≤ smax * t
+--     c_τmin : τmin ≤ Vec.cumsum t
+--     c_τmax : Vec.cumsum t ≤ τmax
 
 #check eqv₂.backward_map
 
@@ -215,9 +230,9 @@ def eqv₂.backward_mapₚ := eqv₂.backward_map nₚ dₚ.float τminₚ.float
 
 -- Finally, we can obtain the solution to the original problem.
 
-def sol := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ p.solution)
+def sₚ_opt := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ p.solution)
 
-#eval sol
+#eval sₚ_opt
 -- ![0.955578, 0.955548, 0.955565, 0.955532, 0.955564, 0.955560, 0.912362, 0.960401, 0.912365,
 --   0.912375]
 
