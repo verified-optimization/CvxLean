@@ -1,15 +1,15 @@
-/-
--/
-
 /-!
 # Conic Benchmark Format
 
 See <https://docs.mosek.com/latest/rmosek/cbf-format.html>.
+
+The main definition is `CBF.Problem`, the rest is a series of functions to make an element of such
+type.
 -/
 
 namespace CBF
 
-/-- Objective sense. Either a maximisation or minimisation problem. -/
+/-- Objective sense. Either a maximization or minimization problem. -/
 inductive ObjSense
 | MAX | MIN
 
@@ -22,8 +22,10 @@ instance : ToString ObjSense where
 
 end ObjSense
 
-/-- Cone type: free, positive orthant, negative orthant, fixpoint zero (for
-equality), quadratic, quadratic rotated or exponential. -/
+/-- Cone type: free, positive orthant, negative orthant, fixpoint zero (for equality), quadratic,
+quadratic rotated or exponential. The quadratic cone is called second-order in other parts of the
+project. Note that this definition is independent from the cone types in
+`Command/Solve/Float/ProblemData.lean`. -/
 inductive ConeType
   | F | LPos | LNeg | LEq | Q | QR | EXP
 deriving DecidableEq
@@ -54,8 +56,8 @@ instance : ToString Cone where
 
 end Cone
 
-/-- Holds the total dimension (n), number of cones (k), and a list of cones
-([t₁, d₁], ..., [tₖ, dₖ]). We must have that ∑dᵢ = n. -/
+/-- Holds the total dimension (`n`), number of cones (`k`), and a list of cones
+(`[t₁, d₁], ..., [tₖ, dₖ]`). We must have that `∑dᵢ = n`. -/
 structure ConeProduct where
   n : Nat
   k : Nat
@@ -121,7 +123,7 @@ instance : Decidable (isEmpty ev) := decEq _ _
 
 end EncodedValue
 
-/-- Represents the value  aᵢ. -/
+/-- Represents the value  `aᵢ`. -/
 structure EncodedVectorEntry where
   i : Nat
   value : Float
@@ -136,7 +138,7 @@ def fromIndexAndValue (i : Nat) (v : Float) : EncodedVectorEntry :=
 
 end EncodedVectorEntry
 
-/-- Represents the vector a = (aᵢ) where n entries are non-zero. -/
+/-- Represents the vector `a = (aᵢ)` where `n` entries are non-zero. -/
 structure EncodedVector where
   n : Nat
   values : List EncodedVectorEntry
@@ -155,7 +157,7 @@ def isEmpty (ev : EncodedVector) : Prop := ev.n = 0
 instance : Decidable (isEmpty ev) := Nat.decEq _ _
 
 def addEntry (ev : EncodedVector) (eve : EncodedVectorEntry) : EncodedVector :=
-  if eve.value < 0 ∨ eve.value > 0 then
+  if eve.value < 0 || eve.value > 0 then
     EncodedVector.mk (ev.n + 1) (ev.values.concat eve)
   else
     ev
@@ -164,7 +166,7 @@ def stack (ev1 ev2 : EncodedVector) : EncodedVector :=
   EncodedVector.mk (ev1.n + ev2.n) (ev1.values ++ ev2.values)
 
 def fromIndexAndValue (i : Nat) (v : Float) : EncodedVector :=
-  if v > 0 ∨ v < 0 then
+  if v > 0 || v < 0 then
     EncodedVector.mk 1 [EncodedVectorEntry.fromIndexAndValue i v]
   else
     EncodedVector.mk 0 []
@@ -172,13 +174,13 @@ def fromIndexAndValue (i : Nat) (v : Float) : EncodedVector :=
 def fromArray (a : Array Float) : EncodedVector := Id.run <| do
   let mut ev := empty
   for (i, ai) in a.data.enum do
-    if ai > 0 ∨ ai < 0 then
+    if ai > 0 || ai < 0 then
       ev := ev.addEntry (EncodedVectorEntry.mk i ai)
   return ev
 
 end EncodedVector
 
-/-- Represents the vlaue aᵢⱼ. -/
+/-- Represents the vlaue `aᵢⱼ`. -/
 structure EncodedMatrixEntry where
   i : Nat
   j : Nat
@@ -192,13 +194,12 @@ instance : ToString EncodedMatrixEntry where
     (toString eme.j) ++ " " ++
     (toString eme.value)
 
-def fromIndexAndEncodedVectorEntry (i : Nat) (eve : EncodedVectorEntry)
-  : EncodedMatrixEntry :=
+def fromIndexAndEncodedVectorEntry (i : Nat) (eve : EncodedVectorEntry) : EncodedMatrixEntry :=
   EncodedMatrixEntry.mk i eve.i eve.value
 
 end EncodedMatrixEntry
 
-/-- Represents the matrix A = (aᵢⱼ) where n entries are non-zero. -/
+/-- Represents the matrix `A = (aᵢⱼ)` where `n` entries are non-zero. -/
 structure EncodedMatrix where
   n : Nat
   values : List EncodedMatrixEntry
@@ -217,15 +218,15 @@ def isEmpty (em : EncodedMatrix) : Prop := em.n = 0
 instance : Decidable (isEmpty em) := Nat.decEq _ _
 
 def addEntry (em : EncodedMatrix) (eme : EncodedMatrixEntry) : EncodedMatrix :=
-  if /- eme.i >= eme.j ∧ -/ (eme.value < 0 ∨ eme.value > 0) then
+  if eme.value < 0 || eme.value > 0 then
     EncodedMatrix.mk (em.n + 1) (em.values.concat eme)
-  else em
+  else
+    em
 
 def stack (em1 em2 : EncodedMatrix) : EncodedMatrix :=
   EncodedMatrix.mk (em1.n + em2.n) (em1.values ++ em2.values)
 
-def fromIndexAndEncodedVector (i : Nat) (ev : EncodedVector)
-  : EncodedMatrix := Id.run <| do
+def fromIndexAndEncodedVector (i : Nat) (ev : EncodedVector) : EncodedMatrix := Id.run <| do
   let mut em := empty
   for eve in ev.values do
     let eme := EncodedMatrixEntry.fromIndexAndEncodedVectorEntry i eve
@@ -236,13 +237,13 @@ def fromArray (A : Array (Array Float)) : EncodedMatrix := Id.run <| do
   let mut em := empty
   for (i, ai) in A.data.enum do
     for (j, aij) in ai.data.enum do
-      if i >= j ∧ (aij > 0 ∨ aij < 0) then
+      if i >= j && (aij > 0 || aij < 0) then
         em := em.addEntry (EncodedMatrixEntry.mk i j aij)
   return em
 
 end EncodedMatrix
 
-/-- Represents the entry Aⱼₖ in the ith matrix in the list. -/
+/-- Represents the entry `Aⱼₖ` in the ith matrix in the list. -/
 structure EncodedMatrixListEntry where
   i : Nat
   j : Nat
@@ -258,14 +259,13 @@ instance : ToString EncodedMatrixListEntry where
     (toString emle.k) ++ " " ++
     (toString emle.value)
 
-def fromIndexAndEncodedMatrixEntry (i : Nat) (eme : EncodedMatrixEntry)
-  : EncodedMatrixListEntry :=
+def fromIndexAndEncodedMatrixEntry (i : Nat) (eme : EncodedMatrixEntry) : EncodedMatrixListEntry :=
   EncodedMatrixListEntry.mk i eme.i eme.j eme.value
 
 end EncodedMatrixListEntry
 
-/-- Represents L = [A₁, ...] where the total number of non-zero entries of all
-the matrices Aᵢ is n. -/
+/-- Represents `L = [A₁, ...]` where the total number of non-zero entries of all the matrices `Aᵢ`
+is `n`. -/
 structure EncodedMatrixList where
   n : Nat
   values : List EncodedMatrixListEntry
@@ -283,37 +283,34 @@ def isEmpty (eml : EncodedMatrixList) : Prop := eml.n = 0
 
 instance : Decidable (isEmpty eml) := Nat.decEq _ _
 
-def addEntry (eml : EncodedMatrixList) (emle : EncodedMatrixListEntry)
-  : EncodedMatrixList :=
-  if /- emle.j >= emle.k ∧ -/ (emle.value > 0 ∨ emle.value < 0) then
+def addEntry (eml : EncodedMatrixList) (emle : EncodedMatrixListEntry) : EncodedMatrixList :=
+  if emle.value > 0 || emle.value < 0 then
     EncodedMatrixList.mk (eml.n + 1) (eml.values.concat emle)
-  else eml
+  else
+    eml
 
-def stack (eml1 eml2 : EncodedMatrixList)
-  : EncodedMatrixList :=
+def stack (eml1 eml2 : EncodedMatrixList) : EncodedMatrixList :=
   EncodedMatrixList.mk (eml1.n + eml2.n) (eml1.values ++ eml2.values)
 
-def fromIndexAndEncodedMatrix (i : Nat) (em : EncodedMatrix)
-  : EncodedMatrixList := Id.run <| do
+def fromIndexAndEncodedMatrix (i : Nat) (em : EncodedMatrix) : EncodedMatrixList := Id.run <| do
   let mut eml := empty
   for eme in em.values do
     let emle := EncodedMatrixListEntry.fromIndexAndEncodedMatrixEntry i eme
     eml := eml.addEntry emle
   eml
 
-def fromArray (A : Array (Array (Array Float)))
-  : EncodedMatrixList := Id.run <| do
+def fromArray (A : Array (Array (Array Float))) : EncodedMatrixList := Id.run <| do
   let mut eml := empty
   for (i, ai) in A.data.enum do
     for (j, aij) in ai.data.enum do
       for (k, aijk) in aij.data.enum do
-        if j >= k ∧ (aijk > 0 ∨ aijk < 0) then
+        if j >= k && (aijk > 0 || aijk < 0) then
           eml := eml.addEntry (EncodedMatrixListEntry.mk i j k aijk)
   return eml
 
 end EncodedMatrixList
 
-/-- Represents the entry Aₖₗ in the jth matrix of the ith list. -/
+/-- Represents the entry `Aₖₗ` in the `j`-th matrix of the `i`-th list. -/
 structure EncodedMatrixListListEntry where
   i : Nat
   j : Nat
@@ -331,14 +328,14 @@ instance : ToString EncodedMatrixListListEntry where
     (toString emlle.l) ++ " " ++
     (toString emlle.value)
 
-def fromIndexAndEncodedMatrixList (i : Nat) (emle : EncodedMatrixListEntry)
-  : EncodedMatrixListListEntry :=
+def fromIndexAndEncodedMatrixList (i : Nat) (emle : EncodedMatrixListEntry) :
+    EncodedMatrixListListEntry :=
   EncodedMatrixListListEntry.mk i emle.i emle.j emle.k emle.value
 
 end EncodedMatrixListListEntry
 
-/-- Represents C = [L₁, ...] where each Lᵢ is a list of matrices and n is the
-total number of non-zero entries. -/
+/-- Represents `C = [L₁, ...]` where each `Lᵢ` is a list of matrices and `n` is the total number of
+non-zero entries. -/
 structure EncodedMatrixListList where
   n : Nat
   values : List EncodedMatrixListListEntry
@@ -356,39 +353,38 @@ def isEmpty (emll : EncodedMatrixListList) : Prop := emll.n = 0
 
 instance : Decidable (isEmpty emll) := Nat.decEq _ _
 
-def addEntry (emll : EncodedMatrixListList) (emlle : EncodedMatrixListListEntry)
-  : EncodedMatrixListList :=
-  if /- emlle.k >= emlle.l ∧ -/ (emlle.value > 0 ∨ emlle.value < 0) then
+def addEntry (emll : EncodedMatrixListList) (emlle : EncodedMatrixListListEntry) :
+    EncodedMatrixListList :=
+  if emlle.value > 0 || emlle.value < 0 then
     EncodedMatrixListList.mk (emll.n + 1) (emll.values.concat emlle)
   else emll
 
 def stack (eml1 eml2 : EncodedMatrixListList) : EncodedMatrixListList :=
   EncodedMatrixListList.mk (eml1.n + eml2.n) (eml1.values ++ eml2.values)
 
-def fromIndexAndEncodedMatrixList (i : Nat) (eml : EncodedMatrixList)
-  : EncodedMatrixListList := Id.run <| do
+def fromIndexAndEncodedMatrixList (i : Nat) (eml : EncodedMatrixList) :
+    EncodedMatrixListList := Id.run <| do
   let mut emll := empty
   for emle in eml.values do
     let emlle := EncodedMatrixListListEntry.fromIndexAndEncodedMatrixList i emle
     emll := emll.addEntry emlle
   emll
 
--- TODO: why k >= l
-def fromArray (A : Array (Array (Array (Array Float))))
-  : EncodedMatrixListList := Id.run <| do
+def fromArray (A : Array (Array (Array (Array Float)))) :
+    EncodedMatrixListList := Id.run <| do
   let mut emll := empty
   for (i, ai) in A.data.enum do
     for (j, aij) in ai.data.enum do
       for (k, aijk) in aij.data.enum do
         for (l, aijkl) in aijk.data.enum do
-          if k >= l ∧ (aijkl > 0 ∨ aijkl < 0) then
+          if k >= l && (aijkl > 0 || aijkl < 0) then
             emll := emll.addEntry (EncodedMatrixListListEntry.mk i j k l aijkl)
   return emll
 
 end EncodedMatrixListList
 
-/-- This is the main definition. It represents a full problem in conic benchmark
-format. The problem is defined as follows:
+/-- This is the main definition. It represents a full problem in conic benchmark format. The problem
+is defined as follows:
 
     min/max     g^obj
       s.t.   g_i ∈ K_i for i ∈ I        --> Scalar constraints
@@ -415,8 +411,7 @@ It contains the following headers (and their counterparts):
     ACOORD        scalarConstraintsScalarVariablesCoord   a
     BCOORD        scalarConstraintsShiftCoord             b
     HCOORD        PSDConstraintsScalarVariablesCoord      H
-    DCOORD        PSDConstraintsShiftCoord                D
- -/
+    DCOORD        PSDConstraintsShiftCoord                D -/
 structure Problem where
   version : Nat
   objSense : ObjSense
@@ -497,62 +492,46 @@ def empty : Problem := {
 
 /- Setters. -/
 
-def setVersion (p : Problem) (v : Nat)
-  : Problem :=
+def setVersion (p : Problem) (v : Nat) : Problem :=
   { p with version := v }
 
-def setObjSense (p : Problem) (os : ObjSense)
-  : Problem :=
+def setObjSense (p : Problem) (os : ObjSense) : Problem :=
   { p with objSense := os }
 
-def setScalarVariables (p : Problem) (cp : ConeProduct)
-  : Problem :=
+def setScalarVariables (p : Problem) (cp : ConeProduct) : Problem :=
   { p with scalarVariables := cp }
 
-def setPSDVariables (p : Problem) (dl : DimensionList)
-  : Problem :=
+def setPSDVariables (p : Problem) (dl : DimensionList) : Problem :=
   { p with PSDVariables := dl }
 
-def setScalarConstraints (p : Problem) (cp : ConeProduct)
-  : Problem :=
+def setScalarConstraints (p : Problem) (cp : ConeProduct) : Problem :=
   { p with scalarConstraints := cp }
 
-def setPSDConstraints (p : Problem) (dl : DimensionList)
-  : Problem :=
+def setPSDConstraints (p : Problem) (dl : DimensionList) : Problem :=
   { p with PSDConstraints := dl }
 
-def setObjectivePSDVariablesCoord (p : Problem) (eml : EncodedMatrixList)
-  : Problem :=
+def setObjectivePSDVariablesCoord (p : Problem) (eml : EncodedMatrixList) : Problem :=
   { p with objectivePSDVariablesCoord := eml }
 
-def setObjectiveScalarVariablesCoord (p : Problem) (ev : EncodedVector)
-  : Problem :=
+def setObjectiveScalarVariablesCoord (p : Problem) (ev : EncodedVector) : Problem :=
   { p with objectiveScalarVariablesCoord := ev }
 
 def setObjectiveShiftCoord (p : Problem) (ev : EncodedValue) : Problem :=
   { p with objectiveShiftCoord := ev }
 
-def setScalarConstraintsPSDVariablesCoord
-  (p : Problem) (emll : EncodedMatrixListList)
-  : Problem :=
+def setScalarConstraintsPSDVariablesCoord (p : Problem) (emll : EncodedMatrixListList) : Problem :=
   { p with scalarConstraintsPSDVariablesCoord := emll }
 
-def setScalarConstraintsScalarVariablesCoord
-  (p : Problem) (em : EncodedMatrix)
-  : Problem :=
+def setScalarConstraintsScalarVariablesCoord (p : Problem) (em : EncodedMatrix) : Problem :=
   { p with scalarConstraintsScalarVariablesCoord := em }
 
-def setScalarConstraintsShiftCoord (p : Problem) (ev : EncodedVector)
-  : Problem :=
+def setScalarConstraintsShiftCoord (p : Problem) (ev : EncodedVector) : Problem :=
   { p with scalarConstraintsShiftCoord := ev }
 
-def setPSDConstraintsScalarVariablesCoord
-  (p : Problem) (emll : EncodedMatrixListList)
-  : Problem :=
+def setPSDConstraintsScalarVariablesCoord (p : Problem) (emll : EncodedMatrixListList) : Problem :=
   { p with PSDConstraintsScalarVariablesCoord := emll }
 
-def setPSDConstraintsShiftCoord (p : Problem) (eml : EncodedMatrixList)
-  : Problem :=
+def setPSDConstraintsShiftCoord (p : Problem) (eml : EncodedMatrixList) : Problem :=
   { p with PSDConstraintsShiftCoord := eml }
 
 /- Simple adders. -/
@@ -571,23 +550,19 @@ def addPSDConstraint (p : Problem) (d : Nat) : Problem :=
 
 /- Stack adders. -/
 
-def addScalarConstraintsPSDVariablesCoord
-  (p : Problem) (i : Nat) (eml : EncodedMatrixList)
-  : Problem :=
+def addScalarConstraintsPSDVariablesCoord (p : Problem) (i : Nat) (eml : EncodedMatrixList) :
+    Problem :=
   let emll := EncodedMatrixListList.fromIndexAndEncodedMatrixList i eml
   { p with scalarConstraintsPSDVariablesCoord :=
       p.scalarConstraintsPSDVariablesCoord.stack emll }
 
-def addScalarConstraintsScalarVariablesCoord
-  (p : Problem) (i : Nat) (ev : EncodedVector)
-  : Problem :=
+def addScalarConstraintsScalarVariablesCoord (p : Problem) (i : Nat) (ev : EncodedVector) :
+    Problem :=
   let em := EncodedMatrix.fromIndexAndEncodedVector i ev
   { p with scalarConstraintsScalarVariablesCoord :=
       p.scalarConstraintsScalarVariablesCoord.stack em }
 
-def addScalarConstraintsShiftCoord
-  (p : Problem) (i : Nat) (v : Float)
-  : Problem :=
+def addScalarConstraintsShiftCoord (p : Problem) (i : Nat) (v : Float) : Problem :=
   let ev := EncodedVector.fromIndexAndValue i v
   { p with scalarConstraintsShiftCoord :=
       p.scalarConstraintsShiftCoord.stack ev}
@@ -599,19 +574,16 @@ def addPSDConstraintsScalarVariablesCoord
   { p with PSDConstraintsScalarVariablesCoord :=
       p.PSDConstraintsScalarVariablesCoord.stack emll }
 
-def addPSDConstraintsShiftCoord
-  (p : Problem) (i : Nat) (em : EncodedMatrix)
-  : Problem :=
+def addPSDConstraintsShiftCoord (p : Problem) (i : Nat) (em : EncodedMatrix) : Problem :=
   let eml := EncodedMatrixList.fromIndexAndEncodedMatrix i em
   { p with PSDConstraintsShiftCoord :=
       p.PSDConstraintsShiftCoord.stack eml }
 
 /- Combined adders for scalar and matrix affine constraints. -/
 
-/- Adds constraint g_k = ∑ ⟨F_ki, X_i⟩ + ∑ a_ki x_i + b_k ∈ c. -/
-def addScalarValuedAffineConstraint (p : Problem) (c : Cone)
-  (Fk : EncodedMatrixList) (ak : EncodedVector) (bk : Float)
-  : Problem :=
+/- Add constraint `gₖ = ∑ ⟨Fₖᵢ, Xᵢ⟩ + ∑ aₖᵢ xᵢ + bₖ ∈ 𝒦`. -/
+def addScalarValuedAffineConstraint (p : Problem) (c : Cone) (Fk : EncodedMatrixList)
+    (ak : EncodedVector) (bk : Float) : Problem :=
   Id.run <| do
     let k := p.scalarConstraints.k
     let mut newP := p
@@ -621,10 +593,9 @@ def addScalarValuedAffineConstraint (p : Problem) (c : Cone)
     newP := newP.addScalarConstraintsShiftCoord k bk
     newP
 
-/- Adds constraint G_k = ∑ x_i • H_ki  + D_k ∈ P_d. -/
-def addMatrixValuedAffineConstraint (p : Problem) (d : Nat)
-  (Hk : EncodedMatrixList) (Dk : EncodedMatrix)
-  : Problem :=
+/- Add constraint `G_k = ∑ x_i • H_ki  + D_k ∈ 𝒮₊ⁿ`. -/
+def addMatrixValuedAffineConstraint (p : Problem) (d : Nat) (Hk : EncodedMatrixList)
+    (Dk : EncodedMatrix)  : Problem :=
   Id.run <| do
     let k := p.PSDConstraints.n
     let mut newP := p
