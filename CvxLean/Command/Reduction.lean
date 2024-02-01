@@ -5,11 +5,17 @@ import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Reduction
 import CvxLean.Meta.TacticBuilder
 
+/-!
+# The `reduction` command
+
+
+-/
+
 namespace CvxLean
 
 open Lean Elab Meta Tactic Term Command Minimization
 
-/--  -/
+/-- Run a transformation tactic indicating that a reduction is expected. -/
 def runReductionTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
   runTransformationTactic TransformationGoal.Reduction mvarId stx
 

@@ -5,15 +5,21 @@ import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Relaxation
 import CvxLean.Meta.TacticBuilder
 
+/-!
+# The `relaxation` command
+
+
+-/
+
 namespace CvxLean
 
 open Lean Elab Meta Tactic Term Command Minimization
 
-/--  -/
+/-- Run a transformation tactic indicating that a relaxation is expected. -/
 def runRelaxationTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit :=
   runTransformationTactic TransformationGoal.Relaxation mvarId stx
 
-/-- Run Relaxation tactic and return both the right-hand term (`q`) and the relaxation proof, of
+/-- Run relaxation tactic and return both the right-hand term (`q`) and the relaxation proof, of
 type `Relaxation p q`. -/
 def elabRelaxationProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
   elabTransformationProof TransformationGoal.Relaxation lhs rhsName stx

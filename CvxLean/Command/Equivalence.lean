@@ -1,4 +1,3 @@
-import Lean
 import CvxLean.Lib.Equivalence
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
@@ -7,11 +6,17 @@ import CvxLean.Meta.TacticBuilder
 import CvxLean.Command.Solve.Float.RealToFloatLibrary
 import CvxLean.Tactic.Basic.ChangeOfVariables
 
+/-!
+# The `equivalence` command
+
+
+-/
+
 namespace CvxLean
 
 open Lean Elab Meta Tactic Term Command Minimization
 
-/--  -/
+/-- Run a transformation tactic indicating that an equivalence is expected. -/
 partial def runEquivalenceTactic (mvarId : MVarId) (stx : Syntax) : TermElabM Unit := do
   runTransformationTactic TransformationGoal.Equivalence mvarId stx
 

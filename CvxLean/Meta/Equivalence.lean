@@ -3,9 +3,9 @@ import CvxLean.Lib.Equivalence
 
 namespace CvxLean
 
-namespace Meta
-
 open Lean Meta
+
+namespace Meta
 
 /-- `Equivalence` type components as expressions. -/
 structure EquivalenceExpr where
@@ -41,6 +41,8 @@ def fromGoal (goal : MVarId) : MetaM EquivalenceExpr := do
 
 end EquivalenceExpr
 
+section BasicTactics
+
 macro "equivalence_rfl" : tactic => `(tactic| apply Minimization.Equivalence.refl)
 
 macro "equivalence_symm" : tactic => `(tactic| apply Minimization.Equivalence.symm)
@@ -52,6 +54,8 @@ open Parser Elab Tactic
 elab "equivalence_step" _arr:darrow tac:tacticSeqIndentGt : tactic => do
   evalTactic <| ← `(tactic| equivalence_trans)
   evalTacticSeq1Indented tac.raw
+
+end BasicTactics
 
 end Meta
 

@@ -1,5 +1,6 @@
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Minimization
+import CvxLean.Meta.Attributes
 
 /-!
 # Equivalence of optimization problems
@@ -32,18 +33,21 @@ variable {p q r}
 
 notation p " ≡ " q => Equivalence p q
 
+@[equiv]
 def refl : p ≡ p :=
   { phi := id,
     psi := id,
     phi_optimality := fun _ hx => hx,
     psi_optimality := fun _ hx => hx }
 
+@[equiv]
 def symm (E : p ≡ q) : q ≡ p :=
   { phi := E.psi,
     psi := E.phi,
     phi_optimality := E.psi_optimality,
     psi_optimality := E.phi_optimality }
 
+@[equiv]
 def trans (E₁ : p ≡ q) (E₂ : q ≡ r) : p ≡ r :=
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
@@ -85,6 +89,7 @@ variable {p q r}
 
 notation p " ≡' " q => StrongEquivalence p q
 
+@[strong_equiv]
 def refl : p ≡' p :=
   { phi := id,
     psi := id,
@@ -93,6 +98,7 @@ def refl : p ≡' p :=
     phi_optimality := fun _ _ => le_refl _,
     psi_optimality := fun _ _ => le_refl _ }
 
+@[strong_equiv]
 def symm (E : p ≡' q) : q ≡' p :=
   { phi := E.psi,
     psi := E.phi,
@@ -101,6 +107,7 @@ def symm (E : p ≡' q) : q ≡' p :=
     phi_optimality := E.psi_optimality,
     psi_optimality := E.phi_optimality }
 
+@[strong_equiv]
 def trans (E₁ : p ≡' q) (E₂ : q ≡' r) : p ≡' r :=
   { phi := E₂.phi ∘ E₁.phi,
     psi := E₁.psi ∘ E₂.psi,
@@ -134,6 +141,7 @@ variable {p q : Minimization D R}
 /-- Equal problems are equivalent. Note that the domain needs to be the same. We intentionally do
 not define this as `h ▸ Equivalence.refl (p := p)` so that `phi` and `psi` can be easily
 extracted. -/
+@[equiv]
 def ofEq (h : p = q) : p ≡ q :=
   { phi := id,
     psi := id,
@@ -144,7 +152,9 @@ end Eq
 
 variable {p q}
 
+
 /-- As expected, an `Equivalence` can be built from a `StrongEquivalence`. -/
+@[equiv]
 def ofStrongEquivalence (E : p ≡' q) : p ≡ q :=
   { phi := E.phi,
     psi := E.psi,
@@ -196,6 +206,7 @@ whole domain by a function with a right inverse. -/
 section Maps
 
 /-- See [BV04,p.131] where `g` is `ψ₀`. -/
+@[equiv]
 def map_objFun {g : R → R} (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
     ⟨f, cs⟩ ≡ ⟨fun x => g (f x), cs⟩ :=
   { phi := id,
@@ -205,12 +216,14 @@ def map_objFun {g : R → R} (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f
     psi_optimality := fun _ ⟨h_feas_x, h_opt_x⟩ =>
       ⟨h_feas_x, fun y h_feas_y => (h h_feas_x h_feas_y).mp (h_opt_x y h_feas_y)⟩ }
 
+@[equiv]
 noncomputable def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
     ⟨f, cs⟩ ≡ ⟨fun x => (Real.log (f x)), cs⟩ := by
   apply map_objFun
   intros r s h_feas_r h_feas_s
   exact Real.log_le_log (h r h_feas_r) (h s h_feas_s)
 
+@[equiv]
 noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
     ⟨f, cs⟩ ≡ ⟨fun x => (f x) ^ (2 : ℝ), cs⟩ := by
   apply map_objFun (g := fun x => x ^ (2 : ℝ))
@@ -218,6 +231,7 @@ noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) 
   simp [sq_le_sq, abs_of_nonneg (h r h_feas_r), abs_of_nonneg (h s h_feas_s)]
 
 /-- This is simply a change of variables, see `ChangeOfVariables.toEquivalence` and [BV04,p.130]. -/
+@[equiv]
 def map_domain {f : D → R} {cs : D → Prop} {fwd : D → E} {bwd : E → D}
     (h : ∀ x, cs x → bwd (fwd x) = x) :
     ⟨f, cs⟩ ≡ ⟨fun x => f (bwd x), fun x => cs (bwd x)⟩ :=
@@ -262,6 +276,7 @@ macro_rules
       `(fun x => $c1 x ∧ $c2 x ∧ $c3 x ∧ $c4 x ∧ $c5 x ∧ $c6 x ∧ $c7 x ∧ $c8 x ∧ $c9 x ∧ $c10 x)
   | `([[$c, $cs,*]]) => `(fun x => $c x ∧ ([[$cs,*]] x))
 
+@[equiv]
 def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≡ ⟨g, cs⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := id,
@@ -271,43 +286,53 @@ def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≡ ⟨g, cs�
     phi_optimality := fun {x} hx => le_of_eq (hrw x hx).symm
     psi_optimality := fun {x} hx => le_of_eq (hrw x hx) }
 
+@[equiv]
 def rewrite_objFun_1 (hrw : ∀ x, c1 x → f x = g x) : ⟨f, c1⟩ ≡ ⟨g, c1⟩ :=
   rewrite_objFun hrw
 
+@[equiv]
 def rewrite_objFun_2 (hrw : ∀ x, c1 x → c2 x → f x = g x) : ⟨f, [[c1, c2]]⟩ ≡ ⟨g, [[c1, c2]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_3 (hrw : ∀ x, c1 x → c2 x → c3 x → f x = g x) :
     ⟨f, [[c1, c2, c3]]⟩ ≡ ⟨g, [[c1, c2, c3]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_4 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4]]⟩ ≡ ⟨g, [[c1, c2, c3, c4]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_5 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4, c5]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_6 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4, c5, c6]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5, c6]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_7 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5, c6, c7]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_8 (hrw :
     ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8]]⟩ ≡ ⟨g, [[c1, c2, c3, c4, c5, c6, c7, c8]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_9
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9]]⟩ ≡
     ⟨g, [[c1, c2, c3, c4, c5, c6, c7, c8, c9]]⟩ :=
   rewrite_objFun (fun x _ => by apply hrw x <;> tauto)
 
+@[equiv]
 def rewrite_objFun_10
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → c10 x → f x = g x) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]]⟩ ≡
@@ -336,87 +361,107 @@ macro "equivalence_of_rw_constr" hrw:ident : term =>
 
 end EquivalenceOfConstrRw
 
+@[equiv]
 def rewrite_constraints (hrw : ∀ x, cs x ↔ cs' x) : ⟨f, [[cs]]⟩ ≡ ⟨f, [[cs']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_1 (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) : ⟨f, [[c1, cs]]⟩ ≡ ⟨f, [[c1', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_1_last (hrw : ∀ x, c1 x ↔ c1' x) : ⟨f, [[c1]]⟩ ≡ ⟨f, [[c1']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_2 (hrw : ∀ x, c1 x → cs x → (c2 x ↔ c2' x)) :
     ⟨f, [[c1, c2, cs]]⟩ ≡ ⟨f, [[c1, c2', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_2_last (hrw : ∀ x, c1 x → (c2 x ↔ c2' x)) :
     ⟨f, [[c1, c2]]⟩ ≡ ⟨f, [[c1, c2']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_3 (hrw : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x)) :
     ⟨f, [[c1, c2, c3, cs]]⟩ ≡ ⟨f, [[c1, c2, c3', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_3_last (hrw : ∀ x, c1 x → c2 x → (c3 x ↔ c3' x)) :
     ⟨f, [[c1, c2, c3]]⟩ ≡ ⟨f, [[c1, c2, c3']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_4 (hrw : ∀ x, c1 x → c2 x → c3 x → cs x → (c4 x ↔ c4' x)) :
     ⟨f, [[c1, c2, c3, c4, cs]]⟩ ≡ ⟨f, [[c1, c2, c3, c4', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_4_last (hrw : ∀ x, c1 x → c2 x → c3 x → (c4 x ↔ c4' x)) :
     ⟨f, [[c1, c2, c3, c4]]⟩ ≡ ⟨f, [[c1, c2, c3, c4']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_5 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → cs x → (c5 x ↔ c5' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, cs]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_5_last (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → (c5 x ↔ c5' x)) :
     ⟨f, [[c1, c2, c3, c4, c5]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_6 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → cs x → (c6 x ↔ c6' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, cs]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5, c6', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_6_last (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → (c6 x ↔ c6' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5, c6']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_7
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → cs x → (c7 x ↔ c7' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, cs]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5, c6, c7', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_7_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → (c7 x ↔ c7' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5, c6, c7']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_8
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, cs]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_8_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → (c8 x ↔ c8' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8]]⟩ ≡ ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_9
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → cs x → (c9 x ↔ c9' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, cs]]⟩ ≡
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_9_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → (c9 x ↔ c9' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9]]⟩ ≡
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9']]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_10
     (hrw :
       ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → cs x → (c10 x ↔ c10' x)) :
@@ -424,6 +469,7 @@ def rewrite_constraint_10
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10', cs]]⟩ :=
   equivalence_of_rw_constr hrw
 
+@[equiv]
 def rewrite_constraint_10_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → (c10 x ↔ c10' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]]⟩ ≡
@@ -441,6 +487,7 @@ variable {f : D → R} {cs : D → Prop}
 
 /-- We can always add a redundant constraint. This might be useful to help the reduction algorithm
 infer some constraints that cannot be easily infered by `arith`. -/
+@[equiv]
 def add_constraint {cs' : D → Prop} (h : ∀ x, cs x → cs' x) : ⟨f, cs⟩ ≡ ⟨f, [[cs', cs]]⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := id,
@@ -451,18 +498,21 @@ def add_constraint {cs' : D → Prop} (h : ∀ x, cs x → cs' x) : ⟨f, cs⟩ 
     psi_optimality := fun _ _ => le_refl _ }
 
 /-- See [BV04,p.131] where `g` is `ψᵢ`. -/
+@[equiv]
 def map_le_constraint_standard_form [Zero R] {cs' : D → Prop} {fi : D → R} {g : R → R}
     (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ cs' x) (hg : ∀ x, g x ≤ 0 ↔ x ≤ 0) :
     ⟨f, cs⟩ ≡ ⟨f, fun x => g (fi x) ≤ 0 ∧ cs' x⟩ := by
   apply rewrite_constraints; intros x; rw [hcs x, hg (fi x)]
 
 /-- See [BV04,p.131] where `g` is `ψₘ₊ᵢ`. -/
+@[equiv]
 def map_eq_constraint_standard_form [Zero R] {cs' : D → Prop} {hi : D → R} {g : R → R}
     (hcs : ∀ x, cs x ↔ hi x = 0 ∧ cs' x) (hg : ∀ x, g x = 0 ↔ x = 0) :
     ⟨f, cs⟩ ≡ ⟨f, fun x => g (hi x) = 0 ∧ cs' x⟩ := by
   apply rewrite_constraints; intros x; rw [hcs x, hg (hi x)]
 
 /-- Adding a slack variable [BV04,p.131]. -/
+@[equiv]
 def add_slack_variable_standard_form {cs' : D → Prop} {fi : D → ℝ}
     (hcs : ∀ x, cs x ↔ fi x ≤ 0 ∧ cs' x) :
     ⟨f, cs⟩ ≡ ⟨fun (_, x) => f x, fun (si, x) => 0 ≤ (si : ℝ) ∧ fi x + si = 0 ∧ cs' x⟩ :=
@@ -477,6 +527,7 @@ def add_slack_variable_standard_form {cs' : D → Prop} {fi : D → ℝ}
     psi_optimality := fun (_, x) _ => by simp }
 
 /-- Eliminate equality constraints [BV04,p.132]. -/
+@[equiv]
 noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {cs' : D → Prop} {hi : D → ℝ}
     {g : E → D} (hcs : ∀ x, cs x ↔ hi x = 0 ∧ cs' x) (hg : ∀ x, hi x = 0 ↔ ∃ z, x = g z) :
     ⟨f, cs⟩ ≡ ⟨fun x => f (g x), fun x => cs' (g x)⟩ :=
@@ -501,6 +552,7 @@ noncomputable def eliminate_eq_constraint_standard_form [Inhabited E] {cs' : D �
     psi_optimality := fun x _ => by simp }
 
 /-- Decompose constraint by introducing another equality constraint [BV04,p.132]. -/
+@[equiv]
 def decompose_constraint (g : D → E) (cs' : D → E → Prop) (hc : ∀ x, cs x ↔ cs' x (g x)) :
     ⟨f, cs⟩ ≡ ⟨fun (x, _) => f x, fun (x, y) => y = g x ∧ cs' x y⟩ :=
   Equivalence.ofStrongEquivalence <|
@@ -512,6 +564,7 @@ def decompose_constraint (g : D → E) (cs' : D → E → Prop) (hc : ∀ x, cs 
     psi_optimality := fun {_} _ => le_refl _ }
 
 /-- Epigraph form [BV04,p.134]. -/
+@[equiv]
 def epigraph_form : ⟨f, cs⟩ ≡ ⟨fun (t, _) => t, fun (t, x) => f x ≤ t ∧ cs x⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := fun x => (f x, x),
@@ -526,6 +579,7 @@ one-to-one to `(s, y) : S × E`. Assume that `x` is `p`-feasible iff `s = g y` a
 think of `s` as a new variable. If changing `s` does not change the objective function and the new
 constraints `c` respect monotonicity in `S`, we have that `p` is equivalent to the problem
 `⟨f, s ≤ g y ∧ cs' x⟩`. -/
+@[equiv]
 def eq_to_le_left {S} [Preorder S] (e : D ≃ S × E) (g : E → S) (cs' : D → Prop)
     (hcs : ∀ {x}, cs x ↔ ((e x).1 = g (e x).2 ∧ cs' x))
     (hf : ∀ y r s, f (e.symm (r, y)) = f (e.symm (s, y)))
@@ -545,6 +599,7 @@ def eq_to_le_left {S} [Preorder S] (e : D ≃ S × E) (g : E → S) (cs' : D →
 
 /-- Similar to `eq_to_le_left` with the monotonicity condition on `c` flipped. In this case we have
 that `P` is equivalent to `⟨f, g y ≤ s ∧ cs' x⟩`. -/
+@[equiv]
 def eq_to_le_right {S} [Preorder S] (e : Equiv D (S × E)) (g : E → S) (cs' : D → Prop)
     (hcs : ∀ {x}, cs x ↔ (g (e x).2 = (e x).1 ∧ cs' x))
     (hf : ∀ x r s, f (e.symm ⟨r, x⟩) = f (e.symm ⟨s, x⟩))
@@ -563,6 +618,7 @@ def eq_to_le_right {S} [Preorder S] (e : Equiv D (S × E)) (g : E → S) (cs' : 
     psi_optimality := fun {x} _ => by simp; rw [hf _ _ (e x).1]; simp [le_of_eq] }
 
 /-- Changing the domain to an equivalent type yields an equivalent problem. -/
+@[equiv]
 def domain_equiv (e : E ≃ D) : ⟨f, cs⟩ ≡ ⟨f ∘ e, cs ∘ e⟩ :=
   Equivalence.ofStrongEquivalence <|
   { phi := e.symm,
@@ -575,6 +631,7 @@ def domain_equiv (e : E ≃ D) : ⟨f, cs⟩ ≡ ⟨f ∘ e, cs ∘ e⟩ :=
 /-- Introduce a new variable `s` that replaces occurrences of (non-linear) `g x` in the original
 problem. The resulting problem has an extra constraint `s ≤ g y`. The objective funciton and the
 rest of the constraints need to satisfy the appropriate monotonicity conditions [Gra05,4.2.1]. -/
+@[equiv]
 def linearization_mono {S} [Preorder S] (g : D → S) (c : S → D → Prop) (h : S → D → R)
     (hf : ∀ x, f x = h (g x) x)
     (hcs : ∀ x, cs x = c (g x) x)
@@ -593,6 +650,7 @@ def linearization_mono {S} [Preorder S] (g : D → S) (c : S → D → Prop) (h 
 
 /-- Similar to `linearization_mono` with the monotonicity conditions flipped. The resulting problem
 adds the exactra constraint `g y ≤ s` in this case [Gra05,4.2.1]. -/
+@[equiv]
 def linearization_antimono {S} [Preorder S] (g : D → S) (c : S → D → Prop) (h : S → D → R)
     (hf : ∀ x, f x = h (g x) x)
     (hcs : ∀ x, cs x = c (g x) x)
@@ -611,6 +669,7 @@ def linearization_antimono {S} [Preorder S] (g : D → S) (c : S → D → Prop)
 
 /-- This can be seen as a generalization of `linearization_mono`, where `d` is the graph
 implementation of `g`. This is not used by the DCP procedure. -/
+@[equiv]
 def graph_expansion_greatest {S} [Preorder S] (g : D → S) (c d : S → D → Prop) (h : S → D → R)
     (hg : ∀ x v, c v x → IsGreatest {y | d y x} (g x))
     (hf : ∀ x, f x = h (g x) x)
@@ -631,6 +690,7 @@ def graph_expansion_greatest {S} [Preorder S] (g : D → S) (c d : S → D → P
 
 /-- Similar to `graph_expansion_greatest` but in the flipped monotonicity context, c.f.
 `linearization_antimono`. This is not used by the DCP procedure. -/
+@[equiv]
 def graph_expansion_least {S} [Preorder S] (g : D → S) (c d : S → D → Prop) (h : S → D → R)
     (hg : ∀ x v, c v x → IsLeast {y | d y x} (g x))
     (hf : ∀ x, f x = h (g x) x)
@@ -650,6 +710,7 @@ def graph_expansion_least {S} [Preorder S] (g : D → S) (c d : S → D → Prop
       simp only [hf]; exact h_mono_f y _ _ ((hg y s h_feas_sy.2).2 h_feas_sy.1) }
 
 /-- Version of `graph_expansion_least` that works with vectors. -/
+@[equiv]
 def graph_expansion_least_forall {S I : Type} [Preorder S] [Inhabited I] (g : D → I → S)
     (c d : S → D → Prop) (hg : ∀ x v i, c v x → IsLeast {y | d y x} (g x i))
     (hcs : ∀ x, cs x = ∀ i, c (g x i) x) (h_mono_cs : ∀ x r s, r ≤ s → c s x → c r x) :

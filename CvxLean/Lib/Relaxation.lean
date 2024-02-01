@@ -27,11 +27,13 @@ variable {p q r}
 
 notation p " ≽' " q => Relaxation p q
 
+@[rel]
 def refl : p ≽' p :=
   { phi := id,
     phi_feasibility := fun _ h => h,
     phi_optimality := fun _ _ => le_refl _ }
 
+@[rel]
 def trans (Rx₁ : p ≽' q) (Rx₂ : q ≽' r) : p ≽' r :=
   { phi := Rx₂.phi ∘ Rx₁.phi,
     phi_feasibility := fun x h => Rx₂.phi_feasibility (Rx₁.phi x) (Rx₁.phi_feasibility x h),
@@ -78,6 +80,7 @@ namespace StrongEquivalence
 
 variable {p q}
 
+@[strong_equiv]
 def ofRelaxations (Rx₁ : p ≽' q) (Rx₂ : q ≽' p) : p ≡' q :=
   { phi := Rx₁.phi,
     psi := Rx₂.phi,
@@ -92,6 +95,7 @@ namespace Equivalence
 
 variable {p q}
 
+@[equiv]
 def ofRelaxations (Rx₁ : p ≽' q) (Rx₂ : q ≽' p) : p ≡ q :=
   Equivalence.ofStrongEquivalence (StrongEquivalence.ofRelaxations Rx₁ Rx₂)
 
@@ -101,11 +105,13 @@ namespace Relaxation
 
 variable {f : D → R} {cs : D → Prop}
 
+@[rel]
 def remove_constraint {c cs' : D → Prop} (hcs : ∀ x, cs x ↔ c x ∧ cs' x) : ⟨f, cs⟩ ≽' ⟨f, cs'⟩ :=
   { phi := id,
     phi_feasibility := fun x h_feas_x => ((hcs x).mp h_feas_x).2,
     phi_optimality := fun _ _ => le_refl _ }
 
+@[rel]
 def weaken_constraints (cs' : D → Prop) (hcs : ∀ x, cs x → cs' x) : ⟨f, cs⟩ ≽' ⟨f, cs'⟩ :=
   { phi := id,
     phi_feasibility := fun x h_feas_x => hcs x h_feas_x,

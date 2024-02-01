@@ -31,10 +31,12 @@ variable {p q r}
 
 notation p " ≼  " q => Reduction p q
 
+@[red]
 def refl : p ≼ p :=
   { psi := id,
     psi_optimality := fun _ hy => hy }
 
+@[red]
 def trans (R₁ : p ≼ q) (R₂ : q ≼ r) : p ≼ r :=
   { psi := R₁.psi ∘ R₂.psi,
     psi_optimality := fun x h => R₁.psi_optimality (R₂.psi x) (R₂.psi_optimality x h) }
@@ -47,6 +49,7 @@ def toBwd (R : p ≼ q) : Solution q → Solution p :=
     { point := R.psi sol.point,
       isOptimal := R.psi_optimality sol.point sol.isOptimal }
 
+@[red]
 def ofEquivalence (E : p ≡ q) : p ≼ q :=
   { psi := E.psi,
     psi_optimality := E.psi_optimality }
@@ -62,6 +65,7 @@ section Maps
 /-- Weaker version of `Equivalence.map_objFun`. For a reduction we only need the map to be
 order-reflecting on the image of the objective function. Note that for an equivalence we also need
 it to be order-preserving (order-reflecting + order-preserving = order embedding). -/
+@[red]
 def map_objFun_of_order_reflecting {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
     (h : ∀ {r s}, cs r → cs s → g (f r) ≤ g (f s) → f r ≤ f s) :
     ⟨f, cs⟩ ≼ ⟨fun x => g (f x), cs⟩ :=
@@ -73,22 +77,26 @@ def map_objFun_of_order_reflecting {D R} [Preorder R] {f : D → R} {g : R → R
         h h_feas_x h_feas_y h_gfx_le_gfy⟩ }
 
 /-- See `Equivalence.map_objFun`. -/
+@[red]
 def map_objFun {D R} [Preorder R] {f : D → R} {g : R → R} {cs : D → Prop}
     (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f s) ↔ f r ≤ f s)) :
     ⟨f, cs⟩ ≼ ⟨fun x => g (f x), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun h
 
 /-- See `Equivalence.map_objFun_log`. -/
+@[red]
 noncomputable def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
     ⟨f, cs⟩ ≼ ⟨fun x => (Real.log (f x)), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun_log h
 
 /-- See `Equivalence.map_objFun_sq`. -/
+@[red]
 noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
     ⟨f, cs⟩ ≼ ⟨fun x => (f x) ^ (2 : ℝ), cs⟩ :=
   ofEquivalence <| Equivalence.map_objFun_sq h
 
 /-- See `Equivalence.map_domain`. -/
+@[red]
 def map_domain {f : D → R} {cs : D → Prop} {fwd : D → E} {bwd : E → D}
     (h : ∀ x, cs x → bwd (fwd x) = x) :
     ⟨f, cs⟩ ≼ ⟨fun x => f (bwd x), (fun x => cs (bwd x))⟩ :=
@@ -103,90 +111,111 @@ variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
 variable {c1' c2' c3' c4' c5' c6' c7' c8' c9' c10' : D → Prop}
 variable {cs cs' : D → Prop}
 
+@[red]
 def rewrite_objFun (hrw : ∀ x, cs x → f x = g x) : ⟨f, cs⟩ ≼ ⟨g, cs⟩ :=
   ofEquivalence <| Equivalence.rewrite_objFun hrw
 
+@[red]
 def rewrite_constraints (hrw : ∀ x, cs x ↔ cs' x) : ⟨f, [[cs]]⟩ ≼ ⟨f, [[cs']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraints hrw
 
+@[red]
 def rewrite_constraint_1 (hrw : ∀ x, cs x → (c1 x ↔ c1' x)) : ⟨f, [[c1, cs]]⟩ ≼ ⟨f, [[c1', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_1 hrw
 
+@[red]
 def rewrite_constraint_1_last (hrw : ∀ x, c1 x ↔ c1' x) : ⟨f, [[c1]]⟩ ≼ ⟨f, [[c1']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_1_last hrw
 
+@[red]
 def rewrite_constraint_2 (hrw : ∀ x, c1 x → cs x → (c2 x ↔ c2' x)) :
     ⟨f, [[c1, c2, cs]]⟩ ≼ ⟨f, [[c1, c2', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_2 hrw
 
+@[red]
 def rewrite_constraint_2_last (hrw : ∀ x, c1 x → (c2 x ↔ c2' x)) :
     ⟨f, [[c1, c2]]⟩ ≼ ⟨f, [[c1, c2']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_2_last hrw
 
+@[red]
 def rewrite_constraint_3 (hrw : ∀ x, c1 x → c2 x → cs x → (c3 x ↔ c3' x)) :
     ⟨f, [[c1, c2, c3, cs]]⟩ ≼ ⟨f, [[c1, c2, c3', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_3 hrw
 
+@[red]
 def rewrite_constraint_3_last (hrw : ∀ x, c1 x → c2 x → (c3 x ↔ c3' x)) :
     ⟨f, [[c1, c2, c3]]⟩ ≼ ⟨f, [[c1, c2, c3']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_3_last hrw
 
+@[red]
 def rewrite_constraint_4 (hrw : ∀ x, c1 x → c2 x → c3 x → cs x → (c4 x ↔ c4' x)) :
     ⟨f, [[c1, c2, c3, c4, cs]]⟩ ≼ ⟨f, [[c1, c2, c3, c4', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_4 hrw
 
+@[red]
 def rewrite_constraint_4_last (hrw : ∀ x, c1 x → c2 x → c3 x → (c4 x ↔ c4' x)) :
     ⟨f, [[c1, c2, c3, c4]]⟩ ≼ ⟨f, [[c1, c2, c3, c4']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_4_last hrw
 
+@[red]
 def rewrite_constraint_5 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → cs x → (c5 x ↔ c5' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, cs]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_5 hrw
 
+@[red]
 def rewrite_constraint_5_last (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → (c5 x ↔ c5' x)) :
     ⟨f, [[c1, c2, c3, c4, c5]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_5_last hrw
 
+@[red]
 def rewrite_constraint_6 (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → cs x → (c6 x ↔ c6' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, cs]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5, c6', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_6 hrw
 
+@[red]
 def rewrite_constraint_6_last (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → (c6 x ↔ c6' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5, c6']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_6_last hrw
 
+@[red]
 def rewrite_constraint_7
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → cs x → (c7 x ↔ c7' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, cs]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5, c6, c7', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_7 hrw
 
+@[red]
 def rewrite_constraint_7_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → (c7 x ↔ c7' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5, c6, c7']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_7_last hrw
 
+@[red]
 def rewrite_constraint_8
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → cs x → (c8 x ↔ c8' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, cs]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_8 hrw
 
+@[red]
 def rewrite_constraint_8_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → (c8 x ↔ c8' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8]]⟩ ≼ ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_8_last hrw
 
+@[red]
 def rewrite_constraint_9
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → cs x → (c9 x ↔ c9' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, cs]]⟩ ≼
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_9 hrw
 
+@[red]
 def rewrite_constraint_9_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → (c9 x ↔ c9' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9]]⟩ ≼
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9']]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_9_last hrw
 
+@[red]
 def rewrite_constraint_10
     (hrw :
       ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → cs x → (c10 x ↔ c10' x)) :
@@ -194,6 +223,7 @@ def rewrite_constraint_10
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10', cs]]⟩ :=
   ofEquivalence <| Equivalence.rewrite_constraint_10 hrw
 
+@[red]
 def rewrite_constraint_10_last
     (hrw : ∀ x, c1 x → c2 x → c3 x → c4 x → c5 x → c6 x → c7 x → c8 x → c9 x → (c10 x ↔ c10' x)) :
     ⟨f, [[c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]]⟩ ≼
@@ -212,6 +242,7 @@ end Reduction
 
 namespace Equivalence
 
+@[equiv]
 def ofReductions (R₁ : p ≼ q) (R₂ : q ≼ p) : p ≡ q :=
   { phi := R₂.psi,
     psi := R₁.psi,
