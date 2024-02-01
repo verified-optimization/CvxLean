@@ -92,13 +92,17 @@ where
     | _, _, [] => return none
     | _, _, _ :: _ => return none
 
-/-- Determine a list of variables described by a `domain`.
-  Returns a list of variables, consisting of their name and type. -/
+/-- Determine a list of variables described by a `domain`. Returns a list of variables, consisting
+of their name and type. -/
 def decomposeDomain (domain : Expr) : m (List (Name × Expr)) := do
   match domain with
   | Expr.app (Expr.app (Expr.const `Prod _) ty1) ty2 => do
     return (← decomposeLabel ty1) :: (← decomposeDomain ty2)
   | _ => do return [← decomposeLabel domain]
+
+/-- Same as `decomposeDomain` but also try to instantiate meta-variables. -/
+def decomposeDomainInstantiating (minExpr : MinimizationExpr) : MetaM (List (Name × Expr)) := do
+  decomposeDomain (← instantiateMVars minExpr.domain)
 
 /-- Get a HashSet of variable names in a given domain. -/
 def getVariableNameSet (domain : Expr) : m (HashSet Name) := do

@@ -123,12 +123,12 @@ def addExpConstraint (data : ProblemData) (a : Array Float) (b : Float) : Proble
 def addPosOrthConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.PosOrth
 
-/-- Add second-order cone constraint `∑ i, aᵢxᵢ + b ∈ Q` to problem data. Note that the second-order
+/-- Add second-order cone constraint `∑ i, aᵢxᵢ + b ∈ 𝒬` to problem data. Note that the second-order
 cone is `n+1`-dimensional. The same remark on grouping constraints in `addExpConstraint` applies. -/
 def addSOConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.Q
 
-/- Add second-order cone constraint `∑ i, aᵢxᵢ + b ∈ Qᵣ` to problem data. Note that the rotated
+/- Add second-order cone constraint `∑ i, aᵢxᵢ + b ∈ 𝒬ᵣ` to problem data. Note that the rotated
 second-order cone is `n+2`-dimensional. The same remark on grouping constraints in
 `addExpConstraint` applies. -/
 def addRotatedSOConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
@@ -142,5 +142,9 @@ def addMatrixAffineConstraint (data : ProblemData) (H : Array (Array (Array Floa
   { data with matrixAffineConstraints := data.matrixAffineConstraints.push constraint }
 
 end ProblemData
+
+/-- Indices to group constraints together and tag cones with the correct dimension when translating
+problem data to solver formats. -/
+def ScalarAffineSections : Type := Array Nat
 
 end CvxLean

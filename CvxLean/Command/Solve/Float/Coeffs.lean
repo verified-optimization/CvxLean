@@ -243,11 +243,6 @@ unsafe def determineMatrixCoeffsAux (e : Expr) (p : Expr) (fty : Expr) :
     coeffs := coeffs.push floatCoeff
   return (coeffs, const)
 
-/-- Indices to group constraints together and tag cones with the correct dimension when translating
-the data into CBF format. This happens with the exponential cone, quadratic cone and rotated
-quadratic cone, for instance. -/
-def ScalarAffineSections : Type := Array Nat
-
 /-- Given a `MinimizationExpr`, representing a problem, assuming that it is in conic form, generate
 a `ProblemData`. The expression is first translated to floats, then we find the coefficients of all
 the affine terms involved in the cone membership constraints by plugging in the appropriate basis

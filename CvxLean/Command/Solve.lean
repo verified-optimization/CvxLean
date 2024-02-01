@@ -1,6 +1,12 @@
 import CvxLean.Tactic.DCP.AtomLibrary.All
 import CvxLean.Command.Solve.Conic
 
+/-!
+# The `solve` command
+
+
+-/
+
 namespace CvxLean
 
 open Lean Lean.Elab Lean.Elab.Term Lean.Elab.Command Lean.Meta
@@ -28,7 +34,7 @@ def getReducedProblemAndBwdMap (prob : Expr) : MetaM (Meta.MinimizationExpr × E
 
 syntax (name := solve) "solve " term : command
 
-set_option maxHeartbeats 1000000
+-- set_option maxHeartbeats 1000000
 
 @[command_elab «solve»]
 unsafe def evalSolve : CommandElab := fun stx =>
