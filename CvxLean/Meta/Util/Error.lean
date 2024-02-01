@@ -22,3 +22,11 @@ syntax "throwSolveError " (interpolatedStr(term) <|> term) : term
 macro_rules
   | `(throwSolveError $msg:interpolatedStr) => `(throwError ("`solve` error: " ++ (m! $msg)))
   | `(throwSolveError $msg:term) => `(throwError ("`solve` error: " ++ $msg))
+
+/-- Errors in the `equivalence` command. -/
+syntax "throwEquivalenceError " (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(throwEquivalenceError $msg:interpolatedStr) =>
+    `(throwError ("`equivalence` error: " ++ (m! $msg)))
+  | `(throwEquivalenceError $msg:term) => `(throwError ("`equivalence` error: " ++ $msg))

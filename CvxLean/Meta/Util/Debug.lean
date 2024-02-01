@@ -6,6 +6,6 @@ Custom debug trace classes.
 
 open Lean Meta
 
-builtin_initialize
+initialize
   registerTraceClass `CvxLean
   registerTraceClass `CvxLean.debug

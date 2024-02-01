@@ -1,6 +1,9 @@
 import CvxLean.Lib.Equivalence
 import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Util.Simp
+import CvxLean.Meta.Util.Error
+import CvxLean.Meta.Util.Debug
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Command.Solve.Float.RealToFloatLibrary
@@ -59,29 +62,13 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
   let rhs ← instantiateMVars rhs
   let rhs ← mkLambdaFVars (xs.map Prod.snd) rhs
   let rhs ← instantiateMVars rhs
-  Lean.addDecl <|
-    Declaration.defnDecl
-      (mkDefinitionValEx probId
-      []
-      (← inferType rhs)
-      rhs
-      (Lean.ReducibilityHints.regular 0)
-      (DefinitionSafety.safe)
-      [])
+  simpleAddDefn probId rhs
 
   -- Add equivalence proof to the environment.
   let eqv ← instantiateMVars eqv
   let eqv ← mkLambdaFVars (xs.map Prod.snd) eqv
   let eqv ← instantiateMVars eqv
-  Lean.addDecl <|
-    Declaration.defnDecl
-      (mkDefinitionValEx eqvId
-      []
-      (← inferType eqv)
-      eqv
-      (Lean.ReducibilityHints.regular 0)
-      (DefinitionSafety.safe)
-      [])
+  simpleAddDefn eqvId eqv
 
   if bwdMap then
     lambdaTelescope eqv fun eqvArgs eqvBody => do
@@ -89,67 +76,17 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       let psi := (← whnf eqvBody).getArg! 7
 
       let mut simpCtx ← Simp.Context.mkDefault
-      let simpCfg : Simp.Config :=
-        { zeta             := true
-          beta             := true
-          eta              := true
-          iota             := true
-          proj             := true
-          decide           := true
-          arith            := true
-          dsimp            := true
-          unfoldPartialApp := true
-          etaStruct        := .all }
-      simpCtx := { simpCtx with config := simpCfg }
+      simpCtx := { simpCtx with config := aggressiveSimpConfig }
 
-      let mut simpThms := {}
+      let (.some ext) ← getSimpExtension? `equiv |
+        throwEquivalenceError "could not find `equiv` simp extension."
+
+      let mut simpThms ← ext.getTheorems
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.mk
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.refl
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.trans
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofStrongEquivalence
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.ofEq
       simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.psi
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_log
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_objFun_sq
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.map_domain
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.add_constraint
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_1
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_2
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_3
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_4
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_5
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_6
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_7
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_8
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_9
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_objFun_10
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraints
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_1_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_2_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_3_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_4_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_5_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_6_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_7_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_8_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_9_last
-      simpThms ← simpThms.addDeclToUnfold ``Minimization.Equivalence.rewrite_constraint_10_last
-      simpThms ← simpThms.addDeclToUnfold ``CvxLean.ChangeOfVariables.toEquivalence
-      simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
       simpThms ← simpThms.addDeclToUnfold ``Eq.mp
+      simpThms ← simpThms.addDeclToUnfold ``Eq.mpr
+
       simpCtx := { simpCtx with simpTheorems := #[simpThms] }
 
       let (res, _) ← simp psi simpCtx
@@ -159,14 +96,14 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       let eqvNonPropArgs ← eqvArgs.filterM fun arg => do
         return !(← inferType (← inferType arg)).isProp
       let psi ← mkLambdaFVars eqvNonPropArgs res.expr
-      trace[Meta.debug] "psi: {psi}"
+      trace[CvxLean.debug] "psi: {psi}"
 
       try
         let psiF ← realToFloat psi
         Lean.simpleAddAndCompileDefn (eqvId ++ `backward_map) psiF
       catch e =>
-        trace[Meta.debug]
-          "`equivalence` error: failed to create `{eqvId}.backward_map`.\n{e.toMessageData}"
+        trace[CvxLean.debug]
+          "`equivalence` warning: failed to create `{eqvId}.backward_map`.\n{e.toMessageData}"
 
 /-- Create `equivalence` command. It is similar to the `reduction` command, but requires an
 `Equivalence` instead of a `Reduction`. -/

@@ -23,6 +23,7 @@ class ChangeOfVariables {D E} (c : E → D) where
   property : ∀ x, condition x → c (inv x) = x
 
 /-- -/
+@[equiv]
 def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D → Prop} (c : E → D)
     [cov : ChangeOfVariables c] (h : ∀ x, cs x → cov.condition x) :
     ⟨f, cs⟩ ≡ ⟨fun x => f (c x), fun x => cs (c x)⟩ :=
