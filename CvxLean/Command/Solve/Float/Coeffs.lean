@@ -4,7 +4,7 @@ import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Debug
 import CvxLean.Syntax.Minimization
 import CvxLean.Command.Solve.Float.ProblemData
-import CvxLean.Command.Solve.Float.RealToFloat
+import CvxLean.Command.Solve.Float.RealToFloatLibrary
 
 /-!
 # Extract coefficients from problem to generate problem data

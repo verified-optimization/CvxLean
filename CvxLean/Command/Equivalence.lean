@@ -4,7 +4,7 @@ import CvxLean.Syntax.Minimization
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
-import CvxLean.Command.Solve.Float.RealToFloat
+import CvxLean.Command.Solve.Float.RealToFloatLibrary
 import CvxLean.Tactic.Basic.ChangeOfVariables
 
 namespace CvxLean

@@ -130,8 +130,11 @@ def sum (x : Fin n → Float) : Float :=
 def cumsum (x : Fin n → Float) : Fin n → Float :=
   fun i => (((toArray x).toList.take (i.val + 1)).foldl Float.add 0)
 
-def norm {n m : ℕ} (x : Fin n → Fin m → Float) : Fin n → Float :=
-  fun i => Float.sqrt (sum (Vec.map (Float.pow · 2) (x i)))
+def norm {n : ℕ} (x : Fin n → Float) : Float :=
+  Float.sqrt (sum (fun i => (Float.pow (x i) 2)))
+
+def exp {m} (x : m → Float) : m → Float :=
+  fun i => Float.exp (x i)
 
 end Computable
 

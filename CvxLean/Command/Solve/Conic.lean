@@ -148,7 +148,7 @@ unsafe def exprFromSol (minExpr : MinimizationExpr) (sol : Sol.Result) : MetaM E
 
   -- Generate solution of the correct shape.
   let solPointExprArrayRaw : Array Expr :=
-    Array.mk <| sol.vars.map (fun v => floatToRealExpr v.activity)
+    Array.mk <| sol.vars.map (fun v => floatToReal v.activity)
 
   -- Vectors and matrices as functions.
   let mut solPointExprArray : Array Expr := #[]

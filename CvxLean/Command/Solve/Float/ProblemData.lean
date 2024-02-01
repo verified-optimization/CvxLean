@@ -1,3 +1,14 @@
+/-!
+# Representation of numerical problem data
+
+This file defines an intermediate representation of a problem in conic form at the level of floats.
+We provide an interface to build this data by adding any of the possible types of constraints. This
+data can then be transformed in a straightforward manner into Conic Benchmark Format, for example.
+
+The procedure that creates `ProblemData` from an optimization problem can be found in
+`Command/Solve/Coeffs.lean`.
+-/
+
 namespace CvxLean
 
 /-- Cones admitting scalar affine constraints. Note that the only cone that admits matrix affine
@@ -9,15 +20,15 @@ namespace ScalarConeType
 
 instance : ToString ScalarConeType where
   toString
-    | Zero => "Zero"
-    | PosOrth => "PosOrth"
-    | Exp => "Exp"
-    | Q => "Q"
-    | QR => "QR"
+  | Zero => "Zero"
+  | PosOrth => "PosOrth"
+  | Exp => "Exp"
+  | Q => "Q"
+  | QR => "QR"
 
 end ScalarConeType
 
-/-- Encoding the constraint ⟨X, A⟩ + ∑ i, aᵢ xᵢ + b. -/
+/-- Encodes the expression `⟨X, A⟩ + ∑ i, aᵢ xᵢ + b`. -/
 structure ScalarAffine :=
   (n m : Nat)
   (A : Array (Array Float))
@@ -31,7 +42,7 @@ instance : ToString ScalarAffine where
 
 end ScalarAffine
 
-/-- Encoding the constraint ∑ i, xᵢ • Hᵢ + D -/
+/-- Encodies the expression `∑ i, xᵢ • Hᵢ + D`. -/
 structure MatrixAffine :=
   (n : Nat)
   (H : Array (Array (Array Float)))
@@ -40,12 +51,12 @@ structure MatrixAffine :=
 namespace MatrixAffine
 
 instance : ToString MatrixAffine where
-  toString sa :=
-    s!"MatrixAffine [{sa.n}, {sa.H}, {sa.D}]"
+  toString sa := s!"MatrixAffine [{sa.n}, {sa.H}, {sa.D}]"
 
 end MatrixAffine
 
-/-- Coeffs generates this from the problem goal. -/
+/-- Data structure storing the floating-point coefficient of the objective function and constraints
+of a problem in conic form. -/
 structure ProblemData :=
   (objective : Option ScalarAffine)
   (scalarAffineConstraints : Array (ScalarAffine × ScalarConeType))
@@ -70,75 +81,65 @@ def empty : ProblemData :=
 instance : Inhabited ProblemData where
   default := empty
 
-/-- Set full objective function. -/
-def setObjective (data : ProblemData)
-  (A : Array (Array Float)) (a : Array Float) (b : Float)
-  : ProblemData :=
+/-- Set full objective function of the form `⟨X, A⟩ + ∑ i, aᵢ xᵢ + b`. -/
+def setObjective (data : ProblemData) (A : Array (Array Float)) (a : Array Float) (b : Float) :
+    ProblemData :=
   { data with objective := ScalarAffine.mk A.size a.size A a b }
 
-/-- Same but only ∑ i, aᵢxᵢ + b. -/
-def setObjectiveOnlyVector (data : ProblemData)
-  (a : Array Float) (b : Float)
-  : ProblemData :=
+/-- Same as `setObjective` if the objective is of the form `∑ i, aᵢxᵢ + b`. -/
+def setObjectiveOnlyVector (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.setObjective #[] a b
 
-/-- Same but only ⟨A, X⟩ + b. -/
-def setObjectiveOnlyMatrix (data : ProblemData)
-  (A : Array (Array Float)) (b : Float)
-  : ProblemData :=
+/-- Same as `setObjective` if the objective is of the form `⟨A, X⟩ + b`. -/
+def setObjectiveOnlyMatrix (data : ProblemData) (A : Array (Array Float)) (b : Float) :
+    ProblemData :=
   data.setObjective A #[] b
 
-/-- Add a full scalar affine constraint to the problem data. -/
-def addScalarAffineConstraint (data : ProblemData)
-  (A : Array (Array Float)) (a : Array Float) (b : Float) (sct : ScalarConeType)
-  : ProblemData :=
+/-- Add a scalar affine constraint of the form ``⟨X, A⟩ + ∑ i, aᵢ xᵢ + b ∈ 𝒦`, where `𝒦` is a cone
+of type `sct`. -/
+def addScalarAffineConstraint (data : ProblemData) (A : Array (Array Float)) (a : Array Float)
+    (b : Float) (sct : ScalarConeType) : ProblemData :=
   let constraint := ScalarAffine.mk A.size a.size A a b
   { data with scalarAffineConstraints :=
       data.scalarAffineConstraints.push ⟨constraint, sct⟩ }
 
-/-- Add a scalar affine constraint without the ⟨A, X⟩ part. -/
-def addScalarAffineConstraintOnlyVector (data : ProblemData)
-  (a : Array Float) (b : Float) (sct : ScalarConeType)
-  : ProblemData :=
+/-- Same as `addScalarAffineConstraint` if the constraint is of the form `∑ i, aᵢ xᵢ + b ∈ 𝒦`. -/
+def addScalarAffineConstraintOnlyVector (data : ProblemData) (a : Array Float) (b : Float)
+    (sct : ScalarConeType) : ProblemData :=
   data.addScalarAffineConstraint #[] a b sct
 
-/-- Specialized to the zero cone. -/
-def addZeroConstraint (data : ProblemData)
-  (a : Array Float) (b : Float)
-  : ProblemData :=
+/-- Add zero cone constraint `∑ i, aᵢxᵢ + b ∈ 0` to problem data. -/
+def addZeroConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.Zero
 
-/-- Specialized to the exponential cone. -/
-def addExpConstraint (data : ProblemData)
-  (a : Array Float) (b : Float)
-  : ProblemData :=
+/-- Add exponential cone constraint `∑ i, aᵢxᵢ + b ∈ 𝒦ₑ` to problem data. Note that the
+second-order cone is `3`-dimensional, so to capture `(x, y, z) ∈ 𝒦ₑ` we do `x ∈ 𝒦ₑ`, `y ∈ 𝒦ₑ`, and
+`z ∈ 𝒦ₑ` consecutively. We keep track of how to group consecutive constraints in
+`Command/Solve/Float/Coeffs.lean`. -/
+def addExpConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.Exp
 
-/-- Specialized to the positive orthant cone. -/
-def addPosOrthConstraint (data : ProblemData)
-  (a : Array Float) (b : Float)
-  : ProblemData :=
+/-- Add positive orthant cone constraint `∑ i, aᵢxᵢ + b ∈ ℝ₊` to problem data. -/
+def addPosOrthConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.PosOrth
 
-/- Specialized to the second-order cone. -/
-def addSOConstraint (data : ProblemData)
-  (a : Array Float) (b : Float)
-  : ProblemData :=
+/-- Add second-order cone constraint `∑ i, aᵢxᵢ + b ∈ Q` to problem data. Note that the second-order
+cone is `n+1`-dimensional. The same remark on grouping constraints in `addExpConstraint` applies. -/
+def addSOConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.Q
 
-/- Specialized to the quadratic rotated cone. -/
-def addRotatedSOConstraint (data : ProblemData)
-  (a : Array Float) (b : Float)
-  : ProblemData :=
+/- Add second-order cone constraint `∑ i, aᵢxᵢ + b ∈ Qᵣ` to problem data. Note that the rotated
+second-order cone is `n+2`-dimensional. The same remark on grouping constraints in
+`addExpConstraint` applies. -/
+def addRotatedSOConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.QR
 
-/-- Add a full matrix affine constraint to the problem data. -/
-def addMatrixAffineConstraint (data : ProblemData)
-  (H : Array (Array (Array Float))) (D : Array (Array Float))
-  : ProblemData :=
+/-- Add a matrix affine constraint `∑ i, xᵢ • Hᵢ + D ∈ 𝒮₊ⁿ` to problem data. The only matrix cone
+we consider is the PSD cone. -/
+def addMatrixAffineConstraint (data : ProblemData) (H : Array (Array (Array Float)))
+    (D : Array (Array Float)) : ProblemData :=
   let constraint := MatrixAffine.mk D.size H D
-  { data with matrixAffineConstraints :=
-      data.matrixAffineConstraints.push constraint }
+  { data with matrixAffineConstraints := data.matrixAffineConstraints.push constraint }
 
 end ProblemData
 

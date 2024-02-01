@@ -1,6 +1,6 @@
 import CvxLean.Lib.Minimization
 import CvxLean.Syntax.OptimizationParam
-import CvxLean.Command.Solve.Float.RealToFloat
+import CvxLean.Command.Solve.Float.RealToFloatLibrary
 
 section RealToFloat
 

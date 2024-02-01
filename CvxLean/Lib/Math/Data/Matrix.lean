@@ -101,6 +101,9 @@ def fromBlocks {l : Type} {m : Type} {n : Type} {o : Type} {α : Type} :
 def toUpperTri (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
   fun i j => if i ≤ j then A i j else 0
 
+def norm {n m : ℕ} (A : Matrix (Fin n) (Fin m) Float) : Fin n → Float :=
+  fun i => Vec.Computable.norm (A i)
+
 end Computable
 
 end Matrix
