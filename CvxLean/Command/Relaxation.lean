@@ -8,7 +8,22 @@ import CvxLean.Meta.TacticBuilder
 /-!
 # The `relaxation` command
 
+Given a problem `p : Minimization D R` and fresh identifiers `rel` and `q`, a user can use the
+relaxation command as follows:
+```
+relaxation rel/q : p := by ...
+```
+Placing the cursor on after the `by` keyword opens up a tactic environment where the goal is to
+prove `p ≽' ?q`. After applying a sequence of tactics that transform the goal into, say `r ≽' ?q`,
+the user can leave the relaxation environment and two new definitions will be added to the
+environment:
+* `q := r`,
+* `rel : p ≽' q`.
 
+This command is very similar to `equivalence` (`Command/Equivalence.lean`) and `reduction`
+(`Command/Reduction.lean`) in how it is designed. Of course, the key difference is that the goal
+is to prove a relaxation. Note that in this case, there is no option to create a backward map as
+relaxations do not guarantee that the solution can be mapped back.
 -/
 
 namespace CvxLean
@@ -30,7 +45,7 @@ syntax (name := relaxation)
 /-- Relaxation command. -/
 @[command_elab «relaxation»]
 def evalRelaxation : CommandElab := fun stx => match stx with
-| `(relaxation $relId / $probId $declSig := $proofStx) => do
+| `(relaxation $relIdStx / $probIdStx $declSig := $proofStx) => do
   liftTermElabM do
     let (binders, lhsStx) := expandDeclSig declSig.raw
     elabBindersEx binders.getArgs fun xs => do
@@ -46,38 +61,24 @@ def evalRelaxation : CommandElab := fun stx => match stx with
           mvarId.assign mvarVal }
         catch _ => pure ()
 
-      let rhsName := probId.getId
+      let rhsName := probIdStx.getId
       let (rhs, proof) ← elabRelaxationProof lhs rhsName proofStx.raw
+
+      -- Names for new definitions.
+      let currNamespace ← getCurrNamespace
+      let probId := currNamespace ++ probIdStx.getId
+      let relId := currNamespace ++ relIdStx.getId
 
       -- Add relaxed problem to the environment.
       let rhs ← instantiateMVars rhs
       let rhs ← mkLambdaFVars (xs.map Prod.snd) rhs
       let rhs ← instantiateMVars rhs
-      Lean.addDecl <|
-        Declaration.defnDecl
-          (mkDefinitionValEx probId.getId
-          []
-          (← inferType rhs)
-          rhs
-          (Lean.ReducibilityHints.regular 0)
-          (DefinitionSafety.safe)
-          [])
+      simpleAddDefn probId rhs
 
       -- Add Relaxation proof to the environment.
-      let proofTy ← inferType proof
-      let proofTy ← mkForallFVars (xs.map Prod.snd) proofTy
-      let proofTy ← instantiateMVars proofTy
       let proof ← mkLambdaFVars (xs.map Prod.snd) proof
       let proof ← instantiateMVars proof
-      Lean.addDecl <|
-        Declaration.defnDecl
-          (mkDefinitionValEx relId.getId
-          []
-          proofTy
-          proof
-          (Lean.ReducibilityHints.regular 0)
-          (DefinitionSafety.safe)
-          [])
+      simpleAddDefn relId proof
   | _ => throwUnsupportedSyntax
 
 end CvxLean

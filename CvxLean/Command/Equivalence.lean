@@ -7,12 +7,24 @@ import CvxLean.Meta.Util.Debug
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Command.Solve.Float.RealToFloatLibrary
-import CvxLean.Tactic.Basic.ChangeOfVariables
 
 /-!
 # The `equivalence` command
 
+Given a problem `p : Minimization D R` and fresh identifiers `eqv` and `q`, a user can use the
+equivalence command as follows:
+```
+equivalence eqv/q : p := by ...
+```
+Placing the cursor on after the `by` keyword opens up a tactic environment where the goal is to
+prove `p ≡ ?q`. After applying a sequence of tactics that transform the goal into, say `r ≡ ?q`,
+the user can leave the equivalence environment and two new definitions will be added to the
+environment:
+* `q := r`,
+* `eqv : p ≡ q`.
 
+Writing `equivalence'` instead of `equivalence` will also generate a backward solution map at the
+level of floats.
 -/
 
 namespace CvxLean
@@ -34,9 +46,15 @@ syntax (name := equivalence)
 syntax (name := equivalenceAndBwdMap)
   "equivalence'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
-/-- See `evalEquivalence` and `evalEquivalenceAndBwdMap`. -/
+/-- Open an equivalence environment with a given left-hand-side problem (`lhsStx`) and perhaps some
+parameters (`xs`). From this, an equivalence goal is set to a target problem which is represented by
+a metavariable. The proof (`proofStx`) is evaluated to produce the desired equivalence. The
+metavariable is then instantiated and the resulting problem is stored using the identifier
+`probIdStx`. The equivalence witness is stored according to the identifier `redIdStx`. Optionally, a
+floating-point backward solution map is created. See `evalEquivalence` and
+`evalEquivalenceAndBwdMap`. -/
 def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax × Expr))
-    (lhsStx: Syntax) (proofStx: TSyntax `Lean.Parser.Term.byTactic) (bwdMap : Bool) :
+    (lhsStx : Syntax) (proofStx : TSyntax `Lean.Parser.Term.byTactic) (bwdMap : Bool) :
     TermElabM Unit := do
   let D ← Meta.mkFreshTypeMVar
   let R ← Meta.mkFreshTypeMVar
@@ -105,8 +123,7 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
         trace[CvxLean.debug]
           "`equivalence` warning: failed to create `{eqvId}.backward_map`.\n{e.toMessageData}"
 
-/-- Create `equivalence` command. It is similar to the `reduction` command, but requires an
-`Equivalence` instead of a `Reduction`. -/
+/-- Create `equivalence` command. -/
 @[command_elab «equivalence»]
 def evalEquivalence : CommandElab := fun stx => match stx with
   | `(equivalence $eqvId / $probId $declSig := $proofStx) => do
@@ -125,6 +142,5 @@ def evalEquivalenceAndBwdMap : CommandElab := fun stx => match stx with
         elabBindersEx binders.getArgs fun xs =>
           evalEquivalenceAux probId eqvId xs lhsStx proofStx true
   | _ => throwUnsupportedSyntax
-
 
 end CvxLean
