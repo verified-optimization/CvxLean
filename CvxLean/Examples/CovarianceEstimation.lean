@@ -19,7 +19,7 @@ reduction red/covEstimationConvex (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → 
     · intros R S hR hS h
       apply neg_le_neg
       simp only [maximizeNeg] at h
-      rwa [neg_neg, neg_neg, neg_le_neg_iff, log_le_log] at h
+      rwa [neg_neg, neg_neg, neg_le_neg_iff, log_le_log_iff] at h
       exact prod_gaussianPdf_pos S y hS.1
       exact prod_gaussianPdf_pos R y hR.1
     simp only [Function.comp, neg_neg, maximizeNeg]
