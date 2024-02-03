@@ -3,7 +3,7 @@ open System Lake DSL
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @
-  "1250aa83953a2c7d5819cebea08ad7fdef997d49"
+  "c838d28fb418158125f1551662ef55113d22eeec"
 
 meta if get_config? env = some "dev" then
 require scilean from git
