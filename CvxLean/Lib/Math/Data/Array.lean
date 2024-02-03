@@ -31,7 +31,7 @@ def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
       pure cs
   else
     pure cs
-termination_by _ => as.size - i
+termination_by as.size - i
 
 def Array.zipWithM (f : α → β → MetaM γ) (as : Array α) (bs : Array β) :
     MetaM (Array γ) :=

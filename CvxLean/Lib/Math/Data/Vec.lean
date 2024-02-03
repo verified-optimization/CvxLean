@@ -21,10 +21,8 @@ Named functions on vectors. Each of them corresponds to an atom.
 variable {m : Type u} {n : Type v} [Fintype m] [Fintype n] {α : Type w}
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Abs`. -/
-def abs [Abs α] (x : m → α) : m → α :=
-  fun i => Abs.abs (x i)
-
-instance [Abs α] : Abs (m → α) := ⟨abs⟩
+def abs (x : m → ℝ) : m → ℝ :=
+  fun i => |x i|
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.VecConst`. -/
 def const (n : ℕ) (k : α) : Fin n → α  :=
@@ -66,7 +64,7 @@ Named functions on real vectors, including those defined in
 open Real BigOperators
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Norm2`. -/
-instance : Norm (m → ℝ) := PiLp.hasNorm 2 _
+instance : Norm (m → ℝ) := PiLp.instNorm 2 _
 
 variable (x y : m → ℝ)
 

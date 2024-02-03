@@ -17,10 +17,8 @@ instance [Preorder α] : Preorder (Matrix m n α) where
   le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
   lt_iff_le_not_le := fun _ _ => refl _
 
-def abs [Abs α] (A : Matrix m n α) : Matrix m n α :=
-  fun i j => Abs.abs (A i j)
-
-instance [Abs α] : Abs (Matrix m n α) := ⟨abs⟩
+def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
+  fun i j => |A i j|
 
 theorem vecCons_zero_zero {n} [Zero R] : vecCons (0 : R) (0 : Fin n → R) = 0 := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]

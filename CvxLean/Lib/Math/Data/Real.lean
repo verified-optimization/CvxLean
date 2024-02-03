@@ -43,9 +43,6 @@ Useful instances to construct expressions.
 noncomputable instance instDivReal : Div ℝ := by
   infer_instance
 
-noncomputable instance instAbsReal : Abs ℝ := by
-  infer_instance
-
 noncomputable instance instMinReal : Min ℝ := by
   infer_instance
 
