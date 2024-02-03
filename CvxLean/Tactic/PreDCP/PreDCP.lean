@@ -146,10 +146,10 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
 
   try
     -- Call egg (time it for evaluation).
-    let before ← BaseIO.toIO IO.monoMsNow
+    let bef ← BaseIO.toIO IO.monoMsNow
     let steps ← runEggRequest eggRequest
-    let after ← BaseIO.toIO IO.monoMsNow
-    let diff := after - before
+    let aft ← BaseIO.toIO IO.monoMsNow
+    let diff := aft - bef
     dbg_trace s!"Egg time: {diff} ms."
     dbg_trace s!"Number of steps: {steps.size}."
     let size := (gStr.map fun (_, t) => t.size).fold 0 Nat.add

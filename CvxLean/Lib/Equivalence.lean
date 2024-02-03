@@ -221,7 +221,7 @@ noncomputable def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
     ⟨f, cs⟩ ≡ ⟨fun x => (Real.log (f x)), cs⟩ := by
   apply map_objFun
   intros r s h_feas_r h_feas_s
-  exact Real.log_le_log (h r h_feas_r) (h s h_feas_s)
+  exact Real.log_le_log_iff (h r h_feas_r) (h s h_feas_s)
 
 @[equiv]
 noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :

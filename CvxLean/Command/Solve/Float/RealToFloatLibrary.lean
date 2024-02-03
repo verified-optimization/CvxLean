@@ -47,12 +47,6 @@ addRealToFloat (n : Nat) : AddMonoidWithOne.toNatCast.natCast (R := ℝ) n :=
 addRealToFloat (i) (x : ℕ) : @Nat.cast Real i x :=
   Float.ofNat x
 
-addRealToFloat (n) (i1) (i2) : @instOfNat Real n i1 i2 :=
-  @instOfNatFloat n
-
-addRealToFloat (x : ℕ) (i) : @instOfNat Real x Real.natCast i :=
-  @instOfNatFloat x
-
 addRealToFloat (k : Nat) :
   @SMul.smul ℕ ℝ AddMonoid.toNatSMul k :=
   (fun (x : Float) => (OfNat.ofNat k) * x)

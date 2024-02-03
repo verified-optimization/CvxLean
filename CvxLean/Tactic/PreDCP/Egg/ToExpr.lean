@@ -94,8 +94,8 @@ partial def EggTree.toExpr (vars params : List String) : Tree String String → 
   | Tree.node "abs" #[t] => do
     let t ← toExpr vars params t
     return mkAppN
-      (mkConst ``Abs.abs [levelZero])
-      #[(mkConst ``Real), (mkConst ``Real.instAbsReal), t]
+      (mkConst ``abs [levelZero])
+      #[(mkConst ``Real), (mkConst ``Real.lattice), (mkConst ``Real.instAddGroupReal), t]
   -- Square root.
   | Tree.node "sqrt" #[t] => do
     let t ← toExpr vars params t
