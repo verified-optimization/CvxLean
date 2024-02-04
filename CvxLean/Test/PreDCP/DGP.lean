@@ -98,6 +98,7 @@ def gp4 :=
       h6 : x ^ (2 : ℝ) + 6 * y / z <= sqrt x
       h7 : x * y = z
 
+set_option maxHeartbeats 1000000 in
 time_cmd reduction red4/dcp4 : gp4 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
@@ -133,6 +134,7 @@ def gp5 :=
       h6 : x ^ (2 : ℝ) + 3 * y / z ≤ sqrt x
       h7 : x / y = z ^ (2 : ℝ)
 
+set_option maxHeartbeats 1000000 in
 time_cmd reduction red5/dcp5 : gp5 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
@@ -171,6 +173,7 @@ def gp6 :=
       h8 : 5 ≤ d / w
       h9 : d / w ≤ 6
 
+set_option maxHeartbeats 1000000 in
 time_cmd reduction red6/dcp6 : gp6 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')
@@ -208,7 +211,7 @@ def gp7 :=
       h5 : x + 2 * y + 3 * z ≤ 1
       h6 : (1 / 2) * x * y = 1
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 10000000 in
 time_cmd reduction red7/dcp7 : gp7 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
@@ -248,7 +251,7 @@ def gp8 :=
       h11 : 1.1 * r ≤ sqrt (A / (2 * 3.14159) + r ^ (2 : ℝ))
       h12 : sqrt (A / (2 * 3.14159) + r ^ (2 : ℝ)) ≤ 10
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 10000000 in
 time_cmd reduction red8/dcp8 : gp8 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')

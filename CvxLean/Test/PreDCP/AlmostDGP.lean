@@ -76,6 +76,7 @@ def agp3 :=
       h6 : sqrt x ≤ x ^ (2 : ℝ) - 6 * y / z
       h7 : x * y = z
 
+set_option maxHeartbeats 1000000 in
 time_cmd reduction reda3/dcpa3 : agp3 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
