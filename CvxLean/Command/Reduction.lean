@@ -73,7 +73,7 @@ def evalReductionAux (probIdStx redIdStx : TSyntax `ident) (xs : Array (Syntax �
     catch _ => pure ()
 
   let rhsName := probIdStx.getId
-  let (rhs, eqv) ← elabReductionProof lhs rhsName proofStx
+  let (rhs, red) ← elabReductionProof lhs rhsName proofStx
 
   -- Names for new definitions.
   let currNamespace ← getCurrNamespace
@@ -87,15 +87,16 @@ def evalReductionAux (probIdStx redIdStx : TSyntax `ident) (xs : Array (Syntax �
   simpleAddDefn probId rhs
 
   -- Add reduction proof to the environment.
-  let eqv ← instantiateMVars eqv
-  let eqv ← mkLambdaFVars (xs.map Prod.snd) eqv
-  let eqv ← instantiateMVars eqv
-  simpleAddDefn redId eqv
+  let red ← instantiateMVars red
+  let red ← mkLambdaFVars (xs.map Prod.snd) red
+  let red ← instantiateMVars red
+  simpleAddDefn redId red
 
   if bwdMap then
-    lambdaTelescope eqv fun eqvArgs eqvBody => do
+    lambdaTelescope red fun eqvArgs redBody => do
       -- Get psi, reduce it appropriately and convert to float.
-      let psi := (← whnf eqvBody).getArg! 7
+      let psi := (← whnf redBody).getArg! 6
+      trace[CvxLean.debug] "psi: {psi}"
 
       let mut simpCtx ← Simp.Context.mkDefault
       simpCtx := { simpCtx with config := aggressiveSimpConfig }
@@ -124,7 +125,7 @@ def evalReductionAux (probIdStx redIdStx : TSyntax `ident) (xs : Array (Syntax �
       let redNonPropArgs ← eqvArgs.filterM fun arg => do
         return !(← inferType (← inferType arg)).isProp
       let psi ← mkLambdaFVars redNonPropArgs res.expr
-      trace[CvxLean.debug] "psi: {psi}"
+      trace[CvxLean.debug] "simplified psi: {psi}"
 
       try
         let psiF ← realToFloat psi

@@ -92,6 +92,7 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
     lambdaTelescope eqv fun eqvArgs eqvBody => do
       -- Get psi, reduce it appropriately and convert to float.
       let psi := (← whnf eqvBody).getArg! 7
+      trace[CvxLean.debug] "psi: {psi}"
 
       let mut simpCtx ← Simp.Context.mkDefault
       simpCtx := { simpCtx with config := aggressiveSimpConfig }
@@ -114,7 +115,7 @@ def evalEquivalenceAux (probIdStx eqvIdStx : TSyntax `ident) (xs : Array (Syntax
       let eqvNonPropArgs ← eqvArgs.filterM fun arg => do
         return !(← inferType (← inferType arg)).isProp
       let psi ← mkLambdaFVars eqvNonPropArgs res.expr
-      trace[CvxLean.debug] "psi: {psi}"
+      trace[CvxLean.debug] "simplified psi: {psi}"
 
       try
         let psiF ← realToFloat psi
