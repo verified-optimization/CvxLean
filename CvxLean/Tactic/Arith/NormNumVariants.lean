@@ -7,18 +7,11 @@ namespace CvxLean
 open Lean Elab Meta Tactic
 
 /-- Variant of `norm_num` used to get rid of the `OfScientific`s. -/
-def normNumCleanUp (useSimp : Bool) : TacticM Unit :=
-  Mathlib.Meta.NormNum.elabNormNum mkNullNode mkNullNode (useSimp := useSimp)
+syntax (name := normNumCleanUp) "norm_num_clean_up" : tactic
 
-syntax (name := norm_num_clean_up) "norm_num_clean_up" : tactic
-
-@[tactic norm_num_clean_up]
-def evalNormNumCleanUp : Tactic := fun stx => match stx with
-  | `(tactic| norm_num_clean_up) => do
-    normNumCleanUp (useSimp := false)
-    saveTacticInfoForToken stx
-  | _ => throwUnsupportedSyntax
-
+macro_rules
+  | `(tactic| norm_num_clean_up) =>
+    `(tactic| repeat (conv in OfScientific.ofScientific _ _ _ => norm_num1))
 
 /-- Variant of `norm_num` that simplifies powers. -/
 syntax "norm_num_simp_pow" : tactic
