@@ -56,8 +56,7 @@ instance : ChangeOfVariables
       simp; rw [mul_comm _ (R ^ 2 - r ^ 2), ← mul_div, div_self (by positivity), mul_one]
       ring_nf; exact sqrt_sq hR }
 
-set_option maxHeartbeats 1000000
-
+set_option maxHeartbeats 1000000 in
 equivalence' eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
     trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Apply key change of variables.

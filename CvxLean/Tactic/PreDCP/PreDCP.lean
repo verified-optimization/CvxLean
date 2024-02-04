@@ -77,7 +77,6 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
   -- Finally, apply the tactic that should solve all proof obligations. A mix of approaches using
   -- `norm_num` in combination with the tactic provided by the user for this particular rewrite.
   let tacStx : Syntax ← `(tactic| intros;
-    try { norm_num_clean_up; $tacStx <;> norm_num_simp_pow } <;>
     try { $tacStx <;> norm_num_simp_pow } <;>
     try { norm_num_simp_pow })
 

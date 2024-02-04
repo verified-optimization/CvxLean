@@ -36,23 +36,24 @@ partial def EggTree.toExpr (vars params : List String) : Tree String String → 
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
     | Parsec.ParseResult.success _ res => do
-      -- NOTE: This is not ideal, but it works if we use norm_num all the
-      -- time.
-      let divisionRingToOfScientific :=
-        mkApp2 (mkConst ``DivisionRing.toOfScientific [levelZero])
-          (mkConst ``Real)
-          (mkConst ``Real.instDivisionRingReal)
-      let realOfScientific :=
-        mkApp2 (mkConst ``OfScientific.ofScientific [levelZero])
-          (mkConst ``Real)
-          divisionRingToOfScientific
-      let num := mkApp3 realOfScientific
-        (mkNatLit res.mantissa.natAbs) (Lean.toExpr true) (mkNatLit res.exponent)
-      if res.mantissa < 0 then
-        return mkApp3 (mkConst ``Neg.neg [levelZero])
-          (mkConst ``Real) (mkConst ``Real.instNegReal) num
-      else
-        return num
+        -- NOTE: not ideal, but `norm_num` should get us to where we want.
+        let divisionRingToOfScientific :=
+          mkApp2 (mkConst ``DivisionRing.toOfScientific [levelZero])
+            (mkConst ``Real)
+            (mkConst ``Real.instDivisionRingReal)
+        let realOfScientific :=
+          mkApp2 (mkConst ``OfScientific.ofScientific [levelZero])
+            (mkConst ``Real)
+            divisionRingToOfScientific
+        let num := mkApp3 realOfScientific
+          (mkNatLit res.mantissa.natAbs) (Lean.toExpr true) (mkNatLit res.exponent)
+        let expr :=
+          if res.mantissa < 0 then
+            mkApp3 (mkConst ``Neg.neg [levelZero]) (mkConst ``Real) (mkConst ``Real.instNegReal) num
+          else num
+        let simpResult ←
+          Mathlib.Meta.NormNum.deriveSimp (ctx := ← Simp.Context.mkDefault) (e := expr)
+        return simpResult.expr
     | _ => throwError "`pre_dcp` tree to Expr conversion error: unexpected num {s}."
   -- Variables.
   | Tree.node "var" #[Tree.leaf s] =>

@@ -24,7 +24,6 @@ def e367 :=
       h3 : 0.001 ≤ x3
       h4 : 0.001 ≤ x4
 
-set_option maxHeartbeats 1000000 in
 time_cmd reduction red367/dcp367 : e367 := by
   pre_dcp
 
