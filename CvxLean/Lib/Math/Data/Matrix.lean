@@ -6,6 +6,11 @@ import Mathlib.Data.Array.Defs
 import CvxLean.Lib.Math.Data.List
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Extra operations on matrices. Importantly, computable versions of matrix operations are defined
+here, which are used by the real-to-float procedure.
+-/
+
 namespace Matrix
 
 def const (k : α) : Matrix m n α :=

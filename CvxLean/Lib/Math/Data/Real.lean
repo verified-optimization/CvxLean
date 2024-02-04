@@ -2,6 +2,11 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
+/-!
+Extra real functions and results. Some are needed to define atoms. There are also some lemmas that
+are useful for the pre-DCP rewrite system.
+-/
+
 namespace Real
 
 /-- This makes real powers the default, avoiding a mixture of `ℕ` and `ℝ`, which is problematic for

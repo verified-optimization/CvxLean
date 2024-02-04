@@ -11,8 +11,8 @@ open Matrix
 
 open BigOperators
 
-/-- We need to change the instance of normed add comm group for n → 𝕜 so that it
-picks the correct inner product space instance. -/
+/-- We need to change the instance of normed add comm group for n → 𝕜 so that it picks the correct
+inner product space instance. -/
 @[local instance]
 noncomputable def frobeniusNormedAddCommGroup' [NormedAddCommGroup 𝕜] :
     NormedAddCommGroup (n → 𝕜) :=
@@ -24,16 +24,13 @@ noncomputable instance : InnerProductSpace 𝕜 (n → 𝕜) :=
   EuclideanSpace.instInnerProductSpace
 
 lemma IsHermitian.hasEigenvector_eigenvectorBasis (hA : A.IsHermitian) (i : n) :
-    Module.End.HasEigenvector
-      (Matrix.toLin' A) (hA.eigenvalues i) (hA.eigenvectorBasis i) := by
+    Module.End.HasEigenvector (Matrix.toLin' A) (hA.eigenvalues i) (hA.eigenvectorBasis i) := by
   simp only [IsHermitian.eigenvectorBasis, OrthonormalBasis.coe_reindex]
   apply LinearMap.IsSymmetric.hasEigenvector_eigenvectorBasis
 
-/-- *Diagonalization theorem*, *spectral theorem* for matrices; A hermitian
-matrix can be diagonalized by a change of basis using a matrix consisting of
-eigenvectors. -/
-theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n))
-    (as : n → ℝ)
+/-- *Diagonalization theorem*, *spectral theorem* for matrices; A hermitian matrix can be
+diagonalized by a change of basis using a matrix consisting of eigenvectors. -/
+theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n)) (as : n → ℝ)
     (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
     xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) * A =
     diagonal (IsROrC.ofReal ∘ as) * xs.toBasis.toMatrix (Pi.basisFun 𝕜 n) := by
@@ -66,10 +63,8 @@ theorem spectral_theorem (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n))
       Equiv.symm_apply_apply, Equiv.apply_symm_apply]
     rfl }
 
-lemma det_eq_prod_eigenvalues (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n))
-    (as : n → ℝ)
-    (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) :
-    det A = ∏ i, as i := by
+lemma det_eq_prod_eigenvalues (xs : OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n)) (as : n → ℝ)
+    (hxs : ∀ j, Module.End.HasEigenvector (Matrix.toLin' A) (as j) (xs j)) : det A = ∏ i, as i := by
   apply mul_left_cancel₀ (det_ne_zero_of_left_inverse
     (Basis.toMatrix_mul_toMatrix_flip (Pi.basisFun 𝕜 n) xs.toBasis))
   rw [← det_mul, spectral_theorem xs as hxs, det_mul, mul_comm, det_diagonal]

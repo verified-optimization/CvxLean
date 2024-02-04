@@ -11,7 +11,7 @@ def zeroCone (x : ℝ) : Prop :=
 def Vec.zeroCone {n} [Fintype n] (x : n → ℝ) : Prop :=
   ∀ i, Real.zeroCone (x i)
 
-/-- The `n`-dimensional zero cone `{0}ⁿˣᵐ`. -/
+/-- The `n×m`-dimensional zero cone `{0}ⁿˣᵐ`. -/
 def Matrix.zeroCone {n m} [Fintype n] [Fintype m] (M : Matrix n m ℝ) : Prop :=
   ∀ i j, Real.zeroCone (M i j)
 

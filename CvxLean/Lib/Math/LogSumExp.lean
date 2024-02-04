@@ -1,6 +1,10 @@
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+See `CvxLean.Tactic.DCP.Fns.LogSumExp`.
+-/
+
 namespace Vec
 
 open Real

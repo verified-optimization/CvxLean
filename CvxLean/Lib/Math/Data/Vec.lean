@@ -3,6 +3,11 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Fin
 
+/-!
+Extra vector functions and results. Some are needed to define atoms. Importantly, computable
+versions of vector operations are defined here, which are used by the real-to-float procedure.
+-/
+
 namespace Vec
 
 noncomputable instance (priority := high) : NormedAddCommGroup (Fin n → ℝ) :=

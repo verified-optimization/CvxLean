@@ -7,8 +7,8 @@ import CvxLean.Lib.Math.LinearAlgebra.Matrix.ToUpperTri
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.LDL
 
 /-!
-In this file we prove properties needed for the log-det-atom. We follow the proof in the
-MOSEK documentation: https://docs.mosek.com/modeling-cookbook/sdo.html#log-determinant.
+In this file we prove properties needed for the log-det-atom. We follow the proof in the MOSEK
+documentation: https://docs.mosek.com/modeling-cookbook/sdo.html#log-determinant.
 
 See `CvxLean.Tactic.DCP.Fns.LogDet`.
 -/

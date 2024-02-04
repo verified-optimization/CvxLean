@@ -3,7 +3,6 @@ import Mathlib.LinearAlgebra.Matrix.Spectrum
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.LinearAlgebra.Matrix.LDL
 import Mathlib.LinearAlgebra.Matrix.DotProduct
-
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.Spectrum
 import CvxLean.Lib.Math.LinearAlgebra.Eigenspace
@@ -43,7 +42,7 @@ lemma eigenvectorMatrix_inv_mul :
   hA.eigenvectorMatrixInv * hA.eigenvectorMatrix = 1 :=
 by apply Basis.toMatrix_mul_toMatrix_flip
 
--- NOTE: There is a spectral_theorem'
+-- NOTE: There is a `spectral_theorem'`.
 theorem spectral_theorem'' :
   hA.eigenvectorMatrix * diagonal (IsROrC.ofReal ∘ hA.eigenvalues) * hA.eigenvectorMatrixᴴ = A := by
   rw [conjTranspose_eigenvectorMatrix, Matrix.mul_assoc, ← spectral_theorem,
@@ -118,7 +117,7 @@ lemma PosSemidef.PosDef_iff_det_ne_zero [DecidableEq n] {M : Matrix n n ℝ} (hM
 matrices is positive definite. See `det_add_det_le_det_add` for the more general statement.
 
 The argument is taken from Andreas Thom's comment on mathoverflow:
-https://mathoverflow.net/questions/65424/determinant-of-sum-of-positive-definite-matrices/65430#65430 -/
+https://mathoverflow.net/questions/65424/determinant-of-sum-of-positive-definite-matrices. -/
 lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ)
     (hA : A.PosDef) (hB : B.PosSemidef) :
   A.det + B.det ≤ (A + B).det := by

@@ -1,5 +1,9 @@
 import Mathlib.Data.Fin.Basic
 
+/-!
+Basic properties about `Fin`.
+-/
+
 namespace Fin
 
 variable {n : ℕ}
