@@ -4,20 +4,26 @@ import Lean
 Custom error messages.
 -/
 
-syntax "throwTacticBuilderError" (interpolatedStr(term) <|> term) : term
+syntax "throwParserError " (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(throwParserError $msg:interpolatedStr) => `(throwError ("Parser error: " ++ (m! $msg)))
+  | `(throwParserError $msg:term) => `(throwError ("Parser error: " ++ $msg))
+
+syntax "throwTacticBuilderError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwTacticBuilderError $msg:interpolatedStr) =>
       `(throwError ("Tactic builder error: " ++ (m! $msg)))
   | `(throwTacticBuilderError $msg:term) => `(throwError ("Tactic builder error: " ++ $msg))
 
-syntax "throwRwConstrError" (interpolatedStr(term) <|> term) : term
+syntax "throwRwConstrError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwRwConstrError $msg:interpolatedStr) => `(throwError ("`rw_constr` error: " ++ (m! $msg)))
   | `(throwRwConstrError $msg:term) => `(throwError ("`rw_constr` error: " ++ $msg))
 
-syntax "throwRwObjError" (interpolatedStr(term) <|> term) : term
+syntax "throwRwObjError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwRwObjError $msg:interpolatedStr) => `(throwError ("`rw_obj` error: " ++ (m! $msg)))
