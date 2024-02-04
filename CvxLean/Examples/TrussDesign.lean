@@ -1,5 +1,11 @@
 import CvxLean
 
+/-!
+# Case study: Truss design
+
+See section 6.3 in https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf.
+-/
+
 noncomputable section
 
 namespace TrussDesign

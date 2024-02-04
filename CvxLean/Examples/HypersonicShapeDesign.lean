@@ -1,6 +1,12 @@
 import CvxLean
 import CvxLean.Command.Util.TimeCmd
 
+/-!
+# Case study: Aerospace Design via Quasiconvex Optimization
+
+See https://www.cvxpy.org/examples/dqcp/hypersonic_shape_design.html.
+-/
+
 noncomputable section
 
 namespace HypersonicShapeDesign

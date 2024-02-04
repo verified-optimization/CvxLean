@@ -1,5 +1,11 @@
 import CvxLean
 
+/-!
+# Case study: Fitting a sphere to data
+
+See exercise 8.16 in https://github.com/cvxgrp/cvxbook_additional_exercises.
+-/
+
 noncomputable section
 
 open CvxLean Minimization Real BigOperators Matrix Finset

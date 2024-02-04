@@ -1,5 +1,11 @@
 import CvxLean
 
+/-!
+# Case study: Optimal vehicle speed scheduling
+
+See exercise 4.20 in https://github.com/cvxgrp/cvxbook_additional_exercises.
+-/
+
 noncomputable section
 
 namespace VehicleSpeedSched

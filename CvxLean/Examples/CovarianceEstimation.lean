@@ -1,5 +1,11 @@
 import CvxLean
 
+/-!
+# Case study: Sparse covariance estimation for Gaussian variables
+
+See https://www.cvxpy.org/examples/applications/sparse_covariance_est.html.
+-/
+
 namespace CovarianceEstimation
 
 open CvxLean Minimization Real BigOperators Matrix
