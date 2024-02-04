@@ -4,7 +4,7 @@ def testLabel := {** 0 ** x **}
 
 #print testLabel
 
-set_option pp.labels true
+--set_option pp.labels true
 
 #print testLabel
 

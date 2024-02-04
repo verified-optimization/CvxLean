@@ -159,7 +159,7 @@ def delabVar (e : Expr) : DelabM (Lean.Name × Term) := do
       match m.get? `CvxLeanLabel with
       | some (name : Lean.Name) => return (name, ← descend e 0 do delab)
       | none => Alternative.failure
-  | _           => return (`_, ← delab)
+  | _ => return (`_, ← delab)
 
 /-- Show labels (variable names) and terms (types) in a domain type. -/
 partial def delabDomain : DelabM (List (Lean.Name × Term)) := do
@@ -175,11 +175,11 @@ partial def delabDomain : DelabM (List (Lean.Name × Term)) := do
 partial def delabConstraint : DelabM (TSyntax ``Parser.constraint) := do
   match ← getExpr with
   | Expr.mdata m e =>
-    match m.get? `CvxLeanLabel with
-    | some (name : Lean.Name) =>
-        return mkNode ``Parser.constraint
-          #[(mkIdent name).raw, mkAtom ":", (← descend e 0 do delab).raw]
-    | none => Alternative.failure
+      match m.get? `CvxLeanLabel with
+      | some (name : Lean.Name) =>
+          return mkNode ``Parser.constraint
+            #[(mkIdent name).raw, mkAtom ":", (← descend e 0 do delab).raw]
+      | none => Alternative.failure
   | _  => return (← `(Parser.constraint|_ : $(← delab)))
 
 /-- Show all constraints with their labels. -/
@@ -204,35 +204,35 @@ def withDomainBinding {α} [Inhabited α] (domain : Expr) (x : DelabM α) : Dela
 /-- Show minimization problem using the custom syntax, with variable names and constraitn tags. -/
 @[delab app]
 partial def delabMinimization : Delab := do
-  if not (pp.optMinimization.get (← getOptions)) then Alternative.failure
+  --if !(pp.opt.get (← getOptions)) then Alternative.failure
   match ← getExpr with
   | .app (.app (.app (.app (.const `Minimization.mk _) domain) _codomain) _objFun) constraints =>
-    let idents ← withType <| withNaryArg 0 do
-      let tys ← delabDomain
-      let tys ← tys.mapM fun (name, stx) => do `(Parser.minimizationVar| ($(mkIdent name) : $stx))
-      return tys.toArray
-    let (objFun, isMax) ← withNaryArg 2 do withDomainBinding domain do
-      match ← getExpr with
-      | .app (.app (.app (.const ``maximizeNeg _) _) _) e =>
-          withExpr e do
-            return (← delab, true)
-      | _ =>
-          return (← delab, false)
-    let noConstrs ← withLambdaBody constraints fun _ constrsBody => do
-      isDefEq constrsBody (mkConst ``True)
-    let constraints := ← withNaryArg 3 do
-      let cs ← withDomainBinding domain delabConstraints
-      return mkNode ``Parser.constraints #[mkNullNode <| cs.toArray.map (·.raw)]
-    if noConstrs then
-      if isMax then
-        `(optimization $idents* maximize $objFun)
+      let idents ← withType <| withNaryArg 0 do
+        let tys ← delabDomain
+        let tys ← tys.mapM fun (name, stx) => do `(Parser.minimizationVar| ($(mkIdent name) : $stx))
+        return tys.toArray
+      let (objFun, isMax) ← withNaryArg 2 do withDomainBinding domain do
+        match ← getExpr with
+        | .app (.app (.app (.const ``maximizeNeg _) _) _) e =>
+            withExpr e do
+              return (← delab, true)
+        | _ =>
+            return (← delab, false)
+      let noConstrs ← withLambdaBody constraints fun _ constrsBody => do
+        isDefEq constrsBody (mkConst ``True)
+      let constraints := ← withNaryArg 3 do
+        let cs ← withDomainBinding domain delabConstraints
+        return mkNode ``Parser.constraints #[mkNullNode <| cs.toArray.map (·.raw)]
+      if noConstrs then
+        if isMax then
+          `(optimization $idents* maximize $objFun)
+        else
+          `(optimization $idents*  minimize $objFun)
       else
-        `(optimization $idents*  minimize $objFun)
-    else
-      if isMax then
-        `(optimization $idents* maximize $objFun subject to $constraints)
-      else
-        `(optimization $idents* minimize $objFun subject to $constraints)
+        if isMax then
+          `(optimization $idents* maximize $objFun subject to $constraints)
+        else
+          `(optimization $idents* minimize $objFun subject to $constraints)
   | _ => Alternative.failure
 
 end Delab
