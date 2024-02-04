@@ -1191,6 +1191,7 @@ def expSubRevConstr :=
       hx : 0 < x
       h : exp (2 * x) / exp x ≤ 1
 
+set_option maxHeartbeats 1000000 in
 time_cmd equivalence expSubRevConstrRed/expSubRevConstrAuto : expSubRevConstr := by
   pre_dcp
 
