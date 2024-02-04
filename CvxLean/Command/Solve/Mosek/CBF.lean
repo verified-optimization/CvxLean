@@ -74,7 +74,7 @@ def empty : ConeProduct := ConeProduct.mk 0 0 []
 
 def isEmpty (cp : ConeProduct) : Prop := cp.k = 0
 
-instance : Decidable (isEmpty cp) := Nat.decEq _ _
+instance {cp} : Decidable (isEmpty cp) := Nat.decEq _ _
 
 def addCone (cp : ConeProduct) (c : Cone) : ConeProduct :=
   ConeProduct.mk (cp.n + c.dim) (cp.k + 1) (cp.cones.concat c)
@@ -97,7 +97,7 @@ def empty : DimensionList := DimensionList.mk 0 []
 
 def isEmpty (dl : DimensionList) : Prop := dl.n = 0
 
-instance : Decidable (isEmpty dl) := Nat.decEq _ _
+instance {dl} : Decidable (isEmpty dl) := Nat.decEq _ _
 
 def addDimension (dl : DimensionList) (d : Nat) : DimensionList :=
   DimensionList.mk (dl.n + 1) (dl.dimensions.concat d)
@@ -119,7 +119,7 @@ def empty : EncodedValue := EncodedValue.mk none
 
 def isEmpty (ev : EncodedValue) : Prop := ev.value.isNone
 
-instance : Decidable (isEmpty ev) := decEq _ _
+instance {ev} : Decidable (isEmpty ev) := decEq _ _
 
 end EncodedValue
 
@@ -154,7 +154,7 @@ def empty : EncodedVector := EncodedVector.mk 0 []
 
 def isEmpty (ev : EncodedVector) : Prop := ev.n = 0
 
-instance : Decidable (isEmpty ev) := Nat.decEq _ _
+instance {ev} : Decidable (isEmpty ev) := Nat.decEq _ _
 
 def addEntry (ev : EncodedVector) (eve : EncodedVectorEntry) : EncodedVector :=
   if eve.value < 0 || eve.value > 0 then
@@ -215,7 +215,7 @@ def empty : EncodedMatrix := EncodedMatrix.mk 0 []
 
 def isEmpty (em : EncodedMatrix) : Prop := em.n = 0
 
-instance : Decidable (isEmpty em) := Nat.decEq _ _
+instance {em} : Decidable (isEmpty em) := Nat.decEq _ _
 
 def addEntry (em : EncodedMatrix) (eme : EncodedMatrixEntry) : EncodedMatrix :=
   if eme.value < 0 || eme.value > 0 then
@@ -281,7 +281,7 @@ def empty : EncodedMatrixList := EncodedMatrixList.mk 0 []
 
 def isEmpty (eml : EncodedMatrixList) : Prop := eml.n = 0
 
-instance : Decidable (isEmpty eml) := Nat.decEq _ _
+instance {eml} : Decidable (isEmpty eml) := Nat.decEq _ _
 
 def addEntry (eml : EncodedMatrixList) (emle : EncodedMatrixListEntry) : EncodedMatrixList :=
   if emle.value > 0 || emle.value < 0 then
@@ -351,7 +351,7 @@ def empty : EncodedMatrixListList := EncodedMatrixListList.mk 0 []
 
 def isEmpty (emll : EncodedMatrixListList) : Prop := emll.n = 0
 
-instance : Decidable (isEmpty emll) := Nat.decEq _ _
+instance {emll} : Decidable (isEmpty emll) := Nat.decEq _ _
 
 def addEntry (emll : EncodedMatrixListList) (emlle : EncodedMatrixListListEntry) :
     EncodedMatrixListList :=

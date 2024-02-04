@@ -4,7 +4,7 @@ import CvxLean.Lib.Minimization
 
 /-!
 Infrastructure to work with the `Minimization` and `Solution` types as expressions. Crucially, we
-define functions to compose and decompose domans and constraints, taking into account their names.
+define functions to compose and decompose domains and constraints, taking into account their names.
 -/
 
 namespace CvxLean
@@ -13,7 +13,7 @@ namespace Meta
 
 open Lean Lean.Meta
 
-variable [MonadControlT MetaM m] [Monad m]
+variable {m} [MonadControlT MetaM m] [Monad m]
 
 /-- Structure holding all the components in the `Minimization` type. -/
 structure MinimizationExpr where
@@ -132,7 +132,7 @@ partial def mkProjections (domain : Expr) (p : Expr) : m (List (Name × Expr × 
 /-- Introduce let declarations into the context, corresponding to the projections of `p`. The
 argument `domain` specifies the type of `p`. CvxLeanLabels in the `domain` are used to determine the
 names of the new variables. -/
-def withDomainLocalDecls [Inhabited α] (domain : Expr) (p : Expr)
+def withDomainLocalDecls {α} [Inhabited α] (domain : Expr) (p : Expr)
     (x : Array Expr → Array Expr → m α) : m α  := do
   let pr := (← mkProjections domain p).toArray
   withLetDecls (pr.map fun (n, ty, val) => (n, fun _ => return ty, fun _ => return val)) fun xs => do

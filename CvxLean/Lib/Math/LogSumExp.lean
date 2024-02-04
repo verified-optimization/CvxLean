@@ -9,7 +9,7 @@ namespace Vec
 
 open Real
 
-lemma sum_exp_eq_sum_div (x : Fin n → ℝ) (t : ℝ) :
+lemma sum_exp_eq_sum_div {n} (x : Fin n → ℝ) (t : ℝ) :
     Vec.sum (Vec.exp (x - Vec.const n t)) = (Vec.sum (Vec.exp x)) / (Real.exp t) := by
   unfold Vec.sum
   rw [Finset.sum_div]

@@ -13,6 +13,8 @@ here, which are used by the real-to-float procedure.
 
 namespace Matrix
 
+variable {α} {m n}
+
 def const (k : α) : Matrix m n α :=
   fun _ _ => k
 
@@ -25,15 +27,15 @@ instance [Preorder α] : Preorder (Matrix m n α) where
 def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
   fun i j => |A i j|
 
-theorem vecCons_zero_zero {n} [Zero R] : vecCons (0 : R) (0 : Fin n → R) = 0 := by
+theorem vecCons_zero_zero {n} [Zero α] : vecCons (0 : α) (0 : Fin n → α) = 0 := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem smul_vecCons {n} [Zero R] [SMulZeroClass ℝ R] (x : ℝ) (y : R) (v : Fin n → R) :
+theorem smul_vecCons {n} [Zero α] [SMulZeroClass ℝ α] (x : ℝ) (y : α) (v : Fin n → α) :
     x • vecCons y v = vecCons (x • y) (x • v) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem add_vecCons {n} [Zero R] [SMulZeroClass ℝ R] [Add R] (x : R) (v : Fin n → R) (y : R)
-    (w : Fin n → R) : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
+theorem add_vecCons {n} [Zero α] [SMulZeroClass ℝ α] [Add α] (x : α) (v : Fin n → α) (y : α)
+    (w : Fin n → α) : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 open BigOperators
@@ -47,6 +49,8 @@ namespace Computable
 /-!
 Computable operations on matrices used in `RealToFloat`.
 -/
+
+variable {n m l : ℕ}
 
 def toArray (A : Matrix (Fin n) (Fin n) Float) : Array (Array Float) :=
   (Array.range n).map <| fun i =>
@@ -63,10 +67,10 @@ def mulVec (M : Matrix (Fin m) (Fin n) Float) (v : (Fin n) → Float) : Fin m �
 def vecMul (x : Fin m → Float) (M : Matrix (Fin m) (Fin n) Float) : Fin n → Float :=
   fun j => x ⬝ᵥᶜ fun i => M i j
 
-def transpose (M : Matrix m n α) : Matrix n m α :=
+def transpose {m n} (M : Matrix m n α) : Matrix n m α :=
   fun i j => M j i
 
-def diag (M : Matrix n n α) : n → α :=
+def diag {n} (M : Matrix n n α) : n → α :=
   fun i => M i i
 
 def mul (M : Matrix (Fin l) (Fin m) Float) (N : Matrix (Fin m) (Fin n) Float) :

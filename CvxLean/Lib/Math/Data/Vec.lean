@@ -10,18 +10,20 @@ versions of vector operations are defined here, which are used by the real-to-fl
 
 namespace Vec
 
-noncomputable instance (priority := high) : NormedAddCommGroup (Fin n → ℝ) :=
+noncomputable instance (priority := high) {n} : NormedAddCommGroup (Fin n → ℝ) :=
   PiLp.normedAddCommGroup 2 _
 
-noncomputable instance (priority := high) : NormedAddGroup (Fin n → ℝ) :=
+noncomputable instance (priority := high) {n} : NormedAddGroup (Fin n → ℝ) :=
   (PiLp.normedAddCommGroup 2 _).toNormedAddGroup
 
-noncomputable instance (priority := high) : InnerProductSpace ℝ (Fin n → ℝ) :=
+noncomputable instance (priority := high) {n} : InnerProductSpace ℝ (Fin n → ℝ) :=
   PiLp.innerProductSpace _
 
 /-!
 Named functions on vectors. Each of them corresponds to an atom.
 -/
+
+universe u v w
 
 variable {m : Type u} {n : Type v} [Fintype m] [Fintype n] {α : Type w}
 

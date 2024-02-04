@@ -17,6 +17,8 @@ def _root_.Lean.Json.getArr! (j : Json) : Array Json :=
   | Json.arr a => a
   | _ => #[]
 
+variable {ε α}
+
 def _root_.MetaM.ofExcept [ToString ε]: Except ε α -> MetaM α :=
   fun e =>
     match e with

@@ -11,6 +11,8 @@ deriving Inhabited
 
 namespace OC
 
+variable {α β γ δ ε ζ η θ}
+
 def map (f : α → β) (oc : OC α) : OC β :=
   OC.mk (f oc.objFun) (oc.constr.map f)
 
@@ -57,7 +59,7 @@ def map6M [Inhabited α] [Inhabited β] [Inhabited γ] [Inhabited δ] [Inhabited
     constr := constr.push $ ← h a.constr[i]! b.constr[i]! c.constr[i]! d.constr[i]! e.constr[i]! f.constr[i]!
   return OC.mk objFun constr
 
-def map7M [Inhabited α] [Inhabited β] [Inhabited γ] [Inhabited δ] [Inhabited ε] [Inhabited ζ] [Inhabited η] 
+def map7M [Inhabited α] [Inhabited β] [Inhabited γ] [Inhabited δ] [Inhabited ε] [Inhabited ζ] [Inhabited η]
   (h : α → β → γ → δ → ε → ζ → η → MetaM θ)
   (a : OC α) (b : OC β) (c : OC γ) (d : OC δ) (e : OC ε) (f : OC ζ) (g : OC η) : MetaM (OC θ) := do
   let objFun ← h a.objFun b.objFun c.objFun d.objFun e.objFun f.objFun g.objFun

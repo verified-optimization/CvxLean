@@ -61,6 +61,8 @@ instance : Trans (@Reduction D E R _) (@Equivalence E F R _) (@Reduction D F R _
 instance : Trans (@Equivalence D E R _) (@Reduction E F R _) (@Reduction D F R _) :=
   { trans := fun E R => Reduction.trans (ofEquivalence E) R }
 
+variable {f : D → R} {cs : D → Prop}
+
 section Maps
 
 /-- Weaker version of `Equivalence.map_objFun`. For a reduction we only need the map to be

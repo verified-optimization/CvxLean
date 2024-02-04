@@ -76,7 +76,7 @@ where
 
 
 /-- -/
-def withCopyOfMonoXs [Inhabited α] (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → Array ArgKind → TermElabM α) : TermElabM α := do
+def withCopyOfMonoXs {α} [Inhabited α] (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → Array ArgKind → TermElabM α) : TermElabM α := do
   -- Determine subset of monotone arguments and their behavior.
   let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
   let mut monoXs := #[]

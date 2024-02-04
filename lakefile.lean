@@ -2,7 +2,13 @@ import Lake
 
 open System Lake DSL
 
-package CvxLean
+package CvxLean where
+  leanOptions := #[
+    ⟨`pp.unicode.fun, true⟩,
+    ⟨`pp.proofs.withType, false⟩,
+    ⟨`autoImplicit, false⟩,
+    ⟨`relaxedAutoImplicit, false⟩
+  ]
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @
@@ -13,7 +19,7 @@ require scilean from git
   "https://github.com/verified-optimization/SciLean" @
   "master"
 
-meta if get_config? env = some "doc" then
+meta if get_config? doc = some "on" then
 require «doc-gen4» from git
   "https://github.com/verified-optimization/doc-gen4.git" @
   "main"

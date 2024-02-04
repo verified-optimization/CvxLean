@@ -202,6 +202,8 @@ end StrongEquivalence
 
 namespace Equivalence
 
+variable {f : D → R} {cs : D → Prop}
+
 /- Mapping the objective function by monotonic functions yields an equivalence. Also, mapping the
 whole domain by a function with a right inverse. -/
 section Maps

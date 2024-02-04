@@ -25,7 +25,7 @@ feasibility
   (c_neg : by
     unfold posOrthCone
     rw [←neg_le_iff_add_nonneg']
-    exact neg_abs_le_self x)
+    exact neg_abs_le x)
 optimality by
   apply abs_le.2
   rw [←sub_nonneg, sub_neg_eq_add, add_comm, ←sub_nonneg (b := x)]

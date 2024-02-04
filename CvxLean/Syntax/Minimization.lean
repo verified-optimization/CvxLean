@@ -177,7 +177,8 @@ partial def delabConstraint : DelabM (TSyntax ``Parser.constraint) := do
   | Expr.mdata m e =>
     match m.get? `CvxLeanLabel with
     | some (name : Lean.Name) =>
-        return mkNode ``Parser.constraint #[(mkIdent name).raw, mkAtom ":", (← descend e 0 do delab).raw]
+        return mkNode ``Parser.constraint
+          #[(mkIdent name).raw, mkAtom ":", (← descend e 0 do delab).raw]
     | none => Alternative.failure
   | _  => return (← `(Parser.constraint|_ : $(← delab)))
 
@@ -192,7 +193,7 @@ partial def delabConstraints : DelabM (List (TSyntax ``Parser.constraint)) := do
   | _ => return [← delabConstraint]
 
 /-- Delaborate with variable names replaced. -/
-def withDomainBinding [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α := do
+def withDomainBinding {α} [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α := do
   guard (← getExpr).isLambda
   withBindingBody' `p fun p => do
     withDomainLocalDecls domain p fun xs _prs => do

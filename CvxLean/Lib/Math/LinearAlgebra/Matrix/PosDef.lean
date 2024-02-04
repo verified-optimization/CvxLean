@@ -82,7 +82,7 @@ lemma IsHermitian.nonsingular_inv [DecidableEq n] {M : Matrix n n 𝕜} (hM : M.
   refine' (Matrix.inv_eq_right_inv _).symm
   rw [conjTranspose_nonsing_inv, hM.eq, mul_nonsing_inv _ hMdet]
 
-lemma conj_symm {M : Matrix n n 𝕜} (hM : M.IsHermitian) :
+lemma conj_symm {x : n → 𝕜} {M : Matrix n n 𝕜} (hM : M.IsHermitian) :
     star (star x ⬝ᵥ mulVec M x) = star x ⬝ᵥ mulVec M x := by
   nth_rewrite 1 [star_dotProduct, star_mulVec]
   rw [star_star, dotProduct_mulVec, hM.eq]

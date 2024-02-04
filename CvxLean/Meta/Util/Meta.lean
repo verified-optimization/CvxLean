@@ -6,7 +6,8 @@ Helper `Meta`-related functions.
 
 namespace Lean.Meta
 
-variable [MonadControlT MetaM m] [Monad m]
+variable {m} [MonadControlT MetaM m] [Monad m]
+variable {α}
 
 /-- Open lambda-expression by introducing a new local declaration. Similar to `lambdaTelescope`, but
 for only one variable. -/

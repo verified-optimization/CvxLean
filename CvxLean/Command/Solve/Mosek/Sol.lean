@@ -198,6 +198,8 @@ private def optionFloat : Parsec (Option Float) :=
 
 section Summary
 
+variable {α}
+
 /-- Skip the beginning of a summary line. -/
 private def summaryIdentifier (id : String) : Parsec Unit :=
   skipString id *> ws' *> skipChar ':' *> ws'
@@ -227,6 +229,8 @@ private def summary : Parsec Summary :=
 end Summary
 
 section Constraints
+
+variable {α}
 
 /-- Skip the title in the constraints section. -/
 private def constraintsTitle : Parsec Unit :=

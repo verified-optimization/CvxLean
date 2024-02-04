@@ -16,7 +16,7 @@ some components of our automated procedures such as pattern-matching in `dcp` or
 noncomputable instance (priority := high) : HPow ℝ ℝ ℝ := by infer_instance
 
 @[default_instance]
-noncomputable instance (priority := high) : HPow (Fin n → ℝ) ℝ (Fin n → ℝ) := by infer_instance
+noncomputable instance (priority := high) {n} : HPow (Fin n → ℝ) ℝ (Fin n → ℝ) := by infer_instance
 
 section Functions
 
