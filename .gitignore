@@ -7,6 +7,7 @@
 /egg-pre-dcp/*.dot 
 /egg-pre-dcp/*.svg
 *.olean
+*.code-workspace
 
 /playground
 /evaluation
