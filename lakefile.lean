@@ -5,12 +5,12 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @
   "c838d28fb418158125f1551662ef55113d22eeec"
 
-meta if get_config? env = some "dev" then
+meta if get_config? env = some "scilean" then
 require scilean from git
   "https://github.com/verified-optimization/SciLean" @
   "master"
 
-meta if get_config? env = some "dev" then
+meta if get_config? env = some "doc" then
 require «doc-gen4» from git
   "https://github.com/verified-optimization/doc-gen4" @
   "main"
