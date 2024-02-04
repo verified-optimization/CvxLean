@@ -114,7 +114,7 @@ end RealLemmas
 namespace Computable
 
 /-!
-Computable operations on matrices used in `RealToFloat`.
+Computable operations on vectors used in `RealToFloat`.
 -/
 
 variable {n : ℕ}
@@ -128,8 +128,11 @@ def sum (x : Fin n → Float) : Float :=
 def cumsum (x : Fin n → Float) : Fin n → Float :=
   fun i => (((toArray x).toList.take (i.val + 1)).foldl Float.add 0)
 
-def norm {n : ℕ} (x : Fin n → Float) : Float :=
+def _root_.Real.Computable.norm {n : ℕ} (x : Fin n → Float) : Float :=
   Float.sqrt (sum (fun i => (Float.pow (x i) 2)))
+
+def norm {n m : ℕ} (A : Fin n → Fin m → Float) : Fin n → Float :=
+  fun i => Real.Computable.norm (A i)
 
 def exp {m} (x : m → Float) : m → Float :=
   fun i => Float.exp (x i)

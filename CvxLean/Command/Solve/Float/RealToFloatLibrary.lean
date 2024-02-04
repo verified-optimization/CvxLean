@@ -123,7 +123,7 @@ addRealToFloat : @Real.log :=
   Float.log
 
 addRealToFloat (n) (i) : @Norm.norm.{0} (Fin n → ℝ) i :=
-  @Vec.Computable.norm n
+  @Real.Computable.norm n
 
 addRealToFloat (i) : @OfScientific.ofScientific Real i :=
   Float.ofScientific
