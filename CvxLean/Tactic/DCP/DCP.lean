@@ -13,7 +13,7 @@ import CvxLean.Tactic.Arith.Arith
 
 namespace CvxLean
 
-open Lean Lean.Meta
+open Lean Expr Meta
 
 namespace DCP
 

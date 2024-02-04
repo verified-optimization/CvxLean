@@ -7,7 +7,7 @@ import CvxLean.Tactic.DCP.DCP
 
 namespace CvxLean
 
-open Lean Lean.Meta Lean.Elab Lean.Elab.Command
+open Lean Expr Meta Elab Command
 
 /-- -/
 def mkAndIntro (xs : Array Expr) : MetaM Expr := do

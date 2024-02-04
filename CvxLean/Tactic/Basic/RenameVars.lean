@@ -4,7 +4,7 @@ import CvxLean.Meta.Util.Expr
 
 namespace CvxLean
 
-open Lean Meta Elab Tactic
+open Lean Expr Meta Elab Tactic
 
 namespace Meta
 
@@ -12,12 +12,10 @@ namespace Meta
 def renameVarsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun eqvExpr g => do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
   let vars ← decomposeDomain (← instantiateMVars eqvExpr.domainP)
-  let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
 
   -- Create new domain.
   let renamedVars ← manipulateVars vars names.data
   let newDomain := composeDomain renamedVars
-  let newFVars := Array.mk <| renamedVars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
 
   -- Create new minimization expression.
   let newObjFun ← withLocalDeclD `p newDomain fun p => do

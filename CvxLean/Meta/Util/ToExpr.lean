@@ -1,5 +1,9 @@
 import Lean
 
+/-!
+Some `ToExpr` instances.
+-/
+
 section ToExpr
 
 open Lean
@@ -25,8 +29,7 @@ instance : ToExpr Float where
   toTypeExpr := mkConst ``Float
 
 instance {n} : ToExpr (Fin n) where
-  toExpr x :=
-    mkApp (mkConst ``Fin.ofNat) (toExpr x.val)
+  toExpr x := mkApp (mkConst ``Fin.ofNat) (toExpr x.val)
   toTypeExpr := mkApp (mkConst ``Fin) (toExpr n)
 
 instance : ToExpr (Array Float) := by infer_instance

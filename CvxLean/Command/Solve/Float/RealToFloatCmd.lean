@@ -20,7 +20,7 @@ translation.
 
 namespace CvxLean
 
-open Lean Lean.Elab Lean.Meta Lean.Elab.Command Lean.Elab.Term
+open Lean Expr Elab Meta Command Term
 
 syntax (name := addRealToFloatCommand)
   "addRealToFloat" Lean.Parser.Term.funBinder* ":" term ":=" term : command

@@ -1,41 +1,44 @@
 import Lean
-
 import CvxLean.Lib.Math.Data.Array
+
+/-!
+Helper functions to create and manipulate Lean expressions.
+-/
 
 open Lean
 
-/-- TODO Check if `expr` is constant by checking if it contains any free variable
-from `vars`. -/
-def Lean.Expr.isConstant (expr : Expr) : Bool := (Lean.collectFVars {} expr).fvarSet.isEmpty
+/-- Check if `e` is constant by checking if it contains any free variable. -/
+def Lean.Expr.isConstant (e : Expr) : Bool := (Lean.collectFVars {} e).fvarSet.isEmpty
 
-/-- Check if `expr` is constant by checking if it contains any free variable
-from `vars`. -/
-def Lean.Expr.isRelativelyConstant (expr : Expr) (vars : Array FVarId) : Bool := Id.run do
-  let fvarSet := (Lean.collectFVars {} expr).fvarSet
+/-- Check if `e` is constant by checking if it contains any free variable from `vars`. -/
+def Lean.Expr.isRelativelyConstant (e : Expr) (vars : Array FVarId) : Bool := Id.run do
+  let fvarSet := (Lean.collectFVars {} e).fvarSet
   for v in vars do
     if fvarSet.contains v then return false
   return true
 
+/-- Remove the metadata from an expression. -/
 def Lean.Expr.removeMData (e : Expr) : CoreM Expr := do
   let post (e : Expr) : CoreM TransformStep := do
     return TransformStep.done e.consumeMData
   Core.transform e (post := post)
 
-def Lean.Elab.Term.elabTermAndSynthesizeEnsuringType (stx : Syntax)
-  (expectedType? : Option Expr) (errorMsgHeader? : Option String := none) :
-  TermElabM Expr := do
+/-- Combination of `elabTermAndSynthesize` and `ensureHasType`. -/
+def Lean.Elab.Term.elabTermAndSynthesizeEnsuringType (stx : Syntax) (expectedType? : Option Expr)
+    (errorMsgHeader? : Option String := none) : TermElabM Expr := do
   let e ← elabTermAndSynthesize stx expectedType?
   withRef stx <| ensureHasType expectedType? e errorMsgHeader?
 
-def mkAppBeta (e : Expr) (arg : Expr) := e.bindingBody!.instantiate1 arg
+def Lean.Expr.mkAppBeta (e : Expr) (arg : Expr) :=
+  e.bindingBody!.instantiate1 arg
 
-def mkAppNBeta (e : Expr) (args : Array Expr) : Expr := Id.run do
+def Lean.Expr.mkAppNBeta (e : Expr) (args : Array Expr) : Expr := Id.run do
   let mut e := e
   for _arg in args do
     e := e.bindingBody!
   e.instantiateRev args
 
-def convertLambdasToLets (e : Expr) (args : Array Expr) : Expr := Id.run do
+def Lean.Expr.convertLambdasToLets (e : Expr) (args : Array Expr) : Expr := Id.run do
   let mut e := e
   let mut names := #[]
   let mut tys := #[]
@@ -75,7 +78,7 @@ def Lean.Expr.mkProd (as : Array Expr) : MetaM Expr :=
       (as.take (as.size - 1))
 
 private def Lean.Expr.mkArrayAux (ty : Expr) (as : List Expr) :
-  MetaM Expr := do
+    MetaM Expr := do
   match as with
   | []    => return mkAppN (mkConst ``Array.empty [levelZero]) #[ty]
   | e::es =>

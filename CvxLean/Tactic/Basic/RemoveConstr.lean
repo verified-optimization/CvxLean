@@ -4,7 +4,7 @@ import CvxLean.Meta.Util.Expr
 
 namespace CvxLean
 
-open Lean Meta Elab Term Tactic
+open Lean Expr Meta Elab Term Tactic
 
 namespace Meta
 

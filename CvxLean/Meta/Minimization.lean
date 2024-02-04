@@ -138,7 +138,7 @@ partial def mkProjections (domain : Expr) (p : Expr) : m (List (Name × Expr × 
 def withDomainLocalDecls [Inhabited α] (domain : Expr) (p : Expr)
     (x : Array Expr → Array Expr → m α) : m α  := do
   let pr := (← mkProjections domain p).toArray
-  withLetDecls' (pr.map fun (n, ty, val) => (n, fun _ => return ty, fun _ => return val)) fun xs => do
+  withLetDecls (pr.map fun (n, ty, val) => (n, fun _ => return ty, fun _ => return val)) fun xs => do
     let mut xs := xs
     -- Use projections instead of variables named "_" :
     for i in [:pr.size] do
