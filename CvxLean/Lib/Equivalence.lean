@@ -17,6 +17,7 @@ namespace Minimization
 
 variable {D E F R : Type} [Preorder R]
 variable (p : Minimization D R) (q : Minimization E R) (r : Minimization F R)
+
 /- Let `p := ⟨f, cs⟩`, `q := ⟨g, ds⟩` and `r := ⟨h, es⟩`. -/
 
 /-- Regular notion of equivalence between optimization problems. We require maps `(φ, ψ)` between

@@ -4,7 +4,8 @@ import CvxLean.Lib.Equivalence
 # Reduction of optimization problems
 
 We define the notion of reduction. It is a reflexive and transitive relation and it induces a
-backward map between solutions. An equivalence gives a reduction.
+backward map between solutions. The idea is that solving the reduced problem is "as hard" as solving
+the original problem. An equivalence gives a reduction.
 
 ## References
 
@@ -231,12 +232,6 @@ def rewrite_constraint_10_last
   ofEquivalence <| Equivalence.rewrite_constraint_10_last hrw
 
 end Rewrites
-
-section Other
-
--- TODO: from equiv.
-
-end Other
 
 end Reduction
 

@@ -3,7 +3,9 @@ import CvxLean.Lib.Equivalence
 /-!
 # Relaxation of optimization problems
 
-We define the notion of relaxation.
+We define the notion of relaxation. It is a reflexive and transitive relation and it induces a
+forward map between solutions. The idea is that solving the original problem is "as hard" as solving
+the relaxed problem. A strong equivalence gives a relaxation.
 
 ## References
 
@@ -38,9 +40,9 @@ def trans (Rx₁ : p ≽' q) (Rx₂ : q ≽' r) : p ≽' r :=
   { phi := Rx₂.phi ∘ Rx₁.phi,
     phi_feasibility := fun x h => Rx₂.phi_feasibility (Rx₁.phi x) (Rx₁.phi_feasibility x h),
     phi_optimality := fun x hx =>
-      -- h(φ₂(φ₁(x))) ≤ g(φ₁(x))
+      -- `h(φ₂(φ₁(x))) ≤ g(φ₁(x))`
       have h₁ := Rx₂.phi_optimality (Rx₁.phi x) (Rx₁.phi_feasibility x hx)
-      -- g(φ₁(x)) ≤ f(x)
+      -- `g(φ₁(x)) ≤ f(x)`
       have h₂ := Rx₁.phi_optimality x hx
       le_trans h₁ h₂ }
 
