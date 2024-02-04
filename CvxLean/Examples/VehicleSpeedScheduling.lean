@@ -210,15 +210,11 @@ def bₚ : ℝ := 6
 @[optimization_param]
 def cₚ : ℝ := 10
 
-def p := vehSpeedSchedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
+solve vehSpeedSchedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
 
-set_option trace.Meta.debug true
-
-solve p
-
-#eval p.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
-#eval p.value    -- 275.042133
-#eval p.solution -- ...
+#eval vehSpeedSchedQuadratic.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
+#eval vehSpeedSchedQuadratic.value    -- 275.042133
+#eval vehSpeedSchedQuadratic.solution -- ...
 
 -- NOTE: F is not really used here, but it is a parameter of the equivalence, so we must give it a
 -- value.
@@ -230,7 +226,7 @@ def eqv₂.backward_mapₚ := eqv₂.backward_map nₚ dₚ.float τminₚ.float
 
 -- Finally, we can obtain the solution to the original problem.
 
-def sₚ_opt := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ p.solution)
+def sₚ_opt := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ vehSpeedSchedQuadratic.solution)
 
 #eval sₚ_opt
 -- ![0.955578, 0.955548, 0.955565, 0.955532, 0.955564, 0.955560, 0.912362, 0.960401, 0.912365,

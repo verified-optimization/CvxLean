@@ -200,6 +200,9 @@ addRealToFloat (l m n) (i) :
 addRealToFloat (n : Nat) (i1) (i2) : @Matrix.toUpperTri.{0,0} (Fin n) ℝ i1 i2 :=
   @Matrix.Computable.toUpperTri n
 
+addRealToFloat (n) (i) : @Inv.inv (Matrix (Fin n) (Fin n) ℝ) i :=
+  @Matrix.Computable.inv n
+
 end Matrix
 
 section CovarianceEstimation
