@@ -26,8 +26,8 @@ Minimization.mk
 The full version with labels would be
 ```
 @Minimization.mk ({** ℝ ** `x **} × {** ℝ ** `y **}) ℝ
-  (fun p => {** 40 * p.1 + 30 * p.2 ** `c₁ **})
-  (fun p => {** 12 ≤ p.1 + p.2 ∧ 16 ≤ 2 * p.1 + p.2 ** `c₂ **})
+  (fun p => 40 * p.1 + 30 * p.2)
+  (fun p => {** 12 ≤ p.1 + p.2 ** `c₁ **} ∧ {** 16 ≤ 2 * p.1 + p.2 ** `c₂ **})
 ```
 where the `{ ** e ** n }` notation is as defined in `Syntax/Label.lean`.
 
