@@ -78,7 +78,6 @@ def trace (A : Matrix (Fin n) (Fin n) Float) : Float :=
 
 def covarianceMatrix {N n : ℕ} (Y : Matrix (Fin N) (Fin n) Float) (i j : Fin n) : Float :=
   Vec.Computable.sum (fun k => (Y k i) * (Y k j)) / (OfNat.ofNat N)
-  --((vecToArray Y).map (fun y => (y i) * y j)).foldl (· + ·) 0 / (OfNat.ofNat N)
 
 def diagonal (x : Fin n → Float) : Matrix (Fin n) (Fin n) Float :=
   fun i j => (if i = j then x i else 0)
@@ -98,6 +97,35 @@ def fromBlocks {l : Type} {m : Type} {n : Type} {o : Type} {α : Type} :
 
 def toUpperTri (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
   fun i j => if i ≤ j then A i j else 0
+
+private def minorAux (A : Matrix (Fin n.succ) (Fin n.succ) Float) (a b : Fin n.succ) :
+    Matrix (Fin n) (Fin n) Float :=
+  fun i j =>
+    let i' : Fin n.succ := if i.val < a.val then i else i.succ;
+    let j' : Fin n.succ := if j.val < b.val then j else j.succ;
+    A i' j'
+
+def minor (A : Matrix (Fin n) (Fin n) Float) (a b : Fin n) :
+    Matrix (Fin n.pred) (Fin n.pred) Float :=
+  match n with
+  | 0 => fun _ => Fin.elim0
+  | _ + 1 => minorAux A a b
+
+def det {n : ℕ} (A : Matrix (Fin n) (Fin n) Float) : Float :=
+  if h : 0 < n then
+    if n == 1 then A ⟨0, h⟩ ⟨0, h⟩ else
+      (List.finRange n).foldl (fun s i =>
+        s + (-1) ^ (Float.ofNat i.val) * A i ⟨0, h⟩ * det (minor A i ⟨0, h⟩)) 0
+  else 0
+
+def cofactor (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
+  fun i j => (-1) ^ (Float.ofNat (i.val + j.val)) * (A i j)
+
+def adjugate (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
+  transpose (cofactor A)
+
+def inv (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
+  (1 / det A) • adjugate A
 
 end Computable
 
