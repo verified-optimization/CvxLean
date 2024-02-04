@@ -1,6 +1,16 @@
 import CvxLean.Meta.Minimization
 import CvxLean.Lib.Equivalence
 
+/-!
+Infrastructure to work with `Equivalence` types as expressions. We also define some basic tactics
+that work on equivalence goals:
+* `equivalence_rfl` closes a goal by reflexivity.
+* `equivalence_symm` applies symmetry.
+* `equivalence_trans` applies transitivity.
+* `equivalence_step => ...` allows users to apply one equivalence step in the `equivalence` command
+  by first applying transitivity as otherwise the goal would be closed immediately.
+-/
+
 namespace CvxLean
 
 open Lean Meta
@@ -9,30 +19,30 @@ namespace Meta
 
 /-- `Equivalence` type components as expressions. -/
 structure EquivalenceExpr where
-  domainP : Expr
-  domainQ : Expr
+  domainLHS : Expr
+  domainRHS : Expr
   codomain : Expr
   codomainPreorder : Expr
-  p : Expr
-  q : Expr
+  lhs : Expr
+  rhs : Expr
 
 namespace EquivalenceExpr
 
 def toMinimizationExprLHS (eqvExpr : EquivalenceExpr) : MetaM MinimizationExpr := do
-  MinimizationExpr.fromExpr (← whnf eqvExpr.p)
+  MinimizationExpr.fromExpr (← whnf eqvExpr.lhs)
 
 def toMinimizationExprRHS (eqvExpr : EquivalenceExpr) : MetaM MinimizationExpr := do
-  MinimizationExpr.fromExpr (← whnf eqvExpr.q)
+  MinimizationExpr.fromExpr (← whnf eqvExpr.rhs)
 
 def toExpr (eqvExpr : EquivalenceExpr) : Expr :=
-  mkApp6 (mkConst ``Minimization.Equivalence)
-    eqvExpr.domainP eqvExpr.domainQ eqvExpr.codomain eqvExpr.codomainPreorder eqvExpr.p eqvExpr.q
+  mkApp6 (mkConst ``Minimization.Equivalence) eqvExpr.domainLHS eqvExpr.domainRHS eqvExpr.codomain
+    eqvExpr.codomainPreorder eqvExpr.lhs eqvExpr.rhs
 
 def fromExpr (e : Expr) : MetaM EquivalenceExpr := do
   match e with
   | .app (.app (.app (.app (.app (.app (.const ``Minimization.Equivalence _)
-      domainP) domainQ) codomain) codomainPreorder) p) q => do
-      return EquivalenceExpr.mk domainP domainQ codomain codomainPreorder p q
+      domainLHS) domainRHS) codomain) codomainPreorder) lhs) rhs => do
+      return EquivalenceExpr.mk domainLHS domainRHS codomain codomainPreorder lhs rhs
   | _ => throwError "Expression not of the form `Minimization.Equivalence ...`."
 
 def fromGoal (goal : MVarId) : MetaM EquivalenceExpr := do

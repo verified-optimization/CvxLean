@@ -4,6 +4,13 @@ import Lean
 Custom error messages.
 -/
 
+syntax "throwTacticBuilderError" (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(throwTacticBuilderError $msg:interpolatedStr) =>
+      `(throwError ("Tactic builder error: " ++ (m! $msg)))
+  | `(throwTacticBuilderError $msg:term) => `(throwError ("Tactic builder error: " ++ $msg))
+
 syntax "throwRwConstrError" (interpolatedStr(term) <|> term) : term
 
 macro_rules
@@ -38,7 +45,7 @@ syntax "throwRealToFloatError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwRealToFloatError $msg:interpolatedStr) =>
-    `(throwError ("`real-to-float` error: " ++ (m! $msg)))
+      `(throwError ("`real-to-float` error: " ++ (m! $msg)))
   | `(throwRealToFloatError $msg:term) => `(throwError ("`real-to-float` error: " ++ $msg))
 
 syntax "throwSolveError " (interpolatedStr(term) <|> term) : term
@@ -52,7 +59,7 @@ syntax "throwEquivalenceError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwEquivalenceError $msg:interpolatedStr) =>
-    `(throwError ("`equivalence` error: " ++ (m! $msg)))
+      `(throwError ("`equivalence` error: " ++ (m! $msg)))
   | `(throwEquivalenceError $msg:term) => `(throwError ("`equivalence` error: " ++ $msg))
 
 /-- Errors in the `reduction` command. -/
@@ -60,7 +67,7 @@ syntax "throwReductionError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwReductionError $msg:interpolatedStr) =>
-    `(throwError ("`reduction` error: " ++ (m! $msg)))
+      `(throwError ("`reduction` error: " ++ (m! $msg)))
   | `(throwReductionError $msg:term) => `(throwError ("`reduction` error: " ++ $msg))
 
 /-- Errors in the `relaxation` command. -/
@@ -68,5 +75,5 @@ syntax "throwRelaxationError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
   | `(throwRelaxationError $msg:interpolatedStr) =>
-    `(throwError ("`relaxation` error: " ++ (m! $msg)))
+      `(throwError ("`relaxation` error: " ++ (m! $msg)))
   | `(throwRelaxationError $msg:term) => `(throwError ("`relaxation` error: " ++ $msg))

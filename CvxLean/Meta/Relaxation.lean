@@ -1,6 +1,15 @@
 import CvxLean.Meta.Equivalence
 import CvxLean.Lib.Relaxation
 
+/-!
+Infrastructure to work with `Relaxation` types as expressions. We also define some basic tactics
+that work on relaxation goals:
+* `relaxation_rfl` closes a goal by reflexivity.
+* `relaxation_trans` applies transitivity.
+* `relaxation_step => ...` allows users to apply one relaxation step in the `relaxation` command
+  by first applying transitivity as otherwise the goal would be closed immediately.
+-/
+
 namespace CvxLean
 
 namespace Meta
