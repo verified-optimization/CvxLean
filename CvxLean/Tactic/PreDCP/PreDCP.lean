@@ -1,6 +1,8 @@
 import CvxLean.Lib.Equivalence
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
+import CvxLean.Meta.Util.Error
+import CvxLean.Meta.Util.Debug
 import CvxLean.Tactic.PreDCP.RewriteMapExt
 import CvxLean.Tactic.PreDCP.RewriteMapLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
@@ -37,7 +39,7 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
             return (← `(tactic| (rw [eq_comm]; $tac)), false)
           else
             return (← `(tactic| (rw [Iff.comm]; $tac)), false)
-  | _ => throwError "Unknown rewrite name {rewriteName}({direction})."
+  | _ => throwPreDCPError "unknown rewrite name {rewriteName}({direction})."
 
 /-- Given an egg rewrite and a current goal with all the necessary information about the
 minimization problem, we find the appropriate rewrite to apply, and output the remaining goals. -/
@@ -49,12 +51,11 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
     else if let [_, tag] := step.location.splitOn ":" then
       return tag
     else
-      throwError "`pre_dcp` error: Unexpected tag name {step.location}."
+      throwPreDCPError "unexpected tag name {step.location}."
   let tagNum := tagsMap.find! step.location
   let atObjFun := tagNum == 0
 
-  -- Build expexcted expression to generate the right rewrite condition. Again, mapping the
-  -- objective function is an exception where the expected term is not used.
+  -- Build expexcted expression to generate the right rewrite condition.
   let expectedTermStr := step.expectedTerm
   let mut expectedExpr ← EggString.toExpr vars params expectedTermStr
   if !atObjFun then
@@ -62,7 +63,6 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
   let paramsFvars := Array.mk <| params.map (fun v => mkFVar (FVarId.mk v))
   let paramsDeclsIds := Array.mk <| paramsDecls.map (fun decl => mkFVar decl.fvarId)
-  -- TODO: Why do we need this?
   let D ← instantiateMVars eqvExpr.domainP
   expectedExpr ←
     withLocalDeclD `p D fun p => do
@@ -84,7 +84,7 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
   if isMap then
     -- Maps, e.g., `map_objFun_log` are applied directly to the equivalence goal.
     if let _ :: _ ← evalTacticAt tacStx g then
-      throwError "`pre_dcp` error: failed to apply {step.rewriteName}."
+      throwPreDCPError "failed to apply {step.rewriteName}."
   else
     -- Rewrites use the machinery from `Tactic.Basic.RewriteOpt`.
     if atObjFun then
@@ -161,17 +161,18 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
     for step in steps do
       let gs ← Tactic.run g <| (evalStep step varsNames paramsNames paramsDecls tagsMap).toTactic
       if gs.length != 1 then
-        throwError (s!"`pre_dcp` error: failed to rewrite {step.rewriteName} after evaluating "
-          ++ s!"step ({gs.length} goals remaining).")
+        trace[CvxLean.debug] "Remaining goals: {gs}."
+        throwPreDCPError "failed to rewrite {step.rewriteName} ({gs.length} goals remaining)."
       else
+        trace[CvxLean.debug] "Rewrote {step.rewriteName}."
         g := gs[0]!
-        dbg_trace s!"Rewrote {step.rewriteName}."
 
     let gsFinal ← evalTacticAt (← `(tactic| equivalence_rfl)) g
     if gsFinal.length != 0 then
-      throwError "`pre_dcp` error: could not close last goal."
+      trace[CvxLean.debug] "Remaining goals: {gsFinal}."
+      throwPreDCPError "could not close last goal."
   catch e =>
-    throwError "`pre_dcp` error: {e.toMessageData}"
+    throwPreDCPError "{e.toMessageData}"
 
 /-- The `pre_dcp` tactic encodes a given minimization problem, sends it to egg, and reconstructs
 the proof from egg's output. -/
