@@ -63,7 +63,7 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
   let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
   let paramsFvars := Array.mk <| params.map (fun v => mkFVar (FVarId.mk v))
   let paramsDeclsIds := Array.mk <| paramsDecls.map (fun decl => mkFVar decl.fvarId)
-  let D ← instantiateMVars eqvExpr.domainP
+  let D ← instantiateMVars eqvExpr.domainLHS
   expectedExpr ←
     withLocalDeclD `p D fun p => do
       Meta.withDomainLocalDecls D p fun xs prs => do

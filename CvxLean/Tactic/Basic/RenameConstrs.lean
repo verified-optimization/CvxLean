@@ -28,7 +28,7 @@ def renameConstrsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun e
     return ← mkLambdaFVars #[p] $ composeAnd constraints.toList
   let rhsMinExpr := { lhsMinExpr with constraints := newConstrs }
 
-  if !(← isDefEq eqvExpr.q rhsMinExpr.toExpr) then
+  if !(← isDefEq eqvExpr.rhs rhsMinExpr.toExpr) then
       throwError "`rename_constrs` error: Failed to unify the goal."
 
   -- Close goal by reflexivity.

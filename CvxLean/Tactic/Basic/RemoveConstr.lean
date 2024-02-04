@@ -85,14 +85,14 @@ def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder := fun
       return ← mkLambdaFVars #[p] <| ← mkAppM ``Iff.intro #[oldImpliesNew, newImpliesOld]
 
     -- Prove by rewriting.
-    let D := eqvExpr.domainP
+    let D := eqvExpr.domainLHS
     let R := eqvExpr.codomain
     let RPreorder := eqvExpr.codomainPreorder
     let fullProof ← mkAppOptM ``Minimization.Equivalence.rewrite_constraints
       #[D, R, RPreorder, lhsMinExpr.objFun, lhsMinExpr.constraints, newConstrs, iffProof]
     check fullProof
     let rhs := { lhsMinExpr with constraints := newConstrs }
-    if !(← isDefEq eqvExpr.q rhs.toExpr) then
+    if !(← isDefEq eqvExpr.rhs rhs.toExpr) then
       throwError "`remove_constr` error: failed to unify RHS."
 
     if let _ :: _ ← g.apply fullProof then
