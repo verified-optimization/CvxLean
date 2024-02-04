@@ -4,6 +4,18 @@ import Lean
 Custom error messages.
 -/
 
+syntax "throwRwConstrError" (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(throwRwConstrError $msg:interpolatedStr) => `(throwError ("`rw_constr` error: " ++ (m! $msg)))
+  | `(throwRwConstrError $msg:term) => `(throwError ("`rw_constr` error: " ++ $msg))
+
+syntax "throwRwObjError" (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(throwRwObjError $msg:interpolatedStr) => `(throwError ("`rw_obj` error: " ++ (m! $msg)))
+  | `(throwRwObjError $msg:term) => `(throwError ("`rw_obj` error: " ++ $msg))
+
 syntax "throwPreDCPError " (interpolatedStr(term) <|> term) : term
 
 macro_rules
