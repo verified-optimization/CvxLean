@@ -54,7 +54,7 @@ jobs:
           git remote add origin "https://github.com/verified-optimization/workaround"
 
           mkdir -p .lake/packages
-          cp -r ../mathlib4/.lake/packages/* .lake/packages
+          cp -r ../CvxLean/.lake/packages/* .lake/packages
           lake update
       - name: Build doc-gen4
         working-directory: workaround
