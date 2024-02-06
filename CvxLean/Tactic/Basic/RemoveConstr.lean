@@ -106,6 +106,7 @@ end Meta
 
 namespace Tactic
 
+/-- -/
 syntax (name := removeConstr) "remove_constr" ident term : tactic
 
 @[tactic removeConstr]

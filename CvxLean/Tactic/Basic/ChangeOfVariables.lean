@@ -10,19 +10,45 @@ import CvxLean.Tactic.Basic.ConvOpt
 
 /-!
 # Change of variables
+
+This file defines the `change_of_variables` tactic.  The idea is that change of variable functions
+are registered as instances of the `ChangeOfVariables` typeclass. These instances are also currently
+defined in this file. The tactic takes care of renaming the variables as needed, finding the change
+of variables, and proving the condition.
+
+We illustrate it with an example of how to use it inside the `equivalence` command:
+```
+equivalence eqv/q :
+    optimization (x : ℝ)
+      minimize x
+      subject to
+        c : 0 < x := by
+  change_of_variables (u) (x ↦ exp u)
+```
+The resulting problem `q` looks as follows:
+```
+optimization (u : ℝ)
+  minimize exp u
+  subject to
+    c : 0 < exp u := by
+```
+We provide `change_of_variables!` as a convenient variant that also tries to remove trivial
+constraints. In this case, it would remove `0 < exp u` as it is always true.
 -/
 
 namespace CvxLean
 
 open Minimization
 
-/-- -/
+/-- Change of variables functions are registered using this typeclass. The only requirement
+(`property`) is that they have a right inverse `inv` over some domain given by `condition`. -/
 class ChangeOfVariables {D E} (c : E → D) where
   inv : D → E
   condition : D → Prop
   property : ∀ x, condition x → c (inv x) = x
 
-/-- -/
+/-- A change of variables is an equivalence-preserving transformation, as long as the condition
+holds in the feasible set. -/
 @[equiv]
 def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D → Prop} (c : E → D)
     [cov : ChangeOfVariables c] (h : ∀ x, cs x → cov.condition x) :
@@ -37,27 +63,28 @@ def ChangeOfVariables.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D �
 
 section Structural
 
-/-- -/
+/-- Composing changes of variables results in a valid change of variables. -/
 instance ChangeOfVariables.comp {D E F} (c₁ : E → D) (c₂ : F → E) [cov₁ : ChangeOfVariables c₁]
     [cov₂ : ChangeOfVariables c₂] : ChangeOfVariables (c₁ ∘ c₂) :=
   { inv := cov₂.inv ∘ cov₁.inv
     condition := fun x => cov₁.condition x ∧ cov₂.condition (cov₁.inv x)
     property := fun x ⟨hx₁, hx₂⟩ => by simp [cov₂.property (cov₁.inv x) hx₂, cov₁.property x hx₁] }
 
-/-- -/
+/-- Apply change of variables to the left of a product domain. -/
 instance ChangeOfVariables.prod_left {D E F} (c : E → D) [cov : ChangeOfVariables c] :
     ChangeOfVariables (fun x : E × F => (c x.1, x.2)) :=
   { inv := fun ⟨x₁, x₂⟩ => (cov.inv x₁, x₂)
     condition := fun ⟨x₁, _⟩ => cov.condition x₁
     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₁ hx] }
 
-/-- -/
+/-- Apply change of variables to the right of a product domain. -/
 instance ChangeOfVariables.prod_right {D E F} (c : E → D) [cov : ChangeOfVariables c] :
     ChangeOfVariables (fun x : F × E => (x.1, c x.2)) :=
   { inv := fun ⟨x₁, x₂⟩ => (x₁, cov.inv x₂)
     condition := fun ⟨_, x₂⟩ => cov.condition x₂
     property := fun ⟨x₁, x₂⟩ hx => by simp [cov.property x₂ hx] }
 
+/-- The identity map is a valid change of variables. -/
 instance ChangeOfVariables.id {D} : ChangeOfVariables (fun x : D => x) :=
   { inv := fun x => x
     condition := fun _ => True
@@ -79,10 +106,10 @@ instance : ChangeOfVariables sqrt :=
     condition := fun x => 0 ≤ x
     property := fun _ hx => sqrt_sq hx }
 
--- NOTE(RFM): x ≠ 0 is technically not necessary as division is defined on all of ℝ, but we want to
--- avoid division by zero.
 instance : ChangeOfVariables (fun x : ℝ => x⁻¹) :=
   { inv := fun x => x⁻¹
+    -- NOTE: x ≠ 0 is technically not necessary as `0⁻¹⁻¹ = 0`, but we want to explicitly always
+    -- avoid division by zero.
     condition := fun x => x ≠ 0
     property := fun x _ => by field_simp }
 
@@ -114,23 +141,17 @@ instance {n : ℕ} {a : Fin n → ℝ} : ChangeOfVariables (fun (v : Fin n → �
 
 end VecInstances
 
-/-
-The idea here is to have a tactic
-
-  change_of_variables (u) (x ↦ e^u)
-
-1. Detect exactly where to apply the change of variables.
-2. Syntesize the instance.
-2. Prove the conditions.
-3. Apply the c-of-v to equivalence theorem.
-
-For now, it only works with real variables.
--/
-
 open Lean Elab Meta Tactic Term
 
 namespace Meta
 
+/-- This defines the tactic `change_of_variables (u) (x ↦ exp u)`. It follows the following steps:
+1. Detect exactly where to apply the change of variables.
+2. Syntesize the instance.
+2. Prove the conditions.
+3. Apply the change of variables to equivalence theorem.
+
+For now, it only works with real variables.-/
 def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     (changeStx : TSyntax `term) : EquivalenceBuilder :=
   fun eqvExpr g => do
@@ -218,6 +239,7 @@ def evalChangeOfVariables : Tactic := fun stx => match stx with
       saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
+/-- Tries to remove trivial constraints after applying the change of variables. -/
 syntax (name := changeOfVariablesAndRemove)
   "change_of_variables!" "(" ident ")" "(" ident "↦" term ")" : tactic
 
