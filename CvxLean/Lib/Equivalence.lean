@@ -7,10 +7,10 @@ import CvxLean.Meta.Attributes
 
 We define equivalence and strong equivalence, and several equivalence-preserving transformations.
 
-## References
+### References
 
-* [S. Boyd and L. Vandenberghe, *Convex Optimization*][BV04]
-* [M. C. Grant, *Discipliend Convex Programming*][Gra05]
+* [BV04] S. Boyd and L. Vandenberghe, *Convex Optimization*
+* [Gra05] M. C. Grant, *Discipliend Convex Programming*
 -/
 
 namespace Minimization

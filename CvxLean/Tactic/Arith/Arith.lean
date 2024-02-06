@@ -5,6 +5,10 @@ import Mathlib.Tactic.Positivity
 import CvxLean.Tactic.Arith.NormNumVariants
 import CvxLean.Tactic.Arith.PositivityExt
 
+/-!
+
+-/
+
 namespace Tactic
 
 open Lean Meta Elab Tactic Qq
@@ -60,7 +64,7 @@ def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
               mvarId := g
               break
             else
-              throwError "prepare_positivity failed"
+              throwError "`prepare_positivity` failed."
         | none => continue
 
     return mvarId
@@ -84,7 +88,7 @@ def positivityMaybeNormNum : TacticM Unit :=
         `(tactic| (try { norm_num } <;> positivity))
       else
         `(tactic| positivity)
-    let [] ← evalTacticAt tac g | throwError "positivity_maybe_norm_num failed"
+    let [] ← evalTacticAt tac g | throwError "`positivity_maybe_norm_num` failed."
 
 elab (name := positivity) "positivity_maybe_norm_num" : tactic =>
   positivityMaybeNormNum

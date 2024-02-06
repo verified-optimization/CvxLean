@@ -7,11 +7,11 @@ We define the notion of reduction. It is a reflexive and transitive relation and
 backward map between solutions. The idea is that solving the reduced problem is "as hard" as solving
 the original problem. An equivalence gives a reduction.
 
-## References
+### References
 
-* [C. Papadimitriou, *Computational Complexity*][Pap93]
+* [Pap93] C. Papadimitriou, *Computational Complexity*
 
-## TODO
+### TODO
 
 * Build reductions from equivalences automatically in meta.
 -/

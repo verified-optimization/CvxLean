@@ -13,7 +13,7 @@ This file defines `determineCoeffsFromExpr`, which takes a `MinimizationExpr` an
 `ProblemData`. This procedure is used by `Commands/Solve.lean` to be able to call an external
 solver.
 
-## TODO
+### TODO
 
 * This is probably a big source of inefficency for the `solve` command. We should come up with a
   better way to extract the numerical values from the Lean expressions.
