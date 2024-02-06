@@ -62,16 +62,17 @@ open Lean.PrettyPrinter.Delaborator SubExpr
 
 /-- Display labelled terms using the `{** term ** name **}` syntax. -/
 @[delab mdata] def delabNamedConstraint : Delab := do
-  -- Omit delaboration if pretty printing option is disabled.
-  --if !(pp.labels.get (← getOptions)) then failure
-  -- Check if `CvxLeanLabel` metadata is attached to current expression.
-  let Expr.mdata m e ← getExpr | unreachable!
-  match m.get? `CvxLeanLabel with
-  | some (name : Name) =>
-      let stx ← descend e 0 (do delab)
-      let id := mkIdent name
-      `({** $stx ** $id**})
-  | none => failure
+  failure
+  -- -- Omit delaboration if pretty printing option is disabled.
+  -- if !(pp.labels.get (← getOptions)) then failure
+  -- -- Check if `CvxLeanLabel` metadata is attached to current expression.
+  -- let Expr.mdata m e ← getExpr | unreachable!
+  -- match m.get? `CvxLeanLabel with
+  -- | some (name : Name) =>
+  --     let stx ← descend e 0 (do delab)
+  --     let id := mkIdent name
+  --     `({** $stx ** $id**})
+  -- | none => failure
 
 end Delab
 
