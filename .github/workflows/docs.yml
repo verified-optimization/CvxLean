@@ -42,7 +42,7 @@ jobs:
           elan default leanprover/lean4:v4.6.0-rc1
           lake new workaround
           cd workaround
-          cp -f ../mathlib4/lean-toolchain .
+          cp -f ../CvxLean/lean-toolchain .
           echo 'require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "main"' >> lakefile.lean
           echo 'require CvxLean from ".." / "CvxLean"' >> lakefile.lean
 
