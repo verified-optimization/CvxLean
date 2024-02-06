@@ -45,9 +45,11 @@ type `Reduction p q`. -/
 def elabReductionProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
   elabTransformationProof TransformationGoal.Reduction lhs rhsName stx
 
+/-- Open a reduction environment. -/
 syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
+/-- Open a reduction environment and try to generate a computable backward map. -/
 syntax (name := reductionAndBwdMap)
   "reduction'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 

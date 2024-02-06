@@ -39,10 +39,11 @@ type `Relaxation p q`. -/
 def elabRelaxationProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
   elabTransformationProof TransformationGoal.Relaxation lhs rhsName stx
 
+/-- Open a relaxation environment. -/
 syntax (name := relaxation)
   "relaxation" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
-/-- Relaxation command. -/
+/-- Definition of the `relaxation` command. -/
 @[command_elab «relaxation»]
 def evalRelaxation : CommandElab := fun stx => match stx with
 | `(relaxation $relIdStx / $probIdStx $declSig := $proofStx) => do
