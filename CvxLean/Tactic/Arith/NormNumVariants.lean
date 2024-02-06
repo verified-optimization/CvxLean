@@ -2,6 +2,10 @@ import Lean
 import Mathlib.Tactic.NormNum
 import CvxLean.Lib.Math.Data.Real
 
+/-!
+Custom `norm_num` variants.
+-/
+
 namespace CvxLean
 
 open Lean Elab Meta Tactic

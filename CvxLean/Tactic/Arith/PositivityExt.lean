@@ -4,6 +4,12 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Tactic.Positivity
 import CvxLean.Lib.Math.Data.Real
 
+/-!
+Ad-hoc positivity extensions for particular examples. If `positivity!` fails, then we can try to add
+a new lemma here. This approach is not scalable, but is useful as long as we don't have a general
+nonlinear arithmetic tactic.
+-/
+
 namespace Mathlib.Meta.Positivity
 
 open Lean.Meta Qq Real
