@@ -4,13 +4,13 @@ import Lean.Data.Json.Parser
 /-!
 # Solution format definition and parser
 
-See <https://docs.mosek.com/latest/toolbox/sol-format.html>. 
--/ 
+See <https://docs.mosek.com/latest/toolbox/sol-format.html>.
+-/
 
 namespace Sol
 
-/-- Stores general information about the solution, crucially the optimality 
-status of the problem and the attained values. -/
+/-- Stores general information about the solution, crucially the optimality  status of the problem
+and the attained values. -/
 structure Summary where
   name            : String
   problemStatus   : String
@@ -19,11 +19,11 @@ structure Summary where
   primalObjective : Float
   dualObjective   : Float
 
-namespace Summary 
+namespace Summary
 
-instance : ToString Summary where 
+instance : ToString Summary where
   toString s :=
-    s!"NAME             : {s.name} \n" ++ 
+    s!"NAME             : {s.name} \n" ++
     s!"PROBLEM STATUS   : {s.problemStatus} \n" ++
     s!"SOLUTION STATUS  : {s.solutionStatus} \n" ++
     s!"OBJECTIVE NAME   : {s.objectiveName} \n" ++
@@ -41,12 +41,12 @@ UL : At the upper limit (bound).
 EQ : Lower limit is identical to upper limit.
 ** : Infeasible i.e. the lower limit is greater than the upper limit. -/
 inductive StatusKey
-| UN | BS | SB | LL | UL | EQ | IN
+  | UN | BS | SB | LL | UL | EQ | IN
 
 namespace StatusKey
 
-instance : ToString StatusKey where 
-  toString 
+instance : ToString StatusKey where
+  toString
   | StatusKey.UN => "UN"
   | StatusKey.BS => "BS"
   | StatusKey.SB => "SB"
@@ -70,9 +70,9 @@ structure Constraint where
 
 namespace Constraint
 
-instance : ToString Constraint where 
+instance : ToString Constraint where
   toString c :=
-    s!"{c.index} | " ++ 
+    s!"{c.index} | " ++
     s!"{c.name} | " ++
     s!"{c.status} | " ++
     s!"{c.activity} | " ++
@@ -89,8 +89,8 @@ structure Variable extends Constraint where
 
 namespace Variable
 
-instance : ToString Variable where 
-  toString v := 
+instance : ToString Variable where
+  toString v :=
     (toString v.toConstraint) ++ (s!" | {v.conicDual}")
 
 end Variable
@@ -106,9 +106,9 @@ structure SymmMatrixVariable where
 
 namespace SymmMatrixVariable
 
-instance : ToString SymmMatrixVariable where 
-  toString smv := 
-    s!"{smv.index} | " ++ 
+instance : ToString SymmMatrixVariable where
+  toString smv :=
+    s!"{smv.index} | " ++
     s!"{smv.name} | " ++
     s!"{smv.I} | " ++
     s!"{smv.J} | " ++
@@ -128,41 +128,40 @@ namespace Result
 
 instance : ToString Result where
   toString res :=
-    (toString res.summary) ++ "\n" ++ 
+    (toString res.summary) ++ "\n" ++
     "CONSTRAINTS \n" ++
     "INDEX | NAME | AT | ACTIVITY | LOWER LIMIT | UPPER LIMIT | DUAL LOWER | DUAL UPPER \n" ++
-    (res.constraints.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n" ++ 
+    (res.constraints.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n" ++
     "VARIABLES \n" ++
     "INDEX | NAME | AT | ACTIVITY | LOWER LIMIT | UPPER LIMIT | DUAL LOWER | DUAL UPPER | CONIC DUAL \n" ++
-    (res.vars.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n" ++ 
-    "SYMMETRIC MATRIX VARIABLES \n" ++ 
-    "INDEX | NAME | I | J | PRIMAL | DUAL \n" ++ 
+    (res.vars.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n" ++
+    "SYMMETRIC MATRIX VARIABLES \n" ++
+    "INDEX | NAME | I | J | PRIMAL | DUAL \n" ++
     (res.symmMatrixVars.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n"
 
 end Result
 
 /-- Either a full result or a MOSEK error code. -/
 inductive Response
-| success (res : Result) : Response 
-| failure (code : Nat)   : Response 
+| success (res : Result) : Response
+| failure (code : Nat)   : Response
 
 namespace Response
 
 instance : ToString Response where
-  toString 
+  toString
   | success res  => toString res
   | failure code => s!"MOSEK failed with code {code}."
 
 end Response
 
-namespace Parser 
+namespace Parser
 
 open Lean Parsec
 
 /-- Variation of 'ws' not skipping line breaks. -/
-def ws' : Parsec Unit := fun it =>
-  Lean.Parsec.ParseResult.success (skipWs' it) ()
-where 
+def ws' : Parsec Unit := fun it =>  Lean.Parsec.ParseResult.success (skipWs' it) ()
+where
   skipWs' (it : String.Iterator) : String.Iterator :=
   if it.hasNext then
     let c := it.curr
@@ -170,7 +169,7 @@ where
   else it
 
 /-- End of line (or file). -/
-private def endOfLine : Parsec Unit := 
+private def endOfLine : Parsec Unit :=
   skipChar '\u000a' <|> eof
 
 /-- Parse only valid characters. -/
@@ -178,7 +177,7 @@ private def char : Parsec Char :=
   asciiLetter <|> hexDigit <|> pchar '_' <|> fail "Invalid character."
 
 /-- Parse string containing only valid characters as in `char`. -/
-private def string : Parsec String := 
+private def string : Parsec String :=
   many1Chars char
 
 /-- Parse a `Nat` using the `JsonNumber` parser. -/
@@ -194,51 +193,54 @@ private def float : Parsec Float := fun it₁ =>
   | ParseResult.error it₂ err => ParseResult.error it₂ err
 
 /-- Use `float` or return none if the string is `"NONE"`. -/
-private def optionFloat : Parsec (Option Float) := 
+private def optionFloat : Parsec (Option Float) :=
   (some <$> float) <|> (skipString "NONE" *> pure none)
 
 section Summary
 
+variable {α}
+
 /-- Skip the beginning of a summary line. -/
-private def summaryIdentifier (id : String) : Parsec Unit := 
+private def summaryIdentifier (id : String) : Parsec Unit :=
   skipString id *> ws' *> skipChar ':' *> ws'
 
 /-- Generic function to parse summary lines. -/
 private def summaryLine (id : String) (p : Parsec α) : Parsec α :=
-  summaryIdentifier id *> p <* ws' <* endOfLine 
+  summaryIdentifier id *> p <* ws' <* endOfLine
 
 /-- Specialize `summaryLine` to strings. -/
-private def stringSummaryLine (id : String) : Parsec String := 
+private def stringSummaryLine (id : String) : Parsec String :=
   summaryLine id string
 
 /-- Specialize `summaryLine` to floats. -/
-private def floatSummaryLine (id : String) : Parsec Float := 
+private def floatSummaryLine (id : String) : Parsec Float :=
   summaryLine id float
 
 /-- Parse the whole `Sol.summary` section. -/
 private def summary : Parsec Summary :=
-  Summary.mk <$> 
-  ((skipString "NAME" *> ws' *> skipChar ':' *> ws') *> pure "anonymous" <* endOfLine) <*> 
-  -- stringSummaryLine "NAME"             <*> 
-  stringSummaryLine "PROBLEM STATUS"   <*> 
-  stringSummaryLine "SOLUTION STATUS"  <*> 
-  stringSummaryLine "OBJECTIVE NAME"   <*> 
-  floatSummaryLine  "PRIMAL OBJECTIVE" <*> 
+  Summary.mk <$>
+  ((skipString "NAME" *> ws' *> skipChar ':' *> ws') *> pure "anonymous" <* endOfLine) <*>
+  stringSummaryLine "PROBLEM STATUS"   <*>
+  stringSummaryLine "SOLUTION STATUS"  <*>
+  stringSummaryLine "OBJECTIVE NAME"   <*>
+  floatSummaryLine  "PRIMAL OBJECTIVE" <*>
   floatSummaryLine  "DUAL OBJECTIVE"   <* ws' <* endOfLine
 
-end Summary 
+end Summary
 
-section Constraints 
+section Constraints
+
+variable {α}
 
 /-- Skip the title in the constraints section. -/
-private def constraintsTitle : Parsec Unit := 
+private def constraintsTitle : Parsec Unit :=
   skipString "CONSTRAINTS" <* ws' <* endOfLine
 
 /-- Skip the headers in the constraints section. -/
-private def constraintsHeaders : Parsec Unit := 
-  skipString "INDEX"       <* ws' <* 
-  skipString "NAME"        <* ws' <* 
-  skipString "AT"          <* ws' <* 
+private def constraintsHeaders : Parsec Unit :=
+  skipString "INDEX"       <* ws' <*
+  skipString "NAME"        <* ws' <*
+  skipString "AT"          <* ws' <*
   skipString "ACTIVITY"    <* ws' <*
   skipString "LOWER LIMIT" <* ws' <*
   skipString "UPPER LIMIT" <* ws' <*
@@ -246,7 +248,7 @@ private def constraintsHeaders : Parsec Unit :=
   skipString "DUAL UPPER"  <* ws' <* endOfLine
 
 /-- Parse a `StatusKey`. -/
-private def statusKey : Parsec StatusKey := 
+private def statusKey : Parsec StatusKey :=
   (skipString "UN" *> pure StatusKey.UN) <|>
   (skipString "BS" *> pure StatusKey.BS) <|>
   (skipString "SB" *> pure StatusKey.SB) <|>
@@ -257,97 +259,97 @@ private def statusKey : Parsec StatusKey :=
   (fail "Invalid status key.")
 
 /-- Generic function to parse constraint elements, handling whitespaces. -/
-private def constraintElem (p : Parsec α) : Parsec α := 
+private def constraintElem (p : Parsec α) : Parsec α :=
   ws' *> p
 
 /-- Parse a `Constraint` line. -/
-private def constraint : Parsec Constraint := 
-  Constraint.mk <$> 
-  constraintElem nat         <*> 
+private def constraint : Parsec Constraint :=
+  Constraint.mk <$>
+  constraintElem nat         <*>
   constraintElem string      <*>
-  constraintElem statusKey   <*> 
-  constraintElem float       <*> 
-  constraintElem optionFloat <*> 
-  constraintElem optionFloat <*> 
-  constraintElem optionFloat <*> 
+  constraintElem statusKey   <*>
+  constraintElem float       <*>
+  constraintElem optionFloat <*>
+  constraintElem optionFloat <*>
+  constraintElem optionFloat <*>
   constraintElem optionFloat <* ws' <* endOfLine
 
 /-- Parse the whole `Sol.Result.constraints` section. -/
-private def constraints : Parsec (List Constraint) := 
+private def constraints : Parsec (List Constraint) :=
   constraintsTitle   *>
   constraintsHeaders *>
   Array.data <$> many constraint
 
-end Constraints 
+end Constraints
 
 section Variables
 
 /-- Skip the title in the variables section. -/
-private def varsTitle : Parsec Unit := 
+private def varsTitle : Parsec Unit :=
   skipString "VARIABLES" <* endOfLine
 
 /-- Skip the headers in the variables section. Handle CONIC DUAL case. -/
-private def varsHeaders : Parsec Unit := 
-  skipString "INDEX"       <* ws' <* 
-  skipString "NAME"        <* ws' <* 
-  skipString "AT"          <* ws' <* 
+private def varsHeaders : Parsec Unit :=
+  skipString "INDEX"       <* ws' <*
+  skipString "NAME"        <* ws' <*
+  skipString "AT"          <* ws' <*
   skipString "ACTIVITY"    <* ws' <*
   skipString "LOWER LIMIT" <* ws' <*
   skipString "UPPER LIMIT" <* ws' <*
   skipString "DUAL LOWER"  <* ws' <*
-  skipString "DUAL UPPER"  <* ws' <* 
+  skipString "DUAL UPPER"  <* ws' <*
   (skipString "CONIC DUAL" <|> pure ()) <* ws' <* endOfLine
 
 /-- Parse a `Variable` line. -/
 private def var : Parsec Variable :=
   let noBreakConstraint := Constraint.mk <$>
-    constraintElem nat         <*> 
+    constraintElem nat         <*>
     constraintElem string      <*>
-    constraintElem statusKey   <*> 
-    constraintElem float       <*> 
-    constraintElem optionFloat <*> 
-    constraintElem optionFloat <*> 
+    constraintElem statusKey   <*>
+    constraintElem float       <*>
+    constraintElem optionFloat <*>
+    constraintElem optionFloat <*>
     constraintElem optionFloat <*>
     constraintElem optionFloat
-  Variable.mk <$> 
-    noBreakConstraint <*> 
+  Variable.mk <$>
+    noBreakConstraint <*>
     (constraintElem (optionFloat <|> pure none)) <* ws' <* endOfLine
 
 /-- Parse the whole `Sol.Result.variables` section. -/
-private def vars : Parsec (List Variable) := 
+private def vars : Parsec (List Variable) :=
   varsTitle   *>
   varsHeaders *>
   Array.data <$> many var
 
-end Variables 
+end Variables
 
 section SymmMatrixVariable
 
 /-- Skip the title in the symmetric matrix variables section. -/
-private def symmMatrixVarsTitle : Parsec Unit := 
+private def symmMatrixVarsTitle : Parsec Unit :=
   skipString "SYMMETRIC MATRIX VARIABLES" <* endOfLine
 
 /-- Skip the headers in the symmetric matrix variables section. -/
-private def symmMatrixVarsHeaders : Parsec Unit := 
-  skipString "INDEX"  <* ws' <* 
-  skipString "NAME"   <* ws' <* 
-  skipString "I"      <* ws' <* 
+private def symmMatrixVarsHeaders : Parsec Unit :=
+  skipString "INDEX"  <* ws' <*
+  skipString "NAME"   <* ws' <*
+  skipString "I"      <* ws' <*
   skipString "J"      <* ws' <*
   skipString "PRIMAL" <* ws' <*
   skipString "DUAL"   <* ws' <* endOfLine
 
 /-- Parse a `SymmMatrixVariable` line. -/
-private def symmMatrixVar : Parsec SymmMatrixVariable := 
-  SymmMatrixVariable.mk <$> 
-  constraintElem nat         <*> 
-  constraintElem string      <*> 
-  constraintElem nat         <*> 
-  constraintElem nat         <*> 
-  constraintElem optionFloat <*> 
+private def symmMatrixVar : Parsec SymmMatrixVariable :=
+  SymmMatrixVariable.mk <$>
+  constraintElem nat         <*>
+  constraintElem string      <*>
+  constraintElem nat         <*>
+  constraintElem nat         <*>
+  constraintElem optionFloat <*>
   constraintElem optionFloat <* ws' <* endOfLine
 
 /-- Parse the whole `Sol.Result.symmMatrixVariables` section. -/
-private def symmMatrixVars : Parsec (List SymmMatrixVariable) := 
+private def symmMatrixVars : Parsec (List SymmMatrixVariable) :=
   (symmMatrixVarsTitle  *>
   symmMatrixVarsHeaders *>
   Array.data <$> many symmMatrixVar) <|> pure []
@@ -355,7 +357,7 @@ private def symmMatrixVars : Parsec (List SymmMatrixVariable) :=
 end SymmMatrixVariable
 
 /-- Parse the whole `Sol.Result` object. -/
-def result : Parsec Result := 
+def result : Parsec Result :=
   Result.mk <$>
   summary        <* ws <*>
   constraints    <* ws <*>
@@ -366,9 +368,9 @@ def result : Parsec Result :=
 def parse (s : String) : Except String Result :=
   match result s.mkIterator with
   | Parsec.ParseResult.success _ res => Except.ok res
-  | Parsec.ParseResult.error it err  => 
+  | Parsec.ParseResult.error it err  =>
     Except.error s!"Error at offset {it.i.byteIdx}. Error: {err}.}"
 
-end Parser 
+end Parser
 
 end Sol

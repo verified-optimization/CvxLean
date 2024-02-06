@@ -1,6 +1,8 @@
 import CvxLean.Meta.Minimization
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
+import CvxLean.Meta.Util.Error
+import CvxLean.Meta.Util.Debug
 import CvxLean.Tactic.Basic.ShowVars
 
 /-!
@@ -31,7 +33,7 @@ def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   | 8  => return ``Minimization.Equivalence.rewrite_objFun_8
   | 9  => return ``Minimization.Equivalence.rewrite_objFun_9
   | 10 => return ``Minimization.Equivalence.rewrite_objFun_10
-  | _  => throwError "`rw_obj` error: can only rewrite problems with up to 10 constraints."
+  | _  => throwRwObjError "can only rewrite problems with up to 10 constraints."
 
 /-- -/
 def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
@@ -53,14 +55,15 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr)
       if tag == `g && rhs?.isSome then
         g.assign rhs?.get!
     if !foundGToRw then
-      throwError "`rw_obj` error: could not find rewrite goal."
+      throwRwObjError "could not find rewrite goal."
     let (fvarIds, gAfterIntros) ← gToRw.introN (1 + numConstrs) ([`p] ++ constrTags)
     if fvarIds.size == 0 then
-      throwError "`rw_obj` error: could not introduce optimization variables."
+      throwRwObjError "could not introduce optimization variables."
     let gAfterShowVars ← showVars gAfterIntros (fvarIds.get! 0)
     if shouldEval then
-      if let _ :: _ ← evalTacticAt tacStx gAfterShowVars then
-        throwError "`rw_objFun` error: could not close all goals."
+      if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
+        trace[CvxLean.debug] "`rw_obj` could not close {gs} using {tacStx}."
+        throwRwObjError "could not close all goals."
 
 /-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. -/
 def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :=
@@ -76,7 +79,7 @@ def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :
     | 8  => return (``Minimization.Equivalence.rewrite_constraint_8_last, `c8')
     | 9  => return (``Minimization.Equivalence.rewrite_constraint_9_last, `c9')
     | 10 => return (``Minimization.Equivalence.rewrite_constraint_10_last, `c10')
-    | _  => throwError "`rw_constr` error: can only rewrite problems with up to 10 constraints."
+    | _  => throwRwConstrError "error: can only rewrite problems with up to 10 constraints."
   else
     match rwIdx with
     | 1  => return (``Minimization.Equivalence.rewrite_constraint_1, `c1')
@@ -89,7 +92,7 @@ def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :
     | 8  => return (``Minimization.Equivalence.rewrite_constraint_8, `c8')
     | 9  => return (``Minimization.Equivalence.rewrite_constraint_9, `c9')
     | 10 => return (``Minimization.Equivalence.rewrite_constraint_10, `c10')
-    | _  => throwError "`rw_constr` error: can only rewrite problems with up to 10 constraints."
+    | _  => throwRwConstrError "can only rewrite problems with up to 10 constraints."
 
 section RIntro
 
@@ -114,7 +117,7 @@ def namesToRintroPat (names : List Name) : MetaM (TSyntax `rcasesPat) := do
       return ← `(rcasesPat| ⟨$n1, $n2, $n3, $n4, $n5, $n6, $n7, $n8, $n9⟩)
   | [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10] =>
       return ← `(rcasesPat| ⟨$n1, $n2, $n3, $n4, $n5, $n6, $n7, $n8, $n9, $n10⟩)
-  | _ => throwError "`rw_constr` error: could not apply `rintro`, too many constraints."
+  | _ => throwRwConstrError "could not apply `rintro`, too many constraints."
 
 end RIntro
 
@@ -134,7 +137,7 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
       if constrTags[i]! == constrTag then
         rwIdx := i + 1
     if rwIdx == 0 then
-      throwError "`rw_constr` error: could not find constraint to rewrite."
+      throwRwConstrError "could not find constraint to rewrite."
     let (lemmaName, rhsName) ← rewriteConstrLemma rwIdx numConstrs
     let gs ← g.apply (mkConst lemmaName)
     let mut gToRw := g
@@ -147,7 +150,7 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
       if tag == rhsName && rhs?.isSome then
         g.assign rhs?.get!
     if !foundGToRw then
-      throwError "`rw_constr` error: could not find rewrite goal."
+      throwRwConstrError "error: could not find rewrite goal."
     -- Intros appropriately.
     let constrTagsBefore := constrTags.take rwIdx.pred
     let numConstrsBefore := constrTagsBefore.length
@@ -156,24 +159,22 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
     let (probFVarId, gAfterIntros) := ← do
       let (fvarIds, gAfterIntros1) ← gToRw.introN (1 + numConstrsBefore) ([`p] ++ constrTagsBefore)
       if fvarIds.size == 0 then
-        throwError "`rw_constr` error: could not introduce optimization variables."
+        throwRwConstrError "could not introduce optimization variables."
       if isLast then
         return (fvarIds[0]!, gAfterIntros1)
       else
         let toRIntro ← namesToRintroPat constrTagsAfter
-        trace[Meta.debug] "toRIntro: {toRIntro} {constrTagsAfter} {constrTagsBefore}"
         let (gsAfterRIntro, _) ← TermElabM.run <|
           Std.Tactic.RCases.rintro #[toRIntro] none gAfterIntros1
-        trace[Meta.debug] "gsAfterRIntro: {gsAfterRIntro}"
         if gsAfterRIntro.length != 1 then
-          throwError "`rw_constr` error: could not introduce optimization variables."
+          throwRwConstrError "could not introduce optimization variables."
         return (fvarIds[0]!, gsAfterRIntro[0]!)
 
     let gAfterShowVars ← showVars gAfterIntros probFVarId
     if shouldEval then
       if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
-        trace[Meta.debug] "`rw_constr` could not close {gs} using {tacStx}"
-        throwError "`rw_constr` error: could not close all goals."
+        trace[CvxLean.debug] "`rw_constr` could not close {gs} using {tacStx}."
+        throwRwConstrError "could not close all goals."
 
 end Meta
 

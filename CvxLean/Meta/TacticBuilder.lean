@@ -1,6 +1,18 @@
 import CvxLean.Meta.Equivalence
 import CvxLean.Meta.Reduction
 import CvxLean.Meta.Relaxation
+import CvxLean.Meta.Util.Error
+
+/-!
+There is a hierarchy on the possible transformations between two problems. Most crucially, a
+tactic that builds an `Equivalence` should also build a `Reduction`. And both equivalence and
+reduction-preserving tactics should build backward maps.
+
+This file avoid unnecessary code duplication by providing a common interface for all
+transformation-preserving tactics. When building a tactic, a user must define an
+`EquivalenceBuilder`, a `ReductionBuilder` or a `RelaxationBuilder`. These builders can then be
+turned into tactics using the `toTactic` method.
+-/
 
 namespace CvxLean
 
@@ -8,7 +20,7 @@ namespace Meta
 
 open Lean Meta Elab Tactic Term Command Minimization
 
--- TODO: `StrongEquivalence`
+-- TODO: `StrongEquivalence`.
 inductive TransformationGoal
   | Solution | Equivalence | Reduction | Relaxation
 
@@ -28,8 +40,10 @@ def fromExpr (e : Expr) : MetaM TransformationGoal := do
   else if e.isAppOf `Minimization.Relaxation then
     return TransformationGoal.Relaxation
   else
-    throwError "Expected a `Solution`, `Equivalence`, `Reduction` or `Relaxation` goal, got {e}."
+    throwTacticBuilderError
+      "expected a `Solution`, `Equivalence`, `Reduction` or `Relaxation` goal, got {e}."
 
+/-- Applies appropriate transitivity tactic to the goal. -/
 def applyTransitivity (transf : TransformationGoal) (g : MVarId) : TacticM (MVarId × MVarId) :=
   g.withContext do
     if transf.isTransitive then
@@ -40,7 +54,7 @@ def applyTransitivity (transf : TransformationGoal) (g : MVarId) : TacticM (MVar
           | TransformationGoal.Equivalence => evalTacticAt (← `(tactic| equivalence_trans)) g
           | _ => pure []
       if gsTrans.length != 4 then
-        throwError "Transitivity failed."
+        throwTacticBuilderError "transitivity failed."
       let mut gToChange := gsTrans[0]!
       gToChange.setTag Name.anonymous
       let gNext := gsTrans[1]!
@@ -51,7 +65,8 @@ def applyTransitivity (transf : TransformationGoal) (g : MVarId) : TacticM (MVar
 
 end TransformationGoal
 
-/-- -/
+/-- Given a relaxation goal in the form of a `RelaxationExpr` and the `MVarId` of the current goal,
+provide a tactic to close it. -/
 def RelaxationBuilder := RelaxationExpr → MVarId → TacticM Unit
 
 namespace RelaxationBuilder
@@ -66,11 +81,11 @@ def toTactic (builder : RelaxationBuilder) : TacticM Unit := withMainContext do
 
   match transf with
     | TransformationGoal.Solution =>
-        throwError "Relaxation tactic does not apply to `Solution`."
+        throwTacticBuilderError "relaxation tactic does not apply to `Solution`."
     | TransformationGoal.Equivalence => do
-        throwError "Relaxation tactic does not apply to `Equivalence`."
+        throwTacticBuilderError "relaxation tactic does not apply to `Equivalence`."
     | TransformationGoal.Reduction => do
-        throwError "Relaxation tactic does not apply to `Reduction`."
+        throwTacticBuilderError "relaxation tactic does not apply to `Reduction`."
     | TransformationGoal.Relaxation => do
         pure ()
 
@@ -84,7 +99,8 @@ def toTactic (builder : RelaxationBuilder) : TacticM Unit := withMainContext do
 
 end RelaxationBuilder
 
-/-- -/
+/-- Given a reduction goal in the form of a `ReductionExpr` and the `MVarId` of the current goal,
+provide a tactic to close it. -/
 def ReductionBuilder := ReductionExpr → MVarId → Tactic
 
 namespace ReductionBuilder
@@ -105,11 +121,11 @@ def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
           gToChange := red
           gNext := sol
         else
-          throwError "Could not apply reduction tactic to `Solution`."
+          throwTacticBuilderError "could not apply reduction tactic to `Solution`."
     | TransformationGoal.Equivalence => do
-        throwError "Expected `Reduction`, found `Equivalence`."
+        throwTacticBuilderError "expected `Reduction`, found `Equivalence`."
     | TransformationGoal.Relaxation => do
-        throwError "Expected `Reduction`, found `Relaxation`."
+        throwTacticBuilderError "expected `Reduction`, found `Relaxation`."
     | TransformationGoal.Reduction => do
         pure ()
 
@@ -123,7 +139,8 @@ def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
 
 end ReductionBuilder
 
-/-- -/
+/-- Given an equivalence goal in the form of a `EquivalenceExpr` and the `MVarId` of the current
+goal, provide a tactic to close it. -/
 def EquivalenceBuilder := EquivalenceExpr → MVarId → TacticM Unit
 
 namespace EquivalenceBuilder
@@ -144,16 +161,16 @@ def toTactic (builder : EquivalenceBuilder) : TacticM Unit := withMainContext do
           gToChange := eqv
           gNext := sol
         else
-          throwError "Could not apply equivalence tactic to `Solution`."
+          throwTacticBuilderError "could not apply equivalence tactic to `Solution`."
     | TransformationGoal.Equivalence => do
         pure ()
     | TransformationGoal.Reduction => do
         if let [eqv] ← gToChange.apply (mkConst ``Minimization.Reduction.ofEquivalence) then
           gToChange := eqv
         else
-          throwError "Could not apply equivalence tactic to `Reduction`."
+          throwTacticBuilderError "could not apply equivalence tactic to `Reduction`."
     | TransformationGoal.Relaxation => do
-        throwError "Equivalence tactic does not apply to `Relaxation`."
+        throwTacticBuilderError "equivalence tactic does not apply to `Relaxation`."
 
   -- Run builder.
   let eqvExpr ← EquivalenceExpr.fromExpr (← gToChange.getType)
@@ -231,7 +248,7 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (rhsName 
       let proof ← elabTerm stx (some transfTy)
 
       let some mvarDecl ← getSyntheticMVarDecl? proof.mvarId! |
-        throwError "SyntheticMVarDecl not found."
+        throwTacticBuilderError "`SyntheticMVarDecl` not found."
 
       modify fun s => { s with syntheticMVars := {} }
 
@@ -239,7 +256,9 @@ def elabTransformationProof (transf : TransformationGoal) (lhs : Expr) (rhsName 
       | SyntheticMVarKind.tactic tacticCode savedContext =>
           withSavedContext savedContext do
             runTransformationTactic transf proof.mvarId! tacticCode
-      | _ => throwError "Expected SyntheticMVarDecl of kind `tactic`, got {mvarDecl.kind}"
+      | _ =>
+          throwTacticBuilderError
+            "expected `SyntheticMVarDecl` of kind `tactic`, got {mvarDecl.kind}"
 
       return (rhs, ← instantiateMVars proof)
     finally

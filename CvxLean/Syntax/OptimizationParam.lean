@@ -1,6 +1,11 @@
 import Lean
 import Lean.Environment
 
+/-!
+Definitions tagged with `optimization_param` are treated differently by `solve` as it attempts to
+extract its value.
+-/
+
 section OptimizationParam
 
 open Lean

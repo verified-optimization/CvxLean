@@ -72,10 +72,12 @@ def Key.arity : Key → Nat
   | Key.proj ..   => 1
   | _             => 0
 
-instance : Inhabited (Trie α) := ⟨Trie.node #[] #[]⟩
+instance {α} : Inhabited (Trie α) := ⟨Trie.node #[] #[]⟩
 
 
 namespace DiscrTree
+
+variable {α}
 
 def empty : DiscrTree α := { root := {} }
 
@@ -381,6 +383,8 @@ end DiscrTree
 -- From AESOP:
 namespace Trie
 
+variable {m} {α} {σ}
+
 unsafe def foldMUnsafe [Monad m] (initialKeys : Array Key)
     (f : σ → Array Key → α → m σ) (init : σ) : Trie α → m σ
   | Trie.node vs children => do
@@ -401,6 +405,8 @@ def fold (initialKeys : Array Key) (f : σ → Array Key → α → σ) (init : 
 end Trie
 
 namespace DiscrTree
+
+variable {m} {α} {σ}
 
 @[inline]
 def foldM [Monad m] (f : σ → Array Key → α → m σ) (init : σ) (t : DiscrTree α) :

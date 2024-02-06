@@ -6,7 +6,14 @@ import Mathlib.Data.Array.Defs
 import CvxLean.Lib.Math.Data.List
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Extra operations on matrices. Importantly, computable versions of matrix operations are defined
+here, which are used by the real-to-float procedure.
+-/
+
 namespace Matrix
+
+variable {m n} {α}
 
 def const (k : α) : Matrix m n α :=
   fun _ _ => k
@@ -17,20 +24,18 @@ instance [Preorder α] : Preorder (Matrix m n α) where
   le_trans := fun _ _ _ hAB hBC i j => le_trans (hAB i j) (hBC i j)
   lt_iff_le_not_le := fun _ _ => refl _
 
-def abs [Abs α] (A : Matrix m n α) : Matrix m n α :=
-  fun i j => Abs.abs (A i j)
+def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
+  fun i j => |A i j|
 
-instance [Abs α] : Abs (Matrix m n α) := ⟨abs⟩
-
-theorem vecCons_zero_zero {n} [Zero R] : vecCons (0 : R) (0 : Fin n → R) = 0 := by
+theorem vecCons_zero_zero {n} [Zero α] : vecCons (0 : α) (0 : Fin n → α) = 0 := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem smul_vecCons {n} [Zero R] [SMulZeroClass ℝ R] (x : ℝ) (y : R) (v : Fin n → R) :
+theorem smul_vecCons {n} [Zero α] [SMulZeroClass ℝ α] (x : ℝ) (y : α) (v : Fin n → α) :
     x • vecCons y v = vecCons (x • y) (x • v) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
-theorem add_vecCons {n} [Zero R] [SMulZeroClass ℝ R] [Add R] (x : R) (v : Fin n → R) (y : R)
-    (w : Fin n → R) : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
+theorem add_vecCons {n} [Zero α] [SMulZeroClass ℝ α] [Add α] (x : α) (v : Fin n → α) (y : α)
+    (w : Fin n → α) : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
   ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 open BigOperators
@@ -45,6 +50,8 @@ namespace Computable
 Computable operations on matrices used in `RealToFloat`.
 -/
 
+variable {n m l : ℕ}
+
 def toArray (A : Matrix (Fin n) (Fin n) Float) : Array (Array Float) :=
   (Array.range n).map <| fun i =>
     if h : i < n then Vec.Computable.toArray (A ⟨i, h⟩) else Array.mk <| List.replicate n 0
@@ -54,16 +61,16 @@ def dotProduct (v w : Fin n → Float) : Float :=
 
 infixl:72 " ⬝ᵥᶜ " => Matrix.Computable.dotProduct
 
-def mulVec (M : Matrix (Fin m) (Fin n) Float) (v : (Fin n) → Float) : Fin m → Float :=
+def mulVec (M : Matrix (Fin n) (Fin m) Float) (v : (Fin m) → Float) : Fin n → Float :=
   fun i => (fun j => M i j) ⬝ᵥᶜ v
 
-def vecMul (x : Fin m → Float) (M : Matrix (Fin m) (Fin n) Float) : Fin n → Float :=
+def vecMul (x : Fin n → Float) (M : Matrix (Fin n) (Fin m) Float) : Fin m → Float :=
   fun j => x ⬝ᵥᶜ fun i => M i j
 
-def transpose (M : Matrix m n α) : Matrix n m α :=
+def transpose {m n} {α} (M : Matrix m n α) : Matrix n m α :=
   fun i j => M j i
 
-def diag (M : Matrix n n α) : n → α :=
+def diag {n} {α} (M : Matrix n n α) : n → α :=
   fun i => M i i
 
 def mul (M : Matrix (Fin l) (Fin m) Float) (N : Matrix (Fin m) (Fin n) Float) :
@@ -80,7 +87,6 @@ def trace (A : Matrix (Fin n) (Fin n) Float) : Float :=
 
 def covarianceMatrix {N n : ℕ} (Y : Matrix (Fin N) (Fin n) Float) (i j : Fin n) : Float :=
   Vec.Computable.sum (fun k => (Y k i) * (Y k j)) / (OfNat.ofNat N)
-  --((vecToArray Y).map (fun y => (y i) * y j)).foldl (· + ·) 0 / (OfNat.ofNat N)
 
 def diagonal (x : Fin n → Float) : Matrix (Fin n) (Fin n) Float :=
   fun i j => (if i = j then x i else 0)
@@ -100,6 +106,35 @@ def fromBlocks {l : Type} {m : Type} {n : Type} {o : Type} {α : Type} :
 
 def toUpperTri (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
   fun i j => if i ≤ j then A i j else 0
+
+private def minorAux (A : Matrix (Fin n.succ) (Fin n.succ) Float) (a b : Fin n.succ) :
+    Matrix (Fin n) (Fin n) Float :=
+  fun i j =>
+    let i' : Fin n.succ := if i.val < a.val then i else i.succ;
+    let j' : Fin n.succ := if j.val < b.val then j else j.succ;
+    A i' j'
+
+def minor (A : Matrix (Fin n) (Fin n) Float) (a b : Fin n) :
+    Matrix (Fin n.pred) (Fin n.pred) Float :=
+  match n with
+  | 0 => fun _ => Fin.elim0
+  | _ + 1 => minorAux A a b
+
+def det {n : ℕ} (A : Matrix (Fin n) (Fin n) Float) : Float :=
+  if h : 0 < n then
+    if n == 1 then A ⟨0, h⟩ ⟨0, h⟩ else
+      (List.finRange n).foldl (fun s i =>
+        s + (-1) ^ (Float.ofNat i.val) * A i ⟨0, h⟩ * det (minor A i ⟨0, h⟩)) 0
+  else 0
+
+def cofactor (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
+  fun i j => (-1) ^ (Float.ofNat (i.val + j.val)) * (A i j)
+
+def adjugate (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
+  transpose (cofactor A)
+
+def inv (A : Matrix (Fin n) (Fin n) Float) : Matrix (Fin n) (Fin n) Float :=
+  (1 / det A) • adjugate A
 
 end Computable
 

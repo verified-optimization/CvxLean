@@ -1,5 +1,9 @@
 import Lean
 
+/-!
+Delaborator helper functions.
+-/
+
 namespace Lean.PrettyPrinter.Delaborator
 
 namespace SubExpr

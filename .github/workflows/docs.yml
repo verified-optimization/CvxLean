@@ -1,0 +1,84 @@
+name: docs
+
+on:
+  push:
+    branches: ["main"]
+  
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install elan
+        run: |
+          set -o pipefail
+          curl -sSfL https://github.com/leanprover/elan/releases/download/v3.0.0/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          ./elan-init -y --default-toolchain leanprover/lean4:v4.6.0-rc1
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: Install Rust and Cargo
+        run: |
+          curl --proto '=https' -sSf https://sh.rustup.rs > rustup-init.sh
+          sh rustup-init.sh -y --default-toolchain none
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: verified-optimization/CvxLean
+          path: CvxLean
+      - name: Build egg-pre-dcp and CvxLean
+        working-directory: CvxLean
+        run: |
+          ./build.sh
+      - name: Create dummy docs project
+        run: |
+          # Taken from https://github.com/leanprover-community/mathlib4_docs
+
+          # Workaround for the lake issue
+          elan default leanprover/lean4:v4.6.0-rc1
+          lake new workaround
+          cd workaround
+          cp -f ../CvxLean/lean-toolchain .
+          echo 'require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "main"' >> lakefile.lean
+          echo 'require CvxLean from ".." / "CvxLean"' >> lakefile.lean
+
+          # doc-gen4 expects to work on github repos with at least one commit
+          git config user.email "docs@verified-optimization.github.io"
+          git config user.name "docs CI"
+          git add .
+          git commit -m "workaround"
+          git remote add origin "https://github.com/verified-optimization/workaround"
+
+          mkdir -p .lake/packages
+          cp -r ../CvxLean/.lake/packages/* .lake/packages
+          lake update
+      - name: Build doc-gen4
+        working-directory: workaround
+        run: |
+          lake build doc-gen4
+      - name: Generate docs
+        working-directory: workaround
+        run: |
+          lake build CvxLean:docs
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'workaround/.lake/build/doc'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf CvxLean
+          rm -rf workaround
+          rm -rf $HOME/.elan
+          rm -rf $HOME/.cache/mathlib

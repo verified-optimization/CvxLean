@@ -3,28 +3,33 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Fin
 
+/-!
+Extra vector functions and results. Some are needed to define atoms. Importantly, computable
+versions of vector operations are defined here, which are used by the real-to-float procedure.
+-/
+
 namespace Vec
 
-noncomputable instance (priority := high) : NormedAddCommGroup (Fin n → ℝ) :=
+noncomputable instance (priority := high) {n} : NormedAddCommGroup (Fin n → ℝ) :=
   PiLp.normedAddCommGroup 2 _
 
-noncomputable instance (priority := high) : NormedAddGroup (Fin n → ℝ) :=
+noncomputable instance (priority := high) {n} : NormedAddGroup (Fin n → ℝ) :=
   (PiLp.normedAddCommGroup 2 _).toNormedAddGroup
 
-noncomputable instance (priority := high) : InnerProductSpace ℝ (Fin n → ℝ) :=
+noncomputable instance (priority := high) {n} : InnerProductSpace ℝ (Fin n → ℝ) :=
   PiLp.innerProductSpace _
 
 /-!
 Named functions on vectors. Each of them corresponds to an atom.
 -/
 
+universe u v w
+
 variable {m : Type u} {n : Type v} [Fintype m] [Fintype n] {α : Type w}
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Abs`. -/
-def abs [Abs α] (x : m → α) : m → α :=
-  fun i => Abs.abs (x i)
-
-instance [Abs α] : Abs (m → α) := ⟨abs⟩
+def abs (x : m → ℝ) : m → ℝ :=
+  fun i => |x i|
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.VecConst`. -/
 def const (n : ℕ) (k : α) : Fin n → α  :=
@@ -66,7 +71,7 @@ Named functions on real vectors, including those defined in
 open Real BigOperators
 
 /-- See `CvxLean.Tactic.DCP.AtomLibrary.Fns.Norm2`. -/
-instance : Norm (m → ℝ) := PiLp.hasNorm 2 _
+instance : Norm (m → ℝ) := PiLp.instNorm 2 _
 
 variable (x y : m → ℝ)
 
@@ -116,7 +121,7 @@ end RealLemmas
 namespace Computable
 
 /-!
-Computable operations on matrices used in `RealToFloat`.
+Computable operations on vectors used in `RealToFloat`.
 -/
 
 variable {n : ℕ}
@@ -130,8 +135,14 @@ def sum (x : Fin n → Float) : Float :=
 def cumsum (x : Fin n → Float) : Fin n → Float :=
   fun i => (((toArray x).toList.take (i.val + 1)).foldl Float.add 0)
 
-def norm {n m : ℕ} (x : Fin n → Fin m → Float) : Fin n → Float :=
-  fun i => Float.sqrt (sum (Vec.map (Float.pow · 2) (x i)))
+def _root_.Real.Computable.norm {n : ℕ} (x : Fin n → Float) : Float :=
+  Float.sqrt (sum (fun i => (Float.pow (x i) 2)))
+
+def norm {n m : ℕ} (A : Fin n → Fin m → Float) : Fin n → Float :=
+  fun i => Real.Computable.norm (A i)
+
+def exp {m} (x : m → Float) : m → Float :=
+  fun i => Float.exp (x i)
 
 end Computable
 

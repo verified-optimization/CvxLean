@@ -1,10 +1,17 @@
-import Lean
 import Mathlib.Data.Real.Basic
 import CvxLean.Lib.Math.Data.Real
 
+/-!
+Conversion used in `Solve/Conic.lean` to read the solver's output into an expression to which we can
+apply the backward map.
+-/
+
+namespace CvxLean
+
 open Lean
 
-def floatToRealExpr (f : Float) : Expr :=
+/-- Convert a `Float` to an `Expr` of type `Real`. -/
+def floatToReal (f : Float) : Expr :=
   let divisionRingToOfScientific :=
     mkApp2 (mkConst ``DivisionRing.toOfScientific ([levelZero] : List Level))
       (mkConst ``Real)
@@ -25,3 +32,5 @@ def floatToRealExpr (f : Float) : Expr :=
   | Parsec.ParseResult.error _ _ =>
       mkApp3 realOfScientific
         (mkConst ``Int.zero) (toExpr true) (mkNatLit 1)
+
+end CvxLean

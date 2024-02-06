@@ -1,6 +1,12 @@
 import CvxLean
 import CvxLean.Command.Util.TimeCmd
 
+/-!
+# Case study: Aerospace Design via Quasiconvex Optimization
+
+See https://www.cvxpy.org/examples/dqcp/hypersonic_shape_design.html.
+-/
+
 noncomputable section
 
 namespace HypersonicShapeDesign
@@ -26,6 +32,12 @@ equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb�
   pre_dcp
 
 #print hypersonicShapeDesignConvex
+-- optimization (Δx : ℝ)
+--   minimize Δx ^ (-2) - 1
+--   subject to
+--     h₁ : 1 / 100000 ≤ Δx
+--     h₂ : Δx ≤ 1
+--     h₃ : sqrt a ^ 2 / Δx / (1 - b) ≤ sqrt (1 - Δx ^ 2)
 
 @[optimization_param]
 def aₚ : ℝ := 0.05
@@ -52,22 +64,22 @@ time_cmd solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_nonneg b�
 #print hypersonicShapeDesignConvex.reduced
 
 -- Final width of wedge.
-def width := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
+def wₚ_opt := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
 
-#eval width -- 0.989524
+#eval wₚ_opt -- 0.989524
 
-#eval aₚ.float * (1 / width) - (1 - bₚ.float) * Float.sqrt (1 - width ^ 2) ≤ 0
-#eval aₚ.float * (1 / width) - (1 - bₚ.float) * Float.sqrt (1 - width ^ 2) ≤ 0.000001
+#eval aₚ.float * (1 / wₚ_opt) - (1 - bₚ.float) * Float.sqrt (1 - wₚ_opt ^ 2) ≤ 0
+#eval aₚ.float * (1 / wₚ_opt) - (1 - bₚ.float) * Float.sqrt (1 - wₚ_opt ^ 2) ≤ 0.000001
 
 -- Final height of wedge.
-def height := Float.sqrt (1 - width ^ 2)
+def hₚ_opt := Float.sqrt (1 - wₚ_opt ^ 2)
 
-#eval height -- 0.144368
+#eval hₚ_opt -- 0.144368
 
 -- Final L/D ratio.
-def ldRatio := 1 / (Float.sqrt ((1 / width ^ 2) - 1))
+def ldRatioₚ := 1 / (Float.sqrt ((1 / wₚ_opt ^ 2) - 1))
 
-#eval ldRatio -- 6.854156
+#eval ldRatioₚ -- 6.854156
 
 -- While the above is good enough, we simplify the problem further by performing a change of
 -- variables and simplifying appropriately.
@@ -97,29 +109,35 @@ equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb�
     rfl
 
 #print hypersonicShapeDesignSimpler
+-- optimization (z : ℝ)
+--   minimize z⁻¹ - 1
+--   subject to
+--     h₁ : 1 / 10000000000 ≤ z
+--     h₂ : z ≤ 1
+--     h₃ : a ^ 2 * z⁻¹ ≤ (1 - b) ^ 2 * (1 - z)
 
 time_cmd solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
 #print hypersonicShapeDesignSimpler.reduced
 
 -- Final width of wedge.
-def width' :=
+def wₚ'_opt :=
   eqv₁.backward_map aₚ.float bₚ.float <|
     eqv₂.backward_map aₚ.float bₚ.float hypersonicShapeDesignSimpler.solution
 
-#eval width' -- 0.989524
+#eval wₚ'_opt -- 0.989524
 
-#eval aₚ.float * (1 / width') - (1 - bₚ.float) * Float.sqrt (1 - width' ^ 2) ≤ 0
+#eval aₚ.float * (1 / wₚ'_opt) - (1 - bₚ.float) * Float.sqrt (1 - wₚ'_opt ^ 2) ≤ 0
 
 -- Final height of wedge.
-def height' := Float.sqrt (1 - width' ^ 2)
+def hₚ'_opt := Float.sqrt (1 - wₚ'_opt ^ 2)
 
-#eval height' -- 0.144371
+#eval hₚ'_opt -- 0.144371
 
 -- Final L/D ratio.
-def ldRatio' := 1 / (Float.sqrt ((1 / width' ^ 2) - 1))
+def ldRatioₚ' := 1 / (Float.sqrt ((1 / wₚ'_opt ^ 2) - 1))
 
-#eval ldRatio' -- 6.854031
+#eval ldRatioₚ' -- 6.854031
 
 end HypersonicShapeDesign
 

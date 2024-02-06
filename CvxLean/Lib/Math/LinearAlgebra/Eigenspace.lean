@@ -24,13 +24,11 @@ lemma eigenspace_one : eigenspace (1 : End R M) 1 = ⊤ := by
   intros x _
   simp only [mem_eigenspace_iff, LinearMap.one_apply, one_smul]
 
-lemma has_eigenvector_add {f g : End R M} {a b : R} {x : M}
-    (hf : HasEigenvector f a x) (hg : HasEigenvector g b x) :
-    HasEigenvector (f + g) (a + b) x :=
+lemma has_eigenvector_add {f g : End R M} {a b : R} {x : M} (hf : HasEigenvector f a x)
+    (hg : HasEigenvector g b x) : HasEigenvector (f + g) (a + b) x :=
   ⟨eigenspace_add ⟨hf.1, hg.1⟩, hf.2⟩
 
-lemma has_eigenvector_one {x : M} (hx : x ≠ 0) :
-    HasEigenvector (1 : End R M) 1 x :=
+lemma has_eigenvector_one {x : M} (hx : x ≠ 0) : HasEigenvector (1 : End R M) 1 x :=
   ⟨by { rw [eigenspace_one]; apply Submodule.mem_top }, hx⟩
 
 end End

@@ -1,5 +1,11 @@
 import CvxLean
 
+/-!
+# Case study: Optimal vehicle speed scheduling
+
+See exercise 4.20 in https://github.com/cvxgrp/cvxbook_additional_exercises.
+-/
+
 noncomputable section
 
 namespace VehicleSpeedSched
@@ -82,6 +88,13 @@ equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
   rename_constrs [c_smin, c_smax, c_τmin, c_τmax]
 
 #print vehSpeedSchedConvex
+-- optimization (t : Fin n → ℝ)
+--   minimize Vec.sum (t * Vec.map F (d / t))
+--   subject to
+--     c_smin : smin ≤ d / t
+--     c_smax : d / t ≤ smax
+--     c_τmin : τmin ≤ Vec.cumsum t
+--     c_τmax : Vec.cumsum t ≤ τmax
 
 #check eqv₁.backward_map
 
@@ -102,7 +115,7 @@ equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     cases div_pos_iff.mp h_di_div_ti_pos with
     | inl h_pos => exact h_pos.2
     | inr h_neg => have d_pos_i := h_d_pos i; simp at d_pos_i ⊢; linarith [h_neg.1, d_pos_i]
-  -- Add constraint to tell the system that `t` is `ε`-nonnegative.
+  -- Add constraint to tell the system that `t` is positive.
   equivalence_step =>
     apply Equivalence.add_constraint (cs' := fun t => StrongLT 0 t)
     . rintro t ⟨c_smin, _⟩ i
@@ -130,6 +143,14 @@ equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
   -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
 
 #print vehSpeedSchedQuadratic
+-- optimization (t : Fin n → ℝ)
+--   minimize Vec.sum (a • d ^ 2 * (1 / t) + b • d + c • t)
+--   subject to
+--     c_t : StrongLT 0 t
+--     c_smin : smin * t ≤ d
+--     c_smax : d ≤ smax * t
+--     c_τmin : τmin ≤ Vec.cumsum t
+--     c_τmax : Vec.cumsum t ≤ τmax
 
 #check eqv₂.backward_map
 
@@ -195,15 +216,11 @@ def bₚ : ℝ := 6
 @[optimization_param]
 def cₚ : ℝ := 10
 
-def p := vehSpeedSchedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
+solve vehSpeedSchedQuadratic nₚ dₚ τminₚ τmaxₚ sminₚ smaxₚ aₚ bₚ cₚ nₚ_pos dₚ_pos sminₚ_pos
 
-set_option trace.Meta.debug true
-
-solve p
-
-#eval p.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
-#eval p.value    -- 275.042133
-#eval p.solution -- ...
+#eval vehSpeedSchedQuadratic.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
+#eval vehSpeedSchedQuadratic.value    -- 275.042133
+#eval vehSpeedSchedQuadratic.solution -- ...
 
 -- NOTE: F is not really used here, but it is a parameter of the equivalence, so we must give it a
 -- value.
@@ -215,9 +232,9 @@ def eqv₂.backward_mapₚ := eqv₂.backward_map nₚ dₚ.float τminₚ.float
 
 -- Finally, we can obtain the solution to the original problem.
 
-def sol := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ p.solution)
+def sₚ_opt := eqv₁.backward_mapₚ (eqv₂.backward_mapₚ vehSpeedSchedQuadratic.solution)
 
-#eval sol
+#eval sₚ_opt
 -- ![0.955578, 0.955548, 0.955565, 0.955532, 0.955564, 0.955560, 0.912362, 0.960401, 0.912365,
 --   0.912375]
 

@@ -1,12 +1,17 @@
 import Lean
 
+/-!
+This file defines how to parse variables, constraints, objective functions and full optimization
+problems. Syntax matching these definitions is elaborated in `Syntax/Minimization.lean`.
+-/
+
 namespace CvxLean
 
 open Lean
 
 namespace Parser
 
-open Lean.Parser
+open Parser
 
 def minimizationVar : Parser :=
   leading_parser ((ident <|> Term.bracketedBinder) >> ppSpace)
@@ -33,12 +38,7 @@ scoped syntax (name := optimization)
   ppGroup("optimization " minimizationVar* letVar*)
     ppLine ppGroup(minOrMax term)
     (ppLine ppGroup("subject to " constraints))?
-  ppLine
-  : term
-
--- By using the "scoped" keyword, the syntax only works when opening the CvxLean
--- namespace, but when the namespace is not open, "optimization", "minimize",
--- "maximize", and "subject to" will not be keywords and can be used as names.
+  ppLine : term
 
 end Syntax
 

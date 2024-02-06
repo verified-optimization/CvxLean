@@ -5,8 +5,7 @@ import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 
 /-!
-We follow the MOSEK modeling cookbook:
-https://docs.mosek.com/modeling-cookbook/cqo.html
+We follow the MOSEK modeling cookbook: https://docs.mosek.com/modeling-cookbook/cqo.html
 -/
 
 namespace Real
@@ -39,9 +38,8 @@ noncomputable section ConeConversion
 def rotateSoCone {n : ℕ} (t : ℝ) (x : Fin n.succ → ℝ) : ℝ × ℝ × (Fin n → ℝ) :=
   ((t + x 0) / sqrt 2, (t - x 0) / sqrt 2, fun i => x i.succ)
 
-lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ}
-  (h : soCone t x) :
-  let (v, w, x) := rotateSoCone t x; rotatedSoCone v w x := by
+lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ} (h : soCone t x) :
+    let (v, w, x) := rotateSoCone t x; rotatedSoCone v w x := by
   simp [rotatedSoCone, rotateSoCone]
   have habsx0t : |x 0| ≤ t := by
     rw [soCone, Fin.sum_univ_succ] at h
@@ -62,13 +60,11 @@ lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ}
   { simp [le_div_iff]; linarith }
 
 /-- If `(v, w, x) ∈ 𝒬ⁿ⁺²` then `u(v, w, x) ∈ 𝒬ᵣⁿ⁺¹`. -/
-def unrotateSoCone {n : ℕ} (v w : Real) (x : Fin n → ℝ) :
-  ℝ × (Fin n.succ → ℝ) :=
+def unrotateSoCone {n : ℕ} (v w : Real) (x : Fin n → ℝ) : ℝ × (Fin n.succ → ℝ) :=
   ((v + w) / sqrt 2, Matrix.vecCons ((v - w) / sqrt 2) x)
 
-lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ}
-  (h : rotatedSoCone v w x) :
-  let (t, x) := unrotateSoCone v w x; soCone t x := by
+lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ} (h : rotatedSoCone v w x) :
+    let (t, x) := unrotateSoCone v w x; soCone t x := by
   simp [soCone, unrotateSoCone]
   replace ⟨h, hv, hw⟩ := h
   rw [sqrt_le_iff]
@@ -81,9 +77,6 @@ lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ}
     have hrw : ((v + w) ^ 2 - (v - w) ^ 2) / 2 = v * w * 2 := by norm_cast; ring
     norm_cast at hrw h
     rwa [hrw] }
-
--- TODO(RFM): rotate then unrotate?
--- TODO(RFM): unrotate then rotate?
 
 end ConeConversion
 

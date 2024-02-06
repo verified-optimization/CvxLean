@@ -1,6 +1,15 @@
 import CvxLean.Meta.Equivalence
 import CvxLean.Lib.Reduction
 
+/-!
+Infrastructure to work with `Reduction` types as expressions. We also define some basic tactics
+that work on reduction goals:
+* `reduction_rfl` closes a goal by reflexivity.
+* `reduction_trans` applies transitivity.
+* `reduction_step => ...` allows users to apply one reduction step in the `reduction` command
+  by first applying transitivity as otherwise the goal would be closed immediately.
+-/
+
 namespace CvxLean
 
 namespace Meta
@@ -9,30 +18,30 @@ open Lean Meta
 
 /-- `Reduction` type components as expressions. -/
 structure ReductionExpr where
-  domainP : Expr
-  domainQ : Expr
+  domainLHS : Expr
+  domainRHS : Expr
   codomain : Expr
-  codomainPreorder : Expr
-  p : Expr
-  q : Expr
+  codomainLHSreorder : Expr
+  lhs : Expr
+  rhs : Expr
 
 namespace ReductionExpr
 
 def toMinimizationExprLHS (redExpr : ReductionExpr) : MetaM MinimizationExpr :=
-  MinimizationExpr.fromExpr redExpr.p
+  MinimizationExpr.fromExpr redExpr.lhs
 
 def toMinimizationExprRHS (redExpr : ReductionExpr) : MetaM MinimizationExpr :=
-  MinimizationExpr.fromExpr redExpr.q
+  MinimizationExpr.fromExpr redExpr.rhs
 
 def toExpr (redExpr : ReductionExpr) : Expr :=
-  mkApp6 (mkConst ``Minimization.Reduction)
-    redExpr.domainP redExpr.domainQ redExpr.codomain redExpr.codomainPreorder redExpr.p redExpr.q
+  mkApp6 (mkConst ``Minimization.Reduction) redExpr.domainLHS redExpr.domainRHS redExpr.codomain
+    redExpr.codomainLHSreorder redExpr.lhs redExpr.rhs
 
 def fromExpr (e : Expr) : MetaM ReductionExpr := do
   match e with
   | .app (.app (.app (.app (.app (.app (.const ``Minimization.Reduction _)
-      domainP) domainQ) codomain) codomainPreorder) p) q => do
-      return ReductionExpr.mk domainP domainQ codomain codomainPreorder p q
+      domainLHS) domainRHS) codomain) codomainLHSreorder) p) q => do
+      return ReductionExpr.mk domainLHS domainRHS codomain codomainLHSreorder p q
   | _ => throwError "Expression not of the form `Minimization.Reduction ...`."
 
 def fromGoal (goal : MVarId) : MetaM ReductionExpr := do

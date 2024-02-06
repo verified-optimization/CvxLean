@@ -1,8 +1,7 @@
 import Mathlib.Data.Complex.Exponential
 
 /-!
-We follow the MOSEK modeling cookbook:
-https://docs.mosek.com/modeling-cookbook/expo.html
+We follow the MOSEK modeling cookbook: https://docs.mosek.com/modeling-cookbook/expo.html
 -/
 
 namespace Real

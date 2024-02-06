@@ -35,7 +35,7 @@ def reorderConstrsBuilder (ids : Array Name) : EquivalenceBuilder := fun eqvExpr
       mkLambdaFVars #[p] constrBody
     let rhsMinExpr := { lhsMinExpr with constraints := newConstrs }
 
-    if !(← isDefEq eqvExpr.q rhsMinExpr.toExpr) then
+    if !(← isDefEq eqvExpr.rhs rhsMinExpr.toExpr) then
       throwError "`reorder_constrs` error: Failed to unify the goal."
 
     if let [g] ← g.apply (mkConst ``Minimization.Equivalence.rewrite_constraints) then

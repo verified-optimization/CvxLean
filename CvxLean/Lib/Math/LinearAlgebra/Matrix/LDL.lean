@@ -21,13 +21,12 @@ open scoped Matrix ComplexOrder
 variable {S : Matrix n n 𝕜} [Fintype n] (hS : S.PosDef)
 
 @[simp]
-lemma lowerInv_diagonal (i : n) :
-    lowerInv hS i i = 1 := by
-  rw [lowerInv_eq_gramSchmidtBasis]
-  simpa only [gramSchmidtBasis, Basis.coe_mk]
-    using @repr_gramSchmidt_diagonal 𝕜 (n → 𝕜) _
-      (NormedAddCommGroup.ofMatrix hS.transpose)
-      (InnerProductSpace.ofMatrix hS.transpose) n _ _ _ i (Pi.basisFun 𝕜 n)
+lemma lowerInv_diagonal (i : n) : lowerInv hS i i = 1 := by
+  simp only [lowerInv_eq_gramSchmidtBasis, gramSchmidtBasis]
+  letI := NormedAddCommGroup.ofMatrix hS.transpose
+  letI := InnerProductSpace.ofMatrix hS.transpose
+  rw [Basis.coe_mk, ← @repr_gramSchmidt_diagonal 𝕜 (n → 𝕜) _ _ _ n _ _ _ i (Pi.basisFun 𝕜 n)]
+  simp [Basis.toMatrix]
 
 lemma lower_eq_to_matrix :
     lower hS =

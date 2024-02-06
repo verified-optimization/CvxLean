@@ -12,7 +12,6 @@ noncomputable section
 
 open CvxLean Minimization Real
 
-/- TODO: where does this example come from?  -/
 section QCP1
 
 def qcp1 :=
@@ -28,7 +27,6 @@ time_cmd reduction redqcp1/dqcp1 : qcp1 := by
   pre_dcp
 
 #print dqcp1
--- def dqcp1 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize y
 --   subject to
@@ -43,7 +41,7 @@ solve dqcp1
 
 end QCP1
 
-/- -/
+/- https://www.cvxpy.org/examples/dqcp/hypersonic_shape_design.html -/
 section QCP2
 
 def hypersonicShapeDesign (a b : ℝ) :=
@@ -60,7 +58,6 @@ time_cmd equivalence redqcp2/dqcp2 : hypersonicShapeDesign 0.05 0.65 := by
 solve dqcp2
 
 #print dqcp2.reduced
--- def dqcp2.reduced : Minimization (ℝ × ℝ × ℝ × ℝ × ℝ × ℝ × ℝ) ℝ :=
 -- optimization (Δx : ℝ) (t₀.0 : ℝ) (t₁.1 : ℝ) (t.2 : ℝ) (y'.3 : ℝ) (t.4 : ℝ) (t.5 : ℝ)
 --   minimize t₀.0 - 1
 --   subject to

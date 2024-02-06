@@ -25,7 +25,6 @@ time_cmd reduction red1/dcp1 : gp1 := by
   pre_dcp
 
 #print dcp1
--- def dcp1 : Minimization ℝ ℝ :=
 -- optimization (x : ℝ)
 --   minimize x
 --   subject to
@@ -51,7 +50,6 @@ time_cmd reduction red2/dcp2 : gp2 := by
   pre_dcp
 
 #print dcp2
--- def dcp2 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize x
 --   subject to
@@ -77,7 +75,6 @@ time_cmd reduction red3/dcp3 : gp3 := by
   pre_dcp
 
 #print dcp3
--- def dcp3 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize x
 --   subject to
@@ -110,7 +107,6 @@ time_cmd reduction red4/dcp4 : gp4 := by
 solve dcp4
 
 #print dcp4
--- def dcp4 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) (z : ℝ)
 --   minimize x - y
 --   subject to
@@ -144,7 +140,6 @@ time_cmd reduction red5/dcp5 : gp5 := by
   pre_dcp
 
 #print dcp5
--- def dcp5 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) (z : ℝ)
 --   minimize -(x - y)
 --   subject to
@@ -183,7 +178,6 @@ time_cmd reduction red6/dcp6 : gp6 := by
   pre_dcp
 
 #print dcp6
--- def dcp6 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (h : ℝ) (w : ℝ) (d : ℝ)
 --   minimize -(h + (d + w))
 --   subject to
@@ -201,8 +195,6 @@ end GP6
 /- In https://web.stanford.edu/~boyd/papers/pdf/gp_tutorial.pdf section 2.2. -/
 section GP7
 
--- NOTE: We don't have the power atom yet.
--- TODO: add atoms for ^(1/2) and ^(-1/2).
 -- objFun : (x ^ (-1)) * y ^ (-1 / 2) * z ^ (-1) + 2.3 * x * z + 4 * x * y * z
 -- h4 : (1 / 3) * x ^ (-2) * y ^ (-2) + (4 / 3) * y ^ (1 / 2) * z ^ (-1) ≤ 1
 def gp7 :=
@@ -216,7 +208,6 @@ def gp7 :=
       h5 : x + 2 * y + 3 * z ≤ 1
       h6 : (1 / 2) * x * y = 1
 
-set_option maxHeartbeats 1000000
 time_cmd reduction red7/dcp7 : gp7 := by
   change_of_variables! (u) (x ↦ exp u)
   change_of_variables! (v) (y ↦ exp v)
@@ -224,13 +215,12 @@ time_cmd reduction red7/dcp7 : gp7 := by
   pre_dcp
 
 #print dcp7
--- def dcp7 : Minimization (ℝ × ℝ × ℝ) ℝ :=
--- optimization (x : ℝ) (y : ℝ) (z : ℝ)
---   minimize exp (y * -(1 / 2) - z - x) + (23 / 10 * exp (x + z) + 4 * exp (x + (y + z)))
+-- optimization (u : ℝ) (v : ℝ) (w : ℝ)
+--   minimize rexp (-(w + (u + v * (1 / 2)))) + (23 / 10 * rexp (u + w) + 4 * rexp (u + (v + w)))
 --   subject to
---     h4 : exp (-2 * (x + y)) / 3 ≤ 1 - 4 / 3 * exp (y * (1 / 2) - z)
---     h5 : exp z * 3 ≤ 1 - exp x - exp y * 2
---     h6 : x + (y - log 2) = 0
+--     h4 : rexp (-(2 * (u + v))) + rexp (v * (1 / 2) - w) * 4 ≤ 3
+--     h5 : rexp v * 2 ≤ 1 - rexp u - rexp w * 3
+--     h6 : u + (v + log (1 / 2)) = 0
 
 solve dcp7
 
@@ -248,8 +238,8 @@ def gp8 :=
       h2  : 0 < w
       h3  : 0 < A
       h4  : 0 < r
-      h5  : 10 * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ)) / 2 * h ≤ 0.5 * A
-      h6  : 20 * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ)) / 2 * w ≤ 0.5 * A
+      h5  : 10 * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ)) / (2 * h) ≤ 0.5 * A
+      h6  : 20 * sqrt (w ^ (2 : ℝ) + h ^ (2 : ℝ)) / (2 * w) ≤ 0.5 * A
       h7  : 1 ≤ h
       h8  : h ≤ 100
       h9  : 1 ≤ w
@@ -257,7 +247,6 @@ def gp8 :=
       h11 : 1.1 * r ≤ sqrt (A / (2 * 3.14159) + r ^ (2 : ℝ))
       h12 : sqrt (A / (2 * 3.14159) + r ^ (2 : ℝ)) ≤ 10
 
-set_option maxHeartbeats 1000000 in
 time_cmd reduction red8/dcp8 : gp8 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')

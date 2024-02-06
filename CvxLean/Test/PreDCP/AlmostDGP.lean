@@ -11,7 +11,7 @@ noncomputable section
 
 open CvxLean Minimization Real
 
-/- This problem is not DGP because of -10.123 -/
+/- This problem is not DGP because of `-10.123`. -/
 section AlmostDGP1
 
 def agp1 :=
@@ -26,7 +26,6 @@ time_cmd reduction reda1/dcpa1 : agp1 := by
   pre_dcp
 
 #print dcpa1
--- def dcpa1 : Minimization ℝ ℝ :=
 -- optimization (x : ℝ)
 --   minimize x
 --   subject to
@@ -36,7 +35,7 @@ solve dcpa1
 
 end AlmostDGP1
 
-/- This problem is not DGP because of -5.382. -/
+/- This problem is not DGP because of `-5.382`. -/
 section AlmostDGP2
 
 def agp2 :=
@@ -47,14 +46,12 @@ def agp2 :=
         h2 : 0 < y
         h3 : x * y - 5.382 ≤ 0
 
-set_option trace.Meta.debug true
 time_cmd reduction reda2/dcpa2 : agp2 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
   pre_dcp
 
 #print dcpa2
--- def dcpa2 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize x
 --   subject to
@@ -64,7 +61,7 @@ solve dcpa2
 
 end AlmostDGP2
 
-/- This problem is not DGP because -6 * y / z is not a positive monomial. -/
+/- This problem is not DGP because `-6 * y / z` is not a positive monomial. -/
 section AlmostDGP3
 
 def agp3 :=
@@ -83,10 +80,9 @@ time_cmd reduction reda3/dcpa3 : agp3 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
   change_of_variables! (w) (z ↦ Real.exp w)
-  pre_dcp -- TODO: Check this.
+  pre_dcp
 
 #print dcpa3
--- def dcpa3 : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) (z : ℝ)
 --   minimize exp y + (exp x + exp z)
 --   subject to
@@ -99,7 +95,7 @@ solve dcpa3
 
 end AlmostDGP3
 
-/- This problem is not DGP because -x and -y are not positive monomials. -/
+/- This problem is not DGP because `-x` and `-y` are not positive monomials. -/
 section AlmostDGP4
 
 def agp4 :=
@@ -110,14 +106,12 @@ def agp4 :=
       h2 : 0 < y
       h3 : x * y ≤ 2 - x - y
 
-set_option trace.Meta.debug true
 time_cmd reduction reda4/dcpa4 : agp4 := by
   change_of_variables! (u) (x ↦ Real.exp u)
   change_of_variables! (v) (y ↦ Real.exp v)
   pre_dcp
 
 #print dcpa4
--- def dcpa4 : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ)
 --   minimize -(x + y)
 --   subject to
@@ -127,39 +121,41 @@ solve dcpa4
 
 end AlmostDGP4
 
--- /- This problem is not convex. -/
--- section AlmostDGP5
+/- This problem is not convex. -/
+section AlmostDGP5
 
--- def agp5 :=
---   optimization (x y : ℝ)
---     minimize (x * y)
---     subject to
---       h1 : 0 < x
---       h2 : 0 < y
---       h3 : x * y ≤ 2 + x - y
+def agp5 :=
+  optimization (x y : ℝ)
+    minimize (x * y)
+    subject to
+      h1 : 0 < x
+      h2 : 0 < y
+      h3 : x * y ≤ 2 + x - y
 
--- reduction reda5/dcpa5 : agp5 := by
---   map_exp
---   try { pre_dcp } -- Should fail.
+reduction reda5/dcpa5 : agp5 := by
+  change_of_variables! (u) (x ↦ Real.exp u)
+  change_of_variables! (v) (y ↦ Real.exp v)
+  fail_if_success pre_dcp
 
--- end AlmostDGP5
+end AlmostDGP5
 
--- /- This problem is not convex. -/
--- section AlmostDGP6
+/- This problem is not convex. -/
+section AlmostDGP6
 
--- def agp6 :=
---   optimization (x y : ℝ)
---     minimize (x * y)
---     subject to
---       h1 : 0 < x
---       h2 : 0 < y
---       h3 : sqrt (x * y - y) ≤ 1
+def agp6 :=
+  optimization (x y : ℝ)
+    minimize (x * y)
+    subject to
+      h1 : 0 < x
+      h2 : 0 < y
+      h3 : sqrt (x * y - y) ≤ 1
 
--- reduction reda6/dcpa6 : agp6 := by
---   map_exp
---   try { pre_dcp } -- Should fail.
+reduction reda6/dcpa6 : agp6 := by
+  change_of_variables! (u) (x ↦ Real.exp u)
+  change_of_variables! (v) (y ↦ Real.exp v)
+  fail_if_success pre_dcp
 
--- end AlmostDGP6
+end AlmostDGP6
 
 end
 

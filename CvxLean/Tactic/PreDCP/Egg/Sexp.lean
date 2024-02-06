@@ -59,8 +59,8 @@ inductive SexpError
   | notSingleSexp (s: String) (xs: List Sexp) : SexpError
   deriving BEq, Repr
 
-instance : ToString SexpError where 
-  toString 
+instance : ToString SexpError where
+  toString
     | .unmatchedOpenParen ix => s!"Unmatched open parenthesis at {ix}"
     | .unmatchedCloseParen ix => s!"Unmatched close parenthesis at {ix}"
     | .notSingleSexp s xs => s!"not a single sexp '{s}', parsed as: '{xs}'"
@@ -87,9 +87,9 @@ def SexpM.pushTok (tok: SexpTok): SexpM Unit := do
 
 def SexpM.pushSexp (sexp: Sexp): SexpM Unit := do
   let state ← get
-  if state.stack.length == 0 then 
+  if state.stack.length == 0 then
     set { state with stack := [], sexps := sexp :: state.sexps }
-  else 
+  else
     set { state with stack := (SexpTok.sexp sexp) :: state.stack }
 
 def SexpM.incrementDepth: SexpM Unit :=
@@ -98,7 +98,7 @@ def SexpM.incrementDepth: SexpM Unit :=
 def SexpM.decrementDepth: SexpM Unit :=
   modify (fun state => { state with depth := state.depth - 1 })
 
-instance [Inhabited α] : Inhabited (SexpM α) := by infer_instance
+instance {α} [Inhabited α] : Inhabited (SexpM α) := by infer_instance
 
 def SexpM.pop: SexpM SexpTok := do
   let state ← get
@@ -111,7 +111,7 @@ def SexpM.pop: SexpM SexpTok := do
 -- Remove elements from the stack of tokens `List SexpToken` till we find a `SexpToken.opening`.
 -- When we do, return (1) the position of the open paren, (2) the list of SexpTokens left on the stack, and (3) the list of Sexps
 -- Until then, accumulate the `SexpToken.sexp`s into `sexps`.
-def stackPopTillOpen (stk : List SexpTok) (sexps : List Sexp := []) : 
+def stackPopTillOpen (stk : List SexpTok) (sexps : List Sexp := []) :
   Option (String.Pos × (List SexpTok) × (List Sexp)) :=
   match stk with
   | [] => .none
@@ -159,7 +159,7 @@ partial def SexpM.parse : SexpM Unit := do
   | .none => do
       let state ← get
       match stackPopTillOpen state.stack with
-      | some (openPos, _, _) => throw <| 
+      | some (openPos, _, _) => throw <|
           SexpError.unmatchedOpenParen ({ s := state.it.s, i := openPos })
       | none => return ()
 
@@ -170,7 +170,7 @@ def parseSexpList (s: String):  Except SexpError (List Sexp) :=
   | .ok () state => .ok state.sexps.reverse
   | .error e _ => .error e
 
-/-- Parse a single s-expression, and error if found no sexp or multiple sexps. 
+/-- Parse a single s-expression, and error if found no sexp or multiple sexps.
 -/
 def parseSingleSexp (s: String) : Except SexpError Sexp := do
   match (← parseSexpList s) with

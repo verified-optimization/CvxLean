@@ -3,7 +3,9 @@ import CvxLean.Lib.Equivalence
 /-!
 # Relaxation of optimization problems
 
-We define the notion of relaxation.
+We define the notion of relaxation. It is a reflexive and transitive relation and it induces a
+forward map between solutions. The idea is that solving the original problem is "as hard" as solving
+the relaxed problem. A strong equivalence gives a relaxation.
 
 ## References
 
@@ -27,18 +29,20 @@ variable {p q r}
 
 notation p " ≽' " q => Relaxation p q
 
+@[rel]
 def refl : p ≽' p :=
   { phi := id,
     phi_feasibility := fun _ h => h,
     phi_optimality := fun _ _ => le_refl _ }
 
+@[rel]
 def trans (Rx₁ : p ≽' q) (Rx₂ : q ≽' r) : p ≽' r :=
   { phi := Rx₂.phi ∘ Rx₁.phi,
     phi_feasibility := fun x h => Rx₂.phi_feasibility (Rx₁.phi x) (Rx₁.phi_feasibility x h),
     phi_optimality := fun x hx =>
-      -- h(φ₂(φ₁(x))) ≤ g(φ₁(x))
+      -- `h(φ₂(φ₁(x))) ≤ g(φ₁(x))`
       have h₁ := Rx₂.phi_optimality (Rx₁.phi x) (Rx₁.phi_feasibility x hx)
-      -- g(φ₁(x)) ≤ f(x)
+      -- `g(φ₁(x)) ≤ f(x)`
       have h₂ := Rx₁.phi_optimality x hx
       le_trans h₁ h₂ }
 
@@ -78,6 +82,7 @@ namespace StrongEquivalence
 
 variable {p q}
 
+@[strong_equiv]
 def ofRelaxations (Rx₁ : p ≽' q) (Rx₂ : q ≽' p) : p ≡' q :=
   { phi := Rx₁.phi,
     psi := Rx₂.phi,
@@ -92,6 +97,7 @@ namespace Equivalence
 
 variable {p q}
 
+@[equiv]
 def ofRelaxations (Rx₁ : p ≽' q) (Rx₂ : q ≽' p) : p ≡ q :=
   Equivalence.ofStrongEquivalence (StrongEquivalence.ofRelaxations Rx₁ Rx₂)
 
@@ -101,11 +107,13 @@ namespace Relaxation
 
 variable {f : D → R} {cs : D → Prop}
 
+@[rel]
 def remove_constraint {c cs' : D → Prop} (hcs : ∀ x, cs x ↔ c x ∧ cs' x) : ⟨f, cs⟩ ≽' ⟨f, cs'⟩ :=
   { phi := id,
     phi_feasibility := fun x h_feas_x => ((hcs x).mp h_feas_x).2,
     phi_optimality := fun _ _ => le_refl _ }
 
+@[rel]
 def weaken_constraints (cs' : D → Prop) (hcs : ∀ x, cs x → cs' x) : ⟨f, cs⟩ ≽' ⟨f, cs'⟩ :=
   { phi := id,
     phi_feasibility := fun x h_feas_x => hcs x h_feas_x,

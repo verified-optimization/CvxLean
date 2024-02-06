@@ -19,9 +19,7 @@ def p :=
 time_cmd equivalence eq/q : p := by
   pre_dcp
 
-
 #print q
--- def q : Minimization ℝ ℝ :=
 -- optimization (x : ℝ)
 --   minimize x
 --   subject to
@@ -31,7 +29,6 @@ time_cmd equivalence eq/q : p := by
 solve q
 
 #print q.reduced
--- def q.reduced : Minimization (ℝ × ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (t.0 : ℝ) (t.1 : ℝ)
 --   minimize x
 --   subject to

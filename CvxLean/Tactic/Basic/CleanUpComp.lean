@@ -12,9 +12,9 @@ namespace Meta
 def cleanUpCompAux (e : Expr) (name : String) : MetaM Expr := do
   match e with
   | .app (.app (.app (.app (.app (.const ``Function.comp lvls) ty₁) ty₂) ty₃) f₁) f₂ => do
-    let f₂ ← instantiateMVars <| ← whnf f₂
-    let f₁ ← instantiateMVars f₁
-    return mkApp5 (mkConst ``Function.comp lvls) ty₁ ty₂ ty₃ f₁ f₂
+      let f₂ ← instantiateMVars <| ← whnf f₂
+      let f₁ ← instantiateMVars f₁
+      return mkApp5 (mkConst ``Function.comp lvls) ty₁ ty₂ ty₃ f₁ f₂
   | _ => throwError "{name} not of the form '... ∘ ...'"
 
 /-- -/
@@ -23,7 +23,7 @@ def cleanUpCompBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let newObjFun ← cleanUpCompAux lhsMinExpr.objFun "objFun"
   let newConstraints ← cleanUpCompAux lhsMinExpr.constraints "constr"
   let rhsMinExpr := { lhsMinExpr with objFun := newObjFun, constraints := newConstraints }
-  let newEqvExpr := { eqvExpr with p := lhsMinExpr.toExpr, q := rhsMinExpr.toExpr }
+  let newEqvExpr := { eqvExpr with lhs := lhsMinExpr.toExpr, rhs := rhsMinExpr.toExpr }
   if (← isDefEq (mkMVar g) newEqvExpr.toExpr) then
     throwError "`clean_up_comp` error: Failed to unify the goal."
   let simpComp ← ({} : SimpTheorems).addDeclToUnfold ``Function.comp

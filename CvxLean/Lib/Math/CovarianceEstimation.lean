@@ -1,7 +1,7 @@
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.PosDef
 
 /-!
-Definitions needed for the case study
+Definitions needed for `Examples/CovarianceEstimation.lean`.
 -/
 
 noncomputable section CovarianceEstimation

@@ -10,19 +10,21 @@ deriving Inhabited
 
 namespace Tree
 
+variable {α β γ δ}
+
 open Lean
 
 partial def toMessageData [ToMessageData α] [ToMessageData β] (x : Tree α β) : MessageData := match x with
   | Tree.node val children =>
-    let children := children.map toMessageData
-    MessageData.paren (
-      "node:" ++ ToMessageData.toMessageData val ++ "[" ++ (MessageData.joinSep children.toList ", ") ++ "]"
-    )
+      let children := children.map toMessageData
+      MessageData.paren <|
+        "node:" ++ ToMessageData.toMessageData val ++
+        "[" ++ (MessageData.joinSep children.toList ", ") ++ "]"
   | Tree.leaf val => "leaf:" ++ ToMessageData.toMessageData val
 
-instance [ToMessageData α] [ToMessageData β] : ToMessageData (Tree α β) := {
+instance [ToMessageData α] [ToMessageData β] : ToMessageData (Tree α β) where
   toMessageData := toMessageData
-}
+
 
 partial def zip [Inhabited α] [Inhabited β] [ToMessageData α] [ToMessageData β] [ToMessageData γ] [ToMessageData δ] :
   Tree α γ → Tree β δ → MetaM (Tree (α × β) (γ × δ))
@@ -41,10 +43,10 @@ partial def fold [Inhabited γ] (init : γ) (f : γ → α → γ) : Tree α β 
       res ← fold res f child
     res := f res val
     return res
-  | leaf val => init
+  | leaf _ => init
 
 def val : Tree α α → α
-  | node val children => val
+  | node val _ => val
   | leaf val => val
 
 partial def size : Tree α β → Nat

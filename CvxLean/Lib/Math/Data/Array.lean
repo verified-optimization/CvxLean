@@ -3,7 +3,9 @@ import Mathlib.Algebra.Group.Defs
 
 open Lean
 
-instance {α} : Inhabited (Array α) where
+variable {α β γ}
+
+instance : Inhabited (Array α) where
   default := Array.empty
 
 def Array.zeros [Zero α] (n : Nat) : Array α :=
@@ -19,8 +21,8 @@ def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
       bs := bs.push (as.get ⟨i, h.2⟩)
   return bs
 
-@[specialize] def Array.zipWithMAux (f : α → β → MetaM γ)
-    (as : Array α) (bs : Array β) (i : Nat) (cs : Array γ) :
+@[specialize]
+def Array.zipWithMAux (f : α → β → MetaM γ) (as : Array α) (bs : Array β) (i : Nat) (cs : Array γ) :
     MetaM (Array γ) := do
   if h : i < as.size then
     let a := as.get ⟨i, h⟩;
@@ -31,7 +33,7 @@ def Array.filterIdx (as : Array α) (f : Nat → Bool) := Id.run do
       pure cs
   else
     pure cs
-termination_by _ => as.size - i
+termination_by as.size - i
 
 def Array.zipWithM (f : α → β → MetaM γ) (as : Array α) (bs : Array β) :
     MetaM (Array γ) :=

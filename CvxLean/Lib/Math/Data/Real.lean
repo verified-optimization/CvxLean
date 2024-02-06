@@ -2,6 +2,11 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
+/-!
+Extra real functions and results. Some are needed to define atoms. There are also some lemmas that
+are useful for the pre-DCP rewrite system.
+-/
+
 namespace Real
 
 /-- This makes real powers the default, avoiding a mixture of `ℕ` and `ℝ`, which is problematic for
@@ -11,7 +16,7 @@ some components of our automated procedures such as pattern-matching in `dcp` or
 noncomputable instance (priority := high) : HPow ℝ ℝ ℝ := by infer_instance
 
 @[default_instance]
-noncomputable instance (priority := high) : HPow (Fin n → ℝ) ℝ (Fin n → ℝ) := by infer_instance
+noncomputable instance (priority := high) {n} : HPow (Fin n → ℝ) ℝ (Fin n → ℝ) := by infer_instance
 
 section Functions
 
@@ -41,9 +46,6 @@ Useful instances to construct expressions.
 -/
 
 noncomputable instance instDivReal : Div ℝ := by
-  infer_instance
-
-noncomputable instance instAbsReal : Abs ℝ := by
   infer_instance
 
 noncomputable instance instMinReal : Min ℝ := by
