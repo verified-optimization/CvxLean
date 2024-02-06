@@ -61,10 +61,10 @@ def dotProduct (v w : Fin n → Float) : Float :=
 
 infixl:72 " ⬝ᵥᶜ " => Matrix.Computable.dotProduct
 
-def mulVec (M : Matrix (Fin m) (Fin n) Float) (v : (Fin n) → Float) : Fin m → Float :=
+def mulVec (M : Matrix (Fin n) (Fin m) Float) (v : (Fin m) → Float) : Fin n → Float :=
   fun i => (fun j => M i j) ⬝ᵥᶜ v
 
-def vecMul (x : Fin m → Float) (M : Matrix (Fin m) (Fin n) Float) : Fin n → Float :=
+def vecMul (x : Fin n → Float) (M : Matrix (Fin n) (Fin m) Float) : Fin m → Float :=
   fun j => x ⬝ᵥᶜ fun i => M i j
 
 def transpose {m n} {α} (M : Matrix m n α) : Matrix n m α :=
