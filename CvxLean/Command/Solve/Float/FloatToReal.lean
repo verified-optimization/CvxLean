@@ -2,8 +2,8 @@ import Mathlib.Data.Real.Basic
 import CvxLean.Lib.Math.Data.Real
 
 /-!
-Conversion used in `Solve/Conic.lean` to read the solver's output into an expression to which we can
-apply the backward map.
+Conversion used in `CvxLean/Command/Solve/Conic.lean` to read the solver's output into an expression
+to which we can apply the backward map.
 -/
 
 namespace CvxLean

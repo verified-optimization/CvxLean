@@ -29,7 +29,7 @@ The full version with labels would be
   (fun p => 40 * p.1 + 30 * p.2)
   (fun p => {** 12 ≤ p.1 + p.2 ** `c₁ **} ∧ {** 16 ≤ 2 * p.1 + p.2 ** `c₂ **})
 ```
-where the `{ ** e ** n }` notation is as defined in `Syntax/Label.lean`.
+where the `{ ** e ** n }` notation is as defined in `CvxLean/Syntax/Label.lean`.
 
 We also define how to delaborate it so that it can be pretty printed back to the custom syntax.
 -/

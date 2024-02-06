@@ -27,7 +27,7 @@ environment:
 Writing `reduction'` instead of `reduction` will also generate a backward solution map at the
 level of floats.
 
-It is essentially the same as `Command/Equivalence.lean`, except that the goal is to prove a
+It is essentially the same as `CvxLean/Command/Equivalence.lean`, except that the goal is to prove a
 reduction instead of an equivalence. We note that proving that two problems are equivalent is
 usually preferred.
 -/

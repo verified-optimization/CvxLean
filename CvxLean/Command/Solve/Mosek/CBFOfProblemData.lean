@@ -57,7 +57,8 @@ unsafe def getTotalDim (minExpr : MinimizationExpr) : MetaM Nat := do
 
 namespace CBF
 
-/-- Translate generic cone types from `Solve/Float/ProblemData.lean` to MOSEK cones. -/
+/-- Translate generic cone types from `CvxLean/Command/Solve/Float/ProblemData.lean` to MOSEK
+cones. -/
 def translateCone : ScalarConeType → CBF.ConeType
   | ScalarConeType.Zero => CBF.ConeType.LEq
   | ScalarConeType.PosOrth => CBF.ConeType.LPos
@@ -67,8 +68,8 @@ def translateCone : ScalarConeType → CBF.ConeType
 
 /-- Constraints in non-matrix cones with intrinsic dimension (`𝒦ₑ`, `𝒬ⁿ⁺¹`, and `𝒬ᵣⁿ⁺²`) are
 defined by a series of constraints. These need to be grouped appropriately. In
-`Command/Solve/Float/Coeffs.lean` we keep track of these groups as "sections". These are used here
-to correctly write the problem in CBF. -/
+`CvxLean/Command/Solve/Float/Coeffs.lean` we keep track of these groups as "sections". These are
+used here to correctly write the problem in CBF. -/
 def groupCones (sections : ScalarAffineSections) (l : List CBF.Cone) : MetaM (List CBF.Cone) := do
   let l := l.toArray
   let mut res := []

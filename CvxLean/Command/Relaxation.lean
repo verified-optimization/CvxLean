@@ -20,10 +20,10 @@ environment:
 * `q := r`,
 * `rel : p ≽' q`.
 
-This command is very similar to `equivalence` (`Command/Equivalence.lean`) and `reduction`
-(`Command/Reduction.lean`) in how it is designed. Of course, the key difference is that the goal
-is to prove a relaxation. Note that in this case, there is no option to create a backward map as
-relaxations do not guarantee that the solution can be mapped back.
+This command is very similar to `equivalence` (`CvxLean/Command/Equivalence.lean`) and `reduction`
+(`CvxLean/Command/Reduction.lean`) in how it is designed. Of course, the key difference is that the
+goal is to prove a relaxation. Note that in this case, there is no option to create a backward map
+as relaxations do not guarantee that the solution can be mapped back.
 -/
 
 namespace CvxLean

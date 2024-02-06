@@ -10,8 +10,8 @@ import CvxLean.Command.Solve.Float.RealToFloatLibrary
 # Extract coefficients from problem to generate problem data
 
 This file defines `determineCoeffsFromExpr`, which takes a `MinimizationExpr` and returns
-`ProblemData`. This procedure is used by `Commands/Solve.lean` to be able to call an external
-solver.
+`ProblemData`. This procedure is used by `CvxLean/Commands/Solve.lean` to be able to call an
+external solver.
 
 ### TODO
 

@@ -6,7 +6,7 @@ We provide an interface to build this data by adding any of the possible types o
 data can then be transformed in a straightforward manner into Conic Benchmark Format, for example.
 
 The procedure that creates `ProblemData` from an optimization problem can be found in
-`Command/Solve/Coeffs.lean`.
+`CvxLean/Command/Solve/Coeffs.lean`.
 -/
 
 namespace CvxLean
@@ -115,7 +115,7 @@ def addZeroConstraint (data : ProblemData) (a : Array Float) (b : Float) : Probl
 /-- Add exponential cone constraint `∑ i, aᵢxᵢ + b ∈ 𝒦ₑ` to problem data. Note that the
 second-order cone is `3`-dimensional, so to capture `(x, y, z) ∈ 𝒦ₑ` we do `x ∈ 𝒦ₑ`, `y ∈ 𝒦ₑ`, and
 `z ∈ 𝒦ₑ` consecutively. We keep track of how to group consecutive constraints in
-`Command/Solve/Float/Coeffs.lean`. -/
+`CvxLean/Command/Solve/Float/Coeffs.lean`. -/
 def addExpConstraint (data : ProblemData) (a : Array Float) (b : Float) : ProblemData :=
   data.addScalarAffineConstraintOnlyVector a b ScalarConeType.Exp
 
