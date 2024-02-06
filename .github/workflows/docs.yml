@@ -31,6 +31,9 @@ jobs:
           sh rustup-init.sh -y --default-toolchain none
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          repository: verified-optimization/CvxLean
+          path: CvxLean
       - name: Build egg-pre-dcp and CvxLean
         run: |
           ./build.sh
