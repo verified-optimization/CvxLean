@@ -35,6 +35,7 @@ jobs:
           repository: verified-optimization/CvxLean
           path: CvxLean
       - name: Build egg-pre-dcp and CvxLean
+        working-directory: CvxLean
         run: |
           ./build.sh
       - name: Create dummy docs project
