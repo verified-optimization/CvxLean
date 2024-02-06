@@ -59,6 +59,8 @@ def testNorm2 : Solution <|
   dcp
   sorry
 
+variable {m}
+
 def testVecExp : Solution <|
     optimization (x y : Fin m → ℝ)
       minimize (0 : ℝ)
@@ -103,7 +105,7 @@ def testLog : Solution <|
   dcp
   sorry
 
-def testLogDet : Solution <|
+def testLogDet {n : ℕ} : Solution <|
     optimization (M : Matrix (Fin n) (Fin n) ℝ)
       minimize (0 : ℝ)
       subject to
@@ -115,6 +117,8 @@ def testLogDet : Solution <|
 end Atoms
 
 section Misc
+
+variable {d : ℝ}
 
 def testGrantsThesis (a b c : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c) : Solution <|
     optimization (x y : ℝ)
