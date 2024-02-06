@@ -312,7 +312,6 @@ unsafe def determineCoeffsFromExpr (minExpr : MinimizationExpr) :
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
             data := data.addSOConstraint ea eb
             idx := idx + 1
-      -- TODO: Unroll?
       | .app (.app (.app (.app (.app (.const ``Real.Matrix.posOrthCone _)
           (.app (.const ``Fin _) m)) (.app (.const ``Fin _) n)) _) _) e => do
           let m : Nat ← evalExpr Nat (mkConst ``Nat) m

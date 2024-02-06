@@ -13,7 +13,7 @@ here, which are used by the real-to-float procedure.
 
 namespace Matrix
 
-variable {α} {m n}
+variable {m n} {α}
 
 def const (k : α) : Matrix m n α :=
   fun _ _ => k
@@ -67,10 +67,10 @@ def mulVec (M : Matrix (Fin m) (Fin n) Float) (v : (Fin n) → Float) : Fin m �
 def vecMul (x : Fin m → Float) (M : Matrix (Fin m) (Fin n) Float) : Fin n → Float :=
   fun j => x ⬝ᵥᶜ fun i => M i j
 
-def transpose {m n} (M : Matrix m n α) : Matrix n m α :=
+def transpose {m n} {α} (M : Matrix m n α) : Matrix n m α :=
   fun i j => M j i
 
-def diag {n} (M : Matrix n n α) : n → α :=
+def diag {n} {α} (M : Matrix n n α) : n → α :=
   fun i => M i i
 
 def mul (M : Matrix (Fin l) (Fin m) Float) (N : Matrix (Fin m) (Fin n) Float) :
