@@ -8,6 +8,8 @@ use optimization::is_ge_zero as is_ge_zero;
 use optimization::is_le_zero as is_le_zero;
 use optimization::is_not_zero as is_not_zero;
 use optimization::is_nat as is_nat;
+use optimization::is_le as is_le;
+use optimization::is_ge as is_ge;
 
 pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
@@ -203,9 +205,6 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
 
-    // rw!("rpow_eq_mul_rpow_pred"; "(pow ?a ?b)" => "(mul ?a (pow ?a (sub ?b 1)))"
-    //     if is_not_zero("?a")),
-
     rw!("inv_eq_pow_neg_one"; "(inv ?a)" => "(pow ?a (neg 1))" if is_not_zero("?a")),
 
 
@@ -261,6 +260,17 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("abs_nonneg"; "(abs ?a)" => "?a" if is_ge_zero("?a")),
 
     rw!("abs_nonpos"; "(abs ?a)" => "(neg ?a)" if is_le_zero("?a")),
+
+    
+    /* Min and max rules. */
+
+    rw!("min_eq_left"; "(min ?a ?b)" => "?a" if is_le("?a", "?b")),
+
+    rw!("min_eq_right"; "(min ?a ?b)" => "?b" if is_le("?b", "?a")),
+
+    rw!("max_eq_left"; "(max ?a ?b)" => "?a" if is_ge("?a", "?b")),
+
+    rw!("max_eq_right"; "(max ?a ?b)" => "?b" if is_ge("?b", "?a")),
 
 
     /* Atom folding and unfolding rules. */

@@ -1,5 +1,4 @@
 import Lean
-import Std.Linter.UnreachableTactic
 import CvxLean.Tactic.PreDCP.RewriteMapExt
 
 namespace CvxLean
@@ -25,7 +24,6 @@ syntax (name := registerObjFunRewriteMap)
 
 open Lean.Elab Lean.Elab.Command
 
-set_option linter.unreachableTactic false in
 @[command_elab registerRewriteMap] def elabRegisterEggRewrite : CommandElab
 | `(register_rewrite_map $rwName ; $rwTarget => $rwGoal := $tac;) => do
     let rwNameStr := rwName.getString
@@ -35,7 +33,6 @@ set_option linter.unreachableTactic false in
     liftTermElabM <| addRewriteMapEntry rwNameStr tac false
 | _ => throwUnsupportedSyntax
 
-set_option linter.unreachableTactic false in
 @[command_elab registerObjFunRewriteMap] def elabRegisterObjFunEggRewrite : CommandElab
 | `(register_objFun_rewrite_map $rwName ; $rwTarget => $rwGoal := $tac;) => do
     let rwNameStr := rwName.getString

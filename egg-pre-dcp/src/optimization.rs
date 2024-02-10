@@ -292,3 +292,20 @@ pub fn is_nat(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
         return false;
     }
 }
+
+pub fn is_le(var1: &str, var2: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var1 = var1.parse().unwrap();
+    let var2 = var2.parse().unwrap();
+    move |egraph, _, subst| {
+        if let Some(d1) = &egraph[subst[var1]].data.domain {
+            if let Some(d2) = &egraph[subst[var2]].data.domain {
+                return Domain::subseteq(d1, d2);
+            }
+        }
+        return false;
+    }
+}
+
+pub fn is_ge(var1: &str, var2: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    is_le(var2, var1)
+}

@@ -18,12 +18,16 @@ macro_rules
 
 namespace CvxLean
 
+set_option linter.unreachableTactic false
+
 /- Objective function rules. -/
 
-register_objFun_rewrite_map "map_objFun_log"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (log ?a)) ?cs)" :=
+register_objFun_rewrite_map
+    "map_objFun_log"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (log ?a)) ?cs)" :=
   apply Minimization.Equivalence.map_objFun_log (by positivity!);
 
-register_objFun_rewrite_map "map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (pow ?a 2)) ?cs)" :=
+register_objFun_rewrite_map
+    "map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (pow ?a 2)) ?cs)" :=
   apply Minimization.Equivalence.map_objFun_sq (by positivity!);
 
 
@@ -210,10 +214,12 @@ register_rewrite_map "pow_sub"; "(pow ?a (sub ?b ?c))" => "(div (pow ?a ?b) (pow
 register_rewrite_map "pow_sub-rev"; "(div (pow ?a ?b) (pow ?a ?c))" => "(pow ?a (sub ?b ?c))" :=
   simp_or_rw [←Real.rpow_sub (by positivity!)];
 
-register_rewrite_map "div_pow_eq_mul_pow_neg" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
+register_rewrite_map
+    "div_pow_eq_mul_pow_neg" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
   simp_or_rw [Real.div_pow_eq_mul_pow_neg (by positivity!)];
 
-register_rewrite_map "div_pow_eq_mul_pow_neg-rev" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
+register_rewrite_map
+    "div_pow_eq_mul_pow_neg-rev" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
   simp_or_rw [←Real.div_pow_eq_mul_pow_neg (by positivity!)];
 
 register_rewrite_map "one_div_eq_pow_neg_one"; "(div 1 ?a)" => "(pow ?a (neg 1))" :=
@@ -244,7 +250,8 @@ register_rewrite_map "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
 register_rewrite_map "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
   simp_or_rw [Real.pow_half_two (by positivity!)];
 
-register_rewrite_map "binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=
+register_rewrite_map "binomial_two";
+    "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=
   simp_or_rw [Real.binomial_two];
 
 register_rewrite_map "rpow_eq_mul_rpow_pred"; "(pow ?a ?b)" => "(mul ?a (pow ?a (sub ?b 1)))" :=
@@ -319,6 +326,21 @@ register_rewrite_map "abs_nonneg" ; "(abs ?a)" => "?a" :=
 
 register_rewrite_map "abs_nonpos" ; "(abs ?a)" => "(neg ?a)" :=
   simp_or_rw [abs_eq_neg_self.mpr (by linarith)];
+
+
+/- Min and max rules. -/
+
+register_rewrite_map "min_eq_left"; "(min ?a ?b)" => "?a" :=
+  simp_or_rw [min_eq_left (by linarith)];
+
+register_rewrite_map "min_eq_right"; "(min ?a ?b)" => "?b" :=
+  simp_or_rw [min_eq_right (by linarith)];
+
+register_rewrite_map "max_eq_left"; "(max ?a ?b)" => "?a" :=
+  simp_or_rw [max_eq_left (by linarith)];
+
+register_rewrite_map "max_eq_right"; "(max ?a ?b)" => "?b" :=
+  simp_or_rw [max_eq_right (by linarith)];
 
 
 /- Atom folding. -/
