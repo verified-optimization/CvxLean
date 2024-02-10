@@ -27,6 +27,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("log_eq_log"; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b")),
+    
+    rw!("log_eq_log-rev"; "(eq (log ?a) (log ?b))" => "(eq ?a ?b)"
+        if is_gt_zero("?a") if is_gt_zero("?b")),
 
 
     /* Less than or equal rules. */
@@ -175,6 +178,9 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
         if is_gt_zero("?b")),
 
     rw!("one_div_eq_pow_neg_one"; "(div 1 ?a)" => "(pow ?a (neg 1))"
+        if is_gt_zero("?a")),
+    
+    rw!("one_div_eq_pow_neg_one-rev"; "(pow ?a (neg 1))" => "(div 1 ?a)"
         if is_gt_zero("?a")),
 
     rw!("sqrt_eq_rpow"; "(sqrt ?a)" => "(pow ?a 0.5)"),
