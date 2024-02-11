@@ -14,7 +14,7 @@ import CvxLean.Command.Solve.Float.RealToFloatExt
 # Conversion of Real to Float (command)
 
 We define the `realToFloat` function to go from real `Expr`s to float `Expr`s as well as the
-`addRealToFloat` command to add new translations and the `#realToFloat` command to test the
+`add_real_to_float` command to add new translations and the `#real_to_float` command to test the
 translation.
 -/
 
@@ -23,7 +23,7 @@ namespace CvxLean
 open Lean Expr Elab Meta Command Term
 
 syntax (name := addRealToFloatCommand)
-  "addRealToFloat" Lean.Parser.Term.funBinder* ":" term ":=" term : command
+  "add_real_to_float" Lean.Parser.Term.funBinder* ":" term ":=" term : command
 
 /-- Traverse expression recursively and if a match is found in the real-to-float library return the
 float version. The "correctness" of this function depends on the translations defined in the
@@ -72,11 +72,11 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
         return e
   | _ => return e
 
-/-- The `addRealToFloat` command, which simply adds the user-defined expressions to the environment
-extension. -/
+/-- The `add_real_to_float` command, which simply adds the user-defined expressions to the
+environment extension. -/
 @[command_elab addRealToFloatCommand]
 def elabAddRealToFloatCommand : CommandElab
-| `(addRealToFloat : $real := $float) =>
+| `(add_real_to_float : $real := $float) =>
   liftTermElabM do
     let real ← elabTermAndSynthesize real.raw none
     let float ← elabTermAndSynthesize float.raw none
@@ -84,19 +84,19 @@ def elabAddRealToFloatCommand : CommandElab
 | _ => throwUnsupportedSyntax
 
 macro_rules
-| `(addRealToFloat $idents:funBinder* : $real := $float) => do
+| `(add_real_to_float $idents:funBinder* : $real := $float) => do
   if idents.size != 0 then
-    `(addRealToFloat : fun $idents:funBinder* => $real := fun $idents:funBinder* => $float)
+    `(add_real_to_float : fun $idents:funBinder* => $real := fun $idents:funBinder* => $float)
   else
     Macro.throwUnsupported
 
 syntax (name:=realToFloatCommand)
-  "#realToFloat" term : command
+  "#real_to_float" term : command
 
 /-- Transform the given expression to its float version and log the result. -/
 @[command_elab realToFloatCommand]
 unsafe def elabRealToFloatCommand : CommandElab
-| `(#realToFloat $stx) =>
+| `(#real_to_float $stx) =>
   liftTermElabM do
     let e ← elabTermAndSynthesize stx.raw none
     let res ← realToFloat e

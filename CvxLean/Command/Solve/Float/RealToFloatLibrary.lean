@@ -14,200 +14,200 @@ namespace CvxLean
 
 section Basic
 
-addRealToFloat : Real :=
+add_real_to_float : Real :=
   Float
 
-addRealToFloat : Real.instInhabitedReal :=
+add_real_to_float : Real.instInhabitedReal :=
   instInhabitedFloat
 
-addRealToFloat : Real.instZeroReal :=
+add_real_to_float : Real.instZeroReal :=
   Zero.mk (0 : Float)
 
-addRealToFloat : Real.instOneReal :=
+add_real_to_float : Real.instOneReal :=
   One.mk (1 : Float)
 
-addRealToFloat : Real.instLEReal :=
+add_real_to_float : Real.instLEReal :=
   instLEFloat
 
-addRealToFloat : Real.instLTReal :=
+add_real_to_float : Real.instLTReal :=
   instLTFloat
 
-addRealToFloat : Real.instDivReal  :=
+add_real_to_float : Real.instDivReal  :=
   instDivFloat
 
-addRealToFloat : Real.instPowReal :=
+add_real_to_float : Real.instPowReal :=
   Pow.mk Float.pow
 
-addRealToFloat (n : Nat) (i) : @OfNat.ofNat Real n i :=
+add_real_to_float (n : Nat) (i) : @OfNat.ofNat Real n i :=
   Float.ofNat n
 
-addRealToFloat (n : Nat) : AddMonoidWithOne.toNatCast.natCast (R := ℝ) n :=
+add_real_to_float (n : Nat) : AddMonoidWithOne.toNatCast.natCast (R := ℝ) n :=
   Float.ofNat n
 
-addRealToFloat (i) (x : ℕ) : @Nat.cast Real i x :=
+add_real_to_float (i) (x : ℕ) : @Nat.cast Real i x :=
   Float.ofNat x
 
-addRealToFloat (k : Nat) :
+add_real_to_float (k : Nat) :
   @SMul.smul ℕ ℝ AddMonoid.toNatSMul k :=
   (fun (x : Float) => (OfNat.ofNat k) * x)
 
-addRealToFloat (i) : @Ring.toNeg Real i :=
+add_real_to_float (i) : @Ring.toNeg Real i :=
   Neg.mk Float.neg
 
-addRealToFloat : Real.instNegReal := instNegFloat
+add_real_to_float : Real.instNegReal := instNegFloat
 
-addRealToFloat : Real.instAddReal := instAddFloat
+add_real_to_float : Real.instAddReal := instAddFloat
 
-addRealToFloat (i) : @HAdd.hAdd Real Real Real i :=
+add_real_to_float (i) : @HAdd.hAdd Real Real Real i :=
   Float.add
 
-addRealToFloat (i) : @instHAdd Real i :=
+add_real_to_float (i) : @instHAdd Real i :=
   @HAdd.mk Float Float Float Float.add
 
-addRealToFloat : Real.instSubReal := instSubFloat
+add_real_to_float : Real.instSubReal := instSubFloat
 
-addRealToFloat (i) : @HSub.hSub Real Real Real i :=
+add_real_to_float (i) : @HSub.hSub Real Real Real i :=
   Float.sub
 
-addRealToFloat (i) : @instHSub Real i :=
+add_real_to_float (i) : @instHSub Real i :=
   @HSub.mk Float Float Float Float.sub
 
-addRealToFloat : Real.instMulReal := instMulFloat
+add_real_to_float : Real.instMulReal := instMulFloat
 
-addRealToFloat (i) : @HMul.hMul Real Real Real i :=
+add_real_to_float (i) : @HMul.hMul Real Real Real i :=
   Float.mul
 
-addRealToFloat (i) : @instHMul Real i :=
+add_real_to_float (i) : @instHMul Real i :=
   @HMul.mk Float Float Float Float.mul
 
-addRealToFloat (i) (k) : @HSMul.hSMul ℕ ℝ ℝ i k :=
+add_real_to_float (i) (k) : @HSMul.hSMul ℕ ℝ ℝ i k :=
   fun r => Float.ofNat k * r
 
-addRealToFloat (i) : @HDiv.hDiv Real Real Real i :=
+add_real_to_float (i) : @HDiv.hDiv Real Real Real i :=
   Float.div
 
-addRealToFloat (i) : @instHDiv Real i :=
+add_real_to_float (i) : @instHDiv Real i :=
   @HDiv.mk Float Float Float Float.div
 
-addRealToFloat (i) : @HPow.hPow Real Nat Real i :=
+add_real_to_float (i) : @HPow.hPow Real Nat Real i :=
   fun f n => Float.pow f (Float.ofNat n)
 
-addRealToFloat (i) : @HPow.hPow.{0, 0, 0} Real Real Real i :=
+add_real_to_float (i) : @HPow.hPow.{0, 0, 0} Real Real Real i :=
   fun f n => Float.pow f n
 
-addRealToFloat (β) (i) : @instHPow Real β i :=
+add_real_to_float (β) (i) : @instHPow Real β i :=
   @HPow.mk Float Float Float Float.pow
 
-addRealToFloat (n) (i) : @HPow.hPow (Fin n → Real) Real (Fin n → Real) i :=
+add_real_to_float (n) (i) : @HPow.hPow (Fin n → Real) Real (Fin n → Real) i :=
   fun (x : Fin n → Float) (p : Float) (i : Fin n) => Float.pow (x i) p
 
-addRealToFloat (n) (β) (i) : @instHPow (Fin n → Real) β i :=
+add_real_to_float (n) (β) (i) : @instHPow (Fin n → Real) β i :=
   @HPow.mk (Fin n → Float) Float (Fin n → Float) (fun x p i => Float.pow (x i) p)
 
-addRealToFloat (i) : @LE.le Real i :=
+add_real_to_float (i) : @LE.le Real i :=
   Float.le
 
-addRealToFloat : Real.pi :=
+add_real_to_float : Real.pi :=
   2 * Float.acos 0
 
-addRealToFloat : @Real.exp :=
+add_real_to_float : @Real.exp :=
   Float.exp
 
-addRealToFloat : @Vec.exp.{0} :=
+add_real_to_float : @Vec.exp.{0} :=
   @Vec.Computable.exp.{0}
 
-addRealToFloat : @Real.sqrt :=
+add_real_to_float : @Real.sqrt :=
   Float.sqrt
 
-addRealToFloat : @Real.log :=
+add_real_to_float : @Real.log :=
   Float.log
 
-addRealToFloat (n) (i) : @Norm.norm.{0} (Fin n → ℝ) i :=
+add_real_to_float (n) (i) : @Norm.norm.{0} (Fin n → ℝ) i :=
   @Real.Computable.norm n
 
-addRealToFloat (i) : @OfScientific.ofScientific Real i :=
+add_real_to_float (i) : @OfScientific.ofScientific Real i :=
   Float.ofScientific
 
-addRealToFloat : Real.natCast :=
+add_real_to_float : Real.natCast :=
   NatCast.mk Float.ofNat
 
 end Basic
 
 section Matrix
 
-addRealToFloat (n m k) :
+add_real_to_float (n m k) :
     @HSMul.hSMul ℕ (Matrix (Fin n) (Fin m) ℝ) (Matrix (Fin n) (Fin m) ℝ) instHSMul k :=
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
-addRealToFloat (n k i) : @HSMul.hSMul ℕ ((Fin n) → ℝ) ((Fin n) → ℝ) i k :=
+add_real_to_float (n k i) : @HSMul.hSMul ℕ ((Fin n) → ℝ) ((Fin n) → ℝ) i k :=
   (fun (x : (Fin n) → Float) i => (OfNat.ofNat k) * (x i))
 
-addRealToFloat (n m k : Nat) : @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.toNatSMul k :=
+add_real_to_float (n m k : Nat) : @SMul.smul ℕ (Matrix (Fin n) (Fin m) ℝ) AddMonoid.toNatSMul k :=
   (fun (M : Matrix (Fin n) (Fin m) Float) i j => (OfNat.ofNat k) * (M i j))
 
-addRealToFloat (n k i) : @SMul.smul ℕ ((Fin n) → ℝ) i k :=
+add_real_to_float (n k i) : @SMul.smul ℕ ((Fin n) → ℝ) i k :=
   (fun (x : (Fin n) → Float) i => (OfNat.ofNat k) * (x i))
 
-addRealToFloat (i1 i2 i3) : @Algebra.toSMul ℝ ℝ i1 i2 i3 :=
+add_real_to_float (i1 i2 i3) : @Algebra.toSMul ℝ ℝ i1 i2 i3 :=
   SMul.mk Float.mul
 
-addRealToFloat : @Matrix.vecEmpty Real :=
+add_real_to_float : @Matrix.vecEmpty Real :=
   fun (x : Fin 0) => ((False.elim (Nat.not_lt_zero x.1 x.2)) : Float)
 
-addRealToFloat (n) : @Matrix.vecEmpty (Fin n → Real) :=
+add_real_to_float (n) : @Matrix.vecEmpty (Fin n → Real) :=
   fun (x : Fin 0) => ((False.elim (Nat.not_lt_zero x.1 x.2)) : Fin n → Float)
 
-addRealToFloat : @Matrix.transpose.{0,0,0} :=
+add_real_to_float : @Matrix.transpose.{0,0,0} :=
   @Matrix.Computable.transpose.{0,0,0}
 
-addRealToFloat (n) (α) (i1) (i2) : @Matrix.diagonal.{0,0} (Fin n) α i1 i2 :=
+add_real_to_float (n) (α) (i1) (i2) : @Matrix.diagonal.{0,0} (Fin n) α i1 i2 :=
   @Matrix.Computable.diagonal n
 
-addRealToFloat : @Matrix.fromBlocks.{0,0,0,0,0} :=
+add_real_to_float : @Matrix.fromBlocks.{0,0,0,0,0} :=
   @Matrix.Computable.fromBlocks
 
-addRealToFloat : @Matrix.diag.{0,0} :=
+add_real_to_float : @Matrix.diag.{0,0} :=
   @Matrix.Computable.diag.{0,0}
 
-addRealToFloat (n) (i) (hn) : @Vec.sum.{0} ℝ i (Fin n) hn :=
+add_real_to_float (n) (i) (hn) : @Vec.sum.{0} ℝ i (Fin n) hn :=
   @Vec.Computable.sum n
 
-addRealToFloat (n) (i) (hn) : @Matrix.sum (Fin n) Real hn i :=
+add_real_to_float (n) (i) (hn) : @Matrix.sum (Fin n) Real hn i :=
   @Matrix.Computable.sum n
 
-addRealToFloat (n) (i) : @Vec.cumsum.{0} ℝ i n :=
+add_real_to_float (n) (i) : @Vec.cumsum.{0} ℝ i n :=
   @Vec.Computable.cumsum n
 
-addRealToFloat : @Vec.norm :=
+add_real_to_float : @Vec.norm :=
   @Vec.Computable.norm
 
-addRealToFloat (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) ℝ i1 i2 i3 :=
+add_real_to_float (n) (i1) (i2) (i3) : @Matrix.dotProduct (Fin n) ℝ i1 i2 i3 :=
   @Matrix.Computable.dotProduct n
 
-addRealToFloat (n m) (i1) (i2) : @Matrix.mulVec (Fin n) (Fin m) ℝ i1 i2 :=
+add_real_to_float (n m) (i1) (i2) : @Matrix.mulVec (Fin n) (Fin m) ℝ i1 i2 :=
   @Matrix.Computable.mulVec n m
 
-addRealToFloat (n m) (i1) (i2) : @Matrix.vecMul (Fin n) (Fin m) ℝ i1 i2 :=
+add_real_to_float (n m) (i1) (i2) : @Matrix.vecMul (Fin n) (Fin m) ℝ i1 i2 :=
   @Matrix.Computable.vecMul n m
 
-addRealToFloat (n : Nat) (i1) (i2) : @Matrix.trace (Fin n) ℝ i1 i2 :=
+add_real_to_float (n : Nat) (i1) (i2) : @Matrix.trace (Fin n) ℝ i1 i2 :=
   @Matrix.Computable.trace n
 
-addRealToFloat (l m n) (i) :
+add_real_to_float (l m n) (i) :
     @HMul.hMul (Matrix (Fin l) (Fin m) ℝ) (Matrix (Fin m) (Fin n) ℝ) (Matrix (Fin m) (Fin n) ℝ) i :=
   @Matrix.Computable.mul l m n
 
-addRealToFloat (n : Nat) (i1) (i2) : @Matrix.toUpperTri.{0,0} (Fin n) ℝ i1 i2 :=
+add_real_to_float (n : Nat) (i1) (i2) : @Matrix.toUpperTri.{0,0} (Fin n) ℝ i1 i2 :=
   @Matrix.Computable.toUpperTri n
 
-addRealToFloat (n) (i) : @Inv.inv (Matrix (Fin n) (Fin n) ℝ) i :=
+add_real_to_float (n) (i) : @Inv.inv (Matrix (Fin n) (Fin n) ℝ) i :=
   @Matrix.Computable.inv n
 
 end Matrix
 
 section CovarianceEstimation
 
-addRealToFloat (N n : ℕ) : @covarianceMatrix N n :=
+add_real_to_float (N n : ℕ) : @covarianceMatrix N n :=
   @Matrix.Computable.covarianceMatrix N n
 
 end CovarianceEstimation
