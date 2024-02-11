@@ -3,15 +3,15 @@ import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Debug
-import CvxLean.Tactic.PreDCP.RewriteMapExt
-import CvxLean.Tactic.PreDCP.RewriteMapLibrary
+import CvxLean.Tactic.PreDCP.RuleToTacticExt
+import CvxLean.Tactic.PreDCP.RuleToTacticLibrary
 import CvxLean.Tactic.PreDCP.Egg.All
 import CvxLean.Tactic.Basic.ConvOpt
 import CvxLean.Tactic.Basic.NormNumOpt
 import CvxLean.Tactic.Basic.RewriteOpt
 
 /-!
-# Atomatic transformation to DCP form
+# Automatic transformation to DCP form
 
 This file defines the tactic `pre_dcp`, which calls `egg` to find a sequence of rewrites that
 turns an optimization problem into DCP form.
