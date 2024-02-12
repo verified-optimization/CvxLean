@@ -75,6 +75,7 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
     Bool ×
     Array MessageData ×
     AtomDataTrees) := do
+  let e := eta e
   -- Variable case.
   if e.isFVar ∧ vars.contains e.fvarId! then
     trace[Meta.debug] "Variable {e}"

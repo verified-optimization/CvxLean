@@ -114,6 +114,15 @@ def testLogDet {n : ℕ} : Solution <|
   dcp
   sorry
 
+open BigOperators in
+def testBinders {n} : Solution <|
+    optimization (x : Fin n → ℝ)
+      minimize ∑ i, x i
+      subject to
+        c1 : ∀ i, 1 ≤ x i := by
+  dcp
+  sorry
+
 end Atoms
 
 section Misc
