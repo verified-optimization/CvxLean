@@ -204,7 +204,7 @@ pub fn get_steps_from_string_maybe_node_limit(
         // Set up the runner with the given expression, analysis and limits.
         let iter_limit = node_limit / 250;
         let time_limit = (node_limit / 500).try_into().unwrap();
-        let runner: Runner<Optimization, Meta> = 
+        let mut runner: Runner<Optimization, Meta> = 
             Runner::new(analysis)
             .with_explanations_enabled()
             .with_explanation_length_optimization()
@@ -213,21 +213,23 @@ pub fn get_steps_from_string_maybe_node_limit(
             .with_time_limit(Duration::from_secs(time_limit))
             .with_expr(&expr);
         
-        let runner = 
-            if cfg!(stop_on_success) {
-                runner
+            #[cfg(stop_on_success)]
+            {
+                runner = 
+                    runner
                     .with_hook(|runner| {
-                        // NOTE(RFM): rust-analyzer does not understand that we are working with 
-                        // `DataWithCost` and not `Data`. The code can still be run.
-                        if runner.egraph[runner.roots[0]].data.curvature <= Curvature::Convex {
+                        let data = runner.egraph[runner.roots[0]].data.clone();
+                        if data.curvature <= Curvature::Convex {
                             return Err("DCP term found.".to_string());
                         }
                         return Ok(());
                     })
                     .run(&rules())
-            } else {
-                runner.run(&rules())
-            };
+            } 
+            #[cfg(not(stop_on_success))]
+            {
+                runner = runner.run(&rules())
+            }
         
         if debug {
             println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
@@ -239,18 +241,19 @@ pub fn get_steps_from_string_maybe_node_limit(
 
         // Extract the best term and best cost. This is obtained directly from the e-class 
         // analysis in the `stop_on_success` case, and by running the extractor otherwise.
-        let best_cost;
-        let best;
-        if cfg!(stop_on_success) {
+        let mut best_cost= (Curvature::Unknown, u32::MAX, u32::MAX);
+        let mut best= RecExpr::default();
+        #[cfg(stop_on_success)]
+        {
             let result_data = runner.egraph[root].data.clone();
             best = result_data.best;
             best_cost = (result_data.curvature, result_data.num_vars, result_data.term_size);
-        } else {
+        }
+        #[cfg(not(stop_on_success))] 
+        {
             let cost_func = DCPCost { egraph: &runner.egraph };
-            let extractor = 
-                Extractor::new(&runner.egraph, cost_func);
-            let (best_cost_found, best_found) = 
-                extractor.find_best(root);
+            let extractor = Extractor::new(&runner.egraph, cost_func);
+            let (best_cost_found, best_found) = extractor.find_best(root);
             best = best_found;
             best_cost = best_cost_found;
         }
