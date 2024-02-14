@@ -3,8 +3,6 @@ Tests from the additional exercises in the Stanford Convex Optimization course:
 https://github.com/cvxgrp/cvxbook_additional_exercises
 !*/
 
-use std::time::Instant;
-
 use egg_pre_dcp::domain;
 use egg_pre_dcp::test_util::{*};
 

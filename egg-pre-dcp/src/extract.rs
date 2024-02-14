@@ -3,6 +3,8 @@ use std::convert::TryInto;
 use std::fs;
 use std::time::Duration;
 use std::collections::HashMap;
+use std::vec;
+use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::domain;
@@ -157,6 +159,7 @@ pub fn get_steps_from_string_maybe_node_limit(
     domains_vec: Vec<(String, Domain)>, 
     debug: bool, 
     node_limit: Option<usize>) -> Option<Vec<Step>> {
+    let starting_time: Instant = Instant::now();
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
     
     // Process domains, intersecting domains assigned to the same variable.
@@ -180,18 +183,25 @@ pub fn get_steps_from_string_maybe_node_limit(
         }
     }
     
-    // Specify a node limit, or try with default ones.
+    // Choose the specified node limit, or select the default ones (for `stop_on_success`, we set
+    // a large limit; note that if a DCP term is found it will not be reached).
     let node_limits = 
         if let Some(n) = node_limit { 
             vec![n] 
         } else { 
-            vec![2500, 5000, 10000, 20000, 50000, 80000] 
+            if cfg!(stop_on_success) {
+                vec![100000]
+            } else {
+                vec![2500, 5000, 10000, 20000, 50000, 80000] 
+            }
         };
+
     for node_limit in node_limits  {
         let analysis = Meta {
             domains : domains.clone()
         };
         
+        // Set up the runner with the given expression, analysis and limits.
         let iter_limit = node_limit / 250;
         let time_limit = (node_limit / 500).try_into().unwrap();
         let runner: Runner<Optimization, Meta> = 
@@ -201,8 +211,21 @@ pub fn get_steps_from_string_maybe_node_limit(
             .with_node_limit(node_limit)
             .with_iter_limit(iter_limit)
             .with_time_limit(Duration::from_secs(time_limit))
-            .with_expr(&expr)
-            .run(&rules());
+            .with_expr(&expr);
+        
+        let runner = 
+            if cfg!(stop_on_success) {
+                runner
+                    .with_hook(|runner| {
+                        if runner.egraph[runner.roots[0]].data.curvature <= Curvature::Convex {
+                            return Err("DCP term found.".to_string());
+                        }
+                        return Ok(());
+                    })
+                    .run(&rules())
+            } else {
+                runner.run(&rules())
+            };
         
         if debug {
             println!("Creating graph with {:?} nodes.", runner.egraph.total_number_of_nodes());
@@ -212,9 +235,15 @@ pub fn get_steps_from_string_maybe_node_limit(
 
         let root = runner.roots[0];
 
+        // Extract the best term and best cost. This is obtained directly from the e-class 
+        // analysis in the `stop_on_success` case, and by running the extractor otherwise.
         let best_cost;
         let best;
-        {
+        if cfg!(stop_on_success) {
+            let result_data = runner.egraph[root].data.clone();
+            best = result_data.best;
+            best_cost = (result_data.curvature, result_data.num_vars, result_data.term_size);
+        } else {
             let cost_func = DCPCost { egraph: &runner.egraph };
             let extractor = 
                 Extractor::new(&runner.egraph, cost_func);
@@ -223,35 +252,56 @@ pub fn get_steps_from_string_maybe_node_limit(
             best = best_found;
             best_cost = best_cost_found;
         }
-        if debug {
-            println!("Best cost: {:?}", best_cost);
-            println!("Best: {:?}", best.to_string());
-        }
 
+        let curvature = best_cost.0;
+        let num_vars = best_cost.1;
+        let term_size = best_cost.2;
+        if debug {
+            println!("Best curvature: {:?}.", curvature);
+            println!("Best number of variables: {:?}.", num_vars);
+            println!("Best term size: {:?}.", term_size);
+            println!("Best term: {:?}.", best.to_string());
+        }
+        
+        // If term is not DCP, try with the next node limit.
+        if curvature <= Curvature::Convex {
+            if debug {
+                let build_time = starting_time.elapsed();
+                println!("E-graph building time: {:.2?}.", build_time);
+            }
+        } else {
+            continue;
+        }
+        let after_build_time = Instant::now();
+
+        // If term is DCP, extract the steps.
         let mut egraph = runner.egraph;
         let mut explanation : Explanation<Optimization> = 
             egraph.explain_equivalence(&expr, &best);
         let flat_explanation : &FlatExplanation<Optimization> =
             explanation.make_flat_explanation();
         if debug {
-            println!("{} steps", flat_explanation.len() - 1);
+            println!("Number of steps: {}.", flat_explanation.len() - 1);
         }
 
         let mut res = Vec::new();
-        if best_cost.0 <= Curvature::Convex {
-            for i in 0..flat_explanation.len() - 1 {
-                let current = &flat_explanation[i];
-                let next = &flat_explanation[i + 1];
-                match get_step(current, next) {
-                    Some(step) => { res.push(step); }
-                    None => { 
-                        // Should not get here.
-                        println!("Failed to extract step.");
-                    }
+        for i in 0..flat_explanation.len() - 1 {
+            let current = &flat_explanation[i];
+            let next = &flat_explanation[i + 1];
+            match get_step(current, next) {
+                Some(step) => { res.push(step); }
+                None => { 
+                    // Should not get here.
+                    println!("Failed to extract step.");
                 }
             }
-        } else {
-            continue;
+        }
+
+        if debug {
+            let extract_time = after_build_time.elapsed();
+            let total_time = starting_time.elapsed();
+            println!("Step extraction time: {:.2?}.", extract_time);
+            println!("Total time: {:.2?}.", total_time);
         }
 
         return Some(res);
