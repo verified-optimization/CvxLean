@@ -8,7 +8,7 @@ use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_main_example() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom())],
         "(var x)", 
         vec![

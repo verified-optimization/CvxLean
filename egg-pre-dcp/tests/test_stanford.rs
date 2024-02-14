@@ -11,7 +11,7 @@ use egg_pre_dcp::test_util::{*};
 fn test_3_32() {
     // 1 / (x * y) = (x^-0.5)^2 / y
     //             = qol(x^-0.5, y) (this is just one possibility)
-    // convexify_check_expression_with_domain(
+    // pre_dcp_check_expression_with_domain(
     //     vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
     //     "(div 1 (mul (var x) (var y)))");
 }
@@ -23,7 +23,7 @@ fn test_3_33() {
     //               ... = norm2(1, qol(x, y))
     // NOTE(RFM): Constant unfolding issue: x cannot be in the free domain as 
     // otherwise we cannot convert x^4 to (x^2)^2.
-    // convexify_check_expression_with_domain(
+    // pre_dcp_check_expression_with_domain(
     //     vec![("x", domain::nonneg_dom()), ("y", domain::pos_dom())], 
     //     "(sqrt (add 1 (div (pow (var x) 4) (var y))))"
     // );
@@ -34,7 +34,7 @@ fn test_3_33() {
 fn test_3_36_a() {
     // sqrt(1 + 4x^2 + 16y^2) = sqrt((2x)^2 + (sqrt(1^2 + (4y)^2))^2)
     //                    ... = norm2(2x, norm2(1, 4y))
-    // convexify_check_expression_with_domain(
+    // pre_dcp_check_expression_with_domain(
     //     vec![("x", domain::nonneg_dom()), ("y", domain::nonneg_dom())], 
     //      "(sqrt (add 1 (add (mul 4 (pow (var x) 2)) (mul 16 (pow (var y) 2)))))");
 }
@@ -42,7 +42,7 @@ fn test_3_36_a() {
 #[test]
 fn test_3_36_c() {
     // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5) 
-    convexify_check_expression_with_domain(
+    pre_dcp_check_expression_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
          "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
 }
@@ -51,7 +51,7 @@ fn test_3_36_c() {
 fn test_3_38_e() {
     // (sqrt(x) + sqrt(y))^2 = x + y + 2sqrt(xy)
     //                   ... = x + y + 2geo(x, y)
-    convexify_check_expression_with_domain(
+    pre_dcp_check_expression_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
          "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
 }
@@ -93,7 +93,7 @@ fn test_3_67_aux(n: usize, node_limit: usize) {
             .iter()
             .map(|(s,d)| (s.as_str(), d.clone()))
             .collect::<Vec<_>>();
-        convexify_check_expression_with_domain_and_node_limit(domain, &build_term(n), node_limit);
+        pre_dcp_check_expression_with_domain_and_node_limit(domain, &build_term(n), node_limit);
 }
 
 #[test]

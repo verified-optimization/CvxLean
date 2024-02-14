@@ -9,7 +9,7 @@ use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_log_le_log() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())],
         "0", 
         vec![
@@ -19,7 +19,7 @@ fn test_log_le_log() {
 
 #[test]
 fn test_sub_iff_add_le() {
-    convexify_check(
+    pre_dcp_check(
         "0", 
         vec![
             "(le (add 1 (var x)) (var x))",
@@ -28,7 +28,7 @@ fn test_sub_iff_add_le() {
 
 #[test]
 fn test_log_le_log_rev() {
-    convexify_check(
+    pre_dcp_check(
         "0", 
         vec![
             "(le (exp (var x)) (exp (var y)))"
@@ -37,7 +37,7 @@ fn test_log_le_log_rev() {
 
 #[test]
 fn test_exp_add() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom())],
         "0",
         vec![
@@ -47,7 +47,7 @@ fn test_exp_add() {
 
 #[test]
 fn test_exp_neg_eq_one_div_obj() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", Domain::make_ci(domain::one()))],
         "(mul (var x) (exp (neg (log (var x)))))",
         vec![
@@ -56,7 +56,7 @@ fn test_exp_neg_eq_one_div_obj() {
 
 #[test]
 fn test_exp_neg_eq_one_div_constr() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", Domain::make_ci(domain::one()))],
         "(le (mul (var x) (exp (neg (log (var x))))) (var x))",
         vec![
@@ -65,7 +65,7 @@ fn test_exp_neg_eq_one_div_constr() {
 
 #[test]
 fn test_log_mul_rev_constr() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom())],
         "0",
         vec![
@@ -75,7 +75,7 @@ fn test_log_mul_rev_constr() {
 
 #[test]
 fn test_exp_neg_eq_one_div_rev() {
-    convexify_check(
+    pre_dcp_check(
         "(div 1 (exp (var x)))",
         vec![
             "(le 1 (var x))"
@@ -84,7 +84,7 @@ fn test_exp_neg_eq_one_div_rev() {
 
 #[test]
 fn test_div_self() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom())], 
         "0", 
         vec![
@@ -94,7 +94,7 @@ fn test_div_self() {
 
 #[test]
 fn test_div_le_iff_rev() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom())], 
         "0", 
         vec![
@@ -104,7 +104,7 @@ fn test_div_le_iff_rev() {
 
 #[test]
 fn test_log_div_rev_obj() {
-    convexify_check_with_domain(
+    pre_dcp_check_with_domain(
         vec![("x", domain::pos_dom())], 
         "(neg (sub (log (pow (var x) 2)) (log (var x))))", 
         vec![
@@ -113,21 +113,21 @@ fn test_log_div_rev_obj() {
 
 #[test]
 fn test_geo_mean_fold() {
-    convexify_check_expression_with_domain(
+    pre_dcp_check_expression_with_domain(
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
         "(neg (sqrt (mul (var x) (var y))))");
 }
 
 #[test]
 fn test_quad_over_lin_fold() {
-    convexify_check_expression_with_domain(
+    pre_dcp_check_expression_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::pos_dom())], 
         "(div (pow (var x) 2) (var y))");
 }
 
 #[test]
 fn test_norm2_fold() {
-    convexify_check_expression_with_domain(
+    pre_dcp_check_expression_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
         "(sqrt (add (pow (var x) 2) (pow (var y) 2)))");
 }
