@@ -222,7 +222,7 @@ register_rule_to_tactic
     "div_pow_eq_mul_pow_neg-rev" ; "(div ?a (pow ?b ?c))" => "(mul ?a (pow ?b (neg ?c)))" :=
   simp_or_rw [←Real.div_pow_eq_mul_pow_neg (by positivity!)];
 
-register_rule_to_tactic "one_div_eq_pow_neg_one"; "(div 1 ?a)" => "(pow ?a (neg 1))" :=
+register_rule_to_tactic "one_div_eq_pow_neg_one"; "(div 1 ?a)" <=> "(pow ?a (neg 1))" :=
   simp_or_rw [Real.one_div_eq_pow_neg_one (by positivity!)];
 
 register_rule_to_tactic "sqrt_eq_rpow" ; "(sqrt ?a)" => "(pow ?a 0.5)" :=
