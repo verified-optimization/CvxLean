@@ -241,8 +241,8 @@ pub fn get_steps_from_string_maybe_node_limit(
 
         // Extract the best term and best cost. This is obtained directly from the e-class 
         // analysis in the `stop_on_success` case, and by running the extractor otherwise.
-        let mut best_cost= (Curvature::Unknown, u32::MAX, u32::MAX);
-        let mut best= RecExpr::default();
+        let best_cost;
+        let best;
         #[cfg(stop_on_success)]
         {
             let result_data = runner.egraph[root].data.clone();
