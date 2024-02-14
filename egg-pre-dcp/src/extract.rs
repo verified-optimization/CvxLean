@@ -217,6 +217,8 @@ pub fn get_steps_from_string_maybe_node_limit(
             if cfg!(stop_on_success) {
                 runner
                     .with_hook(|runner| {
+                        // NOTE(RFM): rust-analyzer does not understand that we are working with 
+                        // `DataWithCost` and not `Data`. The code can still be run.
                         if runner.egraph[runner.roots[0]].data.curvature <= Curvature::Convex {
                             return Err("DCP term found.".to_string());
                         }
@@ -266,8 +268,8 @@ pub fn get_steps_from_string_maybe_node_limit(
         // If term is not DCP, try with the next node limit.
         if curvature <= Curvature::Convex {
             if debug {
-                let build_time = starting_time.elapsed();
-                println!("E-graph building time: {:.2?}.", build_time);
+                let build_time = starting_time.elapsed().as_millis();
+                println!("E-graph building time: {:.2?} ms.", build_time);
             }
         } else {
             continue;
@@ -298,10 +300,10 @@ pub fn get_steps_from_string_maybe_node_limit(
         }
 
         if debug {
-            let extract_time = after_build_time.elapsed();
-            let total_time = starting_time.elapsed();
-            println!("Step extraction time: {:.2?}.", extract_time);
-            println!("Total time: {:.2?}.", total_time);
+            let extract_time = after_build_time.elapsed().as_millis();
+            let total_time = starting_time.elapsed().as_millis();
+            println!("Step extraction time: {:.2?} ms.", extract_time);
+            println!("Total time: {:.2?} ms.", total_time);
         }
 
         return Some(res);
