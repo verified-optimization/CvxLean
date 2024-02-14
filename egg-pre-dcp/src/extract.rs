@@ -20,7 +20,9 @@ use optimization::Meta as Meta;
 use crate::rules;
 use rules::rules as rules;
 
+#[cfg(not(stop_on_success))]
 use crate::cost;
+#[cfg(not(stop_on_success))]
 use cost::DCPCost as DCPCost;
 
 use crate::explain_util;
@@ -146,6 +148,10 @@ impl ToString for Minimization {
 
 // Return the rewrite steps if egg successfully found a chain of rewrites to
 // transform the term into DCP form. Return `None` if it didn't.
+pub fn get_steps_maybe_node_limit(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool, node_limit: Option<usize>) -> Option<Vec<Step>> {
+    get_steps_from_string_maybe_node_limit(&prob.to_string(), domains_vec, debug, node_limit)
+}
+
 pub fn get_steps(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
     get_steps_from_string(&prob.to_string(), domains_vec, debug)
 }
@@ -192,7 +198,7 @@ pub fn get_steps_from_string_maybe_node_limit(
             if cfg!(stop_on_success) {
                 vec![100000]
             } else {
-                vec![2500, 5000, 10000, 20000, 50000, 80000] 
+                vec![2500, 5000, 10000, 20000, 40000, 80000] 
             }
         };
 

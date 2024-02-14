@@ -4,6 +4,7 @@ use domain::Domain as Domain;
 use crate::extract;
 use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
+use extract::get_steps_maybe_node_limit as get_steps_maybe_node_limit;
 use extract::get_steps_from_string_maybe_node_limit as get_steps_from_string_maybe_node_limit; 
 
 fn make(obj: &str, constrs: Vec<&str>) -> Minimization {
@@ -22,7 +23,16 @@ fn pre_dcp_check_with_domain_maybe_print(domains : Vec<(&str, Domain)>, obj: &st
     let prob = make(obj, constrs);
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
-    let steps = get_steps(prob, domains, true);
+    let steps = 
+        match std::env::var("EGG_PRE_DCP_NODE_LIMIT") {
+            Result::Ok(v) => { 
+                let node_limit = v.parse::<usize>().unwrap();
+                get_steps_maybe_node_limit(prob, domains, print, Some(node_limit)) 
+            }
+            Result::Err(_) => { 
+                get_steps(prob, domains, print)
+            }
+        };
     if steps.is_none() {
         panic!("Test failed, could not rewrite target into DCP form.");
     }

@@ -8,7 +8,7 @@ use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_gp1() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(exp (var u))",
         vec![
             "(le (pow (exp (var u)) 2) (div 10123 1000))"
@@ -17,7 +17,7 @@ fn test_gp1() {
 
 #[test]
 fn test_gp2() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(exp (var u))",
         vec![
             "(le (mul (exp (var u)) (exp (var v))) (div 2691 500))"
@@ -26,7 +26,7 @@ fn test_gp2() {
 
 #[test]
 fn test_gp3() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(exp (var u))",
         vec![
             "(le (sqrt (add (mul (exp (var u)) (exp (var u))) (exp (var v)))) 1)"
@@ -35,7 +35,7 @@ fn test_gp3() {
 
 #[test]
 fn test_gp4() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(div 1 (div (exp (var u)) (exp (var v))))",
         vec![
             "(le 2 (exp (var u)))",
@@ -47,7 +47,7 @@ fn test_gp4() {
 
 #[test]
 fn test_gp5() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(div 1 (div (exp (var u)) (exp (var v))))",
         vec![
             "(le 2 (exp (var u)))",
@@ -59,17 +59,16 @@ fn test_gp5() {
 
 #[test]
 fn test_gp6() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(div 1 (div (exp (var u)) (exp (var v))))",
         vec![
             "(le 2 (exp (var u)))",
             "(le (exp (var u)) 3)",
-            "(le (add (pow (exp (var u)) 2) (div (mul 3 (exp (var v))) (exp (var w)))) (mul 5 (sqrt (exp (var v))))",
+            "(le (add (pow (exp (var u)) 2) (div (mul 3 (exp (var v))) (exp (var w)))) (mul 5 (sqrt (exp (var v)))))",
             "(eq (mul (exp (var u)) (exp (var v))) (pow (exp (var w)) 2))"
         ]);
 }
 
-// 7
 #[test]
 fn test_gp7_with_params() {
     pre_dcp_check_with_domain(
@@ -92,21 +91,21 @@ fn test_gp7_with_params() {
 
 #[test]
 fn test_gp7() {
-    pre_dcp_check(
-        "(div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))", 
+    pre_dcp_check_and_print(
+        "(div 1 (mul (mul (exp (var h')) (exp (var w'))) (exp (var d'))))", 
         vec![
-            "(le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d)))) 100)",
-            "(le (mul (exp (var w)) (exp (var d))) 10)",
-            "(le (div 1 2) (div (exp (var h)) (exp (var w)))",
-            "(le (div (exp (var h)) (exp (var w))) (div 1 2)",
-            "(le 5 (div (exp (var d)) (exp (var w)))",
-            "(le (div (exp (var d)) (exp (var w))) 6)"
+            "(le (mul 2 (add (mul (exp (var h')) (exp (var d'))) (mul (exp (var w')) (exp (var d'))))) 100)",
+            "(le (mul (exp (var w')) (exp (var d'))) 10)",
+            "(le (div 1 2) (div (exp (var h')) (exp (var w'))))",
+            "(le (div (exp (var h')) (exp (var w'))) (div 1 2))",
+            "(le 5 (div (exp (var d')) (exp (var w'))))",
+            "(le (div (exp (var d')) (exp (var w'))) 6)"
         ]);
 }
 
 #[test]
 fn test_gp8() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(add (add (mul (mul (div 1 (exp (var u))) (div 1 (sqrt (exp (var v))))) (div 1 (exp (var w)))) (mul (mul (div 23 10) (exp (var u))) (exp (var w)))) (mul (mul (mul 4 (exp (var u))) (exp (var v))) (exp (var w))))", 
         vec![
             "(le (add (mul (mul (div 1 3) (div 1 (pow (exp (var u)) 2))) (div 1 (pow (exp (var v)) 2))) (mul (mul (div 4 3) (sqrt (exp (var v)))) (div 1 (exp (var w))))) 1)",
@@ -118,7 +117,7 @@ fn test_gp8() {
 
 #[test]
 fn test_gp9() {
-    pre_dcp_check(
+    pre_dcp_check_and_print(
         "(mul (mul 2 (exp (var A))) (norm2 (exp (var w)) (exp (var h))))",
         vec![
             "(le (mul (div (mul 10 (norm2 (exp (var w)) (exp (var h)))) 2) (exp (var h))) (mul (div 1 2) (exp (var A))))",
