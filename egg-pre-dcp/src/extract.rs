@@ -148,6 +148,7 @@ impl ToString for Minimization {
 
 // Return the rewrite steps if egg successfully found a chain of rewrites to
 // transform the term into DCP form. Return `None` if it didn't.
+#[allow(unused)]
 pub fn get_steps_maybe_node_limit(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool, node_limit: Option<usize>) -> Option<Vec<Step>> {
     get_steps_from_string_maybe_node_limit(&prob.to_string(), domains_vec, debug, node_limit)
 }
@@ -267,7 +268,9 @@ pub fn get_steps_from_string_maybe_node_limit(
         let curvature = best_cost.0;
         let num_vars = best_cost.1;
         let term_size = best_cost.2;
-        if debug {
+        if debug && curvature <= Curvature::Convex {
+            let total_nodes = runner.egraph.total_number_of_nodes();
+            println!("Succeeded with node limit {:?} (using {:?} nodes).", node_limit, total_nodes);
             println!("Best curvature: {:?}.", curvature);
             println!("Best number of variables: {:?}.", num_vars);
             println!("Best term size: {:?}.", term_size);
