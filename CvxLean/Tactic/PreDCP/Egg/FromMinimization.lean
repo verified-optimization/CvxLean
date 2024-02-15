@@ -82,7 +82,7 @@ partial def EggTree.adjustOps (t : Tree String String) : MetaM (Tree String Stri
         else
         return Tree.node newOp newChildren
       else
-        throwError s!"The atom {op} is not supported by the `convexify` tactic."
+        throwError s!"The atom {op} is not supported by the `pre_dcp` tactic."
   | Tree.leaf "unknown" => throwError "Unknown atom."
   | l => return l
 
