@@ -41,3 +41,26 @@ fn test_qcp2_with_params() {
             "(le (sub (mul (param a) (div 1 (var x))) (mul (sub 1 (param b)) (sqrt (sub 1 (pow (var x) 2))))) 0)"
         ])
 }
+
+#[test]
+fn test_qcp3() {
+    let dx = Domain::make_singleton(12.0);
+    let dy = Domain::make_cc(domain::make_float(0.001), domain::make_float(6.0));
+    pre_dcp_check_with_domain_and_print(
+        vec![("x", dx), ("y", dy)], 
+        "0",
+        vec![
+            "(le (div (var x) (var y)) 3)"
+        ])
+}
+
+#[test]
+fn test_qcp4() {
+    let dx = Domain::make_ci(domain::make_float(10.0));
+    pre_dcp_check_with_domain_and_print(
+        vec![("x", dx)], 
+        "(neg (var x))",
+        vec![
+            "(le (div (sqrt (add (pow (add (var x) 1) 2) 4)) (sqrt (add (pow (var x) 2) 100))) 1)"
+        ])
+}

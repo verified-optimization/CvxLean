@@ -37,14 +37,18 @@ time_cmd reduction redqcp1/dqcp1 : qcp1 := by
 
 solve dqcp1
 
-#eval dqcp1.value -- -2.000000
+#print dqcp1.reduced -- ...
+#eval dqcp1.value    -- -2.000000
+#eval dqcp1.solution -- (2.000000, 2.000000)
 
 end QCP1
 
-/- https://www.cvxpy.org/examples/dqcp/hypersonic_shape_design.html -/
 section QCP2
 
-def hypersonicShapeDesign (a b : ℝ) :=
+/-! Adapted from https://www.cvxpy.org/examples/dqcp/hypersonic_shape_design.html.
+See `CvxLean/Examples/HypersonicShapeDesign.lean` for a complete analysis. -/
+
+def qcp2 (a b : ℝ) :=
   optimization (Δx : ℝ)
     minimize sqrt (1 / (Δx ^ (2 : ℝ)) - 1)
     subject to
@@ -52,31 +56,60 @@ def hypersonicShapeDesign (a b : ℝ) :=
       h2 : Δx ≤ 1
       h3 : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ (2 : ℝ)) ≤ 0
 
-time_cmd equivalence redqcp2/dqcp2 : hypersonicShapeDesign 0.05 0.65 := by
+time_cmd equivalence redqcp2/dqcp2 : qcp2 0.05 0.65 := by
   pre_dcp
 
 solve dqcp2
 
-#print dqcp2.reduced
--- optimization (Δx : ℝ) (t₀.0 : ℝ) (t₁.1 : ℝ) (t.2 : ℝ) (y'.3 : ℝ) (t.4 : ℝ) (t.5 : ℝ)
---   minimize t₀.0 - 1
---   subject to
---     _ : posOrthCone (1 - Δx)
---     _ : posOrthCone (7 / 20 * t.5 - t.2 / 20)
---     _ : soCone (Δx + t₁.1) ![Δx - t₁.1, 2]
---     _ : soCone (t₀.0 + 1) ![t₀.0 - 1, 2 * t₁.1]
---     _ : posOrthCone (t₀.0 - 0)
---     _ : posOrthCone (t₁.1 - 0)
---     _ : posOrthCone (Δx - 0)
---     _ : soCone (Δx + t.2) ![Δx - t.2, 2 * 1]
---     _ : posOrthCone (t.2 - 0)
---     _ : rotatedSoCone t.4 (1 / 2) ![Δx]
---     _ : rotatedSoCone (1 - t.4) (1 / 2) ![t.5]
-
-#eval dqcp2.value
-#eval dqcp2.solution
+#print dqcp2.reduced -- ...
+#eval dqcp2.value    -- 0.021286
+#eval dqcp2.solution -- 0.989524
 
 end QCP2
+
+section QCP3
+
+def qcp3 :=
+  optimization (x y : ℝ)
+    minimize (0 : ℝ)
+    subject to
+      c₁ : 0.001 <= y
+      c₂ : x / y ≤ 3
+      c₃ : x = 12
+      c₄ : y ≤ 6
+
+time_cmd reduction redqcp3/dqcp3 : qcp3 := by
+  pre_dcp
+
+solve dqcp3
+
+#print dqcp3.reduced -- ...
+#eval dqcp3.value    -- 0.000000
+#eval dqcp3.solution -- (12.000000, 4.000000)
+
+end QCP3
+
+section QCP3
+
+def qcp4 :=
+  optimization (x : ℝ)
+    minimize -x
+    subject to
+      c₁ : sqrt ((x + 1) ^ 2 + 4) / sqrt (x ^ 2 + 100) ≤ 1
+      c₂ : 10 ≤ x
+
+set_option trace.CvxLean.debug true
+
+time_cmd reduction redqcp4/dqcp4 : qcp4 := by
+  pre_dcp
+
+solve dqcp4
+
+#print dqcp4.reduced -- ...
+#eval dqcp4.value    -- -47.500000
+#eval dqcp4.solution -- 47.500000
+
+end QCP3
 
 end
 
