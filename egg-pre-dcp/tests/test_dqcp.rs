@@ -10,7 +10,7 @@ use egg_pre_dcp::test_util::{*};
 
 #[test]
 fn test_qcp1() {
-    pre_dcp_check_with_domain(
+    pre_dcp_check_with_domain_and_print(
         vec![("x", domain::pos_dom())], 
         "(var x)", 
         vec![
@@ -21,7 +21,7 @@ fn test_qcp1() {
 #[test]
 fn test_qcp2() {
     let d = Domain::make_oc(domain::zero(), domain::one());
-    pre_dcp_check_with_domain(
+    pre_dcp_check_with_domain_and_print(
         vec![("x", d)], 
         "(sqrt (sub (div 1 (pow (var x) 2)) 1))",
         vec![
