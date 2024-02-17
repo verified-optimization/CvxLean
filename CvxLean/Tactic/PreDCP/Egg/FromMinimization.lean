@@ -203,6 +203,7 @@ partial def EggTree.toEggString : Tree String String → String
 
 /-- Size of the AST. -/
 partial def EggTree.size : EggTree → Nat
+  | Tree.node "var" _ => 1
   | Tree.node _ children => 1 + (children.map EggTree.size).foldl Nat.add 0
   | Tree.leaf _ => 1
 

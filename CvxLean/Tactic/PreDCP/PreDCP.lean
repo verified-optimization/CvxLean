@@ -182,6 +182,7 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
 
   -- Get goal as tree and create tags map.
   let (gStr, domainConstrs) ← ExtendedEggTree.fromMinimization lhs varsStr
+  let probSize := (gStr.map fun (_, t) => t.size).fold 0 Nat.add
   let mut tagsMap := HashMap.empty
   tagsMap := tagsMap.insert "objFun" 0
   let mut idx := 1
@@ -210,8 +211,7 @@ def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
     let diff := aft - bef
     dbg_trace s!"Egg time: {diff} ms."
     dbg_trace s!"Number of steps: {steps.size}."
-    let size := (gStr.map fun (_, t) => t.size).fold 0 Nat.add
-    dbg_trace s!"Term size: {size}."
+    dbg_trace s!"Term size: {probSize}."
     dbg_trace s!"Term JSON: {eggMinimization.toJson}."
 
     -- Apply steps.
