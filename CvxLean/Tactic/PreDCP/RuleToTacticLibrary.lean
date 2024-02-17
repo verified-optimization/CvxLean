@@ -244,11 +244,11 @@ register_rule_to_tactic "pow_two-rev"; "(mul ?a ?a)" => "(pow ?a 2)" :=
   (norm_cast; simp_or_rw [←pow_two]);
 
 register_rule_to_tactic "pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" :=
-  simp_or_rw [Real.pow_half_two (by positivity!)];
+  exact Real.pow_half_two (by positivity!);
 
 -- Exception, technically ← but we cannot find the pattern otherwise.
 register_rule_to_tactic "pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" :=
-  simp_or_rw [Real.pow_half_two (by positivity!)];
+  exact (Real.pow_half_two (by positivity!)).symm;
 
 register_rule_to_tactic "binomial_two";
     "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))" :=

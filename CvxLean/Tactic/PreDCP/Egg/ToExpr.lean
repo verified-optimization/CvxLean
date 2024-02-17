@@ -1,5 +1,6 @@
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Minimization
+import CvxLean.Meta.Util.Error
 import CvxLean.Tactic.PreDCP.Egg.Sexp
 import CvxLean.Tactic.DCP.Tree
 
@@ -32,6 +33,11 @@ partial def EggTree.toExpr (vars params : List String) : Tree String String → 
   -- Pi.
   | Tree.leaf "pi" => do
       return mkConst ``Real.pi
+  -- Special case: hole. Used to apply `congrAgr` in `pre_dcp`.
+  | Tree.leaf "?" => do
+    if "subexpr" ∈ vars then
+      throwPreDCPError "\"subexpr\" is not a valid variable name."
+    return mkFVar (FVarId.mk (Name.mkSimple "subexpr"))
   -- Numbers.
   | Tree.leaf s =>
     match Json.Parser.num s.mkIterator with
@@ -54,13 +60,13 @@ partial def EggTree.toExpr (vars params : List String) : Tree String String → 
         let simpResult ←
           Mathlib.Meta.NormNum.deriveSimp (ctx := ← Simp.Context.mkDefault) (e := expr)
         return simpResult.expr
-    | _ => throwError "`pre_dcp` tree to Expr conversion error: unexpected num {s}."
+    | _ => throwPreDCPError "conversion error, unexpected num {s}."
   -- Variables.
   | Tree.node "var" #[Tree.leaf s] =>
     if s ∈ vars then
       return mkFVar (FVarId.mk (Name.mkSimple s))
     else
-      throwError "`pre_dcp` tree to Expr conversion error: unexpected var {s}."
+      throwPreDCPError "conversion error, unexpected var {s}."
   -- Parameters.
   | Tree.node "param" #[Tree.leaf s] =>
     if s ∈ params then
@@ -176,7 +182,7 @@ partial def EggTree.toExpr (vars params : List String) : Tree String String → 
     return Meta.mkLabel (Name.mkSimple s) t
   -- Error.
   | Tree.node op children =>
-    throwError "Tree to Expr conversion error: unexpected op {op} with {children.size} children."
+    throwPreDCPError "conversion error, unexpected op {op} with {children.size} children."
 where
   mkRealHBinAppExpr (opName instHName : Name) (nTyArgs : Nat) (instName : Name)
     (e1 e2 : Expr) : Expr :=

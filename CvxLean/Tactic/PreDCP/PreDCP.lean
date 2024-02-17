@@ -24,7 +24,7 @@ open Lean Elab Meta Tactic Term IO
 /-- Given the rewrite name and direction from egg's output, find the appropriate tactic in the
 environment. It also returns a bool to indicate if the proof needs an intermediate equality step.
 Otherwise, the tactic will be applied directly. -/
-def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteDirection) :
+def findTactic (rewriteName : String) (direction : EggRewriteDirection) :
     MetaM (TSyntax `tactic × Bool) := do
   match ← getTacticFromRewriteName rewriteName with
   | some (tac, mapObjFun) =>
@@ -35,10 +35,7 @@ def findTactic (atObjFun : Bool) (rewriteName : String) (direction : EggRewriteD
       | EggRewriteDirection.Forward => return (tac, false)
       | EggRewriteDirection.Backward =>
           -- Simply flip the goal so that the rewrite is applied to the target.
-          if atObjFun then
-            return (← `(tactic| (rw [eq_comm]; $tac)), false)
-          else
-            return (← `(tactic| (rw [Iff.comm]; $tac)), false)
+          return (← `(tactic| (symm; $tac)), false)
   | _ => throwPreDCPError "unknown rewrite name {rewriteName}({direction})."
 
 /-- Given an egg rewrite and a current goal with all the necessary information about the
@@ -55,41 +52,100 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
   let tagNum := tagsMap.find! step.location
   let atObjFun := tagNum == 0
 
-  -- Build expexcted expression to generate the right rewrite condition.
-  let expectedTermStr := step.expectedTerm
-  let mut expectedExpr ← EggString.toExpr vars params expectedTermStr
-  if !atObjFun then
-    expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
-  let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
-  let paramsFvars := Array.mk <| params.map (fun v => mkFVar (FVarId.mk v))
-  let paramsDeclsIds := Array.mk <| paramsDecls.map (fun decl => mkFVar decl.fvarId)
-  let D ← instantiateMVars eqvExpr.domainLHS
-  expectedExpr ←
-    withLocalDeclD `p D fun p => do
-      Meta.withDomainLocalDecls D p fun xs prs => do
-        let expectedExpr := Expr.replaceFVars expectedExpr paramsFvars paramsDeclsIds
-        let expectedExpr := Expr.replaceFVars expectedExpr fvars xs
-        let expectedExpr := Expr.replaceFVars expectedExpr xs prs
-        mkLambdaFVars #[p] expectedExpr
+  let (tacStx, isMap) ← findTactic step.rewriteName step.direction
 
-  let (tacStx, isMap) ← findTactic atObjFun step.rewriteName step.direction
-
-  -- Finally, apply the tactic that should solve all proof obligations. A mix of approaches using
-  -- `norm_num` in combination with the tactic provided by the user for this particular rewrite.
-  let tacStx : Syntax ← `(tactic| intros;
+  -- This tactic should solve the final goal. It uses the tactic provided by the user for this
+  -- particular rule in combination with `norm_num`.
+  let tacStx : Syntax ← `(tactic|
     try { $tacStx <;> norm_num_simp_pow } <;>
     try { norm_num_simp_pow })
 
   if isMap then
     -- Maps, e.g., `map_objFun_log` are applied directly to the equivalence goal.
-    if let _ :: _ ← evalTacticAt tacStx g then
+    if let gs@(_ :: _) ← evalTacticAt tacStx g then
+      trace[CvxLean.debug] "`pre_dcp` failed to close goals: {gs}."
       throwPreDCPError "failed to apply {step.rewriteName}."
   else
+    -- Optimization and param free variables, and domain. Needed to build expressions and replace
+    -- variables appropriately.
+    let fvars := Array.mk <| vars.map (fun v => mkFVar (FVarId.mk v))
+    let paramsFvars := Array.mk <| params.map (fun v => mkFVar (FVarId.mk v))
+    let paramsDeclsIds := Array.mk <| paramsDecls.map (fun decl => mkFVar decl.fvarId)
+    let D ← instantiateMVars eqvExpr.domainLHS
+
+    -- Convert string subexpressions given by `egg` into expressions.
+    let mut lhsSubExpr ← EggString.toExpr vars params step.subexprFrom
+    let mut rhsSubExpr ← EggString.toExpr vars params step.subexprTo
+    lhsSubExpr ← withLocalDeclD `p D fun p => do
+      Meta.withDomainLocalDecls D p fun xs prs => do
+        let lhsSubExpr := Expr.replaceFVars lhsSubExpr paramsFvars paramsDeclsIds
+        let lhsSubExpr := Expr.replaceFVars lhsSubExpr fvars xs
+        let lhsSubExpr := Expr.replaceFVars lhsSubExpr xs prs
+        mkLambdaFVars #[p] lhsSubExpr
+    rhsSubExpr ← withLocalDeclD `p D fun p => do
+      Meta.withDomainLocalDecls D p fun xs prs => do
+        let rhsSubExpr := Expr.replaceFVars rhsSubExpr paramsFvars paramsDeclsIds
+        let rhsSubExpr := Expr.replaceFVars rhsSubExpr fvars xs
+        let rhsSubExpr := Expr.replaceFVars rhsSubExpr xs prs
+        mkLambdaFVars #[p] rhsSubExpr
+
+    -- Build expexcted expression to generate the right rewrite condition. Note that this has a hole
+    -- where the subexpression will be placed. For example, if
+    let mut expectedExpr ← EggString.toExpr vars params step.expectedTerm
+    if !atObjFun then
+      expectedExpr := Meta.mkLabel (Name.mkSimple tag) expectedExpr
+    expectedExpr ←
+      withLocalDeclD `p D fun p => do
+        Meta.withDomainLocalDecls D p fun xs prs => do
+          let expectedExpr := Expr.replaceFVars expectedExpr paramsFvars paramsDeclsIds
+          let expectedExpr := Expr.replaceFVars expectedExpr fvars xs
+          let expectedExpr := Expr.replaceFVars expectedExpr xs prs
+          withLocalDeclD `subexpr (← inferType (rhsSubExpr.mkAppNBeta #[p])) fun subexpr =>
+            let expectedExpr := expectedExpr.replaceFVars #[mkFVar (FVarId.mk `subexpr)] #[subexpr]
+            mkLambdaFVars #[p, subexpr] expectedExpr
+
+    -- The target expression is the expected expression above replacing `subexpr` with the
+    -- right-hand side subexpression.
+    let targetExpr ← withLocalDeclD `p D fun p => do
+      let targetExpr := expectedExpr.mkAppNBeta #[p, rhsSubExpr.mkAppNBeta #[p]]
+      mkLambdaFVars #[p] targetExpr
+
+    -- This tactic first uses congruence to reduce the goal to the equality of the subexpressions
+    -- and then applies `tacStx`.
+    let tac : MVarId → FVarId → TacticM Unit := fun g p => do
+      -- Introduce other constraints.
+      let (_, g) ← g.intros
+      let mut g := g
+      -- Applt optimization variables to expresssions.
+      let lhsSubExprAtProb := lhsSubExpr.mkAppNBeta #[mkFVar p]
+      let rhsSubExprAtProb := rhsSubExpr.mkAppNBeta #[mkFVar p]
+      let expectedExprAtProb := expectedExpr.mkAppNBeta #[mkFVar p]
+      -- Reduce to equality goal for constraint rewrites.
+      if !atObjFun then
+        let gs ← g.apply (mkConst ``Iff.of_eq)
+        if gs.length != 1 then
+          throwPreDCPError "failed to apply `iff_of_eq`."
+        g := gs[0]!
+      -- Apply congruence.
+      let subExprAtProbType ← inferType rhsSubExprAtProb
+      let congrLemma ← mkAppOptM ``congrArg
+        #[subExprAtProbType, none, lhsSubExprAtProb, rhsSubExprAtProb, expectedExprAtProb]
+      let gs ← g.apply congrLemma
+      if gs.length != 1 then
+        throwPreDCPError "failed to apply `congrArg`."
+      g := gs[0]!
+      -- Apply the tactic.
+      let gs ← evalTacticAt tacStx g
+      if gs.length != 0 then
+        trace[CvxLean.debug] "`pre_dcp` failed to close goals: {gs}."
+        throwPreDCPError "failed to apply {step.rewriteName}."
+      pure ()
+
     -- Rewrites use the machinery from `Tactic.Basic.RewriteOpt`.
     if atObjFun then
-      rewriteObjBuilder true tacStx (some expectedExpr) eqvExpr g
+      rewriteObjBuilderFromTactic true tac (some targetExpr) eqvExpr g
     else
-      rewriteConstrBuilder true (Name.mkSimple tag) tacStx (some expectedExpr) eqvExpr g
+      rewriteConstrBuilderFromTactic true (Name.mkSimple tag) tac (some targetExpr) eqvExpr g
 
 def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS

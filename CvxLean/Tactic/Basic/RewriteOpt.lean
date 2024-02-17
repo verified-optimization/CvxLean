@@ -36,8 +36,8 @@ def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   | _  => throwRwObjError "can only rewrite problems with up to 10 constraints."
 
 /-- -/
-def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
-    EquivalenceBuilder :=
+def rewriteObjBuilderFromTactic (shouldEval : Bool) (tac : MVarId → FVarId → TacticM Unit)
+    (rhs? : Option Expr) : EquivalenceBuilder :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
@@ -59,11 +59,20 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr)
     let (fvarIds, gAfterIntros) ← gToRw.introN (1 + numConstrs) ([`p] ++ constrTags)
     if fvarIds.size == 0 then
       throwRwObjError "could not introduce optimization variables."
+    let probFVarId := fvarIds[0]!
     let gAfterShowVars ← showVars gAfterIntros (fvarIds.get! 0)
     if shouldEval then
-      if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
-        trace[CvxLean.debug] "`rw_obj` could not close {gs} using {tacStx}."
+      if let gs@(_ :: _) ← Tactic.run gAfterShowVars (tac gAfterShowVars probFVarId) then
+        trace[CvxLean.debug] "`rw_obj` could not close {gs}."
         throwRwObjError "could not close all goals."
+
+/-- -/
+def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
+    EquivalenceBuilder :=
+  fun g eqvExpr => do
+    trace[CvxLean.debug] "`rw_obj` using tactic {tacStx}."
+    let tac := fun g _ => evalTacticAt tacStx g *> pure ()
+    rewriteObjBuilderFromTactic shouldEval tac rhs? g eqvExpr
 
 /-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. -/
 def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :=
@@ -124,8 +133,8 @@ end RIntro
 open Term
 
 /-- -/
-def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
-    (rhs? : Option Expr) : EquivalenceBuilder :=
+def rewriteConstrBuilderFromTactic (shouldEval : Bool) (constrTag : Name)
+    (tac : MVarId → FVarId → TacticM Unit) (rhs? : Option Expr) : EquivalenceBuilder :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
@@ -172,9 +181,16 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
 
     let gAfterShowVars ← showVars gAfterIntros probFVarId
     if shouldEval then
-      if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
-        trace[CvxLean.debug] "`rw_constr` could not close {gs} using {tacStx}."
+      if let gs@(_ :: _) ← Tactic.run gAfterShowVars (tac gAfterShowVars probFVarId) then
+        trace[CvxLean.debug] "`rw_constr` could not close {gs}."
         throwRwConstrError "could not close all goals."
+
+def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
+    (rhs? : Option Expr) : EquivalenceBuilder :=
+  fun g eqvExpr => do
+    trace[CvxLean.debug] "`rw_constr` using tactic {tacStx}."
+    let tac := fun g _ => evalTacticAt tacStx g *> pure ()
+    rewriteConstrBuilderFromTactic shouldEval constrTag tac rhs? g eqvExpr
 
 end Meta
 
