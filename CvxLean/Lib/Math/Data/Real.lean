@@ -70,8 +70,9 @@ lemma abs_le_of_sqrt_sq_add_nonneg_le {a b c : ℝ} (hb : 0 ≤ b)
 
 /- Lemmas used in `CvxLean.Tactic.PreDCP.RuleToTacticLibrary`. -/
 
-lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : log x = log y ↔ x = y :=
-  ⟨fun h => by
+lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : x = y ↔ log x = log y :=
+  ⟨fun h => by rw [h],
+   fun h => by
     have hxmem := Set.mem_Ioi.2 hx
     have hymem := Set.mem_Ioi.2 hy
     have heq : Set.restrict (Set.Ioi 0) log ⟨x, hxmem⟩ =
@@ -79,8 +80,7 @@ lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : log x = log y ↔ x = y
       simp [h]
     have h := log_injOn_pos.injective heq
     simp [Subtype.eq] at h
-    exact h,
-  fun h => by rw [h]⟩
+    exact h⟩
 
 lemma div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) :
     a / (b ^ c) = a * b ^ (-c) := by
