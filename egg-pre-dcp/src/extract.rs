@@ -28,6 +28,7 @@ use cost::DCPCost as DCPCost;
 use crate::explain_util;
 use explain_util::Direction as Direction;
 use explain_util::get_rewrite_name_and_direction as get_rewrite_name_and_direction;
+use explain_util::expected_expr_with_hole as expected_expr_with_hole;
 
 #[derive(Serialize, Debug)]
 pub struct Step {
@@ -52,28 +53,29 @@ fn get_step_aux(
         Optimization::ObjFun(_) => {
             *location = Some("objFun".to_string());
 
-            let o_s = next.children[0].get_recexpr().to_string();
+            let o_s = expected_expr_with_hole(&next.children[0]).get_string();
             *expected_term = Some(o_s);
         },
         Optimization::Constr([_, _]) => {
-            let h_s = next.children[0].get_recexpr().to_string();
+            let h_s = next.children[0].get_string();
             *location = Some(h_s);
 
-            let c_s = next.children[1].get_recexpr().to_string();
+            let c_s = expected_expr_with_hole(&next.children[1]).get_string();
             *expected_term = Some(c_s);
         }
         _ => {
             if expected_term.is_none() {
                 // Out-of-context extraction. Useful for testing.
-                let c_s = next.get_recexpr().to_string();
+                let c_s = expected_expr_with_hole(&next).get_string();
                 *expected_term = Some(c_s);
             }
         }
     }
 
     if let Some(rule_name) = &next.backward_rule {
-        let subexpr_from = current.get_recexpr().to_string();
-        let subexpr_to = next.get_recexpr().to_string();
+        let subexpr_from = current.remove_rewrites().get_string();
+        let subexpr_to = next.remove_rewrites().get_string();
+
         if expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 
@@ -89,8 +91,8 @@ fn get_step_aux(
     }
 
     if let Some(rule_name) = &next.forward_rule {
-        let subexpr_from = current.get_recexpr().to_string();
-        let subexpr_to = next.get_recexpr().to_string();
+        let subexpr_from = current.remove_rewrites().get_string();
+        let subexpr_to = next.remove_rewrites().get_string();
         if expected_term.is_some() {
             return Some(Step {
                 rewrite_name: rule_name.to_string(), 

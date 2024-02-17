@@ -38,6 +38,21 @@ pub fn make_rule_table(rules: &Vec<Rewrite>) -> HashMap<Symbol, &Rewrite> {
     table
 }
 
+// Remove rewrite labels and put a "?" in the subexpression to be rewritten.
+pub fn expected_expr_with_hole(ft : &FlatTerm<Optimization>) -> FlatTerm<Optimization> {
+    if ft.forward_rule.is_some() || ft.backward_rule.is_some() { 
+        FlatTerm::new(Optimization::Symbol("?".into()), vec![])
+    } else { 
+        FlatTerm::new(
+            ft.node.clone(),
+            ft.children
+                .iter()
+                .map(|child| expected_expr_with_hole(child))
+                .collect()
+        )
+    }
+}
+
 // These are functions taken from `explain.rs` removing the assertions.
 
 #[allow(unused)]
