@@ -63,6 +63,18 @@ fn pre_dcp_check_expression_with_domain_maybe_print_maybe_node_limit(
     domains : Vec<(&str, Domain)>, 
     s: &str, print: bool, 
     node_limit: Option<usize>) {
+    // NOTE: Even if the node limit is passed as an argument, the environment variable is used if it 
+    // is set, hence overriding the argument.
+    let node_limit = 
+    match std::env::var("EGG_PRE_DCP_NODE_LIMIT") {
+        Result::Ok(v) => { 
+            let node_limit = v.parse::<usize>().unwrap();
+            Some(node_limit) 
+        }
+        Result::Err(_) => { 
+            node_limit
+        }
+    };
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
     let steps = get_steps_from_string_maybe_node_limit(s, domains, true, node_limit);
