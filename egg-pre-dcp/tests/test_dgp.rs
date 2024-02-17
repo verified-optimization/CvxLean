@@ -2,7 +2,7 @@
 Tests from geometric programming.
 !*/
 
-use egg_pre_dcp::domain;
+mod test_dgp {
 
 use egg_pre_dcp::test_util::{*};
 
@@ -70,26 +70,6 @@ fn test_gp6() {
 }
 
 #[test]
-fn test_gp7_with_params() {
-    pre_dcp_check_with_domain(
-        vec![
-            ("Aflr", domain::pos_dom()), 
-            ("α"   , domain::pos_dom()), 
-            ("β"   , domain::pos_dom()), 
-            ("γ"   , domain::pos_dom()), 
-            ("δ"   , domain::pos_dom())],
-        "(div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))", 
-        vec![
-            "(le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall))",
-            "(le (mul (exp (var w)) (exp (var d))) (param Aflr))",
-            "(le (param α) (div (exp (var h)) (exp (var w))))",
-            "(le (div (exp (var h)) (exp (var w))) (param β))",
-            "(le (param γ) (div (exp (var d)) (exp (var w))))",
-            "(le (div (exp (var d)) (exp (var w))) (param δ))"
-        ]);
-}
-
-#[test]
 fn test_gp7() {
     pre_dcp_check_and_print(
         "(div 1 (mul (mul (exp (var h')) (exp (var w'))) (exp (var d'))))", 
@@ -129,4 +109,33 @@ fn test_gp9() {
             "(le (mul (div 11 10) (exp (var r))) (sqrt (add (div (exp (var A)) (div 314159 50000)) (pow (exp (var r)) 2))))",
             "(le (sqrt (add (div (exp (var A)) (div 314159 50000)) (pow (exp (var r)) 2))) 10)"
     ]);
+}
+
+}
+
+mod test_dgp_other {
+
+use egg_pre_dcp::domain;
+
+use egg_pre_dcp::test_util::{*};
+
+#[test]
+fn test_gp7_with_params() {
+    pre_dcp_check_with_domain(
+        vec![
+            ("Aflr", domain::pos_dom()), 
+            ("α"   , domain::pos_dom()), 
+            ("β"   , domain::pos_dom()), 
+            ("γ"   , domain::pos_dom()), 
+            ("δ"   , domain::pos_dom())],
+        "(div 1 (mul (mul (exp (var h)) (exp (var w))) (exp (var d))))", 
+        vec![
+            "(le (mul 2 (add (mul (exp (var h)) (exp (var d))) (mul (exp (var w)) (exp (var d))))) (param Awall))",
+            "(le (mul (exp (var w)) (exp (var d))) (param Aflr))",
+            "(le (param α) (div (exp (var h)) (exp (var w))))",
+            "(le (div (exp (var h)) (exp (var w))) (param β))",
+            "(le (param γ) (div (exp (var d)) (exp (var w))))",
+            "(le (div (exp (var d)) (exp (var w))) (param δ))"
+        ]);
+}
 }

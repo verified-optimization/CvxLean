@@ -3,6 +3,8 @@ Tests from geometric programming that do not follow the DGP rules strictly (ofte
 negative sign that can be removed by rewritting the constraints appropriately).
 !*/
 
+mod test_almost_dgp {
+
 use egg_pre_dcp::test_util::{*};
 
 #[test]
@@ -42,4 +44,6 @@ fn test_agp4() {
         vec![
             "(le (mul (exp (var u)) (exp (var v))) (sub (sub 2 (exp (var u))) (exp (var v))))"
         ]);
+}
+
 }

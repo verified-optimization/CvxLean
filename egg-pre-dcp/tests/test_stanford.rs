@@ -3,8 +3,45 @@ Tests from the additional exercises in the Stanford Convex Optimization course:
 https://github.com/cvxgrp/cvxbook_additional_exercises
 !*/
 
+mod test_stanford {
+
 use egg_pre_dcp::domain;
 use egg_pre_dcp::test_util::{*};
+
+// Exercise 3.36 (c).
+#[test]
+fn test_stan1() {
+    // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5)
+    pre_dcp_check_expression_with_domain_and_print(
+        vec![("x", domain::free_dom()), ("y", domain::free_dom())],
+         "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
+}
+
+// Exercise 3.38 (e).
+#[test]
+fn test_stan2() {
+    // (sqrt(x) + sqrt(y))^2 = x + y + 2sqrt(xy)
+    //                   ... = x + y + 2geo(x, y)
+    pre_dcp_check_expression_with_domain_and_print(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())],
+         "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
+}
+
+// Exercise 3.67 with n = 3.
+#[test]
+fn test_stan3() {
+    pre_dcp_check_expression_with_domain_and_print(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom())],
+         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (sqrt (var z)))) 2))");
+}
+
+// Exercise 3.67 with n = 4.
+#[test]
+fn test_stan4() {
+    pre_dcp_check_expression_with_domain_and_print(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom()), ("w", domain::pos_dom())],
+         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (add (sqrt (var z)) (sqrt (var w))))) 2))");
+}
 
 // TODO: Failing because of qol curvature check simplification.
 // #[test]
@@ -37,40 +74,12 @@ use egg_pre_dcp::test_util::{*};
 //          "(sqrt (add 1 (add (mul 4 (pow (var x) 2)) (mul 16 (pow (var y) 2)))))");
 // }
 
-// Exercise 3.36 (c).
-#[test]
-fn test_stan1() {
-    // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5)
-    pre_dcp_check_expression_with_domain(
-        vec![("x", domain::free_dom()), ("y", domain::free_dom())],
-         "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
 }
 
-// Exercise 3.38 (e).
-#[test]
-fn test_stan2() {
-    // (sqrt(x) + sqrt(y))^2 = x + y + 2sqrt(xy)
-    //                   ... = x + y + 2geo(x, y)
-    pre_dcp_check_expression_with_domain(
-        vec![("x", domain::pos_dom()), ("y", domain::pos_dom())],
-         "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
-}
+mod test_stabford_hard {
 
-// Exercise 3.67 with n = 3.
-#[test]
-fn test_stan3() {
-    pre_dcp_check_expression_with_domain(
-        vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom())],
-         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (sqrt (var z)))) 2))");
-}
-
-// Exercise 3.67 with n = 4.
-#[test]
-fn test_stan4() {
-    pre_dcp_check_expression_with_domain(
-        vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom()), ("w", domain::pos_dom())],
-         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (add (sqrt (var z)) (sqrt (var w))))) 2))");
-}
+use egg_pre_dcp::domain;
+use egg_pre_dcp::test_util::{*};
 
 fn test_stan_hard_aux(n: usize, node_limit: usize) {
     // Generalizaiton of 3.28. Works for n = 3,4,5,6,7
@@ -119,4 +128,6 @@ fn test_stan_hard() {
     for n in 2..max_n {
         test_stan_hard_aux(n, 20000 * n);
     }
+}
+
 }
