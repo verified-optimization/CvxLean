@@ -89,7 +89,7 @@ solve dqcp3
 
 end QCP3
 
-section QCP3
+section QCP4
 
 def qcp4 :=
   optimization (x : ℝ)
@@ -97,8 +97,6 @@ def qcp4 :=
     subject to
       c₁ : sqrt ((x + 1) ^ 2 + 4) / sqrt (x ^ 2 + 100) ≤ 1
       c₂ : 10 ≤ x
-
-set_option trace.CvxLean.debug true
 
 time_cmd reduction redqcp4/dqcp4 : qcp4 := by
   pre_dcp
@@ -109,7 +107,7 @@ solve dqcp4
 #eval dqcp4.value    -- -47.500000
 #eval dqcp4.solution -- 47.500000
 
-end QCP3
+end QCP4
 
 end
 
