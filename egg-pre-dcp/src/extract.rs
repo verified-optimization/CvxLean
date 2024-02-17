@@ -268,10 +268,10 @@ pub fn get_steps_from_string_maybe_node_limit(
             best_cost = best_cost_found;
         }
 
-        let curvature = best_cost.0;
-        let num_vars = best_cost.1;
+        let curvature = best_cost.curvature;
+        let num_vars = best_cost.num_vars;
         // Note: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
-        let term_size = best_cost.2 + 3 * (domains_len as u32); 
+        let term_size = best_cost.term_size + 3 * (domains_len as u32); 
         if debug && curvature <= Curvature::Convex {
             let total_nodes = runner.egraph.total_number_of_nodes();
             println!("Succeeded with node limit {:?} (using {:?} nodes).", node_limit, total_nodes);

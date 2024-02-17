@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use egg::{*};
 
 use crate::domain;
@@ -13,23 +15,51 @@ pub struct DCPCost<'a> {
     pub egraph: &'a optimization::EGraph,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Cost { 
+    pub curvature: Curvature, 
+    pub num_vars: u32, 
+    pub term_size: u32
+}
+
+impl PartialOrd for Cost {
+    fn partial_cmp(&self, other:&Cost) -> Option<Ordering> {
+        match self.curvature.partial_cmp(&other.curvature) {
+            Some(Ordering::Equal) => {
+                match self.num_vars.partial_cmp(&other.num_vars) {
+                    Some(Ordering::Equal) => {
+                        self.term_size.partial_cmp(&other.term_size)
+                    }
+                    x => x
+                }
+            }
+            // It may happen that, on a pass, two nodes in the same e-class are tagged with convex 
+            // and concave curvatures. It must be the case that on a later pass, an affine node is 
+            // found and the whole class is tagged as affine. However, we need to temporarily pick 
+            // one. We tell `egg` to pick either by saying that both curvatures give the same cost.
+            None => Some(Ordering::Equal),
+            x => x
+        }
+    }
+}
+
 impl<'a> CostFunction<Optimization> for DCPCost<'a> {
     // Curvature + number of variables (with repetition) + term size.
     // In lexicographic order.
-    type Cost = (Curvature, u32, u32);
+    type Cost = Cost;   
     // Curvature analysis corresponds exactly to the DCP rules.
     fn cost<C>(&mut self, enode: &Optimization, mut costs: C) -> Self::Cost
     where
         C: FnMut(Id) -> Self::Cost
     {
         macro_rules! get_curvature {
-            ($i:expr) => { costs(*$i).0 }
+            ($i:expr) => { costs(*$i).curvature }
         }
         macro_rules! get_num_vars {
-            ($i:expr) => { costs(*$i).1 }
+            ($i:expr) => { costs(*$i).num_vars }
         }
         macro_rules! get_term_size {
-            ($i:expr) => { costs(*$i).2 }
+            ($i:expr) => { costs(*$i).term_size }
         }
         
         let get_domain = 
@@ -338,7 +368,11 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
             }
         }
 
-        return (curvature, num_vars, term_size);
+        return Cost { 
+            curvature: curvature, 
+            num_vars: num_vars, 
+            term_size: term_size
+        };
     }
 
 }
