@@ -56,6 +56,22 @@ fn test_stan2() {
          "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
 }
 
+// Exercise 3.67 with n = 3.
+#[test]
+fn test_stan3() {
+    pre_dcp_check_expression_with_domain(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom())],
+         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (sqrt (var z)))) 2))");
+}
+
+// Exercise 3.67 with n = 4.
+#[test]
+fn test_stan4() {
+    pre_dcp_check_expression_with_domain(
+        vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom()), ("w", domain::pos_dom())],
+         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (add (sqrt (var z)) (sqrt (var w))))) 2))");
+}
+
 fn test_stan_hard_aux(n: usize, node_limit: usize) {
     // Generalizaiton of 3.28. Works for n = 3,4,5,6,7
     // (sqrt(x_1) + ... + sqrt(x_n))^2
@@ -95,7 +111,6 @@ fn test_stan_hard_aux(n: usize, node_limit: usize) {
             .collect::<Vec<_>>();
         pre_dcp_check_expression_with_domain_and_node_limit(domain, &build_term(n), node_limit);
 }
-
 
 // Exercise 3.67.
 #[test]
