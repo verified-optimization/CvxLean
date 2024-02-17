@@ -172,6 +172,7 @@ pub fn get_steps_from_string_maybe_node_limit(
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
     
     // Process domains, intersecting domains assigned to the same variable.
+    let domains_len = domains_vec.len();
     let mut domains: HashMap<String, Domain> = HashMap::new();
     for (x, dom) in domains_vec {
         if domains.contains_key(&x) {
@@ -269,7 +270,8 @@ pub fn get_steps_from_string_maybe_node_limit(
 
         let curvature = best_cost.0;
         let num_vars = best_cost.1;
-        let term_size = best_cost.2;
+        // Note: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
+        let term_size = best_cost.2 + 3 * (domains_len as u32); 
         if debug && curvature <= Curvature::Convex {
             let total_nodes = runner.egraph.total_number_of_nodes();
             println!("Succeeded with node limit {:?} (using {:?} nodes).", node_limit, total_nodes);
