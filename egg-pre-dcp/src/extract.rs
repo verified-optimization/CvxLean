@@ -251,13 +251,17 @@ pub fn get_steps_from_string_maybe_node_limit(
 
         // Extract the best term and best cost. This is obtained directly from the e-class 
         // analysis in the `stop_on_success` case, and by running the extractor otherwise.
-        let best_cost;
+        let best_curvature;
+        let best_num_vars;
+        let best_term_size;
         let best;
         #[cfg(stop_on_success)]
         {
             let result_data = runner.egraph[root].data.clone();
             best = result_data.best;
-            best_cost = (result_data.curvature, result_data.num_vars, result_data.term_size);
+            best_curvature = result_data.curvature;
+            best_num_vars = result_data.num_vars;
+            best_term_size = result_data.term_size;
         }
         #[cfg(not(stop_on_success))] 
         {
@@ -265,13 +269,15 @@ pub fn get_steps_from_string_maybe_node_limit(
             let extractor = Extractor::new(&runner.egraph, cost_func);
             let (best_cost_found, best_found) = extractor.find_best(root);
             best = best_found;
-            best_cost = best_cost_found;
+            best_curvature = best_cost_found.curvature;
+            best_num_vars = best_cost_found.num_vars;
+            best_term_size = best_cost_found.term_size;
         }
 
-        let curvature = best_cost.curvature;
-        let num_vars = best_cost.num_vars;
+        let curvature = best_curvature;
+        let num_vars = best_num_vars;
         // Note: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
-        let term_size = best_cost.term_size + 3 * (domains_len as u32); 
+        let term_size = best_term_size + 3 * (domains_len as u32); 
         if debug && curvature <= Curvature::Convex {
             let total_nodes = runner.egraph.total_number_of_nodes();
             println!("Succeeded with node limit {:?} (using {:?} nodes).", node_limit, total_nodes);
