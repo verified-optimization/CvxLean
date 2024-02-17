@@ -116,24 +116,27 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
       -- Introduce other constraints.
       let (_, g) ← g.intros
       let mut g := g
-      -- Applt optimization variables to expresssions.
+      -- Apply optimization variables to expresssions.
       let lhsSubExprAtProb := lhsSubExpr.mkAppNBeta #[mkFVar p]
       let rhsSubExprAtProb := rhsSubExpr.mkAppNBeta #[mkFVar p]
       let expectedExprAtProb := expectedExpr.mkAppNBeta #[mkFVar p]
-      -- Reduce to equality goal for constraint rewrites.
-      if !atObjFun then
-        let gs ← g.apply (mkConst ``Iff.of_eq)
+      -- Distinguish between rewriting props and reals. No need to apply congruence if we are
+      -- rewriting the whole constraint.
+      if !(← inferType lhsSubExprAtProb).isProp then
+        -- Reduce to equality goal for real rewerites .
+        if !atObjFun then
+          let gs ← g.apply (mkConst ``Iff.of_eq)
+          if gs.length != 1 then
+            throwPreDCPError "failed to apply `iff_of_eq`."
+          g := gs[0]!
+        -- Apply congruence.
+        let subExprAtProbType ← inferType rhsSubExprAtProb
+        let congrLemma ← mkAppOptM ``congrArg
+          #[subExprAtProbType, none, lhsSubExprAtProb, rhsSubExprAtProb, expectedExprAtProb]
+        let gs ← g.apply congrLemma
         if gs.length != 1 then
-          throwPreDCPError "failed to apply `iff_of_eq`."
+          throwPreDCPError "failed to apply `congrArg`."
         g := gs[0]!
-      -- Apply congruence.
-      let subExprAtProbType ← inferType rhsSubExprAtProb
-      let congrLemma ← mkAppOptM ``congrArg
-        #[subExprAtProbType, none, lhsSubExprAtProb, rhsSubExprAtProb, expectedExprAtProb]
-      let gs ← g.apply congrLemma
-      if gs.length != 1 then
-        throwPreDCPError "failed to apply `congrArg`."
-      g := gs[0]!
       -- Apply the tactic.
       let gs ← evalTacticAt tacStx g
       if gs.length != 0 then
