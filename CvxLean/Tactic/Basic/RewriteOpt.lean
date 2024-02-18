@@ -69,10 +69,28 @@ def rewriteObjBuilderFromTactic (shouldEval : Bool) (tac : MVarId → FVarId →
 /-- -/
 def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
     EquivalenceBuilder :=
-  fun g eqvExpr => do
-    trace[CvxLean.debug] "`rw_obj` using tactic {tacStx}."
-    let tac := fun g _ => evalTacticAt tacStx g *> pure ()
-    rewriteObjBuilderFromTactic shouldEval tac rhs? g eqvExpr
+  fun eqvExpr g => do
+    if shouldEval then
+      trace[CvxLean.debug] "`rw_obj` using tactic {tacStx}."
+      let tac := fun g _ => evalTacticAt tacStx g *> pure ()
+      rewriteObjBuilderFromTactic shouldEval tac rhs? eqvExpr g
+    else
+      rewriteObjBuilderFromTactic shouldEval (fun _ _ => pure ()) rhs? eqvExpr g
+
+def rewriteObjBuilderWithoutTarget (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder :=
+  rewriteObjBuilder shouldEval tacStx none
+
+def rewriteObjBuilderWithTarget (shouldEval : Bool) (tacStx : Syntax) (targetStx : Syntax) :
+    EquivalenceBuilder :=
+  fun eqvExpr g => g.withContext do
+    let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
+    let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
+    let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
+    let target ← withLocalDeclD `p lhsMinExpr.domain fun p => do
+      Meta.withDomainLocalDecls lhsMinExpr.domain p fun xs prs => do
+        let target ← Tactic.elabTerm targetStx none
+        mkLambdaFVars #[p] ((target.replaceFVars fvars xs).replaceFVars xs prs)
+    rewriteObjBuilder shouldEval tacStx (some target) eqvExpr g
 
 /-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. -/
 def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :=
@@ -188,32 +206,57 @@ def rewriteConstrBuilderFromTactic (shouldEval : Bool) (constrTag : Name)
 def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
     (rhs? : Option Expr) : EquivalenceBuilder :=
   fun g eqvExpr => do
-    trace[CvxLean.debug] "`rw_constr` using tactic {tacStx}."
+    if shouldEval then
+      trace[CvxLean.debug] "`rw_constr` using tactic {tacStx}."
     let tac := fun g _ => evalTacticAt tacStx g *> pure ()
     rewriteConstrBuilderFromTactic shouldEval constrTag tac rhs? g eqvExpr
+
+def rewriteConstrBuilderWithoutTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) :
+    EquivalenceBuilder :=
+  rewriteConstrBuilder shouldEval constrTag tacStx none
+
+def rewriteConstrBuilderWithTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) (targetStx : Syntax) :
+    EquivalenceBuilder :=
+  fun eqvExpr g => g.withContext do
+    let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
+    let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
+    let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
+    let target ← withLocalDeclD `p lhsMinExpr.domain fun p => do
+      Meta.withDomainLocalDecls lhsMinExpr.domain p fun xs prs => do
+        let target ← Tactic.elabTerm targetStx none
+        mkLambdaFVars #[p] ((target.replaceFVars fvars xs).replaceFVars xs prs)
+    rewriteConstrBuilder shouldEval constrTag tacStx (some target) eqvExpr g
 
 end Meta
 
 namespace Tactic
 
-syntax (name := rwObj) "rw_obj" "=>" (tacticSeq)? : tactic
+syntax (name := rwObj) "rw_obj" (&" into" term)? darrow (tacticSeq)? : tactic
 
 @[tactic rwObj]
 def evalRwObjFun : Tactic := fun stx => match stx with
-  | `(tactic|rw_obj => $tacStx) => do
-      (rewriteObjBuilder true tacStx none).toTactic
   | `(tactic|rw_obj =>) => do
-      (rewriteObjBuilder false stx none).toTactic
+      (rewriteObjBuilderWithoutTarget false stx).toTactic
+  | `(tactic|rw_obj => $tacStx) => do
+      (rewriteObjBuilderWithoutTarget true tacStx).toTactic
+  | `(tactic|rw_obj into $targetStx =>) => do
+      (rewriteObjBuilderWithTarget false stx targetStx).toTactic
+  | `(tactic|rw_obj into $targetStx => $tacStx) => do
+      (rewriteObjBuilderWithTarget true tacStx targetStx).toTactic
   | _ => throwUnsupportedSyntax
 
-syntax (name := rwConstr) "rw_constr" (ident)? "=>" (tacticSeq)? : tactic
+syntax (name := rwConstr) "rw_constr " (ident)? (&" into" term)? darrow (tacticSeq)? : tactic
 
 @[tactic rwConstr]
 def evalRwConstr : Tactic := fun stx => match stx with
-  | `(tactic|rw_constr $h => $tacStx) => do
-      (rewriteConstrBuilder true h.getId tacStx none).toTactic
   | `(tactic|rw_constr $h =>) => do
-      (rewriteConstrBuilder false h.getId stx none).toTactic
+      (rewriteConstrBuilderWithoutTarget false h.getId stx).toTactic
+  | `(tactic|rw_constr $h => $tacStx) => do
+      (rewriteConstrBuilderWithoutTarget true h.getId tacStx).toTactic
+  | `(tactic|rw_constr $h into $targetStx =>) => do
+      (rewriteConstrBuilderWithTarget false h.getId stx targetStx).toTactic
+  | `(tactic|rw_constr $h into $targetStx => $tacStx) => do
+      (rewriteConstrBuilderWithTarget true h.getId tacStx targetStx).toTactic
   | _ => throwUnsupportedSyntax
 
 end Tactic
