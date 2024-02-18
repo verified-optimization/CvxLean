@@ -72,10 +72,8 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr)
   fun eqvExpr g => do
     if shouldEval then
       trace[CvxLean.debug] "`rw_obj` using tactic {tacStx}."
-      let tac := fun g _ => evalTacticAt tacStx g *> pure ()
-      rewriteObjBuilderFromTactic shouldEval tac rhs? eqvExpr g
-    else
-      rewriteObjBuilderFromTactic shouldEval (fun _ _ => pure ()) rhs? eqvExpr g
+    let tac := fun g _ => evalTacticAt tacStx g >>= setGoals
+    rewriteObjBuilderFromTactic shouldEval tac rhs? eqvExpr g
 
 def rewriteObjBuilderWithoutTarget (shouldEval : Bool) (tacStx : Syntax) : EquivalenceBuilder :=
   rewriteObjBuilder shouldEval tacStx none
@@ -208,15 +206,15 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
   fun g eqvExpr => do
     if shouldEval then
       trace[CvxLean.debug] "`rw_constr` using tactic {tacStx}."
-    let tac := fun g _ => evalTacticAt tacStx g *> pure ()
+    let tac := fun g _ => evalTacticAt tacStx g >>= setGoals
     rewriteConstrBuilderFromTactic shouldEval constrTag tac rhs? g eqvExpr
 
 def rewriteConstrBuilderWithoutTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) :
     EquivalenceBuilder :=
   rewriteConstrBuilder shouldEval constrTag tacStx none
 
-def rewriteConstrBuilderWithTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) (targetStx : Syntax) :
-    EquivalenceBuilder :=
+def rewriteConstrBuilderWithTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
+    (targetStx : Syntax) : EquivalenceBuilder :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
@@ -224,7 +222,7 @@ def rewriteConstrBuilderWithTarget (shouldEval : Bool) (constrTag : Name) (tacSt
     let target ← withLocalDeclD `p lhsMinExpr.domain fun p => do
       Meta.withDomainLocalDecls lhsMinExpr.domain p fun xs prs => do
         let target ← Tactic.elabTerm targetStx none
-        mkLambdaFVars #[p] ((target.replaceFVars fvars xs).replaceFVars xs prs)
+        mkLambdaFVars #[p] (mkLabel constrTag ((target.replaceFVars fvars xs).replaceFVars xs prs))
     rewriteConstrBuilder shouldEval constrTag tacStx (some target) eqvExpr g
 
 end Meta
