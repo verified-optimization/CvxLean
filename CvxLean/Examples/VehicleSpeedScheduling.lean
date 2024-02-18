@@ -69,23 +69,16 @@ equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
   conv_constr c_τmin => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
   conv_constr c_τmax => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
   -- Put in matrix form.
-  equivalence_step =>
-    apply Equivalence.rewrite_objFun (g := fun t => Vec.sum (t * (Vec.map F (d / t))))
-    . intro t _; simp [Vec.sum]; rfl
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_1 (c1' := fun t => smin ≤ d / t)
-    . intro t _; rfl
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_2 (c2' := fun t => d / t ≤ smax)
-    . intro t _ _; rfl
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_3 (c3' := fun t => τmin ≤ Vec.cumsum t)
-    . intro t _ _ _; simp [fold_partial_sum t]; rfl
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_4_last (c4' := fun t => Vec.cumsum t ≤ τmax)
-    . intro t _ _ _; simp [fold_partial_sum t]; rfl
-  rename_vars [t]
-  rename_constrs [c_smin, c_smax, c_τmin, c_τmax]
+  rw_obj into (Vec.sum (t * (Vec.map F (d / t)))) =>
+    simp [Vec.sum]; rfl
+  rw_constr c_smin into (smin ≤ d / t) =>
+    rfl
+  rw_constr c_smax into (d / t ≤ smax) =>
+    rfl
+  rw_constr c_τmin into (τmin ≤ Vec.cumsum t) =>
+    simp [fold_partial_sum t]; rfl
+  rw_constr c_τmax into (Vec.cumsum t ≤ τmax) =>
+    simp [fold_partial_sum t]; rfl
 
 #print vehSpeedSchedConvex
 -- optimization (t : Fin n → ℝ)
@@ -120,26 +113,18 @@ equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     apply Equivalence.add_constraint (cs' := fun t => StrongLT 0 t)
     . rintro t ⟨c_smin, _⟩ i
       exact t_pos_of_c_smin t c_smin i
+  rename_vars [t]
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
   -- Arithmetic simplification in the objective function.
-  equivalence_step =>
-    apply Equivalence.rewrite_objFun
-      (g := fun t => Vec.sum (a • (d ^ (2 : ℝ)) * (1 / t) + b • d + c • t))
-    . rintro t ⟨c_t, _⟩
-      congr; funext i; unfold Vec.map; dsimp
-      have h_ti_pos : 0 < t i := c_t i
-      field_simp; ring
+  rw_obj into (Vec.sum (a • (d ^ (2 : ℝ)) * (1 / t) + b • d + c • t)) =>
+    congr; funext i; unfold Vec.map; dsimp
+    have h_ti_pos : 0 < t i := c_t i
+    field_simp; ring
   -- Rewrite linear constraints.
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_2 (c2' := fun t => smin * t ≤ d)
-    . intro t c_t _; rw [Vec.le_div_iff c_t]
-  rename_vars [t]
-  rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_3 (c3' := fun t => d ≤ smax * t)
-    . intro t c_t _ _; rw [Vec.div_le_iff c_t]
-  rename_vars [t]
-  rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
+  rw_constr c_smin into (smin * t ≤ d) =>
+    rw [Vec.le_div_iff c_t]
+  rw_constr c_smax into (d ≤ smax * t) =>
+    rw [Vec.div_le_iff c_t]
   -- Finally, we can apply `dcp`! (or we can call `solve`, as we do below).
 
 #print vehSpeedSchedQuadratic
