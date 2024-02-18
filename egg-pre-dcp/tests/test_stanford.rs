@@ -76,7 +76,7 @@ fn test_stan4() {
 
 }
 
-mod test_stabford_hard {
+mod test_stanford_hard {
 
 use egg_pre_dcp::domain;
 use egg_pre_dcp::test_util::{*};

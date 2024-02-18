@@ -2,6 +2,8 @@
 Tests for extended interval arithmetic.
 !*/
 
+mod test_domain {
+
 use egg_pre_dcp;
 
 use egg_pre_dcp::domain;
@@ -693,4 +695,6 @@ fn exp_neg() {
 fn is_nonneg_1() {
     // [1, 1] is non-negative
     assert!(domain::is_nonneg(&Domain::make_singleton(1.0)));
+}
+
 }

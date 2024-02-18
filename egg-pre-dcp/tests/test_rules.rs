@@ -2,6 +2,8 @@
 Tests for specific rewrite rules.
 !*/
 
+mod test_rules {
+
 use egg_pre_dcp::domain;
 use egg_pre_dcp::domain::Domain as Domain;
 
@@ -130,4 +132,6 @@ fn test_norm2_fold() {
     pre_dcp_check_expression_with_domain(
         vec![("x", domain::free_dom()), ("y", domain::free_dom())], 
         "(sqrt (add (pow (var x) 2) (pow (var y) 2)))");
+}
+
 }
