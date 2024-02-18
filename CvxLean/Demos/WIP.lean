@@ -217,9 +217,9 @@ equivalence' eqv/q : p := by
   change_of_variables! (v) (y ↦ v + 1)
   change_of_variables! (w) (v ↦ exp w)
   remove_constr c₂ =>
-    field_simp; positivity!
-  rw_constr c₃ =>
-    field_simp; rfl
+    field_simp; arith
+  rw_constr c₃ into (w ≤ 2 * sqrt x + 1) =>
+    field_simp
 
 solve q
 
