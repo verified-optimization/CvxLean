@@ -41,7 +41,7 @@ def findTactic (rewriteName : String) (direction : EggRewriteDirection) :
 /-- Given an egg rewrite and a current goal with all the necessary information about the
 minimization problem, we find the appropriate rewrite to apply, and output the remaining goals. -/
 def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List LocalDecl)
-    (tagsMap : HashMap String ℕ) : EquivalenceBuilder := fun eqvExpr g => g.withContext do
+    (tagsMap : HashMap String ℕ) : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let tag ← liftMetaM <| do
     if step.location == "objFun" then
       return "objFun"
@@ -150,7 +150,7 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
     else
       rewriteConstrBuilderFromTactic true (Name.mkSimple tag) tac (some targetExpr) eqvExpr g
 
-def preDCPBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
+def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
 
   -- Get optimization variables.

@@ -27,7 +27,7 @@ def cleanUpCompAux (e : Expr) (name : String) : MetaM Expr := do
 
 /-- Trivially builds an equivalence by simplifying `Function.comp` on the problem, essentially,
 pushing all function compositions. -/
-def cleanUpCompBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
+def cleanUpCompBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
   let newObjFun ← cleanUpCompAux lhsMinExpr.objFun "objFun"
   let newConstraints ← cleanUpCompAux lhsMinExpr.constraints "constr"

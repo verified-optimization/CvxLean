@@ -15,7 +15,7 @@ open Lean Elab Meta Tactic
 
 namespace Meta
 
-def normNumOptBuilder : EquivalenceBuilder :=
+def normNumOptBuilder : EquivalenceBuilder Unit :=
   Conv.convertOpt (fullProb := true) (convTac := Mathlib.Tactic.elabNormNum1Conv mkNullNode)
 
 end Meta

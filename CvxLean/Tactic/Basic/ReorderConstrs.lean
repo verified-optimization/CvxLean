@@ -27,7 +27,7 @@ def reorderConstrsExpr (ids : Array Name) (e : Expr) : MetaM Expr := do
   return composeAnd newConstrs.data
 
 /-- -/
-def reorderConstrsBuilder (ids : Array Name) : EquivalenceBuilder := fun eqvExpr g =>
+def reorderConstrsBuilder (ids : Array Name) : EquivalenceBuilder Unit := fun eqvExpr g =>
   g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let newConstrs ← withLambdaBody lhsMinExpr.constraints fun p constrBody => do

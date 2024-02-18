@@ -69,11 +69,11 @@ end TransformationGoal
 
 /-- Given a relaxation goal in the form of a `RelaxationExpr` and the `MVarId` of the current goal,
 provide a tactic to close it. -/
-def RelaxationBuilder := RelaxationExpr → MVarId → TacticM Unit
+def RelaxationBuilder (α) := RelaxationExpr → MVarId → TacticM α
 
 namespace RelaxationBuilder
 
-def toTactic (builder : RelaxationBuilder) : TacticM Unit := withMainContext do
+def toTactic {α} (builder : RelaxationBuilder α) : TacticM α := withMainContext do
   let transf ← TransformationGoal.fromExpr (← getMainTarget)
 
   -- Apply transitivity.
@@ -93,21 +93,23 @@ def toTactic (builder : RelaxationBuilder) : TacticM Unit := withMainContext do
 
   -- Run builder.
   let relExpr ← RelaxationExpr.fromExpr (← gToChange.getType)
-  builder relExpr gToChange
+  let res ← builder relExpr gToChange
 
   -- Set next goal.
   gNext.setTag Name.anonymous
   setGoals [gNext]
 
+  return res
+
 end RelaxationBuilder
 
 /-- Given a reduction goal in the form of a `ReductionExpr` and the `MVarId` of the current goal,
 provide a tactic to close it. -/
-def ReductionBuilder := ReductionExpr → MVarId → Tactic
+def ReductionBuilder (α) := ReductionExpr → MVarId → TacticM α
 
 namespace ReductionBuilder
 
-def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
+def toTactic {α} (builder : ReductionBuilder α) : TacticM α := do
   let transf ← TransformationGoal.fromExpr (← getMainTarget)
 
   -- Apply transitivity.
@@ -133,21 +135,23 @@ def toTactic (builder : ReductionBuilder) : Tactic := fun stx => do
 
   -- Run builder.
   let redExpr ← ReductionExpr.fromExpr (← gToChange.getType)
-  builder redExpr gToChange stx
+  let res ← builder redExpr gToChange
 
   -- Set next goal.
   gNext.instantiateMVars
   setGoals [gNext]
 
+  return res
+
 end ReductionBuilder
 
 /-- Given an equivalence goal in the form of a `EquivalenceExpr` and the `MVarId` of the current
 goal, provide a tactic to close it. -/
-def EquivalenceBuilder := EquivalenceExpr → MVarId → TacticM Unit
+def EquivalenceBuilder (α) := EquivalenceExpr → MVarId → TacticM α
 
 namespace EquivalenceBuilder
 
-def toTactic (builder : EquivalenceBuilder) : TacticM Unit := withMainContext do
+def toTactic {α} (builder : EquivalenceBuilder α) : TacticM α := withMainContext do
   let transf ← TransformationGoal.fromExpr (← getMainTarget)
 
   -- Apply transitivity.
@@ -176,11 +180,13 @@ def toTactic (builder : EquivalenceBuilder) : TacticM Unit := withMainContext do
 
   -- Run builder.
   let eqvExpr ← EquivalenceExpr.fromExpr (← gToChange.getType)
-  builder eqvExpr gToChange
+  let res ← builder eqvExpr gToChange
 
   -- Set next goal.
   gNext.setTag Name.anonymous
   setGoals [gNext]
+
+  return res
 
 end EquivalenceBuilder
 

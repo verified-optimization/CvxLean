@@ -35,7 +35,7 @@ syntax (name := convConstr) "conv_constr" (ident)? "=>" (convSeq)? : tactic
 * If `changeObjFun` is set, then we enter conv mode on the objective function.
 * Otherwise, we enter `conv` mode on the constraints. -/
 def convertOpt (fullProb changeObjFun : Bool := false) (convTac : TacticM Unit) :
-    EquivalenceBuilder :=
+    EquivalenceBuilder Unit :=
   fun _ g => g.withContext do
     -- Turn into equality goal.
     if let [gEq] ← g.apply (mkConst ``Minimization.Equivalence.ofEq) then
@@ -72,7 +72,7 @@ def convertOpt (fullProb changeObjFun : Bool := false) (convTac : TacticM Unit) 
 
 /-- Enter `conv` mode on the full problem. The `shouldEval` flag is set to false when no tactics are
 applied but we still want to enter conv mode and see the goal. -/
-def convertFullProb (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder :=
+def convertFullProb (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder Unit :=
   convertOpt (fullProb := true) (changeObjFun := false) do
     if shouldEval then evalTactic stx else saveTacticInfoForToken stx
 
@@ -86,7 +86,7 @@ partial def evalConvOpt : Tactic := fun stx => match stx with
 section ConvObj
 
 /-- Enter `conv` mode on the objective function. -/
-def convertObj (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder :=
+def convertObj (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder Unit :=
   convertOpt (fullProb := false) (changeObjFun := true) do
     if shouldEval then evalTactic stx else saveTacticInfoForToken stx
 
@@ -118,13 +118,13 @@ partial def splitAnds (goal : MVarId) : TacticM (List MVarId) := do
       return [goal]
 
 /-- Enter `conv` mode setting all constraints as subgoals. -/
-def convertConstrs (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder :=
+def convertConstrs (shouldEval : Bool) (stx : Syntax) : EquivalenceBuilder Unit :=
   convertOpt (fullProb := false) (changeObjFun := false) do
     replaceMainGoal <| ← splitAnds <| ← getMainGoal
     if shouldEval then evalTactic stx else saveTacticInfoForToken stx
 
 /-- Enter `conv` mode on a specific constraint. -/
-def convertConstrWithName (shouldEval : Bool) (stx : Syntax) (h : Name) : EquivalenceBuilder :=
+def convertConstrWithName (shouldEval : Bool) (stx : Syntax) (h : Name) : EquivalenceBuilder Unit :=
   convertOpt (fullProb := false) (changeObjFun := false) do
     let constrs ← splitAnds <| ← getMainGoal
     let mut found := false

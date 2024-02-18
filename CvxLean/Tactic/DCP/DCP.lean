@@ -979,7 +979,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
 
       return (redProblem, eqvProof)
 
-def dcpBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
+def dcpBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let ogProblem ← eqvExpr.toMinimizationExprLHS
   let (_, eqvProof) ← canonize ogProblem
   if ! (← isDefEq (mkMVar g) eqvProof) then

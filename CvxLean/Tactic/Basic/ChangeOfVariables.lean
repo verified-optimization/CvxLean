@@ -158,7 +158,7 @@ namespace Meta
 
 For now, it only works with real variables.-/
 def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
-    (changeStx : TSyntax `term) : EquivalenceBuilder :=
+    (changeStx : TSyntax `term) : EquivalenceBuilder Unit :=
   fun eqvExpr g => g.withContext do
     let newVar := newVarStx.getId
     let varToChange := varToChangeStx.getId
