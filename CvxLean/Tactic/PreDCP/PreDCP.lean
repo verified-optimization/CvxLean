@@ -146,9 +146,9 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
 
     -- Rewrites use the machinery from `Tactic.Basic.RewriteOpt`.
     if atObjFun then
-      rewriteObjBuilderFromTactic true tac (some targetExpr) eqvExpr g
+      rewriteObjBuilderFromTactic true tac targetExpr eqvExpr g
     else
-      rewriteConstrBuilderFromTactic true (Name.mkSimple tag) tac (some targetExpr) eqvExpr g
+      let _ ← rewriteConstrBuilderFromTactic true (Name.mkSimple tag) tac targetExpr eqvExpr g
 
 def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
