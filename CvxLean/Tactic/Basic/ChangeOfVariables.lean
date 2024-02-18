@@ -128,6 +128,11 @@ instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => x + a) :=
     condition := fun _ => True
     property := fun _ _ => by ring }
 
+instance {a : ℕ} : ChangeOfVariables (fun x : ℝ => x + a) :=
+  { inv := fun x => x - a
+    condition := fun _ => True
+    property := fun _ _ => by ring }
+
 end RealInstances
 
 noncomputable section VecInstances
@@ -154,7 +159,7 @@ namespace Meta
 For now, it only works with real variables.-/
 def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     (changeStx : TSyntax `term) : EquivalenceBuilder :=
-  fun eqvExpr g => do
+  fun eqvExpr g => g.withContext do
     let newVar := newVarStx.getId
     let varToChange := varToChangeStx.getId
 
@@ -174,7 +179,7 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     -- Construct change of variables function.
     let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
     -- u ↦ c(u)
-    let changeFnStx ← `(fun $newVarStx => $changeStx)
+    let changeFnStx ← `(fun ($newVarStx : ℝ) => $changeStx)
     let changeFn ← Tactic.elabTerm changeFnStx none
     -- c(x)
     let changeTerm ← Core.betaReduce <|
@@ -218,10 +223,11 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
 
     -- Solve change of variables condition.
     let gCondition := gsAfterApply[0]!
-    let (_, gCondition) ← gCondition.intros
+    let (_, gCondition) ← gCondition.introN 2 [`x, `h]
     let gsFinal ← evalTacticAt
-      (← `(tactic| simp [ChangeOfVariables.condition] <;> arith)) gCondition
+      (← `(tactic| (simp [ChangeOfVariables.condition] at * <;> linarith))) gCondition
     if gsFinal.length != 0 then
+      trace[CvxLean.debug] "Could not prove {gsFinal}."
       throwError "Failed to solve change of variables condition."
 
 end Meta
