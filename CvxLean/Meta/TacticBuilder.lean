@@ -31,15 +31,17 @@ def isTransitive : TransformationGoal → Bool
   | _ => true
 
 def fromExpr (e : Expr) : MetaM TransformationGoal := do
-  if e.isAppOf `Minimization.Solution then
+  let e ← whnf e
+  if e.isAppOf ``Minimization.Solution then
     return TransformationGoal.Solution
-  else if e.isAppOf `Minimization.Equivalence then
+  else if e.isAppOf ``Minimization.Equivalence then
     return TransformationGoal.Equivalence
-  else if e.isAppOf `Minimization.Reduction then
+  else if e.isAppOf ``Minimization.Reduction then
     return TransformationGoal.Reduction
-  else if e.isAppOf `Minimization.Relaxation then
+  else if e.isAppOf ``Minimization.Relaxation then
     return TransformationGoal.Relaxation
   else
+    trace[Meta.TacticBuilder] "{e.ctorName}"
     throwTacticBuilderError
       "expected a `Solution`, `Equivalence`, `Reduction` or `Relaxation` goal, got {e}."
 
