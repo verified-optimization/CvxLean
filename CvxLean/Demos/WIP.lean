@@ -98,12 +98,10 @@ equivalence eqv₂/p₃ : p₂ := by
   conv_obj =>
     rw [← exp_add]
   conv_constr c₂ =>
-    rw [← log_le_log (by norm_num) (exp_pos _), log_exp]
+    rw [← log_le_log_iff (by norm_num) (exp_pos _), log_exp]
     norm_num
 
 open Equivalence
-
-set_option trace.Meta.debug true
 
 equivalence eqv/q :
     optimization (x : ℝ)
@@ -111,7 +109,7 @@ equivalence eqv/q :
       subject to
         c₁ : 0 ≤ x := by
   rw_obj =>
-    rw [sqrt_sq c₁]
+    rw [rpow_two, sqrt_sq c₁]
 
 end Equivalences
 
@@ -137,11 +135,13 @@ def Rx₁₂ : p₁ ≽' p₂ :=
 
 open Real Matrix
 
+-- TODO: Move. Not needed here.
 lemma PosSemiDef_is_symmetric {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A) :
-  ∀ i j, A i j = A j i := by
+    IsSymm A := by
   let h_A_IsHermitian := hA.1
   rw [Matrix.isHermitian_iff_isSymmetric] at h_A_IsHermitian
   simp [LinearMap.IsSymmetric, toEuclideanLin] at h_A_IsHermitian
+  apply IsSymm.ext
   intros i j
   have hAij := h_A_IsHermitian (fun k => if k = i then 1 else 0) (fun k => if k = j then 1 else 0)
   have hi : (Finset.sum Finset.univ fun x => A j x * (Equiv.refl (WithLp 2 (Fin n → ℝ)))
@@ -153,17 +153,17 @@ lemma PosSemiDef_is_symmetric {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemi
   rw [hAij]
 
 lemma trace_mul_transpose_self_eq_quad_of_symm {n} (A : Matrix (Fin n) (Fin n) ℝ) (x : Fin n → ℝ)
-    (h_A_symm : ∀ i j, A i j = A j i) :
+    (hA : IsSymm A) :
     trace (A * (Vec.toMatrix x * (Vec.toMatrix x)ᵀ)) = vecMul x A ⬝ᵥ x := by
   simp [trace, dotProduct]
   congr; funext i;
   simp [Matrix.mul_apply, vecMul, dotProduct, Finset.sum_mul]
   congr; funext j;
   simp [Vec.toMatrix]
-  rw [h_A_symm i j]
+  rw [hA.apply i j]
   ring
 
-def sdr {n} {A C : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A) (hC : PosSemidef C) (b : ℝ) :
+def sdr {n} {A C : Matrix (Fin n) (Fin n) ℝ} (hA : IsSymm A) (hC : IsSymm C) (b : ℝ) :
   (optimization (x : Fin n → ℝ)
     minimize (vecMul x C) ⬝ᵥ x
     subject to
@@ -176,19 +176,55 @@ def sdr {n} {A C : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A) (hC : PosSemi
   { phi := fun x => (Vec.toMatrix x) * (Vec.toMatrix x)ᵀ,
     phi_feasibility := fun x h_feas_x => by
       simp [objFun, feasible, constraints, p₁, p₂, Vec.toMatrix] at *
-      have h_A_symm := PosSemiDef_is_symmetric hA
-      rw [trace_mul_transpose_self_eq_quad_of_symm A x h_A_symm]
+      rw [trace_mul_transpose_self_eq_quad_of_symm A x hA]
       refine ⟨h_feas_x, ?_⟩
       rw [← conjTranspose_eq_transpose]
       exact posSemidef_conjTranspose_mul_self _,
     phi_optimality := fun x h_feas_x => by
       simp [objFun, feasible, constraints, p₁, p₂] at *
-      have h_C_symm := PosSemiDef_is_symmetric hC
-      rw [trace_mul_transpose_self_eq_quad_of_symm C x h_C_symm] }
-
+      rw [trace_mul_transpose_self_eq_quad_of_symm C x hC] }
 
 end Relaxations
 
 end Chapter3
+
+namespace Chapter4
+
+end Chapter4
+
+namespace Chapter5
+
+end Chapter5
+
+namespace Chapter6
+
+-- Just links here.
+
+end Chapter6
+
+namespace Chapter7
+
+def p :=
+  optimization (x y : ℝ)
+    maximize (2 * x : ℝ)
+    subject to
+      c₁ : 0 ≤ x
+      c₂ : 1 < y
+      c₃ : log (y - 1) ≤ 2 * sqrt x + 1
+      c₄ : 3 * x + 5 * y ≤ 10
+
+equivalence' eqv/q : p := by
+  change_of_variables! (v) (y ↦ v + 1)
+  change_of_variables! (w) (v ↦ exp w)
+  remove_constr c₂ =>
+    field_simp; positivity!
+  rw_constr c₃ =>
+    field_simp; rfl
+
+solve q
+
+#eval eqv.backward_map q.solution
+
+end Chapter7
 
 end

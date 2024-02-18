@@ -142,7 +142,7 @@ instance {n : ℕ} {a : Fin n → ℝ} : ChangeOfVariables (fun (v : Fin n → �
     condition := fun v => ∀ i, v i ≠ 0 ∧ a i ≠ 0
     property := fun v hnot0 => by
       ext i
-      simp [←div_mul, div_self (hnot0 i).2, one_mul] }
+      simp [← div_mul, div_self (hnot0 i).2, one_mul] }
 
 end VecInstances
 
