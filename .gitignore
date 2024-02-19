@@ -10,7 +10,7 @@
 *.code-workspace
 
 /playground
-/evaluation
+/scripts/evaluation/data
 /plots
 
 /CvxLean/Tactic/Solver/Mosek/Path.lean
