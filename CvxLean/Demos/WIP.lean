@@ -4,6 +4,44 @@ open CvxLean Minimization Real
 
 noncomputable section
 
+namespace Chapter2
+
+#check Vector.replicate (α := ℝ)
+
+#check Nat
+#check Nat.rec
+#print Nat.casesOn
+
+def t : ℝ := 1
+
+def p : Prop := True
+
+#check p → p
+
+#check Nat.zero
+
+axiom B : Type
+axiom A : Type
+axiom b : B
+
+#check fun _a : A ↦ b
+#check λ _a : A ↦ b
+#check fun _a : A => b
+#check λ _a : A => b
+
+axiom B' : A → Type
+axiom b' : (a : A) → B' a
+
+#check fun a : A => b' a
+
+universe u
+axiom b'' : A → Sort u
+
+#check (a : A) → b'' a
+#check ∀ a : A, b'' a
+
+end Chapter2
+
 namespace Chapter3
 
 namespace CvxLean_overview
