@@ -4,13 +4,14 @@ import CvxLean.Meta.TacticBuilder
 import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Debug
 import CvxLean.Tactic.Basic.ShowVars
+import CvxLean.Tactic.Basic.RenameConstrs
 
 /-!
 # Tactics for conditional rewrites
 
 TODO
 
-## TODO
+### TODO
 
 * Clean up.
 -/
@@ -36,8 +37,8 @@ def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   | _  => throwRwObjError "can only rewrite problems with up to 10 constraints."
 
 /-- -/
-def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
-    EquivalenceBuilder :=
+def rewriteObjBuilderFromTactic (shouldEval : Bool) (tac : MVarId → FVarId → TacticM Unit)
+    (rhs? : Option Expr) : EquivalenceBuilder Unit :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
@@ -59,11 +60,37 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr)
     let (fvarIds, gAfterIntros) ← gToRw.introN (1 + numConstrs) ([`p] ++ constrTags)
     if fvarIds.size == 0 then
       throwRwObjError "could not introduce optimization variables."
+    let probFVarId := fvarIds[0]!
     let gAfterShowVars ← showVars gAfterIntros (fvarIds.get! 0)
     if shouldEval then
-      if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
-        trace[CvxLean.debug] "`rw_obj` could not close {gs} using {tacStx}."
+      if let gs@(_ :: _) ← Tactic.run gAfterShowVars (tac gAfterShowVars probFVarId) then
+        trace[CvxLean.debug] "`rw_obj` could not close {gs}."
         throwRwObjError "could not close all goals."
+
+/-- -/
+def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
+    EquivalenceBuilder Unit :=
+  fun eqvExpr g => do
+    if shouldEval then
+      trace[CvxLean.debug] "`rw_obj` using tactic {tacStx}."
+    let tac := fun g _ => evalTacticAt tacStx g >>= setGoals
+    rewriteObjBuilderFromTactic shouldEval tac rhs? eqvExpr g
+
+def rewriteObjBuilderWithoutTarget (shouldEval : Bool) (tacStx : Syntax) :
+    EquivalenceBuilder Unit :=
+  rewriteObjBuilder shouldEval tacStx none
+
+def rewriteObjBuilderWithTarget (shouldEval : Bool) (tacStx : Syntax) (targetStx : Syntax) :
+    EquivalenceBuilder Unit :=
+  fun eqvExpr g => g.withContext do
+    let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
+    let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
+    let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
+    let target ← withLocalDeclD `p lhsMinExpr.domain fun p => do
+      Meta.withDomainLocalDecls lhsMinExpr.domain p fun xs prs => do
+        let target ← Tactic.elabTerm targetStx none
+        mkLambdaFVars #[p] ((target.replaceFVars fvars xs).replaceFVars xs prs)
+    rewriteObjBuilder shouldEval tacStx (some target) eqvExpr g
 
 /-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. -/
 def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :=
@@ -124,8 +151,8 @@ end RIntro
 open Term
 
 /-- -/
-def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
-    (rhs? : Option Expr) : EquivalenceBuilder :=
+def rewriteConstrBuilderFromTactic (shouldEval : Bool) (constrTag : Name)
+    (tac : MVarId → FVarId → TacticM Unit) (rhs? : Option Expr) : EquivalenceBuilder (List Name) :=
   fun eqvExpr g => g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let constrTags ← withLambdaBody lhsMinExpr.constraints fun _ constrsBody => do
@@ -150,7 +177,7 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
       if tag == rhsName && rhs?.isSome then
         g.assign rhs?.get!
     if !foundGToRw then
-      throwRwConstrError "error: could not find rewrite goal."
+      throwRwConstrError "could not find rewrite goal."
     -- Intros appropriately.
     let constrTagsBefore := constrTags.take rwIdx.pred
     let numConstrsBefore := constrTagsBefore.length
@@ -172,32 +199,68 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
 
     let gAfterShowVars ← showVars gAfterIntros probFVarId
     if shouldEval then
-      if let gs@(_ :: _) ← evalTacticAt tacStx gAfterShowVars then
-        trace[CvxLean.debug] "`rw_constr` could not close {gs} using {tacStx}."
+      if let gs@(_ :: _) ← Tactic.run gAfterShowVars (tac gAfterShowVars probFVarId) then
+        trace[CvxLean.debug] "`rw_constr` could not close {gs}."
         throwRwConstrError "could not close all goals."
+
+    return constrTags
+
+def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
+    (rhs? : Option Expr) : EquivalenceBuilder (List Name) :=
+  fun g eqvExpr => do
+    if shouldEval then
+      trace[CvxLean.debug] "`rw_constr` using tactic {tacStx}."
+    let tac := fun g _ => evalTacticAt tacStx g >>= setGoals
+    rewriteConstrBuilderFromTactic shouldEval constrTag tac rhs? g eqvExpr
+
+def rewriteConstrBuilderWithoutTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) :
+    EquivalenceBuilder (List Name) :=
+  rewriteConstrBuilder shouldEval constrTag tacStx none
+
+def rewriteConstrBuilderWithTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
+    (targetStx : Syntax) : EquivalenceBuilder (List Name) :=
+  fun eqvExpr g => g.withContext do
+    let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
+    let vars ← decomposeDomain (← instantiateMVars lhsMinExpr.domain)
+    let fvars := Array.mk <| vars.map (fun ⟨n, _⟩ => mkFVar (FVarId.mk n))
+    let target ← withLocalDeclD `p lhsMinExpr.domain fun p => do
+      Meta.withDomainLocalDecls lhsMinExpr.domain p fun xs prs => do
+        let target ← Tactic.elabTerm targetStx none
+        mkLambdaFVars #[p] ((target.replaceFVars fvars xs).replaceFVars xs prs)
+    rewriteConstrBuilder shouldEval constrTag tacStx (some target) eqvExpr g
 
 end Meta
 
 namespace Tactic
 
-syntax (name := rwObj) "rw_obj" "=>" (tacticSeq)? : tactic
+syntax (name := rwObj) "rw_obj" (&" into" term)? darrow (tacticSeq)? : tactic
 
 @[tactic rwObj]
 def evalRwObjFun : Tactic := fun stx => match stx with
-  | `(tactic|rw_obj => $tacStx) => do
-      (rewriteObjBuilder true tacStx none).toTactic
   | `(tactic|rw_obj =>) => do
-      (rewriteObjBuilder false stx none).toTactic
+      (rewriteObjBuilderWithoutTarget false stx).toTactic
+  | `(tactic|rw_obj => $tacStx) => do
+      (rewriteObjBuilderWithoutTarget true tacStx).toTactic
+  | `(tactic|rw_obj into $targetStx =>) => do
+      (rewriteObjBuilderWithTarget false stx targetStx).toTactic
+  | `(tactic|rw_obj into $targetStx => $tacStx) => do
+      (rewriteObjBuilderWithTarget true tacStx targetStx).toTactic
   | _ => throwUnsupportedSyntax
 
-syntax (name := rwConstr) "rw_constr" (ident)? "=>" (tacticSeq)? : tactic
+syntax (name := rwConstr) "rw_constr " (ident)? (&" into" term)? darrow (tacticSeq)? : tactic
 
 @[tactic rwConstr]
 def evalRwConstr : Tactic := fun stx => match stx with
-  | `(tactic|rw_constr $h => $tacStx) => do
-      (rewriteConstrBuilder true h.getId tacStx none).toTactic
   | `(tactic|rw_constr $h =>) => do
-      (rewriteConstrBuilder false h.getId stx none).toTactic
+      let _ ← (rewriteConstrBuilderWithoutTarget false h.getId stx).toTactic
+  | `(tactic|rw_constr $h => $tacStx) => do
+      let constrTags ← (rewriteConstrBuilderWithoutTarget true h.getId tacStx).toTactic
+      (renameConstrsBuilder constrTags.toArray).toTactic
+  | `(tactic|rw_constr $h into $targetStx =>) => do
+      let _ ← (rewriteConstrBuilderWithTarget false h.getId stx targetStx).toTactic
+  | `(tactic|rw_constr $h into $targetStx => $tacStx) => do
+      let constrTags ← (rewriteConstrBuilderWithTarget true h.getId tacStx targetStx).toTactic
+      (renameConstrsBuilder constrTags.toArray).toTactic
   | _ => throwUnsupportedSyntax
 
 end Tactic

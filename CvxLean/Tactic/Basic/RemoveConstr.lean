@@ -37,7 +37,7 @@ def composeAndIntro (l : List Expr) : MetaM Expr :=
       return mkApp4 (mkConst ``And.intro) eTy esTy e es
 
 /-- -/
-def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder := fun eqvExpr g =>
+def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder Unit := fun eqvExpr g =>
   g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
     let (idxToRemove, numConstrs, newConstrs, toShow) ←
@@ -106,12 +106,13 @@ end Meta
 
 namespace Tactic
 
-syntax (name := removeConstr) "remove_constr" ident term : tactic
+/-- -/
+syntax (name := removeConstr) "remove_constr" ident " => " tacticSeq : tactic
 
 @[tactic removeConstr]
 partial def evalRemoveConstr : Tactic := fun stx => match stx with
-| `(tactic| remove_constr $id $proof) => do
-    (removeConstrBuilder id.getId proof).toTactic
+| `(tactic| remove_constr $id => $tacStx) => do
+    (removeConstrBuilder id.getId (← `(term| by $tacStx))).toTactic
     saveTacticInfoForToken stx
 | _ => throwUnsupportedSyntax
 

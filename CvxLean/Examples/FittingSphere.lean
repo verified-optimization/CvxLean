@@ -102,16 +102,11 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
   conv_constr h₁ => dsimp
   conv_obj => dsimp
   -- Rewrite objective.
-  equivalence_step =>
-    apply Equivalence.rewrite_objFun
-      (g := fun (ct : (Fin n → ℝ) × ℝ) =>
-        Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x ct.1) - Vec.const m ct.2) ^ 2))
-    . rintro ⟨c, t⟩ h
-      dsimp at h ⊢; simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
-      rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp h))]
-      simp [mulVec, inner, dotProduct]
-  rename_vars [c, t]
-
+  rw_obj into (Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x c) - Vec.const m t) ^ 2)) =>
+    dsimp at h₁ ⊢; simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
+    rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp h₁))]
+    simp [mulVec, inner, dotProduct]
+  
 #print fittingSphereT
 -- optimization (c : Fin n → ℝ) (t : ℝ)
 --   minimize Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2)

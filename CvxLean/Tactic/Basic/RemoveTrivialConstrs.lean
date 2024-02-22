@@ -10,7 +10,7 @@ open Lean Meta Elab Term Tactic
 
 namespace Meta
 
-def removeTrivialConstrsBuilder : EquivalenceBuilder := fun eqvExpr g => g.withContext do
+def removeTrivialConstrsBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
   let constrNames ← withLambdaBody lhs.constraints fun _ constrsBody => do
     let cs ← decomposeConstraints constrsBody

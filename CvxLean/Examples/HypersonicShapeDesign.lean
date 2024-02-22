@@ -91,22 +91,20 @@ equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb�
     rewrite [le_sqrt' (by norm_num)]; norm_num
   conv_constr h₂ =>
     rewrite [sqrt_le_iff]; norm_num
-  rw_constr h₃ =>
+  rw_constr h₃ into (a ^ 2 * z⁻¹ ≤ (1 - b) ^ 2 * (1 - z)) =>
     have hz : 0 ≤ z := by arith
     have h_one_sub_z : 0 ≤ 1 - z := by arith
-    rewrite [rpow_two (sqrt a), sq_sqrt ha, rpow_two (sqrt z), sq_sqrt hz]
-    rewrite [div_le_iff (by arith)]
+    rw [rpow_two (sqrt a), sq_sqrt ha, rpow_two (sqrt z), sq_sqrt hz]
+    rw [div_le_iff (by arith)]
     have hlhs : 0 ≤ a / sqrt z := div_nonneg ha (sqrt_nonneg _)
     have hrhs : 0 ≤ sqrt (1 - z) * (1 - b) := mul_nonneg (sqrt_nonneg _) (by arith)
-    rewrite [← pow_two_le_pow_two hlhs hrhs]
-    rewrite [div_rpow ha (sqrt_nonneg _), rpow_two (sqrt z), sq_sqrt hz]
-    rewrite [mul_rpow (sqrt_nonneg _) (by arith), rpow_two (sqrt (1 - z)), sq_sqrt h_one_sub_z]
-    rewrite [← mul_one_div, ← inv_eq_one_div, mul_comm (1 - z) _]
-    rfl
+    rw [← pow_two_le_pow_two hlhs hrhs]
+    rw [div_rpow ha (sqrt_nonneg _), rpow_two (sqrt z), sq_sqrt hz]
+    rw [mul_rpow (sqrt_nonneg _) (by arith), rpow_two (sqrt (1 - z)), sq_sqrt h_one_sub_z]
+    rw [← mul_one_div, ← inv_eq_one_div, mul_comm (1 - z) _]
   rename_constrs [h₁, h₂, h₃]
-  rw_obj =>
-    rewrite [rpow_neg (sqrt_nonneg _), rpow_two (sqrt z), sq_sqrt (by arith)]
-    rfl
+  rw_obj into (z⁻¹ - 1) =>
+    rw [rpow_neg (sqrt_nonneg _), rpow_two (sqrt z), sq_sqrt (by arith)]
 
 #print hypersonicShapeDesignSimpler
 -- optimization (z : ℝ)

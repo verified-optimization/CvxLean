@@ -7,9 +7,9 @@ We define the notion of relaxation. It is a reflexive and transitive relation an
 forward map between solutions. The idea is that solving the original problem is "as hard" as solving
 the relaxed problem. A strong equivalence gives a relaxation.
 
-## References
+### References
 
-* <https://en.wikipedia.org/wiki/Relaxation_(approximation)>[RelaxationWiki]
+* [RelaxationWiki] https://en.wikipedia.org/wiki/Relaxation_(approximation)
 -/
 
 namespace Minimization

@@ -2,7 +2,7 @@ import Lean
 
 /-!
 This file defines how to parse variables, constraints, objective functions and full optimization
-problems. Syntax matching these definitions is elaborated in `Syntax/Minimization.lean`.
+problems. Syntax matching these definitions is elaborated in `CvxLean/Syntax/Minimization.lean`.
 -/
 
 namespace CvxLean

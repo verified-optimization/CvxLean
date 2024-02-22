@@ -7,10 +7,10 @@ import CvxLean.Meta.Attributes
 
 We define equivalence and strong equivalence, and several equivalence-preserving transformations.
 
-## References
+### References
 
-* [S. Boyd and L. Vandenberghe, *Convex Optimization*][BV04]
-* [M. C. Grant, *Discipliend Convex Programming*][Gra05]
+* [BV04] S. Boyd and L. Vandenberghe, *Convex Optimization*
+* [Gra05] M. C. Grant, *Discipliend Convex Programming*
 -/
 
 namespace Minimization
@@ -204,9 +204,10 @@ namespace Equivalence
 
 variable {f : D → R} {cs : D → Prop}
 
-/- Mapping the objective function by monotonic functions yields an equivalence. Also, mapping the
-whole domain by a function with a right inverse. -/
 section Maps
+
+/-! Mapping the objective function by monotonic functions yields an equivalence. Also, mapping the
+whole domain by a function with a right inverse. -/
 
 /-- See [BV04,p.131] where `g` is `ψ₀`. -/
 @[equiv]
@@ -248,8 +249,9 @@ def map_domain {f : D → R} {cs : D → Prop} {fwd : D → E} {bwd : E → D}
 
 end Maps
 
-/- Rewriting the objective function or the constraints leads to equivalent problems. -/
 section Rewrites
+
+/-! Rewriting the objective function or the constraints leads to equivalent problems. -/
 
 variable {f : D → R}
 variable {c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 : D → Prop}
@@ -481,10 +483,11 @@ def rewrite_constraint_10_last
 
 end Rewrites
 
-/- Other equivalence-preserving transformations. These are not used by any tactic but can be used
+section Other
+
+/-! Other equivalence-preserving transformations. These are not used by any tactic but can be used
 directly. They provide evidence that our notion of equivalence captures the expected
 transformations. -/
-section Other
 
 variable {f : D → R} {cs : D → Prop}
 

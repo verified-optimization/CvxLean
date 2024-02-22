@@ -14,7 +14,7 @@ def replaceConstrName (name : Name) (e : Expr) : MetaM Expr := do
 
 /-- Rename the constraints using `names`. The `names` Array can be shorter then
   the number of constraints; then only the first few constraints are renamed. -/
-def renameConstrsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun eqvExpr g => do
+def renameConstrsBuilder (names : Array Name) : EquivalenceBuilder Unit := fun eqvExpr g => do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
 
   -- Create new renamed constraints.
@@ -25,7 +25,7 @@ def renameConstrsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun e
     for i in [:names.size] do
       let newConstr ← replaceConstrName names[i]! constraints[i]!
       constraints := constraints.set! i newConstr
-    return ← mkLambdaFVars #[p] $ composeAnd constraints.toList
+    return ← mkLambdaFVars #[p] <| composeAnd constraints.toList
   let rhsMinExpr := { lhsMinExpr with constraints := newConstrs }
 
   if !(← isDefEq eqvExpr.rhs rhsMinExpr.toExpr) then

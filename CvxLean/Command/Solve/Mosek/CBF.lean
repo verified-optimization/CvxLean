@@ -25,7 +25,7 @@ end ObjSense
 /-- Cone type: free, positive orthant, negative orthant, fixpoint zero (for equality), quadratic,
 quadratic rotated or exponential. The quadratic cone is called second-order in other parts of the
 project. Note that this definition is independent from the cone types in
-`Command/Solve/Float/ProblemData.lean`. -/
+`CvxLean/Command/Solve/Float/ProblemData.lean`. -/
 inductive ConeType
   | F | LPos | LNeg | LEq | Q | QR | EXP
 deriving DecidableEq

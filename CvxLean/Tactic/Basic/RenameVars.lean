@@ -9,7 +9,7 @@ open Lean Expr Meta Elab Tactic
 namespace Meta
 
 /-- -/
-def renameVarsBuilder (names : Array Lean.Name) : EquivalenceBuilder := fun eqvExpr g => do
+def renameVarsBuilder (names : Array Name) : EquivalenceBuilder Unit := fun eqvExpr g => do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
   let vars ← decomposeDomain (← instantiateMVars eqvExpr.domainLHS)
 

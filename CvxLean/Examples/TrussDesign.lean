@@ -56,7 +56,6 @@ instance : ChangeOfVariables
       simp; rw [mul_comm _ (R ^ 2 - r ^ 2), ← mul_div, div_self (by positivity), mul_one]
       ring_nf; exact sqrt_sq hR }
 
-set_option maxHeartbeats 1000000 in
 equivalence' eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
     trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Apply key change of variables.
@@ -72,44 +71,28 @@ equivalence' eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) 
   -- Some cleanup.
   conv_opt => dsimp
   -- Rewrite contraint `c_R_lb`.
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_8
-      (c8' := fun (hwrA : ℝ × ℝ × ℝ × ℝ) => 0.21 * hwrA.2.2.1 ^ 2 ≤ hwrA.2.2.2 / (2 * π))
-    . rintro ⟨h, w, r, A⟩ c_r _ _ _ _ _ _ _; dsimp at *
-      rw [le_sqrt' (by positivity), rpow_two, mul_pow, ← sub_le_iff_le_add]
-      rw [iff_eq_eq]; congr; ring_nf
+  rw_constr c_R_lb into (0.21 * r ^ 2 ≤ A / (2 * π)) =>
+    rw [le_sqrt' (by positivity), rpow_two, mul_pow, ← sub_le_iff_le_add]
+    rw [iff_eq_eq]; congr; ring_nf
+  -- Useful fact about constraints used for simplification. This is a good example of introducing
+  -- local lemmas in an `equivalence` environment.
   have h_A_div_2π_add_r2_nonneg : ∀ (r A : ℝ) (c_r : 0 < r)
     (c_R_lb : 0.21 * r ^ 2 ≤ A / (2 * π)), 0 ≤ A / (2 * π) + r ^ 2 :=
     fun r A c_r c_R_lb => by
       have h_A_div_2π_nonneg : 0 ≤ A / (2 * π) := le_trans (by positivity) c_R_lb
       exact add_nonneg (h_A_div_2π_nonneg) (by positivity)
   -- Simplify objective function.
-  equivalence_step =>
-    apply Equivalence.rewrite_objFun
-      (g := fun (hwrA : ℝ × ℝ × ℝ × ℝ) => 2 * hwrA.2.2.2 * sqrt (hwrA.2.1 ^ 2 + hwrA.1 ^ 2))
-    . rintro ⟨h, w, r, A⟩ ⟨c_r, _, _, _, _, _, _, c_R_lb, _⟩; dsimp at *
-      rw [rpow_two, sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
-      ring_nf; field_simp; ring
-  rename_vars [h, w, r, A]
+  rw_obj into (2 * A * sqrt (w ^ 2 + h ^ 2)) =>
+    rw [rpow_two, sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
+    ring_nf; field_simp; ring
   -- Simplify constraint `c_F₁`.
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_2
-      (c2' := fun (hwrA : ℝ × ℝ × ℝ × ℝ) =>
-        F₁ * sqrt (hwrA.2.1 ^ 2 + hwrA.1 ^ 2) / (2 * hwrA.1) ≤ σ * hwrA.2.2.2)
-    . rintro ⟨h, w, r, A⟩ c_r ⟨_, _, _, _, _, c_R_lb, _⟩; dsimp at *
-      rw [rpow_two (sqrt (_ + r ^ 2)), sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
-      rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
-  rename_vars [h, w, r, A]
+  rw_constr c_F₁ into (F₁ * sqrt (w ^ 2 + h ^ 2) / (2 * h) ≤ σ * A) =>
+    rw [rpow_two (sqrt (_ + r ^ 2)), sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
+    rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
   -- Simplify constraint `c_F₂`.
-  equivalence_step =>
-    apply Equivalence.rewrite_constraint_3
-      (c3' := fun (hwrA : ℝ × ℝ × ℝ × ℝ) =>
-        F₂ * sqrt (hwrA.2.1 ^ 2 + hwrA.1 ^ 2) / (2 * hwrA.2.1) ≤ σ * hwrA.2.2.2)
-    . rintro ⟨h, w, r, A⟩ c_r _ ⟨_, _, _, _, c_R_lb, _⟩; dsimp at *
-      rw [rpow_two (sqrt (_ + r ^ 2)), sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
-      rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
-  rename_vars [h, w, r, A]
-  rename_constrs [c_r, c_F₁, c_F₂, c_hmin, c_hmax, c_wmin, c_wmax, c_A_lb, c_A_ub]
+  rw_constr c_F₂ into (F₂ * sqrt (w ^ 2 + h ^ 2) / (2 * w) ≤ σ * A) =>
+    rw [rpow_two (sqrt (_ + r ^ 2)), sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
+    rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
 
 #print trussDesignGP
 -- minimize 2 * A * sqrt (w ^ 2 + h ^ 2)

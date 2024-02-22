@@ -40,9 +40,11 @@ type `Equivalence p q`. -/
 def elabEquivalenceProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
   elabTransformationProof TransformationGoal.Equivalence lhs rhsName stx
 
+/-- Open an equivalence environment. -/
 syntax (name := equivalence)
   "equivalence" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
+/-- Open an equivalence environment and try to generate a computable backward map. -/
 syntax (name := equivalenceAndBwdMap)
   "equivalence'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 

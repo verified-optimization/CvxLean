@@ -8,17 +8,19 @@ use rug::{Float, float::Round, ops::DivAssignRound, ops::PowAssignRound};
 
 const F64_PREC: u32 = 53;
 
-pub fn zero() -> Float { Float::with_val(F64_PREC, 0.0) }
+pub fn make_float(f: f64) -> Float { Float::with_val(F64_PREC, f) }
 
-pub fn neg_zero() -> Float { Float::with_val(F64_PREC, -0.0) }
+pub fn zero() -> Float { make_float(0.0) }
 
-pub fn one() -> Float { Float::with_val(F64_PREC, 1.0) }
+pub fn neg_zero() -> Float { make_float(-0.0) }
 
-pub fn neg_one() -> Float { Float::with_val(F64_PREC, -1.0) }
+pub fn one() -> Float { make_float(1.0) }
 
-pub fn inf() -> Float { Float::with_val(F64_PREC, f64::INFINITY) }
+pub fn neg_one() -> Float { make_float(-1.0) }
 
-pub fn neg_inf() -> Float { Float::with_val(F64_PREC, f64::NEG_INFINITY) }
+pub fn inf() -> Float { make_float(f64::INFINITY) }
+
+pub fn neg_inf() -> Float { make_float(f64::NEG_INFINITY) }
 
 const NO_ERROR: ErrorInterval = ErrorInterval { lo: false, hi: false };
 
@@ -64,7 +66,7 @@ impl Domain {
     }
 
     pub fn make_singleton(f: f64) -> Domain {
-        let f_f = Float::with_val(F64_PREC, f);
+        let f_f = make_float(f);
         Domain::make_from_endpoints(
             f_f.clone(), f_f.clone(), false, false
         )
@@ -266,7 +268,7 @@ fn custom_string_to_float(s: String) -> Option<Float> {
         "-inf" => Some(neg_inf()),
         _ => {
             match s.parse::<f64>() {
-                Ok(f) => Some(Float::with_val(F64_PREC, f)),
+                Ok(f) => Some(make_float(f)),
                 _ => None
             }
         }
@@ -851,7 +853,7 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
                         let d = abs(d1);
                         let lo = d.lo_float();
                         let hi = d.hi_float();
-                        let c = &Float::with_val(F64_PREC, f);
+                        let c = &make_float(f);
                         let l = d.lo_open;
                         let r = d.hi_open;
                         let res = 

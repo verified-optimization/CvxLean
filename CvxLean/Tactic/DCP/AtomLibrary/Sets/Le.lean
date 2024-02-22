@@ -45,4 +45,29 @@ optimality by
   exact le.optimality _ _ _ _ (hx i) (hy i) (h i)
 vconditionElimination
 
+declare_atom Vec.le' [convex_set] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ :
+    ∀ i, x i ≤ y i :=
+vconditions
+implementationVars
+implementationObjective Real.Vec.posOrthCone (y - x : (Fin n) → ℝ)
+implementationConstraints
+solution
+solutionEqualsAtom by
+  unfold Real.Vec.posOrthCone
+  unfold Real.posOrthCone
+  rw [← iff_iff_eq]
+  constructor
+  · intros h i
+    rw [← le.solEqAtom]
+    unfold Real.posOrthCone
+    apply h
+  · intros hy i
+    simp [hy i]
+feasibility
+optimality by
+  intros x' y' hx hy h i
+  unfold Real.Vec.posOrthCone at h
+  exact le.optimality _ _ _ _ (hx i) (hy i) (h i)
+vconditionElimination
+
 end CvxLean

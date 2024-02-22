@@ -27,7 +27,7 @@ environment:
 Writing `reduction'` instead of `reduction` will also generate a backward solution map at the
 level of floats.
 
-It is essentially the same as `Command/Equivalence.lean`, except that the goal is to prove a
+It is essentially the same as `CvxLean/Command/Equivalence.lean`, except that the goal is to prove a
 reduction instead of an equivalence. We note that proving that two problems are equivalent is
 usually preferred.
 -/
@@ -45,9 +45,11 @@ type `Reduction p q`. -/
 def elabReductionProof (lhs : Expr) (rhsName : Name) (stx : Syntax) : TermElabM (Expr × Expr) :=
   elabTransformationProof TransformationGoal.Reduction lhs rhsName stx
 
+/-- Open a reduction environment. -/
 syntax (name := reduction)
   "reduction" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
+/-- Open a reduction environment and try to generate a computable backward map. -/
 syntax (name := reductionAndBwdMap)
   "reduction'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 

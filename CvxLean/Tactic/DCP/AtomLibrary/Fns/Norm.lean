@@ -3,6 +3,18 @@ import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+### TODO
+
+This is not defined in full generality. It can be made increasing or decreasing in each `xᵢ`
+depending on the sign of `xᵢ`. Only affine arguments are accepted for now.
+
+As a first step, we should define two cases for when `x ≥ 0` and `x ≤ 0`. The issue is that in the
+optimality condition we do not assume that `x'` satisfies any conditions. So, for example, in the
+nonnegative case, we cannot prove that `∑ i, (x' i) ^ 2 ≤ ∑ i, (x i) ^ 2` just from `x' ≤ x`. We
+would need to know that `0 ≤ x'`.
+-/
+
 namespace CvxLean
 
 open Real

@@ -6,33 +6,34 @@ section RealToFloat
 
 -- Simple tests.
 
-#realToFloat Real
+#real_to_float Real
 
-#realToFloat (8 : Real)
+#real_to_float (8 : Real)
 
-#realToFloat (0 : Real) + 1
+#real_to_float (0 : Real) + 1
 
-#realToFloat Real.exp 1
+#real_to_float Real.exp 1
 
-#realToFloat fun (p : Real × (Fin 2 → Real)) => Real.exp p.1 + p.2 1 ≤ 0 ∧ Real.exp p.1 + p.2 1 ≤ 0
+#real_to_float fun (p : Real × (Fin 2 → Real)) =>
+  Real.exp p.1 + p.2 1 ≤ 0 ∧ Real.exp p.1 + p.2 1 ≤ 0
 
-#realToFloat (1 : Real) = 3
+#real_to_float (1 : Real) = 3
 
-#realToFloat (2 • (1 : Matrix (Fin 1) (Fin 1) Real))
+#real_to_float (2 • (1 : Matrix (Fin 1) (Fin 1) Real))
 
 -- Convert whole minimization problem.
 
-#realToFloat @Minimization.mk Real Real (fun (x : Real) => x) (fun (x : Real) => x <= 0)
+#real_to_float @Minimization.mk Real Real (fun (x : Real) => x) (fun (x : Real) => x <= 0)
 
 -- Test optimization_param.
 
 @[optimization_param]
 noncomputable def A : ℝ := 1
 
-#realToFloat A
+#real_to_float A
 
 noncomputable def B : ℝ := 1
 
-#realToFloat B
+#real_to_float B
 
 end RealToFloat

@@ -5,6 +5,13 @@ import Mathlib.Tactic.Positivity
 import CvxLean.Tactic.Arith.NormNumVariants
 import CvxLean.Tactic.Arith.PositivityExt
 
+/-!
+# Arithmetic tactics
+
+This file defines the `positivity!` and `arith` tactics, which are slight extensions of the existing
+arithmetic tactics in mathlib (`positivity` and `linarith`).
+-/
+
 namespace Tactic
 
 open Lean Meta Elab Tactic Qq
@@ -14,6 +21,11 @@ elab (name := cases_and) "cases_and" : tactic => do
   let mvarId' ← mvarId.casesAnd
   replaceMainGoal [mvarId']
 
+/-- Positivity can only work with goals and hypotheses of the form `0 R x`, where `R ∈ {<, ≤, ≠}`.
+Our positivity extension is designed to admit hypotheses of the form `a R x` and `x R a` where
+`a ≠ 0`. For example, `1 ≤ x → 0 ≤ log x`. To be able to use `positivity`, we rewrite `1 ≤ x` into
+`0 ≤ x - 1`. This procedure does exactly that, changing goals and hypotheses to make them compatible
+with `positivity`. -/
 def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
   mvarId.withContext do
     -- Adjust hypotheses if needed.
@@ -60,7 +72,7 @@ def preparePositivity (mvarId : MVarId) : MetaM MVarId := do
               mvarId := g
               break
             else
-              throwError "prepare_positivity failed"
+              throwError "`prepare_positivity` failed."
         | none => continue
 
     return mvarId
@@ -72,8 +84,8 @@ elab (name := prepare_positivity) "prepare_positivity" : tactic => do
 
 open Mathlib.Meta.Positivity
 
-/-- Call `positivity` but if the expression has no free variables, we try to
-apply `norm_num` first. -/
+/-- Call `positivity` but if the expression has no free variables, we try to apply `norm_num`
+first. -/
 def positivityMaybeNormNum : TacticM Unit :=
   withMainContext do
     let g ← getMainGoal
@@ -84,19 +96,21 @@ def positivityMaybeNormNum : TacticM Unit :=
         `(tactic| (try { norm_num } <;> positivity))
       else
         `(tactic| positivity)
-    let [] ← evalTacticAt tac g | throwError "positivity_maybe_norm_num failed"
+    let [] ← evalTacticAt tac g | throwError "`positivity_maybe_norm_num` failed."
 
 elab (name := positivity) "positivity_maybe_norm_num" : tactic =>
   positivityMaybeNormNum
 
 end Tactic
 
+/-- Extension of `positivity` with some pre-processing and the option to call `norm_num`. -/
 syntax "positivity!" : tactic
 
 macro_rules
   | `(tactic| positivity!) =>
     `(tactic| intros; cases_and; prepare_positivity; positivity_maybe_norm_num)
 
+/-- Combination of tactics. We try `positivity!`, then `linarith`, then `norm_num`, then `simp`. -/
 syntax "arith" : tactic
 
 macro_rules
