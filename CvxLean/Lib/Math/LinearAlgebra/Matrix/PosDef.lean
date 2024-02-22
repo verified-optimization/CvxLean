@@ -124,4 +124,19 @@ lemma PosDef_inv_iff_PosDef [DecidableEq n] (M : Matrix n n ℝ) : M⁻¹.PosDef
   { intros hM
     exact hM.nonsingular_inv }
 
+lemma PosSemiDef.IsSymm {n} {A : Matrix (Fin n) (Fin n) ℝ} (hA : PosSemidef A) : IsSymm A := by
+  let h_A_IsHermitian := hA.1
+  rw [Matrix.isHermitian_iff_isSymmetric] at h_A_IsHermitian
+  simp [LinearMap.IsSymmetric, toEuclideanLin] at h_A_IsHermitian
+  apply IsSymm.ext
+  intros i j
+  have hAij := h_A_IsHermitian (fun k => if k = i then 1 else 0) (fun k => if k = j then 1 else 0)
+  have hi : (Finset.sum Finset.univ fun x => A j x * (Equiv.refl (WithLp 2 (Fin n → ℝ)))
+    (fun k => if k = i then 1 else 0) x) = A j i := by simp
+  have hj : (Finset.sum Finset.univ fun x => A i x * (Equiv.refl (WithLp 2 (Fin n → ℝ)))
+    (fun k => if k = j then 1 else 0) x) = A i j := by simp
+  simp [WithLp.equiv, mulVec, dotProduct] at hAij
+  erw [hi, hj] at hAij
+  rw [hAij]
+
 end Matrix
