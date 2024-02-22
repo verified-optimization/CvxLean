@@ -225,7 +225,7 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     let gCondition := gsAfterApply[0]!
     let (_, gCondition) ← gCondition.introN 2 [`x, `h]
     let gsFinal ← evalTacticAt
-      (← `(tactic| (simp [ChangeOfVariables.condition] at * <;> linarith))) gCondition
+      (← `(tactic| (simp [ChangeOfVariables.condition] at * <;> arith))) gCondition
     if gsFinal.length != 0 then
       trace[CvxLean.debug] "Could not prove {gsFinal}."
       throwError "Failed to solve change of variables condition."
