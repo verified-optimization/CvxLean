@@ -79,7 +79,7 @@ example : Solution <|
         cz : z = x + y
         cz' : z = x + y
         cz'' : z ≤ x + 4 := by
-  remove_constr cz' by { exact cz }
+  remove_constr cz' => { exact cz }
   rename_constrs [czz, czz2]
   sorry
 
@@ -120,6 +120,23 @@ equivalence eqv2/q1 :
   rw_constr c₂ =>
     ring_nf
     rfl
+
+def p :=
+  optimization (x y : ℝ)
+    maximize (2 * x : ℝ)
+    subject to
+      c₁ : 0 ≤ x
+      c₂ : 1 < y
+      c₃ : log (y - 1) ≤ 2 * sqrt x + 1
+      c₄ : 3 * x + 5 * y ≤ 10
+
+equivalence' eqv3/q3 : p := by
+  change_of_variables! (v) (y ↦ v + 1)
+  change_of_variables! (w) (v ↦ exp w)
+  remove_constr c₂ =>
+    field_simp; arith
+  rw_constr c₃ into (w ≤ 2 * sqrt x + 1) =>
+    field_simp
 
 end
 
