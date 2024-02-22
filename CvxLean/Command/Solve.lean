@@ -27,7 +27,8 @@ def getProblemName (stx : Syntax) : MetaM Name := do
   if ¬ idStx.getId.isStr then
     throwError "Invalid name for minimization problem: {idStx}."
 
-  return idStx.getId
+  let currNamespace ← getCurrNamespace
+  return currNamespace ++ idStx.getId
 
 /-- Call DCP and get the problem in conic form as well as `ψ`, the backward map from the
 equivalence. -/
