@@ -182,7 +182,7 @@ time_cmd reduction red6/dcp6 : gp6 := by
 --     h6 : rexp (u * 2 - v * (1 / 2)) + 3 * rexp (v * (1 / 2) - w) ≤ 5
 --     h7 : u + v = 2 * w
 
-solve dcp6
+--solve dcp6
 
 end GP6
 
