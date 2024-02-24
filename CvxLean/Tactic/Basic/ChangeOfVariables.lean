@@ -30,7 +30,7 @@ The resulting problem `q` looks as follows:
 optimization (u : ℝ)
   minimize exp u
   subject to
-    c : 0 < exp u := by
+    c : 0 < exp u
 ```
 We provide `change_of_variables!` as a convenient variant that also tries to remove trivial
 constraints. In this case, it would remove `0 < exp u` as it is always true.

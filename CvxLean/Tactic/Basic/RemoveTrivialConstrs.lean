@@ -1,15 +1,21 @@
 import CvxLean.Tactic.Basic.RemoveConstr
 import CvxLean.Tactic.Arith.Arith
 
+/-!
+# Tactic to remove trivial constraints
+
+This file defines the `remove_trivial_constrs`. It essentially uses `remove_constr` on every
+constraint and tries to establish the proof obligation using the `positivity!` tactic. This is
+useful for constraints of the form `0 < exp x`, for example.
+-/
+
 namespace CvxLean
-
-open Lean
-
 
 open Lean Meta Elab Term Tactic
 
 namespace Meta
 
+/-- Iteratively try to apply `remove_constr` on every constraint. Do nothing if it fails. -/
 def removeTrivialConstrsBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let lhs ← eqvExpr.toMinimizationExprLHS
   let constrNames ← withLambdaBody lhs.constraints fun _ constrsBody => do
@@ -34,7 +40,6 @@ namespace Tactic
 
 syntax (name := removeTrivialConstrs) "remove_trivial_constrs" : tactic
 
-/-- -/
 @[tactic removeTrivialConstrs]
 def evalRemoveTrivialConstrs : Tactic := fun stx => match stx with
   | `(tactic| remove_trivial_constrs) => do

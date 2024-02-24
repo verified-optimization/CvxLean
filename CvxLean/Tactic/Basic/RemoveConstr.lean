@@ -2,6 +2,33 @@ import CvxLean.Meta.Equivalence
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Meta.Util.Expr
 
+/-!
+# Tactic to remove constraints
+
+This file defines the `remove_constr` tactic. In some cases, a constraint may be trivially true or
+it might be implied by the other constraints.
+
+We illustrate it with an example of how to use it inside the `equivalence` command:
+```
+equivalence eqv/q :
+    optimization (x : ℝ)
+      minimize x
+      subject to
+        c₁ : 1 ≤ x
+        c₂ : 0 < x := by
+  remove_constr c₁ =>
+    linarith
+```
+The resulting problem `q` looks as follows:
+```
+optimization (u : ℝ)
+  minimize exp u
+  subject to
+    c₁ : 1 ≤ x
+```
+In this case, `c₂` follows from `c₁`, so it can be removed.
+-/
+
 namespace CvxLean
 
 open Lean Expr Meta Elab Term Tactic
@@ -36,7 +63,10 @@ def composeAndIntro (l : List Expr) : MetaM Expr :=
       let esTy ← inferType es
       return mkApp4 (mkConst ``And.intro) eTy esTy e es
 
-/-- -/
+/-- The main logic to remove constraints is found here. Essentially, if we want to remove
+constraint `cᵢ`, we ask users to provide a proof that `c₁ ∧ ⋯ ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ⋯ ∧ cₙ → cᵢ`. From
+this, we build a proof that `c₁ ∧ ... ∧ cᵢ₋₁ ∧ cᵢ₊₁ ∧ ... ∧ cₙ ↔ c₁ ∧ ... ∧ cₙ`. Then, the
+equivalence can be build by using `Minimization.Equivalence.rewrite_constraints`. -/
 def removeConstrBuilder (id : Name) (proof : Syntax) : EquivalenceBuilder Unit := fun eqvExpr g =>
   g.withContext do
     let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
@@ -106,7 +136,6 @@ end Meta
 
 namespace Tactic
 
-/-- -/
 syntax (name := removeConstr) "remove_constr" ident " => " tacticSeq : tactic
 
 @[tactic removeConstr]
