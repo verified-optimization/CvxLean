@@ -276,29 +276,29 @@ pub fn get_steps_from_string_maybe_node_limit(
 
         let curvature = best_curvature;
         let num_vars = best_num_vars;
+
         // Note: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
         let term_size = best_term_size + 3 * (domains_len as u32); 
-        if debug && curvature <= Curvature::Convex {
-            let total_nodes = runner.egraph.total_number_of_nodes();
-            println!("Succeeded with node limit {:?} (using {:?} nodes).", node_limit, total_nodes);
-            println!("Best curvature: {:?}.", curvature);
-            println!("Best number of variables: {:?}.", num_vars);
-            println!("Best term size: {:?}.", term_size);
-            println!("Best term: {:?}.", best.to_string());
-        }
         
-        // If term is not DCP, try with the next node limit.
         if curvature <= Curvature::Convex {
             if debug {
+                let total_nodes = runner.egraph.total_number_of_nodes();
+                println!("Succeeded with node limit {:?} (using {:?} nodes).", node_limit, total_nodes);
+                println!("Best curvature: {:?}.", curvature);
+                println!("Best number of variables: {:?}.", num_vars);
+                println!("Best term size: {:?}.", term_size);
+                println!("Best term: {:?}.", best.to_string());
+
                 let build_time = starting_time.elapsed().as_millis();
                 println!("E-graph building time: {:.2?} ms.", build_time);
             }
         } else {
+            // If term is not DCP, try with the next node limit.
             continue;
         }
         let after_build_time = Instant::now();
 
-        // If term is DCP, extract the steps.
+        // If term is DCP, find the explanation.
         let mut egraph = runner.egraph;
         let mut explanation : Explanation<Optimization> = 
             egraph.explain_equivalence(&expr, &best);
