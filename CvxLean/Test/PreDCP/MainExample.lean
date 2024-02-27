@@ -13,11 +13,13 @@ def p :=
   optimization (x : ℝ)
     minimize (x)
     subject to
-      h1 : 0.001 ≤ x
+      h1 : 1 / 1000 ≤ x
       h2 : 1 / (sqrt x) ≤ (exp x)
 
 time_cmd equivalence eq/q : p := by
   pre_dcp
+
+#check congrArg
 
 #print q
 -- optimization (x : ℝ)
