@@ -55,8 +55,8 @@ private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin 
 equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) : @vehSpeedSched n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
-  replace h_d_pos : ∀ i, 0 < d i := fun i => h_d_pos i
-  replace h_smin_pos : ∀ i, 0 < smin i := fun i => h_smin_pos i
+  replace h_d_pos : ∀ i, 0 < d i := h_d_pos
+  replace h_smin_pos : ∀ i, 0 < smin i := h_smin_pos
   haveI : Fact (0 < n) := ⟨h_n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
