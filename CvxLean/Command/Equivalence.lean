@@ -23,7 +23,7 @@ environment:
 * `q := r`,
 * `eqv : p ≡ q`.
 
-Writing `equivalence'` instead of `equivalence` will also generate a backward solution map at the
+Writing `equivalence*` instead of `equivalence` will also generate a backward solution map at the
 level of floats.
 -/
 
@@ -46,7 +46,7 @@ syntax (name := equivalence)
 
 /-- Open an equivalence environment and try to generate a computable backward map. -/
 syntax (name := equivalenceAndBwdMap)
-  "equivalence'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
+  "equivalence*" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
 /-- Open an equivalence environment with a given left-hand-side problem (`lhsStx`) and perhaps some
 parameters (`xs`). From this, an equivalence goal is set to a target problem which is represented by
@@ -139,7 +139,7 @@ def evalEquivalence : CommandElab := fun stx => match stx with
 /-- Same as `equivalence` but also adds the backward map to the environment. -/
 @[command_elab «equivalenceAndBwdMap»]
 def evalEquivalenceAndBwdMap : CommandElab := fun stx => match stx with
-  | `(equivalence' $eqvId / $probId $declSig := $proofStx) => do
+  | `(equivalence* $eqvId / $probId $declSig := $proofStx) => do
       liftTermElabM do
         let (binders, lhsStx) := expandDeclSig declSig.raw
         elabBindersEx binders.getArgs fun xs =>

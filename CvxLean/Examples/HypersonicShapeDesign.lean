@@ -27,7 +27,7 @@ def hypersonicShapeDesign :=
       h₂ : Δx ≤ 1
       h₃ : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 
-equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b) (hb₂ : b < 1) :
+equivalence* eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b) (hb₂ : b < 1) :
     hypersonicShapeDesign a b := by
   pre_dcp
 
@@ -84,7 +84,7 @@ def ldRatioₚ := 1 / (Float.sqrt ((1 / wₚ_opt ^ 2) - 1))
 -- While the above is good enough, we simplify the problem further by performing a change of
 -- variables and simplifying appropriately.
 
-equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b)
+equivalence* eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b)
     (hb₂ : b < 1) : hypersonicShapeDesignConvex a b ha hb₁ hb₂ := by
   change_of_variables (z) (Δx ↦ sqrt z)
   conv_constr h₁ =>

@@ -221,14 +221,14 @@ def map_objFun {g : R → R} (h : ∀ {r s}, cs r → cs s → (g (f r) ≤ g (f
       ⟨h_feas_x, fun y h_feas_y => (h h_feas_x h_feas_y).mp (h_opt_x y h_feas_y)⟩ }
 
 @[equiv]
-noncomputable def map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
+lemma map_objFun_log {f : D → ℝ} (h : ∀ x, cs x → f x > 0) :
     ⟨f, cs⟩ ≡ ⟨fun x => (Real.log (f x)), cs⟩ := by
   apply map_objFun
   intros r s h_feas_r h_feas_s
   exact Real.log_le_log_iff (h r h_feas_r) (h s h_feas_s)
 
 @[equiv]
-noncomputable def map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
+lemma map_objFun_sq {f : D → ℝ} (h : ∀ x, cs x → f x ≥ 0) :
     ⟨f, cs⟩ ≡ ⟨fun x => (f x) ^ (2 : ℝ), cs⟩ := by
   apply map_objFun (g := fun x => x ^ (2 : ℝ))
   intros r s h_feas_r h_feas_s

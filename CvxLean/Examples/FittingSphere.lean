@@ -91,7 +91,7 @@ instance : ChangeOfVariables fun ((c, t) : (Fin n → ℝ) × ℝ) => (c, sqrt (
     condition := fun (_, r) => 0 ≤ r,
     property := fun ⟨c, r⟩ h => by simp [sqrt_sq h] }
 
-equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
+equivalence* eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
   -- Change of variables.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
@@ -106,7 +106,7 @@ equivalence' eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
     dsimp at h₁ ⊢; simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
     rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp h₁))]
     simp [mulVec, inner, dotProduct]
-  
+
 #print fittingSphereT
 -- optimization (c : Fin n → ℝ) (t : ℝ)
 --   minimize Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2)

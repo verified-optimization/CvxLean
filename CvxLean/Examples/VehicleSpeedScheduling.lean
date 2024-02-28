@@ -52,7 +52,7 @@ private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin 
   . rfl
   . linarith [hn.out]
 
-equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
+equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) : @vehSpeedSched n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
   replace h_d_pos : ∀ i, 0 < d i := fun i => h_d_pos i
@@ -98,7 +98,7 @@ equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
 -- However, if we fix `F`, we can use other atoms. For example, if `F` is quadratic, the problem can
 -- be reduced. Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
-equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
+equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) :
     vehSpeedSchedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)

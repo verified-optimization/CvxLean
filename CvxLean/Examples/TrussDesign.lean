@@ -56,7 +56,7 @@ instance : ChangeOfVariables
       simp; rw [mul_comm _ (R ^ 2 - r ^ 2), ← mul_div, div_self (by positivity), mul_one]
       ring_nf; exact sqrt_sq hR }
 
-equivalence' eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
+equivalence* eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) :
     trussDesign hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Apply key change of variables.
   equivalence_step =>
@@ -114,7 +114,7 @@ instance : ChangeOfVariables
     property := fun (h', w', r', A') ⟨hh', hw', hr', hA'⟩ => by
       simp [exp_log hh', exp_log hw', exp_log hr', exp_log hA'] }
 
-equivalence' eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
+equivalence* eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
     (hmin_le_hmax : hmin ≤ hmax) (wmin wmax : ℝ) (wmin_pos : 0 < wmin) (wmin_le_wmax : wmin ≤ wmax)
     (Rmax σ F₁ F₂ : ℝ) : trussDesignGP hmin hmax wmin wmax Rmax σ F₁ F₂ := by
   -- Change variables.
