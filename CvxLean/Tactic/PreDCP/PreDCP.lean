@@ -15,6 +15,12 @@ import CvxLean.Tactic.Basic.RewriteOpt
 
 This file defines the tactic `pre_dcp`, which calls `egg` to find a sequence of rewrites that
 turns an optimization problem into DCP form.
+
+### TODO
+
+* Currently, the tactic immediately fails if it cannot prove some side condition, we could instead
+  leave them as goals for the user to prove manually. Assuming that the interval arithmetic used on
+  the `egg` side is correct, they should all be provable.
 -/
 
 namespace CvxLean
