@@ -1,4 +1,5 @@
 import CvxLean.Tactic.DCP.AtomCmd
+
 namespace CvxLean
 
 declare_atom Nat.smul [affine] (n : ℕ)& (x : ℝ)+ :

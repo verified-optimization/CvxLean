@@ -1,4 +1,5 @@
 import CvxLean.Tactic.DCP.AtomCmd
+
 namespace CvxLean
 
 open Real

@@ -1,4 +1,5 @@
 import CvxLean.Tactic.DCP.AtomCmd
+
 namespace CvxLean
 
 declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y :=

@@ -1,4 +1,5 @@
-import CvxLean.Tactic.DCP.AtomCmdimport CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
+import CvxLean.Tactic.DCP.AtomCmd
+import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sum
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.PosSemidef
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.FromBlocks

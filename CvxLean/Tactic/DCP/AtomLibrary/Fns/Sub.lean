@@ -1,4 +1,5 @@
-import CvxLean.Tactic.DCP.AtomCmdimport CvxLean.Lib.Math.Data.Matrix
+import CvxLean.Tactic.DCP.AtomCmd
+import CvxLean.Lib.Math.Data.Matrix
 
 namespace CvxLean
 
