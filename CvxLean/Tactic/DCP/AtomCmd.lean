@@ -15,41 +15,6 @@ namespace CvxLean
 
 open Lean Expr Meta Elab Command
 
-/-- Given expressions `e₁, ..., eₙ` return `(And.intro e₁ ⋯ (And.intro eₙ₋₁ eₙ) ⋯)`, i.e., `∧` them,
-with associativity to the right. -/
-def mkAndIntro (xs : Array Expr) : MetaM Expr := do
-  let mut res := xs[xs.size - 1]!
-  for i in [:xs.size - 1] do
-    res ← mkAppM ``And.intro #[xs[xs.size - 2 - i]!, res]
-  return res
-
-/-- -/
-def mkExistsFVars (xs : Array Expr) (e : Expr) : MetaM Expr := do
-  let mut res := e
-  for i in [:xs.size] do
-    let x := xs[xs.size - i - 1]!
-    res ← mkAppM ``Exists #[← mkLambdaFVars #[x] res]
-  return res
-
-/-- -/
-def mkExistsIntro (xs : Array Expr) (e : Expr) : MetaM Expr := do
-  let mut res := e
-  for i in [:xs.size] do
-    let x := xs[xs.size-i-1]!
-    res ← mkAppOptM ``Exists.intro
-      #[none, some <| ← mkLambdaFVars #[x] (← inferType res), some x, some res]
-  return res
-
-/-- -/
-def mkLetFVarsWith (e : Expr) (xs : Array Expr) (ts : Array Expr) : MetaM Expr := do
-  if xs.size != ts.size then
-    throwError "Expected same length: {xs} and {ts}"
-  let mut e := e.abstract xs
-  for i in [:xs.size] do
-    let n := (← FVarId.getDecl xs[xs.size-1-i]!.fvarId!).userName
-    e := mkLet n (← inferType xs[xs.size-1-i]!) ts[xs.size-1-i]! e
-  return e
-
 -- TODO: This does not respect namespaces.
 /-- Introduce new names for the proofs in the atom to speed up proof building later. -/
 def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do

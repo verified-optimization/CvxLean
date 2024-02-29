@@ -5,58 +5,96 @@ import CvxLean.Lib.Math.Data.Array
 Helper functions to create and manipulate Lean expressions.
 -/
 
-open Lean
+namespace Lean
+
+open Lean Meta
+
+namespace Expr
+
+/-- Given expressions `e₁, ..., eₙ` return `(And.intro e₁ ⋯ (And.intro eₙ₋₁ eₙ) ⋯)`, i.e., `∧` them,
+with associativity to the right. -/
+def mkAndIntro (xs : Array Expr) : MetaM Expr := do
+  let mut res := xs[xs.size - 1]!
+  for i in [:xs.size - 1] do
+    res ← mkAppM ``And.intro #[xs[xs.size - 2 - i]!, res]
+  return res
+
+/-- Make existential type. -/
+def mkExistsFVars (xs : Array Expr) (e : Expr) : MetaM Expr := do
+  let mut res := e
+  for i in [:xs.size] do
+    let x := xs[xs.size - i - 1]!
+    res ← mkAppM ``Exists #[← mkLambdaFVars #[x] res]
+  return res
+
+/-- Make existential term. -/
+def mkExistsIntro (xs : Array Expr) (e : Expr) : MetaM Expr := do
+  let mut res := e
+  for i in [:xs.size] do
+    let x := xs[xs.size - i - 1]!
+    res ← mkAppOptM ``Exists.intro
+      #[none, some <| ← mkLambdaFVars #[x] (← inferType res), some x, some res]
+  return res
+
+/-- Make let bindings from free variables `xs`. -/
+def mkLetFVarsWith (e : Expr) (xs : Array Expr) (ts : Array Expr) : MetaM Expr := do
+  if xs.size != ts.size then
+    throwError "Expected same length: {xs} and {ts}"
+  let mut e := e.abstract xs
+  for i in [:xs.size] do
+    let n := (← FVarId.getDecl xs[xs.size - 1 - i]!.fvarId!).userName
+    e := mkLet n (← inferType xs[xs.size - 1 - i]!) ts[xs.size - 1 - i]! e
+  return e
 
 /-- Check if `e` is constant by checking if it contains any free variable. -/
-def Lean.Expr.isConstant (e : Expr) : Bool := (Lean.collectFVars {} e).fvarSet.isEmpty
+def isConstant (e : Expr) : Bool := (Lean.collectFVars {} e).fvarSet.isEmpty
 
 /-- Check if `e` is constant by checking if it contains any free variable from `vars`. -/
-def Lean.Expr.isRelativelyConstant (e : Expr) (vars : Array FVarId) : Bool := Id.run do
+def isRelativelyConstant (e : Expr) (vars : Array FVarId) : Bool := Id.run do
   let fvarSet := (Lean.collectFVars {} e).fvarSet
   for v in vars do
     if fvarSet.contains v then return false
   return true
 
 /-- Remove the metadata from an expression. -/
-def Lean.Expr.removeMData (e : Expr) : CoreM Expr := do
+def removeMData (e : Expr) : CoreM Expr := do
   let post (e : Expr) : CoreM TransformStep := do
     return TransformStep.done e.consumeMData
   Core.transform e (post := post)
 
-/-- Combination of `elabTermAndSynthesize` and `ensureHasType`. -/
-def Lean.Elab.Term.elabTermAndSynthesizeEnsuringType (stx : Syntax) (expectedType? : Option Expr)
-    (errorMsgHeader? : Option String := none) : TermElabM Expr := do
-  let e ← elabTermAndSynthesize stx expectedType?
-  withRef stx <| ensureHasType expectedType? e errorMsgHeader?
-
-def Lean.Expr.mkAppBeta (e : Expr) (arg : Expr) :=
+/-- Basically `β`-reduction. -/
+def mkAppBeta (e : Expr) (arg : Expr) :=
   e.bindingBody!.instantiate1 arg
 
-def Lean.Expr.mkAppNBeta (e : Expr) (args : Array Expr) : Expr := Id.run do
+/-- Same as `mkAppBeta` but with several arguments. -/
+def mkAppNBeta (e : Expr) (args : Array Expr) : Expr := Id.run do
   let mut e := e
-  for _arg in args do
+  for _ in args do
     e := e.bindingBody!
   e.instantiateRev args
 
-def Lean.Expr.convertLambdasToLets (e : Expr) (args : Array Expr) : Expr := Id.run do
+/-- Given a lambda term `e := λx₁. ... λxₙ. b` and values for every variable `xᵢ`, turn `e` into
+`let x₁ := v₁; ... let xₙ := vₙ; b`. -/
+def convertLambdasToLets (e : Expr) (args : Array Expr) : Expr := Id.run do
   let mut e := e
   let mut names := #[]
   let mut tys := #[]
-  for _arg in args do
+  for _ in args do
     tys := tys.push e.bindingDomain!
     names := names.push e.bindingName!
     e := e.bindingBody!
   for i in [:args.size] do
-    e := mkLet names[args.size-1-i]! tys[args.size-1-i]! args[args.size-1-i]! e
+    e := mkLet names[args.size - 1 - i]! tys[args.size - 1 - i]! args[args.size - 1 - i]! e
   return e
 
-def Lean.Expr.size : Expr → Nat
-  | bvar _        => 1
-  | fvar _        => 1
-  | mvar _        => 1
-  | sort _        => 1
-  | const _ _     => 1
-  | app a b       => size a + size b
+/-- Size of expressions, which can be a useful heuristic. -/
+def size : Expr → Nat
+  | bvar _          => 1
+  | fvar _          => 1
+  | mvar _          => 1
+  | sort _          => 1
+  | const _ _       => 1
+  | app a b         => size a + size b
   | lam _ _ a _     => size a + 1
   | forallE _ _ a _ => size a + 1
   | letE _ _ a b _  => size a + size b + 1
@@ -66,27 +104,39 @@ def Lean.Expr.size : Expr → Nat
 
 open Meta
 
-def Lean.Expr.mkProd (as : Array Expr) : MetaM Expr :=
+/-- Make a product of expressions. -/
+def mkProd (as : Array Expr) : MetaM Expr :=
   if as.size == 0 then
     throwError "Empty list."
   else if as.size == 1 then
     return as[0]!
   else
     Array.foldrM
-      (fun e1 e2 => Lean.Meta.mkAppM ``Prod.mk #[e1, e2])
-      as[as.size - 1]!
-      (as.take (as.size - 1))
+      (fun e1 e2 => Lean.Meta.mkAppM ``Prod.mk #[e1, e2]) as[as.size - 1]! (as.take (as.size - 1))
 
-private def Lean.Expr.mkArrayAux (ty : Expr) (as : List Expr) :
+private def mkArrayAux (ty : Expr) (as : List Expr) :
     MetaM Expr := do
   match as with
   | []    => return mkAppN (mkConst ``Array.empty [levelZero]) #[ty]
   | e::es =>
-      let r ← Lean.Expr.mkArrayAux ty es
+      let r ← mkArrayAux ty es
       mkAppM ``Array.push #[r, e]
 
-def Lean.Expr.mkArray (ty : Expr) (as : Array Expr) : MetaM Expr :=
-  Lean.Expr.mkArrayAux ty as.data.reverse
+/-- Make expression array of given type, from array of expressions. -/
+def mkArray (ty : Expr) (as : Array Expr) : MetaM Expr :=
+  mkArrayAux ty as.data.reverse
+
+end Expr
+
+namespace Elab.Term
+
+/-- Combination of `elabTermAndSynthesize` and `ensureHasType`. -/
+def elabTermAndSynthesizeEnsuringType (stx : Syntax) (expectedType? : Option Expr)
+    (errorMsgHeader? : Option String := none) : TermElabM Expr := do
+  let e ← elabTermAndSynthesize stx expectedType?
+  withRef stx <| ensureHasType expectedType? e errorMsgHeader?
+
+end Elab.Term
 
 /-- Wrapper of `Lean.addAndCompile` for definitions with some default values. -/
 def Lean.simpleAddAndCompileDefn (n : Name) (e : Expr) : MetaM Unit := do
@@ -101,3 +151,5 @@ def Lean.simpleAddDefn (n : Name) (e : Expr) : MetaM Unit := do
     Declaration.defnDecl <|
       mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe) []
+
+end Lean
