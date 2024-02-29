@@ -4,8 +4,9 @@ import CvxLean.Meta.TacticBuilder
 /-!
 # Tactic to rename constraints
 
-This file defines the `rename_constrs` tactic. It takes a list of names, e.g., `[c₁, c₂, c₃]`. The
-list must have the same length as the number of constraints in the current problem.
+This file defines the `rename_constrs` tactic. It takes a list of names, e.g., `[c₁, c₂, c₃]`. It
+will replace the names of the first `n` constraints in the problem, where `n` is the length of the
+input list.
 
 We illustrate it with an example of how to use it inside the `equivalence` command:
 ```
@@ -38,8 +39,8 @@ def replaceConstrName (name : Name) (e : Expr) : MetaM Expr := do
   let (_, e) ← decomposeLabel e
   return mkLabel name e
 
-/-- Rename the constraints using `names`. The `names` Array can be shorter then
-  the number of constraints; then only the first few constraints are renamed. -/
+/-- Rename the constraints using `names`. The `names` array can be shorter then the number of
+constraints; then only the first few constraints are renamed. -/
 def renameConstrsBuilder (names : Array Name) : EquivalenceBuilder Unit := fun eqvExpr g => do
   let lhsMinExpr ← eqvExpr.toMinimizationExprLHS
 
