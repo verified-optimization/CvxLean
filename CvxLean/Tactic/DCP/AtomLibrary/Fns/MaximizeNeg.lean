@@ -1,5 +1,4 @@
-import CvxLean.Tactic.DCP.Atoms
-
+import CvxLean.Tactic.DCP.AtomCmd
 namespace CvxLean
 
 declare_atom maximizeNeg [affine] (x : ℝ)- : maximizeNeg x :=

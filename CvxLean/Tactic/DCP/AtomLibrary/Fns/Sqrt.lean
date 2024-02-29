@@ -1,5 +1,4 @@
-import CvxLean.Tactic.DCP.Atoms
-import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
+import CvxLean.Tactic.DCP.AtomCmdimport CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
 
 namespace CvxLean

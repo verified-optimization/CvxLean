@@ -1,5 +1,6 @@
 import CvxLean.Syntax.OptimizationParam
 import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Util.Error
 import CvxLean.Tactic.DCP.DCP
 
 namespace CvxLean
@@ -119,7 +120,7 @@ def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
   -- If `mkUncheckedTree` gives any `none` then we throw an error.
   let tree ← tree.mapM (fun o => match o with
     | some (n, t) => return (n, t)
-    | none => throwError "`pre_dcp` error: could not create unchecked DCP tree.")
+    | none => throwPreDCPError "could not create unchecked DCP tree.")
   return tree
 
 end UncheckedDCP

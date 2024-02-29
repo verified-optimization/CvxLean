@@ -1,5 +1,4 @@
-import CvxLean.Tactic.DCP.Atoms
-import CvxLean.Lib.Cones.All
+import CvxLean.Tactic.DCP.AtomCmdimport CvxLean.Lib.Cones.All
 import CvxLean.Syntax.Minimization
 
 namespace CvxLean
