@@ -11,20 +11,20 @@ it might be implied by the other constraints.
 We illustrate it with an example of how to use it inside the `equivalence` command:
 ```
 equivalence eqv/q :
-    optimization (x : ℝ)
-      minimize x
+    optimization (u : ℝ)
+      minimize exp u
       subject to
-        c₁ : 1 ≤ x
-        c₂ : 0 < x := by
+        c₁ : 1 ≤ exp u
+        c₂ : 0 < exp u := by
   remove_constr c₁ =>
-    linarith
+    positivity
 ```
 The resulting problem `q` looks as follows:
 ```
 optimization (u : ℝ)
   minimize exp u
   subject to
-    c₁ : 1 ≤ x
+    c₁ : 1 ≤ exp u
 ```
 In this case, `c₂` follows from `c₁`, so it can be removed.
 -/
