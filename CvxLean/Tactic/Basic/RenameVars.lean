@@ -59,16 +59,16 @@ def renameVarsBuilder (names : Array Name) : EquivalenceBuilder Unit := fun eqvE
       objFun := newObjFun,
       constraints := newConstrs }
   if !(← isDefEq eqvExpr.rhs rhsMinExpr.toExpr) then
-    throwError "`rename_vars` error: Failed to unify the goal."
+    throwRenameVarsError "failed to unify the goal."
 
   -- Close goal by reflexivity.
   if let _ :: _ ← evalTacticAt (← `(tactic| equivalence_rfl)) g then
-    throwError "`rename_vars` error: Failed to close the goal."
+    throwRenameVarsError "dailed to close the goal."
 where
   manipulateVars : List (Name × Expr) → List Name → MetaM (List (Name × Expr))
     | (_, ty) :: vars, newName :: newNames =>
         return (newName, ty) :: (← manipulateVars vars newNames)
-    | [], _ :: _ => throwError "Too many variable names given"
+    | [], _ :: _ => throwRenameVarsError "too many variable names given"
     | vars, [] => return vars
 
 end Meta
