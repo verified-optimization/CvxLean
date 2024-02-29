@@ -8,7 +8,12 @@ import CvxLean.Tactic.DCP.DCP
 /-!
 # Atom library (command)
 
+TODO
 
+### TODO
+
+* Make `vconds` available in `impConstrs` and `impObj`, in the same way that `bconds` are in
+  `elabImpConstrs`. This needs to be synchronised with the DCP procedure.
 -/
 
 namespace CvxLean
