@@ -24,7 +24,7 @@ environment:
 * `q := r`,
 * `red : p ≼ q`.
 
-Writing `reduction'` instead of `reduction` will also generate a backward solution map at the
+Writing `reduction*` instead of `reduction` will also generate a backward solution map at the
 level of floats.
 
 It is essentially the same as `CvxLean/Command/Equivalence.lean`, except that the goal is to prove a
@@ -51,7 +51,7 @@ syntax (name := reduction)
 
 /-- Open a reduction environment and try to generate a computable backward map. -/
 syntax (name := reductionAndBwdMap)
-  "reduction'" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
+  "reduction*" ident "/" ident declSig ":=" Lean.Parser.Term.byTactic : command
 
 /-- Open a reduction environment with a given left-hand-side problem (`lhsStx`) and perhaps some
 parameters (`xs`). From this, a reduction goal is set to a target problem which is represented by a
@@ -150,7 +150,7 @@ def evalReduction : CommandElab := fun stx => match stx with
 /-- Same as `reduction` but also adds the backward map to the environment. -/
 @[command_elab «reductionAndBwdMap»]
 def evalReductionAndBwdMap : CommandElab := fun stx => match stx with
-  | `(reduction' $eqvId / $probId $declSig := $proofStx) => do
+  | `(reduction* $eqvId / $probId $declSig := $proofStx) => do
       liftTermElabM do
         let (binders, lhsStx) := expandDeclSig declSig.raw
         elabBindersEx binders.getArgs fun xs =>

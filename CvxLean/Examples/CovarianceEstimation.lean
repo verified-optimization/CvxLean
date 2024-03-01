@@ -17,7 +17,7 @@ noncomputable def covEstimation (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fi
       c_pos_def : R.PosDef
       c_sparse : R⁻¹.abs.sum ≤ α
 
-reduction' red/covEstimationConvex (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n → ℝ) :
+reduction* red/covEstimationConvex (n : ℕ) (N : ℕ) (α : ℝ) (y : Fin N → Fin n → ℝ) :
   covEstimation n N α y := by
   -- Change objective function.
   reduction_step =>
