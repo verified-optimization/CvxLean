@@ -142,26 +142,23 @@ equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
 -- Now, let's solve a concrete instance of the problem:
 -- https://github.com/cvxgrp/cvxbook_additional_exercises/blob/main/python/veh_speed_sched_data.py
 
-set_option maxRecDepth 1000000
-set_option maxHeartbeats 1000000
-
-@[optimization_param]
+@[optimization_param, reducible]
 def nₚ : ℕ := 10
 
 lemma nₚ_pos : 0 < nₚ := by unfold nₚ; norm_num
 
-@[optimization_param]
+@[optimization_param, reducible]
 def dₚ : Fin nₚ → ℝ :=
   ![1.9501, 1.2311, 1.6068, 1.4860, 1.8913, 1.7621, 1.4565, 1.0185, 1.8214, 1.4447]
 
 lemma dₚ_pos : StrongLT 0 dₚ := by
   intro i; fin_cases i <;> (simp [dₚ]; norm_num)
 
-@[optimization_param]
+@[optimization_param, reducible]
 def τminₚ : Fin nₚ → ℝ :=
   ![1.0809, 2.7265, 3.5118, 5.3038, 5.4516, 7.1648, 9.2674, 12.1543, 14.4058, 16.6258]
 
-@[optimization_param]
+@[optimization_param, reducible]
 def τmaxₚ : Fin nₚ → ℝ :=
   ![4.6528, 6.5147, 7.5178, 9.7478, 9.0641, 10.3891, 13.1540, 16.0878, 17.4352, 20.9539]
 
@@ -169,7 +166,7 @@ def τmaxₚ : Fin nₚ → ℝ :=
 def sminₚ : Fin nₚ → ℝ :=
   ![0.7828, 0.6235, 0.7155, 0.5340, 0.6329, 0.4259, 0.7798, 0.9604, 0.7298, 0.8405]
 
-@[optimization_param]
+@[optimization_param, reducible]
 def smaxₚ : Fin nₚ → ℝ :=
   ![1.9624, 1.6036, 1.6439, 1.5641, 1.7194, 1.9090, 1.3193, 1.3366, 1.9470, 2.8803]
 
