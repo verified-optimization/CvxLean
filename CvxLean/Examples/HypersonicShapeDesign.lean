@@ -27,7 +27,7 @@ def hypersonicShapeDesign :=
       h₂ : Δx ≤ 1
       h₃ : a * (1 / Δx) - (1 - b) * sqrt (1 - Δx ^ 2) ≤ 0
 
-equivalence' eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b) (hb₂ : b < 1) :
+equivalence* eqv₁/hypersonicShapeDesignConvex (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b) (hb₂ : b < 1) :
     hypersonicShapeDesign a b := by
   pre_dcp
 
@@ -61,7 +61,7 @@ lemma one_sub_bₚ_nonneg : 0 ≤ 1 - bₚ := by
 
 time_cmd solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
-#print hypersonicShapeDesignConvex.reduced
+#print hypersonicShapeDesignConvex.conicForm
 
 -- Final width of wedge.
 def wₚ_opt := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
@@ -84,7 +84,7 @@ def ldRatioₚ := 1 / (Float.sqrt ((1 / wₚ_opt ^ 2) - 1))
 -- While the above is good enough, we simplify the problem further by performing a change of
 -- variables and simplifying appropriately.
 
-equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b)
+equivalence* eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb₁ : 0 ≤ b)
     (hb₂ : b < 1) : hypersonicShapeDesignConvex a b ha hb₁ hb₂ := by
   change_of_variables (z) (Δx ↦ sqrt z)
   conv_constr h₁ =>
@@ -116,7 +116,7 @@ equivalence' eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb�
 
 time_cmd solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
-#print hypersonicShapeDesignSimpler.reduced
+#print hypersonicShapeDesignSimpler.conicForm
 
 -- Final width of wedge.
 def wₚ'_opt :=

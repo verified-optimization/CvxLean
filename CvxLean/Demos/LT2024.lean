@@ -45,7 +45,7 @@ equivalence eqv₂/q₂ : p₂ := by
 
 solve q₂
 
-#print q₂.reduced
+#print q₂.conicForm
 
 #eval q₂.status
 #eval q₂.solution
@@ -73,7 +73,7 @@ def p₃ (Awall Aflr α β γ δ : ℝ) :=
 
 set_option trace.Meta.debug true
 
-equivalence' eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
+equivalence* eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
   change_of_variables! (h') (h ↦ exp h')
   change_of_variables! (w') (w ↦ exp w')
   change_of_variables! (d') (d ↦ exp d')
@@ -81,7 +81,7 @@ equivalence' eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
 
 solve q₃
 
-#print q₃.reduced
+#print q₃.conicForm
 
 #eval q₃.status
 #eval q₃.solution

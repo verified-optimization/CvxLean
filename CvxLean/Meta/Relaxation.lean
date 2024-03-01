@@ -59,6 +59,9 @@ open Parser Elab Tactic
 elab "relaxation_step" _arr:darrow tac:tacticSeqIndentGt : tactic => do
   evalTactic <| ← `(tactic| relaxation_trans)
   evalTacticSeq1Indented tac.raw
+  if (← getGoals).length > 1 then
+    evalTactic <| ← `(tactic| try { relaxation_rfl })
+  (← getMainGoal).setTag Name.anonymous
 
 end Meta
 

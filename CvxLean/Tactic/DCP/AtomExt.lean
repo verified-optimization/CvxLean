@@ -1,5 +1,14 @@
 import CvxLean.Tactic.DCP.DiscrTree
 
+/-!
+# Atom library (extension)
+
+This file defines the `GraphAtomData` type, which is what is stored when declaring an atom. This
+includes defining `Curvature` and `ArgKind`, and the composition rule using them.
+
+The enviromnet extesion is also defined here.
+-/
+
 namespace CvxLean
 
 open Lean Lean.Meta
@@ -9,8 +18,7 @@ inductive Curvature where
   | Constant | Affine | Concave | Convex | AffineSet | ConvexSet
 deriving BEq, Inhabited
 
-/-- Arguments of an atom are increasing (+), decreasing (-), constant (&) or
-neither (?). -/
+/-- Arguments of an atom are increasing (+), decreasing (-), constant (&) or neither (?). -/
 inductive ArgKind where
   | Increasing | Decreasing | Neither | Constant
 deriving BEq, Inhabited
@@ -22,7 +30,10 @@ def curvatureInArg : Curvature → ArgKind → Curvature
   | Curvature.Concave, ArgKind.Decreasing => Curvature.Convex
   | Curvature.Convex, ArgKind.Increasing => Curvature.Convex
   | Curvature.Convex, ArgKind.Decreasing => Curvature.Concave
-  -- TODO: Explain this.
+  -- This requires some explanation. The only set atom that allows non-affine arguments is `≤`. The
+  -- rest, equality and cones, require affine arguments. We say that an expression `x ≤ y` is
+  -- decreasing in `x` in the following sense: if `x' ≤ x` then `x ≤ y → x' ≤ y`, where `→` is seen
+  -- as the order relation in `Prop`.
   | Curvature.ConvexSet, ArgKind.Increasing => Curvature.Concave
   | Curvature.ConvexSet, ArgKind.Decreasing => Curvature.Convex
   | _, _ => Curvature.Affine

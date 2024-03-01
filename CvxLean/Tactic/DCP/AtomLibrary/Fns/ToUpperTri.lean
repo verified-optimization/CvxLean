@@ -1,4 +1,4 @@
-import CvxLean.Tactic.DCP.Atoms
+import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.ToUpperTri
 

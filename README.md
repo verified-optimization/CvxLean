@@ -4,7 +4,7 @@ CvxLean is a convex optimization modeling framework written in [Lean 4](https://
 
 Problems are stated using definitions from [mathlib](https://github.com/leanprover-community/mathlib) and can be rigorously transformed both automatically and interactively. They can be solved by calling the backend solver [MOSEK](https://www.mosek.com/).
 
-Our main contribution is a verified version of the [disciplined convex programming (DCP)](https://web.stanford.edu/~boyd/papers/disc_cvx_prog.html) reduction algorithm.
+Our main contribution is a verified version of the [disciplined convex programming (DCP)](https://web.stanford.edu/~boyd/papers/disc_cvx_prog.html) canonization algorithm.
 
 ## Installation
 
@@ -56,7 +56,7 @@ solve so1
 It will show MOSEK's output and its return code, which should be zero.
 
 If successful, it will add several definitions to the environment:
-* `so1.reduced`: the reduced version of the problem after applying DCP.
+* `so1.conicForm`: the conic form of the problem after applying DCP.
 * `so1.status`: the feasibility status of the primal and the dual problem, in this case `"PRIMAL_AND_DUAL_FEASIBLE"`, i.e. optimal.
 * `so1.value`: if the problem is optimal, it corresponds to its optimal value.
 * `so1.solution`: if the problem is optimal, it corresponds to the optimal point.

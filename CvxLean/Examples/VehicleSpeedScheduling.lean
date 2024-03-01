@@ -52,11 +52,11 @@ private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin 
   . rfl
   . linarith [hn.out]
 
-equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
+equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) : @vehSpeedSched n d τmin τmax smin smax F ⟨h_n_pos⟩ := by
-  replace h_d_pos : ∀ i, 0 < d i := fun i => h_d_pos i
-  replace h_smin_pos : ∀ i, 0 < smin i := fun i => h_smin_pos i
+  replace h_d_pos : ∀ i, 0 < d i := h_d_pos
+  replace h_smin_pos : ∀ i, 0 < smin i := h_smin_pos
   haveI : Fact (0 < n) := ⟨h_n_pos⟩
   -- Change variables `s ↦ d / t`.
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
@@ -93,12 +93,12 @@ equivalence' eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
 
 -- The problem is technically in DCP form if `F` is DCP convex. The only issue is that we do not
 -- have an atom for the perspective function, so the objective function
--- `Vec.sum (t * Vec.map F (d / t))` cannot be reduced directly.
+-- `Vec.sum (t * Vec.map F (d / t))` cannot be canonized directly.
 
 -- However, if we fix `F`, we can use other atoms. For example, if `F` is quadratic, the problem can
--- be reduced. Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
+-- be canonized. Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
-equivalence' eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
+equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
     (h_smin_pos : StrongLT 0 smin) :
     vehSpeedSchedConvex n d τmin τmax smin smax (fun s => a • s ^ (2 : ℝ) + b • s + c)
@@ -165,7 +165,7 @@ def τminₚ : Fin nₚ → ℝ :=
 def τmaxₚ : Fin nₚ → ℝ :=
   ![4.6528, 6.5147, 7.5178, 9.7478, 9.0641, 10.3891, 13.1540, 16.0878, 17.4352, 20.9539]
 
-@[optimization_param]
+@[optimization_param, reducible]
 def sminₚ : Fin nₚ → ℝ :=
   ![0.7828, 0.6235, 0.7155, 0.5340, 0.6329, 0.4259, 0.7798, 0.9604, 0.7298, 0.8405]
 
@@ -174,7 +174,7 @@ def smaxₚ : Fin nₚ → ℝ :=
   ![1.9624, 1.6036, 1.6439, 1.5641, 1.7194, 1.9090, 1.3193, 1.3366, 1.9470, 2.8803]
 
 lemma sminₚ_pos : StrongLT 0 sminₚ := by
-  intro i; fin_cases i <;> (simp [sminₚ]; norm_num)
+  intro i; fin_cases i <;> norm_num
 
 @[simp]
 lemma sminₚ_nonneg : 0 ≤ sminₚ := le_of_strongLT sminₚ_pos

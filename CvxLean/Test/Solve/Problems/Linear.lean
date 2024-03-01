@@ -12,7 +12,7 @@ noncomputable def linear1 :=
 
 solve linear1
 
-#print linear1.reduced
+#print linear1.conicForm
 
 #eval linear1.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval linear1.value    -- 11.500000
@@ -41,7 +41,7 @@ lemma linear2Solution : Solution linear2 :=
 
 solve linear2
 
-#print linear2.reduced
+#print linear2.conicForm
 
 #eval linear2.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval linear2.value    -- 400.000000
@@ -56,7 +56,7 @@ noncomputable def linear3 :=
 
 solve linear3
 
-#print linear3.reduced
+#print linear3.conicForm
 
 #eval linear3.status     -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval linear3.value      -- -30.000000
@@ -73,7 +73,7 @@ noncomputable def linear4 :=
 
 solve linear4
 
-#print linear4.reduced
+#print linear4.conicForm
 
 #eval linear4.status       -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval linear4.value        -- 71.500000
@@ -113,7 +113,7 @@ noncomputable def linear5 :=
 set_option trace.Meta.debug true in
 solve linear5
 
-#print linear5.reduced
+#print linear5.conicForm
 
 #eval linear5.status     -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval linear5.value      -- 11.814741

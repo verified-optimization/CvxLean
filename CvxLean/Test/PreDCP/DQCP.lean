@@ -37,9 +37,9 @@ time_cmd reduction redqcp1/dqcp1 : qcp1 := by
 
 solve dqcp1
 
-#print dqcp1.reduced -- ...
-#eval dqcp1.value    -- -2.000000
-#eval dqcp1.solution -- (2.000000, 2.000000)
+#print dqcp1.conicForm -- ...
+#eval dqcp1.value      -- -2.000000
+#eval dqcp1.solution   -- (2.000000, 2.000000)
 
 end QCP1
 
@@ -61,9 +61,9 @@ time_cmd equivalence redqcp2/dqcp2 : qcp2 0.05 0.65 := by
 
 solve dqcp2
 
-#print dqcp2.reduced -- ...
-#eval dqcp2.value    -- 0.021286
-#eval dqcp2.solution -- 0.989524
+#print dqcp2.conicForm -- ...
+#eval dqcp2.value      -- 0.021286
+#eval dqcp2.solution   -- 0.989524
 
 end QCP2
 
@@ -83,9 +83,9 @@ time_cmd reduction redqcp3/dqcp3 : qcp3 := by
 
 solve dqcp3
 
-#print dqcp3.reduced -- ...
-#eval dqcp3.value    -- 0.000000
-#eval dqcp3.solution -- (12.000000, 4.000000)
+#print dqcp3.conicForm -- ...
+#eval dqcp3.value      -- 0.000000
+#eval dqcp3.solution   -- (12.000000, 4.000000)
 
 end QCP3
 
@@ -103,9 +103,9 @@ time_cmd reduction redqcp4/dqcp4 : qcp4 := by
 
 solve dqcp4
 
-#print dqcp4.reduced -- ...
-#eval dqcp4.value    -- -47.500000
-#eval dqcp4.solution -- 47.500000
+#print dqcp4.conicForm -- ...
+#eval dqcp4.value      -- -47.500000
+#eval dqcp4.solution   -- 47.500000
 
 end QCP4
 

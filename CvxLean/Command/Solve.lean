@@ -6,7 +6,7 @@ import CvxLean.Command.Solve.Conic
 
 Given a problem `p : Minimization D R` a user can call `solve p` to call an external solver and
 obtain a result. If successful, three new definitions are added to the environment:
-* `p.reduced : Minimization (D × E) R` is the problem in conic form.
+* `p.conicForm : Minimization (D × E) R` is the problem in conic form.
 * `p.status : String` is the status of the solution.
 * `p.solution : D` is the solution to the problem.
 * `p.value : R` is the value of the solution.
@@ -32,16 +32,16 @@ def getProblemName (stx : Syntax) : MetaM Name := do
 
 /-- Call DCP and get the problem in conic form as well as `ψ`, the backward map from the
 equivalence. -/
-def getReducedProblemAndBwdMap (prob : Expr) : MetaM (MinimizationExpr × Expr) := do
+def getCanonizedProblemAndBwdMap (prob : Expr) : MetaM (MinimizationExpr × Expr) := do
   let ogProb ← MinimizationExpr.fromExpr prob
-  let (redProb, eqvProof) ← DCP.canonize ogProb
+  let (canonProb, eqvProof) ← DCP.canonize ogProb
   let backwardMap ← mkAppM ``Minimization.Equivalence.psi #[eqvProof]
-  return (redProb, backwardMap)
+  return (canonProb, backwardMap)
 
 syntax (name := solve) "solve " term : command
 
 /-- The `solve` command. It works as follows:
-1. Reduce optimization problem to conic form.
+1. Canonize optimization problem to conic form.
 2. Extract problem data using `determineCoeffsFromExpr`.
 3. Obtain a solution using `solutionDataFromProblemData`, which calls an external solver.
 4. Store the result in the enviroment. -/
@@ -61,19 +61,19 @@ unsafe def evalSolve : CommandElab := fun stx =>
           mvarId.assign mvarVal }
         catch _ => pure ()
 
-      -- Create prob.reduced.
-      let (redProb, backwardMap) ← getReducedProblemAndBwdMap probTerm
-      let redProbExpr := redProb.toExpr
+      -- Create prob.conicForm.
+      let (canonProb, backwardMap) ← getCanonizedProblemAndBwdMap probTerm
+      let canonProbExpr := canonProb.toExpr
 
       let probName ← getProblemName probInstance.raw
 
-      simpleAddDefn (probName ++ `reduced) redProbExpr
+      simpleAddDefn (probName ++ `conicForm) canonProbExpr
 
-      -- Call the solver on prob.reduced and get a point in E.
-      let (coeffsData, sections) ← determineCoeffsFromExpr redProb
+      -- Call the solver on prob.conicForm and get a point in E.
+      let (coeffsData, sections) ← determineCoeffsFromExpr canonProb
       trace[CvxLean.debug] "Coeffs data:\n{coeffsData}"
 
-      let solData ← solutionDataFromProblemData redProb coeffsData sections
+      let solData ← solutionDataFromProblemData canonProb coeffsData sections
       trace[CvxLean.debug] "Solution data:\n{solData}"
 
       -- Add status to the environment.
@@ -84,8 +84,8 @@ unsafe def evalSolve : CommandElab := fun stx =>
         pure ()
 
       -- Solution makes sense, handle the numerical solution.
-      let solPointExpr ← exprFromSolutionData redProb solData
-      trace[CvxLean.debug] "Solution point (reduced problem): {solPointExpr}"
+      let solPointExpr ← exprFromSolutionData canonProb solData
+      trace[CvxLean.debug] "Solution point (canonized problem): {solPointExpr}"
 
       let backwardMapFloat ← realToFloat <| ← whnf backwardMap
       let solPointExprFloat ← realToFloat solPointExpr
@@ -97,7 +97,7 @@ unsafe def evalSolve : CommandElab := fun stx =>
       simpleAddAndCompileDefn (probName ++ `solution) probSolPointFloat
 
       -- Also add value of optimal point.
-      let probSolValue := mkApp redProb.objFun solPointExpr
+      let probSolValue := mkApp canonProb.objFun solPointExpr
       let probSolValueFloat ← realToFloat probSolValue
       check probSolValueFloat
 

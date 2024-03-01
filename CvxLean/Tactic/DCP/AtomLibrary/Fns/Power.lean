@@ -1,4 +1,4 @@
-import CvxLean.Tactic.DCP.Atoms
+import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Le
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
