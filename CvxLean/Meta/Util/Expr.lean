@@ -139,15 +139,15 @@ def elabTermAndSynthesizeEnsuringType (stx : Syntax) (expectedType? : Option Exp
 end Elab.Term
 
 /-- Wrapper of `Lean.addAndCompile` for definitions with some default values. -/
-def Lean.simpleAddAndCompileDefn (n : Name) (e : Expr) : MetaM Unit := do
-  Lean.addAndCompile <|
+def simpleAddAndCompileDefn (n : Name) (e : Expr) : MetaM Unit := do
+  addAndCompile <|
     Declaration.defnDecl <|
       mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe) []
 
 /-- Wrapper of `Lean.addDecl` for definitions with some default values. -/
-def Lean.simpleAddDefn (n : Name) (e : Expr) : MetaM Unit := do
-  Lean.addDecl <|
+def simpleAddDefn (n : Name) (e : Expr) : MetaM Unit := do
+  addDecl <|
     Declaration.defnDecl <|
       mkDefinitionValEx n [] (← inferType e) e (Lean.ReducibilityHints.regular 0)
       (DefinitionSafety.safe) []
