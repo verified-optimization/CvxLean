@@ -86,7 +86,7 @@ def yₚ : Fin Nₚ → Fin nₚ → ℝ := ![![0, 2], ![2, 0], ![-2, 0], ![0, -
 
 solve covEstimationConvex nₚ Nₚ αₚ yₚ
 
-#print covEstimationConvex.reduced
+#print covEstimationConvex.conicForm
 -- minimize
 --     -(-(Nₚ • log (sqrt ((2 * π) ^ nₚ)) + Nₚ • (-Vec.sum t.0 / 2)) +
 --         -(↑Nₚ * trace ((covarianceMatrix fun i => yₚ i) * Rᵀ) / 2))

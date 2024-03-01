@@ -28,7 +28,7 @@ noncomputable def sdp1 :=
 
 solve sdp1
 
-#print sdp1.reduced
+#print sdp1.conicForm
 
 #eval sdp1.status       -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval sdp1.value        -- -0.266754

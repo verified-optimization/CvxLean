@@ -29,7 +29,7 @@ noncomputable def logDet2 :=
 
 solve logDet2
 
-#print logDet2.reduced
+#print logDet2.conicForm
 
 #eval logDet2.status       -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval logDet2.value        -- 6.725434

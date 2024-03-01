@@ -93,10 +93,10 @@ equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
 
 -- The problem is technically in DCP form if `F` is DCP convex. The only issue is that we do not
 -- have an atom for the perspective function, so the objective function
--- `Vec.sum (t * Vec.map F (d / t))` cannot be reduced directly.
+-- `Vec.sum (t * Vec.map F (d / t))` cannot be canonized directly.
 
 -- However, if we fix `F`, we can use other atoms. For example, if `F` is quadratic, the problem can
--- be reduced. Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
+-- be canonized. Let `F(s) = a * s^2 + b * s + c` with `0 ≤ a`.
 
 equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (a b c : ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)

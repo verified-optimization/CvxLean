@@ -12,7 +12,7 @@ noncomputable def exp1 :=
 
 solve exp1
 
-#print exp1.reduced
+#print exp1.conicForm
 
 #eval exp1.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval exp1.value    -- 2.302585
@@ -26,7 +26,7 @@ noncomputable def exp2 :=
 
 solve exp2
 
-#print exp2.reduced
+#print exp2.conicForm
 
 #eval exp2.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval exp2.value    -- 22026.464907

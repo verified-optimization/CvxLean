@@ -61,7 +61,7 @@ lemma one_sub_bₚ_nonneg : 0 ≤ 1 - bₚ := by
 
 time_cmd solve hypersonicShapeDesignConvex aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
-#print hypersonicShapeDesignConvex.reduced
+#print hypersonicShapeDesignConvex.conicForm
 
 -- Final width of wedge.
 def wₚ_opt := eqv₁.backward_map aₚ.float bₚ.float hypersonicShapeDesignConvex.solution
@@ -116,7 +116,7 @@ equivalence* eqv₂/hypersonicShapeDesignSimpler (a b : ℝ) (ha : 0 ≤ a) (hb�
 
 time_cmd solve hypersonicShapeDesignSimpler aₚ bₚ aₚ_nonneg bₚ_nonneg bₚ_lt_one
 
-#print hypersonicShapeDesignSimpler.reduced
+#print hypersonicShapeDesignSimpler.conicForm
 
 -- Final width of wedge.
 def wₚ'_opt :=

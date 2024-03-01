@@ -45,7 +45,7 @@ equivalence eqv₂/q₂ : p₂ := by
 
 solve q₂
 
-#print q₂.reduced
+#print q₂.conicForm
 
 #eval q₂.status
 #eval q₂.solution
@@ -81,7 +81,7 @@ equivalence* eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
 
 solve q₃
 
-#print q₃.reduced
+#print q₃.conicForm
 
 #eval q₃.status
 #eval q₃.solution

@@ -30,7 +30,7 @@ time_cmd equivalence eq/q : p := by
 
 solve q
 
-#print q.reduced
+#print q.conicForm
 -- optimization (x : ℝ) (t.0 : ℝ) (t.1 : ℝ)
 --   minimize x
 --   subject to

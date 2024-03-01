@@ -14,7 +14,7 @@ noncomputable def so1 :=
 
 solve so1
 
-#print so1.reduced
+#print so1.conicForm
 
 #eval so1.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval so1.value    -- 2.101003
@@ -29,7 +29,7 @@ def so2 :=
 
 solve so2
 
-#print so2.reduced
+#print so2.conicForm
 
 #eval so2.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval so2.value    -- 0.426303

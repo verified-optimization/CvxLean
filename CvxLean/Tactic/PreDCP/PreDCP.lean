@@ -129,7 +129,7 @@ def evalStep (step : EggRewrite) (vars params : List Name) (paramsDecls : List L
       -- Distinguish between rewriting props and reals. No need to apply congruence if we are
       -- rewriting the whole constraint.
       if !(← inferType lhsSubExprAtProb).isProp then
-        -- Reduce to equality goal for real rewerites .
+        -- Reduce to equality goal for real rewrites .
         if !atObjFun then
           let gs ← g.apply (mkConst ``Iff.of_eq)
           if gs.length != 1 then

@@ -91,9 +91,9 @@ def getMonoArgsCount (curv : Curvature) (argKinds : Array ArgKind) : ℕ :=
       | Curvature.Convex => 1 + acc
       | _ => acc) 0
 
-/-- Use the DCP procedure to reduce the graph implementation to a problem that
+/-- Use the DCP procedure to canon the graph implementation to a problem that
 uses only cone constraints and affine atoms. -/
-def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
+def canonAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   liftTermElabM do
     -- `xs` are the arguments of the atom.
     lambdaTelescope atomData.expr fun xs atomExpr => do
@@ -149,7 +149,7 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             for c in pat.optimality.constr.map Tree.val do
               trace[Meta.debug] "pat opt constr: {c}"
               check c
-            -- `vs1` are the variables already present in the unreduced graph implementation.
+            -- `vs1` are the variables already present in the uncanon graph implementation.
             let vs1 := originalVarsDecls.map (mkFVar ·.fvarId)
             -- `vs2` are the variables to be added to the graph implementation.
             let vs2 := pat.newVarDecls.toArray.map (mkFVar ·.fvarId)
@@ -160,8 +160,8 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             trace[Meta.debug] "xs: {xs}"
 
             -- TODO: move because copied from DCP tactic.
-            let reducedConstrs := pat.reducedExprs.constr.map Tree.val
-            let reducedConstrs := reducedConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
+            let canonConstrs := pat.canonExprs.constr.map Tree.val
+            let canonConstrs := canonConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
 
             -- TODO: move because copied from DCP tactic.
             let newConstrProofs := pat.feasibility.fold #[] fun acc fs =>
@@ -219,18 +219,18 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             for nf in newFeasibility do
               trace[Meta.debug] "newFeasibility: {← inferType nf}"
 
-            let constraintsFromReducedConstraints :=
+            let constraintsFromCanonConstraints :=
               pat.optimality.constr.map Tree.val
 
-            for cfrc in constraintsFromReducedConstraints do
-              trace[Meta.debug] "constraintsFromReducedConstraints: {← inferType cfrc}"
+            for cfrc in constraintsFromCanonConstraints do
+              trace[Meta.debug] "constraintsFromCanonConstraints: {← inferType cfrc}"
 
-            if reducedConstrs.size != constraintsFromReducedConstraints.size then
-              throwError ("Expected same length: {reducedConstrs} and " ++
-                "{constraintsFromReducedConstraints}")
+            if canonConstrs.size != constraintsFromCanonConstraints.size then
+              throwError ("Expected same length: {canonConstrs} and " ++
+                "{constraintsFromCanonConstraints}")
 
-            let objFunFromReducedObjFun := pat.optimality.objFun.val
-            trace[Meta.debug] "objFunFromReducedObjFun: {← inferType objFunFromReducedObjFun}"
+            let objFunFromCanonObjFun := pat.optimality.objFun.val
+            trace[Meta.debug] "objFunFromCanonObjFun: {← inferType objFunFromCanonObjFun}"
 
             trace[Meta.debug] "pat.optimality.objFun: {← inferType atomData.optimality}"
 
@@ -238,18 +238,18 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
               withLocalDeclsDNondep bconds fun bs => do
                 let optimalityXsBConds := mkAppN atomData.optimality (xs ++ bs ++ vs1)
                 trace[Meta.debug] "newOptimality: {← inferType optimalityXsBConds}"
-                withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
+                withLocalDeclsDNondep (canonConstrs.map (fun rc => (`_, rc))) fun cs => do
                   -- First, apply all constraints.
-                  let mut optimalityAfterReduced := optimalityXsBConds
-                  for i in [:reducedConstrs.size] do
-                    trace[Meta.debug] "optimalityAfterReduced: {← inferType optimalityAfterReduced}"
-                    let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
-                    optimalityAfterReduced := mkApp optimalityAfterReduced c
-                  -- Then, adjust the condition using `objFunFromReducedObjFun`.
-                  trace[Meta.debug] "optimalityAfterReduced: {← inferType optimalityAfterReduced}"
+                  let mut optimalityAfterCanon := optimalityXsBConds
+                  for i in [:canonConstrs.size] do
+                    trace[Meta.debug] "optimalityAfterCanon: {← inferType optimalityAfterCanon}"
+                    let c := mkApp constraintsFromCanonConstraints[i]! cs[i]!
+                    optimalityAfterCanon := mkApp optimalityAfterCanon c
+                  -- Then, adjust the condition using `objFunFromCanonObjFun`.
+                  trace[Meta.debug] "optimalityAfterCanon: {← inferType optimalityAfterCanon}"
                   let monoArgsCount := getMonoArgsCount objCurv atomData.argKinds
                   let optimalityAfterApplyWithConditionAdjusted ←
-                    lambdaTelescope (← whnf optimalityAfterReduced) <| fun xs e => do
+                    lambdaTelescope (← whnf optimalityAfterCanon) <| fun xs e => do
                     -- Every extra argument has an extra condition, e.g. x', x ≤ x.
                     trace[Meta.debug] "xs: {xs}"
                     let monoArgs := xs[:2 * monoArgsCount]
@@ -260,16 +260,16 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                       if atomData.curvature == Curvature.Convex then
                         mkAppOptM ``le_trans #[
                           atomRange, none, none, none, none,
-                          optCondition, objFunFromReducedObjFun]
+                          optCondition, objFunFromCanonObjFun]
                       else
                         -- TODO: concave. but convex_set too?
                         mkAppOptM ``le_trans #[
                           atomRange, none, none, none, none,
-                          objFunFromReducedObjFun, optCondition]
+                          objFunFromCanonObjFun, optCondition]
                     mkLambdaFVars monoArgs newCond
 
                   trace[Meta.debug] "optimalityAfterApplyWithConditionAdjusted: {← inferType optimalityAfterApplyWithConditionAdjusted}"
-                  trace[Meta.debug] "newOptimality applied: {← inferType optimalityAfterReduced}"
+                  trace[Meta.debug] "newOptimality applied: {← inferType optimalityAfterCanon}"
                   let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
                   mkLambdaFVars (xs ++ bs ++ vs1 ++ vs2 ++ cs ++ ds) optimalityAfterApplyWithConditionAdjusted
 
@@ -279,10 +279,10 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
             for vcondElim in atomData.vcondElim do
               let newVCondElim := mkAppN vcondElim (xs ++ vs1)
               let newVCondElim ←
-                withLocalDeclsDNondep (reducedConstrs.map (fun rc => (`_, rc))) fun cs => do
+                withLocalDeclsDNondep (canonConstrs.map (fun rc => (`_, rc))) fun cs => do
                   let mut newVCondElim := newVCondElim
-                  for i in [:reducedConstrs.size] do
-                    let c := mkApp constraintsFromReducedConstraints[i]! cs[i]!
+                  for i in [:canonConstrs.size] do
+                    let c := mkApp constraintsFromCanonConstraints[i]! cs[i]!
                     newVCondElim := mkApp newVCondElim c
                   let ds := pat.newConstrVarsArray.map (mkFVar ·.fvarId)
                   mkLambdaFVars (xs ++ vs1 ++ vs2) <| ← mkLambdaFVars (cs ++ ds) newVCondElim
@@ -293,8 +293,8 @@ def reduceAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandEla
                 (← pat.newVarDecls.toArray.mapM fun decl => do
                   return (decl.userName, ← mkLambdaFVars xs decl.type))
               impObjFun := ← mkLambdaFVars xs $ ← mkLambdaFVars (vs1 ++ vs2) $
-                  pat.reducedExprs.objFun.val
-              impConstrs := ← (reducedConstrs ++ pat.newConstrs).mapM
+                  pat.canonExprs.objFun.val
+              impConstrs := ← (canonConstrs ++ pat.newConstrs).mapM
                 (fun c => do
                   withLocalDeclsDNondep bconds fun bs => do
                     return ← mkLambdaFVars xs <| ← mkLambdaFVars bs <| ← mkLambdaFVars (vs1 ++ vs2) c)
@@ -600,10 +600,10 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
     -- | Curvature.ConvexSet => Curvature.ConvexSet
     -- | _ => Curvature.Affine
 
-  trace[Meta.debug] "before reduce sol eq atom: {atomData.solEqAtom}"
+  trace[Meta.debug] "before canon sol eq atom: {atomData.solEqAtom}"
 
-  let atomData ← reduceAtomData objCurv atomData
-  -- trace[Meta.debug] "HERE Reduced atom: {atomData}"
+  let atomData ← canonAtomData objCurv atomData
+  -- trace[Meta.debug] "HERE Canon atom: {atomData}"
   let atomData ← addAtomDataDecls id.getId atomData
   -- trace[Meta.debug] "HERE Added atom"
 
@@ -659,7 +659,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
     }
     return atomData
 
-  let atomData ← reduceAtomData atomData.curvature atomData--Curvature.Affine atomData
+  let atomData ← canonAtomData atomData.curvature atomData--Curvature.Affine atomData
   let atomData ← addAtomDataDecls id.getId atomData
 
   liftTermElabM do
