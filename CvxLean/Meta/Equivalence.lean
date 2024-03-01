@@ -64,6 +64,8 @@ open Parser Elab Tactic
 elab "equivalence_step" _arr:darrow tac:tacticSeqIndentGt : tactic => do
   evalTactic <| ← `(tactic| equivalence_trans)
   evalTacticSeq1Indented tac.raw
+  evalTactic <| ← `(tactic| equivalence_rfl)
+  (← getMainGoal).setTag Name.anonymous
 
 end BasicTactics
 
