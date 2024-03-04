@@ -15,7 +15,7 @@ optimality by
 
 end ZeroCone
 
-/- Positive orthant cone atoms. -/
+/- Nonnegative orthant cone atoms. -/
 section NonnegOrthCone
 
 declare_atom nonnegOrthCone [cone] (x : ℝ)? : nonnegOrthCone x :=
@@ -77,7 +77,7 @@ optimality le_refl _
 
 end PSDCone
 
-/- Trivial cone. -/
+/- Trivial cone atom. -/
 section Trivial
 
 declare_atom trivial [cone] : True :=
