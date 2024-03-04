@@ -83,7 +83,7 @@ namespace CvxLean
 --   optimization (x : ℝ)
 --     minimize (2 * Real.exp (x / 2))
 --     subject to
---       h : Real.posOrthCone x := by
+--       h : Real.nonnegOrthCone x := by
 --     dcp
 
 end CvxLean

@@ -28,7 +28,7 @@ feasibility
       have hxeq0 := le_antisymm h cond
       simp [hxeq0])
   (c2 : by norm_num)
-  (c3 : by simp [posOrthCone, cond])
+  (c3 : by simp [nonnegOrthCone, cond])
 optimality by {
     unfold expCone at c1
     simp at c2

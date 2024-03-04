@@ -82,31 +82,31 @@ feasibility
     dsimp
     intros i
     have h := huber.feasibility0 (x i)
-    unfold Real.posOrthCone at h
+    unfold Real.nonnegOrthCone at h
     simpa using h)
   (c2 : by
     dsimp
     intros i
     have h := huber.feasibility1 (x i)
-    unfold Real.posOrthCone at h
+    unfold Real.nonnegOrthCone at h
     simpa using h)
   (c3 : by
     dsimp
     intros i
     have h := huber.feasibility2 (x i)
-    unfold Real.posOrthCone at h
+    unfold Real.nonnegOrthCone at h
     simpa using h)
 optimality by
     intros i
     simp [Vec.huber]
     rw [←rpow_two]
     apply huber.optimality (x i) (v i) (w i) ((w i) ^ 2) (abs (x i))
-    { unfold posOrthCone; simpa using c1 i }
-    { unfold posOrthCone; simpa using c2 i }
-    { unfold posOrthCone; simpa using c3 i }
+    { unfold nonnegOrthCone; simpa using c1 i }
+    { unfold nonnegOrthCone; simpa using c2 i }
+    { unfold nonnegOrthCone; simpa using c3 i }
     { unfold rotatedSoCone; simp [sq_nonneg]; norm_num }
-    { unfold posOrthCone; simp [sub_nonneg, abs] }
-    { unfold posOrthCone; simp [← sub_le_iff_le_add, abs] }
+    { unfold nonnegOrthCone; simp [sub_nonneg, abs] }
+    { unfold nonnegOrthCone; simp [← sub_le_iff_le_add, abs] }
 
 vconditionElimination
 

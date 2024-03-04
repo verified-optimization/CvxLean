@@ -88,20 +88,20 @@ feasibility
   (c2 : by
     dsimp
     have h := klDiv.feasibility1 x y hx hy
-    unfold posOrthCone at h
+    unfold nonnegOrthCone at h
     simpa using h)
 optimality by
   apply klDiv.optimality x y t c1
-  { unfold posOrthCone expCone at *
+  { unfold nonnegOrthCone expCone at *
     simpa using c2 }
 vconditionElimination
   (hx : by
     apply klDiv.vcondElim0 x y t c1
-    unfold posOrthCone at *
+    unfold nonnegOrthCone at *
     simpa using c2)
   (hy : by
     apply klDiv.vcondElim1 x y t c1
-    unfold posOrthCone expCone at *
+    unfold nonnegOrthCone expCone at *
     simpa using c2)
 
 declare_atom Vec.klDiv [convex] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)? :
@@ -127,23 +127,23 @@ feasibility
     simp [Vec.klDiv, klDiv]
     intros i
     have h := klDiv.feasibility1 (x i) (y i) (hx i) (hy i)
-    unfold posOrthCone at h
+    unfold nonnegOrthCone at h
     simpa [Vec.const] using h)
 optimality fun i => by
     unfold Vec.expCone at c1
     apply klDiv.optimality (x i) (y i) (t i) (c1 i)
-    unfold posOrthCone expCone at *
+    unfold nonnegOrthCone expCone at *
     simpa [Vec.const] using (c2 i)
 vconditionElimination
   (hx : fun i => by
     unfold Vec.expCone at c1
     apply klDiv.vcondElim0 (x i) (y i) (t i) (c1 i)
-    unfold posOrthCone expCone at *
+    unfold nonnegOrthCone expCone at *
     simpa [Vec.const] using (c2 i))
   (hy : fun i => by
     unfold Vec.expCone at c1
     apply klDiv.vcondElim1 (x i) (y i) (t i) (c1 i)
-    unfold posOrthCone expCone at *
+    unfold nonnegOrthCone expCone at *
     simpa [Vec.const] using (c2 i))
 
 end CvxLean

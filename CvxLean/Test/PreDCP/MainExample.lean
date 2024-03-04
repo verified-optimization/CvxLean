@@ -34,9 +34,9 @@ solve q
 -- optimization (x : ℝ) (t.0 : ℝ) (t.1 : ℝ)
 --   minimize x
 --   subject to
---     _ : posOrthCone (t.1 - t.0)
+--     _ : nonnegOrthCone (t.1 - t.0)
 --     _ : expCone (-x) 1 t.0
---     _ : posOrthCone (x - 1 / 1000)
+--     _ : nonnegOrthCone (x - 1 / 1000)
 --     _ : rotatedSoCone x (1 / 2) ![t.1]
 
 #eval q.value -- 0.426303

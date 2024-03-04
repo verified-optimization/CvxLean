@@ -91,7 +91,7 @@ solve covEstimationConvex nₚ Nₚ αₚ yₚ
 --     -(-(Nₚ • log (sqrt ((2 * π) ^ nₚ)) + Nₚ • (-Vec.sum t.0 / 2)) +
 --         -(↑Nₚ * trace ((covarianceMatrix fun i => yₚ i) * Rᵀ) / 2))
 --   subject to
---     _ : Real.posOrthCone (αₚ - sum T.2)
+--     _ : Real.nonnegOrthCone (αₚ - sum T.2)
 --     _ : Vec.expCone t.0 1 (diag Y.1)
 --     _ :
 --       PSDCone
@@ -99,8 +99,8 @@ solve covEstimationConvex nₚ Nₚ αₚ yₚ
 --         let D := diagonal (diag Y.1);
 --         let X := fromBlocks D Z Zᵀ R;
 --         X)
---     _ : Matrix.posOrthCone (T.2 - R)
---     _ : Matrix.posOrthCone (T.2 + R)
+--     _ : Matrix.nonnegOrthCone (T.2 - R)
+--     _ : Matrix.nonnegOrthCone (T.2 + R)
 
 #eval covEstimationConvex.status   -- "PRIMAL_AND_DUAL_FEASIBLE"
 #eval covEstimationConvex.value    -- 14.124098

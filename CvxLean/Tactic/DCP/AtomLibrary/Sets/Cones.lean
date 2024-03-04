@@ -16,24 +16,24 @@ optimality by
 end ZeroCone
 
 /- Positive orthant cone atoms. -/
-section PosOrthCone
+section NonnegOrthCone
 
-declare_atom posOrthCone [cone] (x : ℝ)? : posOrthCone x :=
+declare_atom nonnegOrthCone [cone] (x : ℝ)? : nonnegOrthCone x :=
 optimality by
-  simp [posOrthCone]
+  simp [nonnegOrthCone]
 
-declare_atom Vec.posOrthCone [cone]
-  (n : Nat)& (x : (Fin n) → ℝ)? : Vec.posOrthCone x :=
+declare_atom Vec.nonnegOrthCone [cone]
+  (n : Nat)& (x : (Fin n) → ℝ)? : Vec.nonnegOrthCone x :=
 optimality by
-  simp [Vec.posOrthCone]
+  simp [Vec.nonnegOrthCone]
 
-declare_atom Matrix.posOrthCone [cone]
+declare_atom Matrix.nonnegOrthCone [cone]
   (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
-  Real.Matrix.posOrthCone M :=
+  Real.Matrix.nonnegOrthCone M :=
 optimality by
-  simp [Matrix.posOrthCone]
+  simp [Matrix.nonnegOrthCone]
 
-end PosOrthCone
+end NonnegOrthCone
 
 /- Exponential cone atoms. -/
 section ExpCone
