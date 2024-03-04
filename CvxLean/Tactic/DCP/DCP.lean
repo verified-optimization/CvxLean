@@ -6,6 +6,7 @@ import CvxLean.Meta.TacticBuilder
 import CvxLean.Lib.Math.Data.Array
 import CvxLean.Lib.Minimization
 import CvxLean.Lib.Equivalence
+import CvxLean.Tactic.DCP.DCPTypes
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 import CvxLean.Tactic.DCP.AtomExt
@@ -100,16 +101,13 @@ partial def findAtoms (e : Expr) (vars : Array FVarId) (curvature : Curvature) :
   return (true, failedAtoms, Tree.leaf e, Tree.leaf (), Tree.leaf curvature, Tree.leaf #[])
 where
   processAtom (e : Expr) (vars : Array FVarId) (curvature : Curvature) (atom : GraphAtomData) (args : Array Expr) : MetaM FindAtomResult := do
-    trace[Meta.debug] "Processing atom {atom.expr} for expression {e}, curvature {curvature}"
-    -- TODO: is this correct?
+    trace[CvxLean.debug] "Processing atom {atom.expr} for expression {e}, curvature {curvature}"
     if atom.curvature != Curvature.Affine ∧ curvature != atom.curvature then
       return FindAtomResult.Error
         #[m!"Trying atom {atom.expr} for expression {e}: " ++
           m!"Expected {curvature}, but atom is {atom.curvature}"]
-    let mut abort := false -- TODO: use exception instead?
     let mut bconds := #[]
-    -- withExistingLocalDecls originalConstrVars.toList do
-    for (bcondName, bcondType) in atom.bconds do
+    for (_, bcondType) in atom.bconds do
       let bcondType := mkAppNBeta bcondType args
       let fvarId? ← (← getLCtx).decls.findSomeM? fun decl => match decl with
         | none => pure none
@@ -119,7 +117,7 @@ where
       | some fvarId =>
         bconds := bconds.push (mkFVar fvarId)
       | none =>
-        -- Try to prove simple bconditions by arith.
+        -- Try to prove simple bconditions by `arith`.
         let (e, _) ← Lean.Elab.Term.TermElabM.run $ Lean.Elab.Term.commitIfNoErrors? $ do
           let v ← Lean.Elab.Term.elabTerm (← `(by arith)).raw (some bcondType)
           Lean.Elab.Term.synthesizeSyntheticMVarsNoPostponing
@@ -144,9 +142,10 @@ where
           #[m!"Trying atom {atom.expr} for expression {e}: " ++
             m!"Expected constant argument, but found: {arg}"]
       let c := curvatureInArg curvature atom.argKinds[i]!
-      trace[Meta.debug] "Trying to find atoms for {arg} with curvature {c}"
-      trace[Meta.debug] "vars: {vars.map (mkFVar ·)}"
-      trace[Meta.debug] "args: {args}"
+      trace[CvxLean.debug] "Trying to find atoms for {arg} with curvature {c}."
+      trace[CvxLean.debug] "Current `vars`: {vars.map (mkFVar ·)}."
+      trace[CvxLean.debug] "Current `args`: {args}."
+      --
       let (childFailed, childFailedAtoms, childTree, childArgsTree, childCurvature, childBCond) ← findAtoms arg vars c
       if childFailed then
         return FindAtomResult.Error childFailedAtoms

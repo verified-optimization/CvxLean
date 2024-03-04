@@ -1,4 +1,5 @@
 import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Minimization
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Tactic.DCP.AtomSyntax
@@ -20,8 +21,8 @@ namespace CvxLean
 
 open Lean Expr Meta Elab Command
 
--- TODO: This does not respect namespaces.
-/-- Introduce new names for the proofs in the atom to speed up proof building later. -/
+/-- Introduce new names for the proofs in the atom to speed up proof building later.
+TODO: This does not respect namespaces. -/
 def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   if atomData.solEqAtom.hasMVar then
     throwError "has mvar {atomData.solEqAtom}"
@@ -29,11 +30,11 @@ def addAtomDataDecls (id : Lean.Name) (atomData : GraphAtomData) : CommandElabM 
   let optimality ← addAtomDataDecl (id.mkStr "optimality") atomData.optimality
   let mut feasibility := #[]
   for i in [:atomData.feasibility.size] do
-    feasibility := feasibility.push $
+    feasibility := feasibility.push <|
       ← addAtomDataDecl (id.mkStr (s!"feasibility{i}")) atomData.feasibility[i]!
   let mut vcondElim := #[]
   for i in [:atomData.vcondElim.size] do
-    vcondElim := vcondElim.push $
+    vcondElim := vcondElim.push <|
       ← addAtomDataDecl (id.mkStr (s!"vcondElim{i}")) atomData.vcondElim[i]!
   return {atomData with
     solEqAtom := solEqAtom
@@ -55,7 +56,8 @@ where
 
 
 /-- -/
-def withCopyOfMonoXs {α} [Inhabited α] (xs : Array Expr) (argKinds : Array ArgKind) (f : Array Expr → Array Expr → Array ArgKind → TermElabM α) : TermElabM α := do
+def withCopyOfMonoXs {α} [Inhabited α] (xs : Array Expr) (argKinds : Array ArgKind)
+    (f : Array Expr → Array Expr → Array ArgKind → TermElabM α) : TermElabM α := do
   -- Determine subset of monotone arguments and their behavior.
   let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
   let mut monoXs := #[]
@@ -69,7 +71,7 @@ def withCopyOfMonoXs {α} [Inhabited α] (xs : Array Expr) (argKinds : Array Arg
       monoArgKind := monoArgKind.push argKinds[i]!
 
   withLocalDeclsD argDeclInfo fun ys => do
-    return ← f monoXs ys monoArgKind
+    f monoXs ys monoArgKind
 
 /-- -/
 def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind) (mkConcl : Array Expr → Array Expr → TermElabM Expr) : TermElabM Expr :=
@@ -80,7 +82,7 @@ def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind)
       ty ← match curvatureInArg curv monoArgKind[i]! with
       | Curvature.Concave => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
       | Curvature.Convex => mkArrow (← mkLe ys[i]! monoXs[i]!) ty
-      | _ => throwError "invalid curvature"
+      | _ => throwDCPError "invalid curvature"
     return ← mkForallFVars ys ty
 
 /-- TODO: just the number of relevant opt args. -/
