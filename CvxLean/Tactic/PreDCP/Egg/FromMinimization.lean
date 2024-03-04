@@ -1,5 +1,5 @@
 import CvxLean.Tactic.DCP.Tree
-import CvxLean.Tactic.PreDCP.UncheckedDCP
+import CvxLean.Tactic.PreDCP.Egg.UncheckedDCP
 import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
 namespace CvxLean
