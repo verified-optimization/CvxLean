@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Vec
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Atom for converting a vector to a matrix (affine).
+-/
+
 namespace CvxLean
 
 open Real

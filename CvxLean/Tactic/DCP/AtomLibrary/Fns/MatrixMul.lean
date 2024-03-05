@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Matrix multiplication atoms (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Matrix.mul1 [affine] (m : Type)& (hm : Fintype.{0} m)&

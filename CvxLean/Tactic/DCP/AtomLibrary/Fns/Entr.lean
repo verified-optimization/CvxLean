@@ -3,6 +3,10 @@ import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Entropy atom (concave).
+-/
+
 namespace CvxLean
 
 open Real
@@ -22,7 +26,7 @@ feasibility
     | inl h =>
         left
         refine ⟨h, ?_⟩
-        rw [neg_div, mul_comm _ (log x), ←mul_div]
+        rw [neg_div, mul_comm _ (log x), ← mul_div]
         rw [div_self (ne_of_lt h).symm, mul_one, exp_neg, exp_log h]
         rw [inv_eq_one_div, mul_div, mul_one, div_self (ne_of_lt h).symm]
     | inr h =>
@@ -34,8 +38,8 @@ optimality by
   unfold expCone at c
   cases c with
   | inl c =>
-      rw [mul_comm, ←neg_mul, ←div_le_iff c.1]
-      rw [←exp_le_exp, exp_neg, exp_log c.1, inv_eq_one_div]
+      rw [mul_comm, ← neg_mul, ← div_le_iff c.1]
+      rw [← exp_le_exp, exp_neg, exp_log c.1, inv_eq_one_div]
       rw [le_div_iff c.1, mul_comm]
       exact c.2
   | inr c =>

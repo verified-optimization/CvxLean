@@ -6,12 +6,15 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Kullback-Leibler (KL) divergence, or relative entropy atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
 
--- TODO(RFM): same issue as in `quadOverLin`, no clear way to have 0 < y as a
--- vcondition, the exp y' ≤ y trick makes the solver stall.
+-- TODO: same issue as in `quadOverLin`, no clear way to have `0 < y` as a `vcondition`.
 declare_atom klDiv [convex] (x : ℝ)? (y : ℝ)? : x * log (x / y) - x + y  :=
 vconditions
   (hx : 0 ≤ x)
@@ -33,7 +36,7 @@ feasibility
         left
         refine ⟨hx, ?_⟩
         have hypos : 0 < y := by positivity
-        rw [mul_comm _ (log _), ←neg_mul, ←mul_div, div_self (ne_of_gt hx)]
+        rw [mul_comm _ (log _), ← neg_mul, ← mul_div, div_self (ne_of_gt hx)]
         rw [mul_one, exp_neg, exp_log (div_pos hx hypos), inv_div, mul_div]
         rw [div_le_iff hx, mul_comm]
     | inr hx =>
@@ -54,8 +57,8 @@ optimality by
       have hrhs : y - x - t = -t + (y - x) := by ring
       conv => rhs; rw [hrhs]
       apply add_le_add_right
-      rw [mul_comm, ←le_div_iff c.1, neg_div]
-      rw [←exp_le_exp, exp_log (div_pos hxpos hypos), exp_neg, ←inv_div]
+      rw [mul_comm, ← le_div_iff c.1, neg_div]
+      rw [← exp_le_exp, exp_log (div_pos hxpos hypos), exp_neg, ← inv_div]
       rw [inv_le_inv (div_pos hypos hxpos) (exp_pos _)]
       rw [le_div_iff hxpos, mul_comm]
       exact c.2

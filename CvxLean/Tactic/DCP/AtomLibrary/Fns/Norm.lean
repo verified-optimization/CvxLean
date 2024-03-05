@@ -4,6 +4,8 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
 import CvxLean.Lib.Math.Data.Vec
 
 /-!
+Norm atoms (convex).
+
 ### TODO
 
 This is not defined in full generality. It can be made increasing or decreasing in each `xᵢ`

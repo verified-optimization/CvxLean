@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Vector and matrix cons-ing atoms (affine).
+-/
+
 namespace CvxLean
 
 open Matrix
@@ -15,8 +19,8 @@ additivity by
 optimality by
   intros x' y' hx hy i
   refine' Fin.cases _ _ i <;> simp [vecCons]
-  . exact hx
-  . exact hy
+  · exact hx
+  · exact hy
 
 declare_atom Matrix.vecCons [affine] (n : Nat)& (m : Nat)& (x : Fin n → ℝ)+
     (y : (Fin m) → (Fin n) → ℝ)+ : vecCons x y :=
@@ -28,7 +32,7 @@ additivity by
 optimality by
   intros x' y' hx hy i
   refine' Fin.cases _ _ i <;> simp [vecCons]
-  . exact hx
-  . exact hy
+  · exact hx
+  · exact hy
 
 end CvxLean

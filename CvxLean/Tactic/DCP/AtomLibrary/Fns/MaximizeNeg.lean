@@ -1,5 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+`maximizeNeg` is just negation, really, but needs its own atom as it has its own identifier
+(affine).
+-/
+
 namespace CvxLean
 
 declare_atom maximizeNeg [affine] (x : ℝ)- : maximizeNeg x :=

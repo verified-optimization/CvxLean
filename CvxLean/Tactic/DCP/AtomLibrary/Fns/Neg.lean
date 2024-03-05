@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Atom for negation (affine).
+-/
+
 namespace CvxLean
 
 declare_atom neg [affine] (x : ℝ)- : - x :=

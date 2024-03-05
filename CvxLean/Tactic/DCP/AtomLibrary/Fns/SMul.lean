@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Scalar multiplication atoms (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Nat.smul [affine] (n : ℕ)& (x : ℝ)+ :

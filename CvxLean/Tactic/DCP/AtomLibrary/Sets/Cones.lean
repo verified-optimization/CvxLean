@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Cones.All
 import CvxLean.Syntax.Minimization
 
+/-!
+Cone atoms. They are treated as convex sets with the implementation being themselves.
+-/
+
 namespace CvxLean
 
 open Real

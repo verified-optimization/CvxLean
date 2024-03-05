@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Vec
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Sum atom (affine).
+-/
+
 namespace CvxLean
 
 open Vec in

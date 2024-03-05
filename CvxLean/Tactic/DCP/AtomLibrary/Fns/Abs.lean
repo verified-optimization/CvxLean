@@ -4,6 +4,10 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Add
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Absolute value atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
@@ -24,11 +28,11 @@ feasibility
     exact le_abs_self x)
   (c_neg : by
     unfold nonnegOrthCone
-    rw [←neg_le_iff_add_nonneg']
+    rw [← neg_le_iff_add_nonneg']
     exact neg_abs_le x)
 optimality by
   apply abs_le.2
-  rw [←sub_nonneg, sub_neg_eq_add, add_comm, ←sub_nonneg (b := x)]
+  rw [← sub_nonneg, sub_neg_eq_add, add_comm, ← sub_nonneg (b := x)]
   unfold nonnegOrthCone at c_pos c_neg
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
@@ -57,9 +61,8 @@ optimality by
   apply abs.optimality _ _ (c_pos i) (c_neg i)
 vconditionElimination
 
-declare_atom Matrix.abs [convex]
-  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)?
-  : M.abs :=
+declare_atom Matrix.abs [convex] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
+  M.abs :=
 vconditions
 implementationVars (T : Matrix (Fin m) (Fin n) ℝ)
 implementationObjective T

@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Transpose atom (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Matrix.transpose [affine] (n : Type)& (m : Type)& (A : Matrix.{0,0,0} n m ℝ)+ :

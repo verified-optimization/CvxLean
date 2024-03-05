@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Division atom (affine).
+-/
+
 namespace CvxLean
 
 open Real

@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Trace atom (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Matrix.trace [affine] (m : Type)& (hm : Fintype.{0} m)&

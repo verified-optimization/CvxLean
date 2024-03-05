@@ -2,6 +2,12 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 
+/-!
+Inequality atoms (convex set).
+
+Note that we do not distinguish between affine and convex sets.
+-/
+
 namespace CvxLean
 
 declare_atom le [convex_set] (x : ℝ)- (y : ℝ)+ : x ≤ y :=

@@ -2,6 +2,12 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
 
+/-!
+Square root atom (concave).
+
+Usually just considered as part of the power atom.
+-/
+
 namespace CvxLean
 
 open Real

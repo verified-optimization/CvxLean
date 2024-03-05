@@ -3,6 +3,12 @@ import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecToMatrix
 
+/-!
+Square atom (convex).
+
+Usually just considered as part of the power atom.
+-/
+
 namespace CvxLean
 
 open Real

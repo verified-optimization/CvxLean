@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Logarithm atom (concave).
+-/
+
 namespace CvxLean
 
 open Real
