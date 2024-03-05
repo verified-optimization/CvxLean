@@ -1,5 +1,9 @@
 import CvxLean.Command.Solve
 
+/-!
+A semidefinite program.
+-/
+
 namespace SDP
 
 open CvxLean Minimization Real

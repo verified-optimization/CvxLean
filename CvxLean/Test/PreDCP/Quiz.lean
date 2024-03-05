@@ -5,6 +5,10 @@ import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Examples harvested from the DCP quiz <https://dcp.stanford.edu/quiz>.
+-/
+
 namespace Quiz
 
 noncomputable section

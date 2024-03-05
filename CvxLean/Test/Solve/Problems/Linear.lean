@@ -1,5 +1,9 @@
 import CvxLean.Command.Solve
 
+/-!
+Some linear programs.
+-/
+
 section Linear
 
 open CvxLean Minimization Real
@@ -110,7 +114,6 @@ noncomputable def linear5 :=
       h₁ : A5.mulVec x ≤ b5
       h₂ : 0 ≤ x
 
-set_option trace.Meta.debug true in
 solve linear5
 
 #print linear5.conicForm

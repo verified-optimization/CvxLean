@@ -2,6 +2,10 @@ import CvxLean.Lib.Minimization
 import CvxLean.Syntax.OptimizationParam
 import CvxLean.Command.Solve.Float.RealToFloatLibrary
 
+/-!
+Real-to-float tests.
+-/
+
 section RealToFloat
 
 -- Simple tests.

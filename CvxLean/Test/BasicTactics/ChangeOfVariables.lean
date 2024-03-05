@@ -2,6 +2,10 @@ import CvxLean.Command.Equivalence
 import CvxLean.Command.Reduction
 import CvxLean.Tactic.Basic.ChangeOfVariables
 
+/-!
+Testing changes of variables.
+-/
+
 open CvxLean
 
 noncomputable section ChangeOfVariablesInstances

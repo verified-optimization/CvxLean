@@ -5,6 +5,10 @@ import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Examples from geometric programming.
+-/
+
 namespace GP
 
 noncomputable section

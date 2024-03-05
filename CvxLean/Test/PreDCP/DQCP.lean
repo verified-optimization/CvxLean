@@ -5,6 +5,9 @@ import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Examples from quasiconvex programming that can be directly rewritten into DCP form by `pre_dcp`.
+-/
 
 namespace DQCP
 

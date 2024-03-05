@@ -2,6 +2,10 @@ import CvxLean.Syntax.Minimization
 import CvxLean.Tactic.Basic.All
 import CvxLean.Command.Equivalence
 
+/-!
+Testing the tactics from `CvxLean/Tactic/Basic/All.lean`.
+-/
+
 namespace BasicTacticTest
 
 noncomputable section

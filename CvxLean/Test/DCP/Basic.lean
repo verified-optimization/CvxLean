@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomLibrary.All
 
+/-!
+Some tests around the DCP transformation. One can check the outcome of `dcp` for each of them.
+-/
+
 noncomputable section Basic
 
 open CvxLean Minimization Real
@@ -146,12 +150,12 @@ def c1 : ℝ := 5
 def d1 : ℝ := 6
 
 def testWithConstants : Solution <|
-  optimization (x y : ℝ)
-    minimize (x)
-    subject to
-      c1 : 0 ≤ exp a1
-      c2 : exp y ≤ log (exp a1)
-      c3 : 0 ≤ x := by
+    optimization (x y : ℝ)
+      minimize (x)
+      subject to
+        c1 : 0 ≤ exp a1
+        c2 : exp y ≤ log (exp a1)
+        c3 : 0 ≤ x := by
   dcp
   sorry
 

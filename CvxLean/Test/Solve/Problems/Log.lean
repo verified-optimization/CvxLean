@@ -1,5 +1,9 @@
 import CvxLean.Command.Solve
 
+/-!
+Some problems involving the logarithm function.
+-/
+
 section Log
 
 open CvxLean Minimization Real

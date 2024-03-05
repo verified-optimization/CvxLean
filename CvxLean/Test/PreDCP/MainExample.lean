@@ -3,6 +3,10 @@ import CvxLean.Command.Equivalence
 import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Example that we often use as a simple motivating example for automated pre-DCP transformations.
+-/
+
 namespace MainExample
 
 noncomputable section

@@ -5,6 +5,12 @@ import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Unit tests for `pre_dcp`. The idea was to force certain rewrites to appear in the sequence. The set
+of rewrite rules has been changing, so the name of the tests might not be accurate anymore. Still,
+they are useful to check that all these problems can be rewritten into DCP.
+-/
+
 namespace Unit
 
 noncomputable section
@@ -76,7 +82,8 @@ def leSubIffAddLeConstrRev :=
     subject to
       h : y + x ≤ x
 
-time_cmd equivalence leSubIffAddLeConstrRevRed/leSubIffAddLeConstrRevAuto : leSubIffAddLeConstrRev := by
+time_cmd equivalence leSubIffAddLeConstrRevRed/leSubIffAddLeConstrRevAuto :
+    leSubIffAddLeConstrRev := by
   pre_dcp
 
 #print leSubIffAddLeConstrRevAuto
@@ -101,7 +108,8 @@ def subLeIffLeAddConstrRev :=
     subject to
       h : x ≤ y + x
 
-time_cmd equivalence subLeIffLeAddConstrRevRed/subLeIffLeAddConstrRevAuto : subLeIffLeAddConstrRev := by
+time_cmd equivalence subLeIffLeAddConstrRevRed/subLeIffLeAddConstrRevAuto :
+    subLeIffLeAddConstrRev := by
   pre_dcp
 
 #print subLeIffLeAddConstrRevAuto

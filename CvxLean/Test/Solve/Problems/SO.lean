@@ -1,5 +1,9 @@
 import CvxLean.Command.Solve
 
+/-!
+Some quadratic programs.
+-/
+
 section SO
 
 open CvxLean Minimization Real
