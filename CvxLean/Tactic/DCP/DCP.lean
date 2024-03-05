@@ -183,7 +183,7 @@ partial def mkNewVars (i : Nat) : GraphAtomDataTree → ArgumentsTree → MetaM 
 /-- -/
 def mkNewVarDeclList (newVars : OC NewVarsTree) :
   MetaM (List LocalDecl) := do
-  let newVarTrees := #[newVars.objFun] ++ newVars.constr
+  let newVarTrees := #[newVars.objFun] ++ newVars.constrs
   let mut newVarDecls := #[]
   for t in newVarTrees do
     newVarDecls := t.fold newVarDecls Array.append
@@ -299,7 +299,7 @@ tells us how to assign new variables from old ones. Here, we collect all such
 assignments, which will be used later on to build the forward map between the
 original and canon problems. -/
 def mkForwardImagesNewVars (canonWithSolution : OC CanonExprsWithSolutionTree) : MetaM Solution := do
-  let canonWithSolutionTrees := #[canonWithSolution.objFun] ++ canonWithSolution.constr
+  let canonWithSolutionTrees := #[canonWithSolution.objFun] ++ canonWithSolution.constrs
   let mut fm := #[]
   for t in canonWithSolutionTrees do
     fm := t.fold fm (fun acc a => Array.append acc a.solution)
@@ -688,7 +688,7 @@ withExistingLocalDecls originalVarsDecls.toList do
     trace[Meta.debug] "mkAtomTree xs: {xs}"
     -- Find atoms.
     let atomsAndArgs ← OC.map2M (fun e c => findAtoms e (xs.map (·.fvarId!) ++ extraVars) c) oc
-      ⟨objCurv, oc.constr.map (fun _ => Curvature.ConvexSet)⟩
+      ⟨objCurv, oc.constrs.map (fun _ => Curvature.ConvexSet)⟩
     let failedAtom : OC Bool := atomsAndArgs.map (·.fst)
     let failedAtomMsgs : OC (Array MessageData) := atomsAndArgs.map (·.snd.fst)
     if failedAtom.objFun then
@@ -707,7 +707,7 @@ def mkVConditions (originalVarsDecls : Array LocalDecl) (oc : OC Expr)
   (failedAtom : OC Bool) (failedAtomMsgs : OC (Array MessageData)) (originalConstrVars : Array LocalDecl) :
   MetaM (OC (Tree (Array ℕ) Unit) × Array Bool × OC (Tree (Array Expr) Unit)) := do
 withExistingLocalDecls originalVarsDecls.toList do
-  let vcondData ← OC.map2M (findVConditions originalConstrVars oc.constr) atoms args
+  let vcondData ← OC.map2M (findVConditions originalConstrVars oc.constrs) atoms args
 
   -- Extract only indicies
   let vcondIdx : OC (Tree (Array ℕ) Unit) := vcondData.map
@@ -717,14 +717,14 @@ withExistingLocalDecls originalVarsDecls.toList do
       | Sum.inr _ => acc))
       id)
 
-  let isVCond := vcondIdx.fold (oc.constr.map (fun _ => false))
+  let isVCond := vcondIdx.fold (oc.constrs.map (fun _ => false))
     fun acc vcondIdxTree =>
       vcondIdxTree.fold acc fun acc is =>
         is.foldl (fun acc i => acc.set! i true) acc
   let vcondVars := vcondData.map $ mkVCondVars (originalConstrVars.map LocalDecl.fvarId)
   for i in [:isVCond.size] do
-    if failedAtom.constr[i]! ∧ ¬ isVCond[i]! then
-      throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constr[i]!}"
+    if failedAtom.constrs[i]! ∧ ¬ isVCond[i]! then
+      throwError "Failure in constraint {constraints.toArray[i]!.1}: {failedAtomMsgs.constrs[i]!}"
   return (vcondIdx, isVCond, vcondVars)
 
 /-- -/
@@ -912,7 +912,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
         let objFunForward ← makeObjFunForward D originalVars pat.originalConstrVars ogProblemExpr
           (pat.constraints.toArray.map Prod.snd) pat.solEqAtom.objFun.val
         let constrForward ← makeConstrForward D originalVars pat.originalConstrVars ogProblemExpr
-          (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constr.map Tree.val)
+          (pat.constraints.toArray.map Prod.snd) pat.isVCond (pat.solEqAtom.constrs.map Tree.val)
           pat.feasibility
         return (objFunForward, constrForward)
 
@@ -936,7 +936,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
           mkLambdaFVars #[p] e
 
       -- Canon problem.
-      let canonConstrs := pat.canonExprs.constr.map Tree.val
+      let canonConstrs := pat.canonExprs.constrs.map Tree.val
       let canonConstrs := canonConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
       let canonProblem : MinimizationExpr :=
         { domain := E
@@ -954,7 +954,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
             pat.optimality.objFun.val canonConstrs pat.newConstrs pat.newConstrVarsArray
 
           let constrBackward ← makeConstrBackward pat.vcondElimMap E canonProblemExpr originalVars
-            newVars (pat.optimality.constr.map (·.val)) canonConstrs pat.newConstrs
+            newVars (pat.optimality.constrs.map (·.val)) canonConstrs pat.newConstrs
             pat.newConstrVarsArray
 
           return (objFunBackward, constrBackward)

@@ -144,7 +144,7 @@ partial def size : EggTree → Nat
 /-- Compose the components of an `EggOCTree` into a single `EggTree`. -/
 def ofEggOCTree (ocTree : EggOCTree) : EggTree :=
   let objFun := ocTree.objFun.2
-  let constrs := ocTree.constr.map
+  let constrs := ocTree.constrs.map
     fun (h, c) => Tree.node "constr" #[Tree.leaf h, c]
   let objFunNode := Tree.node "objFun" #[objFun]
   let constrNode := Tree.node "constrs" constrs
@@ -210,7 +210,7 @@ def fromComponents (objFun : String × EggTree) (constr : Array (String × EggTr
   -- Surround variables and adjust operations in the whole tree.
   let ocTree : OC (String × EggTree) := {
     objFun := (objFun.1, ← EggTree.adjustOps objFun.2)
-    constr := ← constr.mapIdxM <|
+    constrs := ← constr.mapIdxM <|
       -- NOTE: some constraints may have the same name, so we add the index.
       fun i (h, c) => return (s!"{i}:" ++ h, ← EggTree.adjustOps c) }
   return (ocTree, domainConstrs)
@@ -220,7 +220,7 @@ adjusting all nodes and extracting the domain information from the constraints. 
 def fromMinimization (e : MinimizationExpr) (vars : List String) :
     MetaM EggOCTreeExtended := do
   let ocTree ← UncheckedDCP.uncheckedTreeFromMinimizationExpr e
-  fromComponents ocTree.objFun ocTree.constr vars
+  fromComponents ocTree.objFun ocTree.constrs vars
 
 end EggOCTreeExtended
 
@@ -229,7 +229,7 @@ namespace EggMinimization
 /-- Convert `EggOCTree `EggMinimization` by flattening all trees. -/
 def ofEggOCTree (oc : EggOCTree) : EggMinimization :=
   { objFun := EggTree.toEggString oc.objFun.2,
-    constrs := Array.data <| oc.constr.map fun (h, c) => (h, EggTree.toEggString c) }
+    constrs := Array.data <| oc.constrs.map fun (h, c) => (h, EggTree.toEggString c) }
 
 end EggMinimization
 

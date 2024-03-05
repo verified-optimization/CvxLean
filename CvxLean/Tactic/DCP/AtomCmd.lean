@@ -149,7 +149,7 @@ def canonAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElab
         withExistingLocalDecls pat.newVarDecls do
           withExistingLocalDecls pat.newConstrVarsArray.toList do
             trace[Meta.debug] "pat opt: {pat.optimality}"
-            for c in pat.optimality.constr.map Tree.val do
+            for c in pat.optimality.constrs.map Tree.val do
               trace[Meta.debug] "pat opt constr: {c}"
               check c
             -- `vs1` are the variables already present in the uncanon graph implementation.
@@ -163,7 +163,7 @@ def canonAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElab
             trace[Meta.debug] "xs: {xs}"
 
             -- TODO: move because copied from DCP tactic.
-            let canonConstrs := pat.canonExprs.constr.map Tree.val
+            let canonConstrs := pat.canonExprs.constrs.map Tree.val
             let canonConstrs := canonConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
 
             -- TODO: move because copied from DCP tactic.
@@ -183,13 +183,13 @@ def canonAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElab
             let vconds := atomData.vconds.map fun (n,c) => (n, mkAppNBeta c xs)
             let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
 
-            let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
+            let solEqAtomProofs := pat.solEqAtom.constrs.map Tree.val
 
             if atomData.feasibility.size != solEqAtomProofs.size then
               throwError ("Expected same length: {atomData.feasibility} and " ++
                 "{solEqAtomProofs}")
 
-            let solEqAtomProofs := pat.solEqAtom.constr.map Tree.val
+            let solEqAtomProofs := pat.solEqAtom.constrs.map Tree.val
             let mut oldFeasibilityAdjusted := #[]
 
             for i in [:atomData.feasibility.size] do
@@ -223,7 +223,7 @@ def canonAtomData (objCurv : Curvature) (atomData : GraphAtomData) : CommandElab
               trace[Meta.debug] "newFeasibility: {← inferType nf}"
 
             let constraintsFromCanonConstraints :=
-              pat.optimality.constr.map Tree.val
+              pat.optimality.constrs.map Tree.val
 
             for cfrc in constraintsFromCanonConstraints do
               trace[Meta.debug] "constraintsFromCanonConstraints: {← inferType cfrc}"

@@ -181,7 +181,7 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let paramsDomainsOC : OC (Option (Name × Expr)) := OC.mk none (paramsDomainsExpr.map some)
   let potentialParamDomains ← UncheckedDCP.mkUncheckedTree #[] paramsDecls.toArray paramsDomainsOC
   let mut paramDomains := #[]
-  for c in potentialParamDomains.constr do
+  for c in potentialParamDomains.constrs do
     if let some (h, t) := c then
       if let some ⟨_, n, d⟩ := EggOCTreeExtended.processDomainExprTree h t paramsStr then
         paramDomains := paramDomains.push (n, d)
@@ -192,7 +192,7 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let mut tagsMap := HashMap.empty
   tagsMap := tagsMap.insert "objFun" 0
   let mut idx := 1
-  for (h, _) in gStr.constr do
+  for (h, _) in gStr.constrs do
     tagsMap := tagsMap.insert h idx
     idx := idx + 1
 
@@ -201,7 +201,7 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let constrsToIgnore := domainConstrs.map (fun ⟨h, _, _⟩ => h)
 
   -- Remove domain constraints before sending it to egg.
-  let gStr := { gStr with constr := gStr.constr.filter (fun (h, _) => !constrsToIgnore.contains h) }
+  let gStr := { gStr with constrs := gStr.constrs.filter (fun (h, _) => !constrsToIgnore.contains h) }
 
   -- Prepare `egg` request.
   let eggMinimization := EggMinimization.ofEggOCTree gStr
