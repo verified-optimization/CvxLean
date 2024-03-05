@@ -86,8 +86,9 @@ def empty : DiscrTree α := { root := {} }
 
 partial def Trie.format [ToMessageData α] : Trie α → MessageData
   | Trie.node vs cs => MessageData.group $ MessageData.paren $
-    "node" ++ (if vs.isEmpty then MessageData.nil else " " ++ toMessageData vs)
-    ++ MessageData.joinSep (cs.toList.map $ fun ⟨k, c⟩ => MessageData.paren (toMessageData k ++ " => " ++ format c)) ","
+      "node" ++ (if vs.isEmpty then MessageData.nil else " " ++ toMessageData vs) ++
+      MessageData.joinSep (cs.toList.map $ fun ⟨k, c⟩ =>
+        MessageData.paren (toMessageData k ++ " => " ++ format c)) ","
 
 instance [ToMessageData α] : ToMessageData (Trie α) := ⟨Trie.format⟩
 
