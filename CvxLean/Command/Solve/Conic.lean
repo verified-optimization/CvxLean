@@ -88,7 +88,8 @@ unsafe def solutionDataFromProblemData (minExpr : MinimizationExpr) (data : Prob
     | Except.error err => throwSolveError err
 
 /-- -/
-unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : SolutionData) : MetaM Expr := do
+unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : SolutionData) :
+    MetaM Expr := do
   let vars ← decomposeDomainInstantiating minExpr
 
   -- Generate solution of the correct shape.
@@ -114,7 +115,7 @@ unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : Solution
         let exprs := (solPointExprArrayRaw.drop i).take n
 
         -- TODO: Code repetition.
-        let arrayExpr ← Lean.Expr.mkArray (mkConst ``Real) exprs
+        let arrayExpr ← Expr.mkArray (mkConst ``Real) exprs
         let arrayList ← mkAppM ``Array.toList #[arrayExpr]
         let v ← withLocalDeclD `i' (← mkAppM ``Fin #[toExpr n]) fun i' => do
           let i'' := mkApp2 (mkConst ``Fin.val) (toExpr n) i'
@@ -128,12 +129,12 @@ unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : Solution
         -- Matrix.
         let mut exprs := #[]
         for j in [:m] do
-          let arrayExpr ← Lean.Expr.mkArray (mkConst ``Real) ((solPointExprArrayRaw.drop (i + j * n)).take n)
+          let arrayExpr ← Expr.mkArray (mkConst ``Real)
+            ((solPointExprArrayRaw.drop (i + j * n)).take n)
           let listExpr ← mkAppM ``Array.toList #[arrayExpr]
           exprs := exprs.push listExpr
 
-        let arrayListExpr ←
-          Lean.Expr.mkArray (← mkAppM ``List #[mkConst ``Real]) exprs
+        let arrayListExpr ← Expr.mkArray (← mkAppM ``List #[mkConst ``Real]) exprs
 
         -- List of list representing the matrix.
         let listListExpr ← mkAppM ``Array.toList #[arrayListExpr]

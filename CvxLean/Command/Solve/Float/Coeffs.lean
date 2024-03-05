@@ -171,7 +171,8 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.nonnegOrthCone #[ei])
     -- Vector exponential cone.
-    | .app (.app (.app (.app (.app (.const ``Real.Vec.expCone _) (.app (.const ``Fin _) n)) _) a) b) c =>
+    | .app (.app (.app (.app (.app
+      (.const ``Real.Vec.expCone _) (.app (.const ``Fin _) n)) _) a) b) c =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
           let idxExpr ← mkFinIdxExpr i n

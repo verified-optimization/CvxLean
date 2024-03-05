@@ -76,12 +76,12 @@ partial def realToFloat (e : Expr) : MetaM Expr := do
 environment extension. -/
 @[command_elab addRealToFloatCommand]
 def elabAddRealToFloatCommand : CommandElab
-| `(add_real_to_float : $real := $float) =>
-  liftTermElabM do
-    let real ← elabTermAndSynthesize real.raw none
-    let float ← elabTermAndSynthesize float.raw none
-    addRealToFloatData { real := real, float := float }
-| _ => throwUnsupportedSyntax
+  | `(add_real_to_float : $real := $float) =>
+      liftTermElabM do
+        let real ← elabTermAndSynthesize real.raw none
+        let float ← elabTermAndSynthesize float.raw none
+        addRealToFloatData { real := real, float := float }
+  | _ => throwUnsupportedSyntax
 
 macro_rules
 | `(add_real_to_float $idents:funBinder* : $real := $float) => do
