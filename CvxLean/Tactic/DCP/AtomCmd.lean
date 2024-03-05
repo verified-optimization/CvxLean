@@ -82,6 +82,7 @@ def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind)
       ty ← match curvatureInArg curv monoArgKind[i]! with
       | Curvature.Concave => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
       | Curvature.Convex => mkArrow (← mkLe ys[i]! monoXs[i]!) ty
+      | Curvature.ConvexSet => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
       | _ => throwDCPError "invalid curvature"
     return ← mkForallFVars ys ty
 
@@ -516,6 +517,7 @@ def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bcond
             match curv with
             | Curvature.Concave => return ← mkLe impObj body
             | Curvature.Convex => return ← mkLe body impObj
+            | Curvature.ConvexSet => return ← mkLe impObj body
             | _ => throwError "invalid curvature: {curv}"
           trace[Meta.debug] "elabOpt ensuring {ty}"
           let opt ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
@@ -779,8 +781,8 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
   let atomData ← addAtomDataDecls id.getId atomData
 
   liftTermElabM do
-    trace[Meta.debug] "Add atom: {atomData}"
-    addAtom $ AtomData.graph atomData
+    trace[CvxLean.debug] "Add atom: {atomData}"
+    addAtom <| AtomData.graph atomData
 | _ => throwUnsupportedSyntax
 
 /-- -/
@@ -789,7 +791,7 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
       optimality $opt) => do
   let atomData ← liftTermElabM do
     let (argDecls, argKinds) ← elabArgKinds args.rawImpl
-    let (expr, bodyTy) ← elabExpr expr.raw argDecls (ty := some (mkSort levelZero))
+    let (expr, _bodyTy) ← elabExpr expr.raw argDecls (ty := some (mkSort levelZero))
     let vconds := #[]
     let impVars := #[]
     let impObj := expr
@@ -799,13 +801,12 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
       do return ← mkLambdaFVars xs $ ← mkEqRefl body
     let feas := #[]
     let bconds := #[]
-    -- TODO: Not concave....
-    let opt ← elabOpt Curvature.Concave argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
+    let opt ← elabOpt Curvature.ConvexSet argDecls expr bconds impVars impObj impConstrs argKinds opt.raw
     let vcondElim := #[]
 
     let atomData := {
       id := id.getId
-      curvature := Curvature.ConvexSet --Curvature.Concave
+      curvature := Curvature.ConvexSet
       expr := expr
       argKinds := argKinds
       vconds := vconds
@@ -824,8 +825,8 @@ def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind
   let atomData ← addAtomDataDecls id.getId atomData
 
   liftTermElabM do
-    trace[Meta.debug] "Add atom: {atomData}"
-    addAtom $ AtomData.graph atomData
+    trace[CvxLean.debug] "Add atom: {atomData}"
+    addAtom <| AtomData.graph atomData
 | _ => throwUnsupportedSyntax
 
 end CvxLean
