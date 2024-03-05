@@ -566,9 +566,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
     optimality $opt
     vconditionElimination $vcondElim*) => do
   let atomData ← liftTermElabM do
-    -- TODO: check if trating convexset as convex makes sense.
-    let curvTag ← elabCurvature curv.raw
-    let curv := if curvTag == Curvature.ConvexSet then Curvature.Concave else curvTag
+    let curv ← elabCurvature curv.raw
     let (argDecls, argKinds) ← elabArgKinds args.rawImpl
     let (expr, bodyTy) ← elabExpr expr.raw argDecls
     let (vconds, vcondMap) ← elabVConditions argDecls vconds.rawImpl
@@ -583,7 +581,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
 
     let atomData := {
       id := id.getId
-      curvature := curvTag
+      curvature := curv
       expr := expr
       argKinds := argKinds
       bconds := #[]
@@ -600,9 +598,6 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
     return atomData
 
   let objCurv := atomData.curvature
-    -- match atomData.curvature with
-    -- | Curvature.ConvexSet => Curvature.ConvexSet
-    -- | _ => Curvature.Affine
 
   trace[Meta.debug] "before canon sol eq atom: {atomData.solEqAtom}"
 
