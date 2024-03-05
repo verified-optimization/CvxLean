@@ -2,6 +2,7 @@ import CvxLean.Syntax.OptimizationParam
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Util.Error
 import CvxLean.Tactic.DCP.DCP
+import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
 /-!
 This is the first step when applying the `pre_dcp` tactic that allows us to get the AST of the
@@ -91,7 +92,7 @@ where
 
   /-- Apply `findUncheckedAtoms` to children and build a tree. -/
   processUncheckedAtom (vars params : Array FVarId) (atom : GraphAtomData) (args : Array Expr) :
-      MetaM (Tree String String) := do
+      MetaM EggTree := do
     let mut childTrees := #[]
     for i in [:args.size] do
       let arg := args[i]!
@@ -102,8 +103,7 @@ where
 
 /-- Wrapper of `mkUncheckedTree` that takes a minimization expression, decomposes it by its
 components and returns the corresponding AST as a tree of strings. -/
-def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
-  MetaM (OC (String × Tree String String)) := do
+def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) : MetaM EggOCTree := do
   let (objFun, constraints, originalVarsDecls) ← withLambdaBody goalExprs.constraints
     fun p constraints => do
       let pr := (← Meta.mkProjections goalExprs.domain p).toArray

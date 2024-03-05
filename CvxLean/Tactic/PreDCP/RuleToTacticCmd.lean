@@ -16,26 +16,26 @@ namespace CvxLean
 open Lean Parser
 
 syntax (name := registerRuleToTactic)
-  "register_rule_to_tactic " str " ; " str " => " str " := " tactic ";" : command
+  "register_rule_to_tactic " str ";" str " => " str " := " tactic ";" : command
 
 syntax (name := registerRuleToTacticBidirectional)
-  "register_rule_to_tactic " str " ; " str " <=> " str " := " tactic ";" : command
+  "register_rule_to_tactic " str ";" str " <=> " str " := " tactic ";" : command
 
 macro_rules
-  | `(register_rule_to_tactic $rwName ; $rwTarget <=> $rwGoal := $tac;) =>
+  | `(register_rule_to_tactic $rwName; $rwTarget <=> $rwGoal := $tac;) =>
     if let some rwNameStr := Syntax.isStrLit? rwName then
       let rwNameRev := Syntax.mkStrLit (rwNameStr ++ "-rev")
-      `(register_rule_to_tactic $rwName ; $rwTarget => $rwGoal := $tac;
-        register_rule_to_tactic $rwNameRev ; $rwGoal => $rwTarget := $tac;)
+      `(register_rule_to_tactic $rwName; $rwTarget => $rwGoal := $tac;
+        register_rule_to_tactic $rwNameRev; $rwGoal => $rwTarget := $tac;)
     else `(throwError "`register_rule_to_tactic` error: expected string.")
 
 syntax (name := registerObjFunRuleToTactic)
-  "register_objFun_rule_to_tactic " str " ; " str " => " str " := " tactic ";" : command
+  "register_objFun_rule_to_tactic " str ";" str " => " str " := " tactic ";" : command
 
 open Lean.Elab Lean.Elab.Command
 
 @[command_elab registerRuleToTactic] def elabRuleToTactic : CommandElab
-| `(register_rule_to_tactic $rwName ; $rwTarget => $rwGoal := $tac;) => do
+| `(register_rule_to_tactic $rwName; $rwTarget => $rwGoal := $tac;) => do
     let rwNameStr := rwName.getString
     -- NOTE: We ignore this for now.
     let _rwTargetStr := rwTarget.getString
@@ -44,7 +44,7 @@ open Lean.Elab Lean.Elab.Command
 | _ => throwUnsupportedSyntax
 
 @[command_elab registerObjFunRuleToTactic] def elabRegisterObjFunRuleToTactic : CommandElab
-| `(register_objFun_rule_to_tactic $rwName ; $rwTarget => $rwGoal := $tac;) => do
+| `(register_objFun_rule_to_tactic $rwName; $rwTarget => $rwGoal := $tac;) => do
     let rwNameStr := rwName.getString
     -- NOTE: We ignore this for now.
     let _rwTargetStr := rwTarget.getString

@@ -2,6 +2,10 @@ import Lean
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
 
+/-!
+The main types user around the `egg` interface.
+-/
+
 namespace CvxLean
 
 section Minimization

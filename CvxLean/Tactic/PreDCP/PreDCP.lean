@@ -201,7 +201,8 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let constrsToIgnore := domainConstrs.map (fun ⟨h, _, _⟩ => h)
 
   -- Remove domain constraints before sending it to egg.
-  let gStr := { gStr with constrs := gStr.constrs.filter (fun (h, _) => !constrsToIgnore.contains h) }
+  let gStr := { gStr with
+    constrs := gStr.constrs.filter (fun (h, _) => !constrsToIgnore.contains h) }
 
   -- Prepare `egg` request.
   let eggMinimization := EggMinimization.ofEggOCTree gStr
