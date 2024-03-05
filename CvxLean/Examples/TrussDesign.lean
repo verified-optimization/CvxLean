@@ -63,7 +63,7 @@ equivalence* eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) 
     apply ChangeOfVariables.toEquivalence
       (fun (hwrA : ℝ × ℝ × ℝ × ℝ) =>
         (hwrA.1, hwrA.2.1, hwrA.2.2.1, sqrt (hwrA.2.2.2 / (2 * π) + hwrA.2.2.1 ^ 2)))
-    . rintro ⟨h, w, r, R⟩ ⟨c_r, _, _, _, _, _, _, c_R_lb, _⟩; dsimp at *
+    · rintro ⟨h, w, r, R⟩ ⟨c_r, _, _, _, _, _, _, c_R_lb, _⟩; dsimp at *
       simp [ChangeOfVariables.condition]
       have h_r_le : r ≤ 1.1 * r := (le_mul_iff_one_le_left c_r).mpr (by norm_num)
       exact le_trans (le_of_lt c_r) (le_trans h_r_le c_R_lb)
@@ -122,12 +122,12 @@ equivalence* eqv₂/trussDesignConvex (hmin hmax : ℝ) (hmin_pos : 0 < hmin)
     apply ChangeOfVariables.toEquivalence
       (fun (hwrA : ℝ × ℝ × ℝ × ℝ) =>
         (exp hwrA.1, exp hwrA.2.1, exp hwrA.2.2.1, exp hwrA.2.2.2))
-    . rintro ⟨h, w, r, A⟩ ⟨c_r, _, _, c_hmin, _, c_wmin, _, c_A_lb, _⟩; dsimp at *
+    · rintro ⟨h, w, r, A⟩ ⟨c_r, _, _, c_hmin, _, c_wmin, _, c_A_lb, _⟩; dsimp at *
       split_ands
-      . exact lt_of_lt_of_le hmin_pos c_hmin
-      . exact lt_of_lt_of_le wmin_pos c_wmin
-      . exact c_r
-      . have h_A_div_2π_pos : 0 < A / (2 * π) := lt_of_lt_of_le (by positivity) c_A_lb
+      · exact lt_of_lt_of_le hmin_pos c_hmin
+      · exact lt_of_lt_of_le wmin_pos c_wmin
+      · exact c_r
+      · have h_A_div_2π_pos : 0 < A / (2 * π) := lt_of_lt_of_le (by positivity) c_A_lb
         rwa [lt_div_iff (by positivity), zero_mul] at h_A_div_2π_pos
   conv_opt => dsimp
   rename_vars [h', w', r', A']

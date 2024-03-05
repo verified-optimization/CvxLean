@@ -49,8 +49,8 @@ private lemma simp_vec_fraction (h_d_pos : StrongLT 0 d) (s : Fin n → ℝ) (i 
 private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
     ∑ j in [[0, i]], t j = Vec.cumsum t i := by
   simp [Vec.cumsum]; split_ifs
-  . rfl
-  . linarith [hn.out]
+  · rfl
+  · linarith [hn.out]
 
 equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
@@ -62,7 +62,7 @@ equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence (fun t => d / t)
-    . rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [h_smin_pos i, c_smin i, h_d_pos i]
+    · rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [h_smin_pos i, c_smin i, h_d_pos i]
   rename_vars [t]
   -- Clean up divisions introduced by the change of variables.
   conv_obj => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
@@ -111,7 +111,7 @@ equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
   -- Add constraint to tell the system that `t` is positive.
   equivalence_step =>
     apply Equivalence.add_constraint (cs' := fun t => StrongLT 0 t)
-    . rintro t ⟨c_smin, _⟩ i
+    · rintro t ⟨c_smin, _⟩ i
       exact t_pos_of_c_smin t c_smin i
   rename_vars [t]
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
