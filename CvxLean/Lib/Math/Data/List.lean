@@ -1,5 +1,9 @@
 import Mathlib.Algebra.Ring.Basic
 
+/-!
+Some extra operations on lists.
+-/
+
 namespace List
 
 variable {α}

@@ -1,6 +1,10 @@
 import Mathlib.Data.Real.Basic
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Zero cones.
+-/
+
 namespace Real
 
 /-- The zero cone `{0}`. -/

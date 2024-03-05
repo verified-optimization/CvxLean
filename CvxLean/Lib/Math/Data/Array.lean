@@ -1,6 +1,10 @@
 import Mathlib.Data.List.Basic
 import Mathlib.Algebra.Group.Defs
 
+/-!
+Some extra operations on arrays.
+-/
+
 open Lean
 
 variable {α β γ}

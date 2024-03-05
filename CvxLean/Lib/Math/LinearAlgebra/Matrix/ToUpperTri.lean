@@ -1,13 +1,13 @@
 import Mathlib.Data.Real.Basic
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.Triangular
 
-namespace Matrix
-
 /-!
 # Conversion to upper triangular matrices
 
 Defines `toUpperTri` and proves some basic lemmas about it.
 -/
+
+namespace Matrix
 
 open Matrix
 

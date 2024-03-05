@@ -1,6 +1,10 @@
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Nonnegative orthant cones.
+-/
+
 namespace Real
 
 /-- The nonnegative orthant
@@ -13,8 +17,7 @@ def Vec.nonnegOrthCone {n} [Fintype n] (x : n → ℝ) : Prop :=
   ∀ i, Real.nonnegOrthCone (x i)
 
 /-- The `n×m`-dimensional nonnegative orthant `ℝ₊ⁿˣᵐ`. -/
-def Matrix.nonnegOrthCone {n m} [Fintype n] [Fintype m] (M : Matrix n m ℝ) :
-  Prop :=
+def Matrix.nonnegOrthCone {n m} [Fintype n] [Fintype m] (M : Matrix n m ℝ) : Prop :=
   ∀ i j, Real.nonnegOrthCone (M i j)
 
 end Real

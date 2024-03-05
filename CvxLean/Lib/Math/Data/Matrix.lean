@@ -28,15 +28,15 @@ def abs (A : Matrix m n ℝ) : Matrix m n ℝ :=
   fun i j => |A i j|
 
 theorem vecCons_zero_zero {n} [Zero α] : vecCons (0 : α) (0 : Fin n → α) = 0 := by
-  ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
+  ext i; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 theorem smul_vecCons {n} [Zero α] [SMulZeroClass ℝ α] (x : ℝ) (y : α) (v : Fin n → α) :
     x • vecCons y v = vecCons (x • y) (x • v) := by
-  ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
+  ext i; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 theorem add_vecCons {n} [Zero α] [SMulZeroClass ℝ α] [Add α] (x : α) (v : Fin n → α) (y : α)
     (w : Fin n → α) : vecCons x v + vecCons y w = vecCons (x + y) (v + w) := by
-  ext i ; refine' Fin.cases _ _ i <;> simp [vecCons]
+  ext i; refine' Fin.cases _ _ i <;> simp [vecCons]
 
 open BigOperators
 

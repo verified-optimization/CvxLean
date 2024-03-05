@@ -1,5 +1,9 @@
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 
+/-!
+The Gram-Schmidt algorithm respects basis vectors.
+-/
+
 section GramSchmidt
 
 variable (𝕜 : Type _) {E : Type _} [IsROrC 𝕜]

@@ -103,16 +103,16 @@ variable {a b c : m → ℝ}
 
 lemma div_le_iff (hb : StrongLT 0 b) : a / b ≤ c ↔ a ≤ c * b := by
   constructor
-  . intro h i; have hi := h i; simp at hi;
+  · intro h i; have hi := h i; simp at hi;
     rw [_root_.div_le_iff (hb i)] at hi; exact hi
-  . intro h i; have hi := h i; simp at hi;
+  · intro h i; have hi := h i; simp at hi;
     dsimp; rw [_root_.div_le_iff (hb i)]; exact hi
 
 lemma le_div_iff (hc : StrongLT 0 c) : a ≤ b / c ↔ a * c ≤ b := by
   constructor
-  . intro h i; have hi := h i; simp at hi;
+  · intro h i; have hi := h i; simp at hi;
     rw [_root_.le_div_iff (hc i)] at hi; exact hi
-  . intro h i; have hi := h i; simp at hi;
+  · intro h i; have hi := h i; simp at hi;
     dsimp; rw [_root_.le_div_iff (hc i)]; exact hi
 
 end RealLemmas

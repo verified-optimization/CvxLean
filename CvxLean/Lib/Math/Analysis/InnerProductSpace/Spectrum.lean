@@ -1,5 +1,9 @@
 import Mathlib.LinearAlgebra.Matrix.Spectrum
 
+/-!
+Version of the spectral theorem.
+-/
+
 namespace LinearMap
 
 variable {𝕜 : Type _} [IsROrC 𝕜] [DecidableEq 𝕜]
@@ -8,10 +12,9 @@ variable [FiniteDimensional 𝕜 E]
 variable {n : ℕ} (hn : FiniteDimensional.finrank 𝕜 E = n)
 variable {T : E →ₗ[𝕜] E}
 
-/-- *Diagonalization theorem*, *spectral theorem*; version 3: A self-adjoint
-operator `T` on a finite-dimensional inner product space `E` acts diagonally on
-the identification of `E` with Euclidean space induced by an orthonormal basis
-of eigenvectors of `T`. -/
+/-- *Diagonalization theorem*, *spectral theorem*; version 3: A self-adjoint operator `T` on a
+finite-dimensional inner product space `E` acts diagonally on the identification of `E` with
+Euclidean space induced by an orthonormal basis of eigenvectors of `T`. -/
 lemma spectral_theorem' (v : E) (i : Fin n)
     (xs : OrthonormalBasis (Fin n) 𝕜 E) (as : Fin n → ℝ)
     (hxs : ∀ j, Module.End.HasEigenvector T (as j) (xs j)) :

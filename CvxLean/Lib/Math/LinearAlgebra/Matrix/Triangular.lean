@@ -1,7 +1,7 @@
 import Mathlib.LinearAlgebra.Matrix.Block
 import CvxLean.Lib.Math.LinearAlgebra.Matrix.Block
 
-/-
+/-!
 # Triangular Matrices
 
 This file defines upper and lower triangular matrices. The definitions are based on
