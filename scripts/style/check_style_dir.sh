@@ -7,8 +7,9 @@ if [ ! -d "$DIR" ]; then
     exit 1
 fi
 
-for file in "$DIR"/*.lean; do
+find "$DIR" -type f -name "*.lean" -print0 | while IFS= read -r -d '' file; do
     if [ -f "$file" ]; then
-        ./scripts/style/check_style_file.sh "$file"
+        echo "Checking style for file $file"
+        ./scripts/style/check_style_file.sh "$file" 2>&1
     fi
 done
