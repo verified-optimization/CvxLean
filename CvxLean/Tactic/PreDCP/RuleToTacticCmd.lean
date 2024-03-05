@@ -1,6 +1,16 @@
 import Lean
 import CvxLean.Tactic.PreDCP.RuleToTacticExt
 
+/-!
+# Egg rewrite rule to tactic (command)
+
+This files defines the commands to associate rule names to Lean tactics. There are two commands:
+* `register_rule_to_tactic`, for if-and-only-if or real equality rewrites.
+* `register_objFun_rule_to_tactic`, for problem-level rewrites (currently these are pre-compositions
+  applied to the objective function). They do the same but set the `mapObjFun` flag to `true` in the
+  environment extension so that `pre_dcp` knows that it should be applied directly.
+-/
+
 namespace CvxLean
 
 open Lean Parser

@@ -1,8 +1,14 @@
 import Lean
 
-open Lean
+/-!
+# S-expressions
 
--- Taken from https://github.com/opencompl/egg-tactic-code
+This file defines S-expressions, and provides a parser for them.
+
+Taken from <https://github.com/opencompl/egg-tactic-code>.
+-/
+
+open Lean
 
 inductive Sexp
   | atom : String → Sexp
@@ -109,16 +115,17 @@ def SexpM.pop: SexpM SexpTok := do
       return x
 
 -- Remove elements from the stack of tokens `List SexpToken` till we find a `SexpToken.opening`.
--- When we do, return (1) the position of the open paren, (2) the list of SexpTokens left on the stack, and (3) the list of Sexps
+-- When we do, return (1) the position of the open paren, (2) the list of SexpTokens left on the
+-- stack, and (3) the list of Sexps
 -- Until then, accumulate the `SexpToken.sexp`s into `sexps`.
 def stackPopTillOpen (stk : List SexpTok) (sexps : List Sexp := []) :
-  Option (String.Pos × (List SexpTok) × (List Sexp)) :=
+    Option (String.Pos × (List SexpTok) × (List Sexp)) :=
   match stk with
   | [] => .none
   | SexpTok.opening openPos :: rest => (.some (openPos, rest, sexps))
   | SexpTok.sexp s :: rest => stackPopTillOpen rest (s :: sexps)
 
-/-- Collapse the current stack till the last ( into a single `Sexp.list`. -/
+/-- Collapse the current stack till the last `(` into a single `Sexp.list`. -/
 def SexpM.matchClosingParen: SexpM Unit := do
   let state ← get
   match stackPopTillOpen state.stack with
@@ -163,15 +170,14 @@ partial def SexpM.parse : SexpM Unit := do
           SexpError.unmatchedOpenParen ({ s := state.it.s, i := openPos })
       | none => return ()
 
-/-- Parse a list of (possibly empty) sexps. -/
+/-- Parse a list of (possibly empty) S-expressions. -/
 def parseSexpList (s: String):  Except SexpError (List Sexp) :=
   let initState := SexpState.fromString s
   match EStateM.run SexpM.parse initState with
   | .ok () state => .ok state.sexps.reverse
   | .error e _ => .error e
 
-/-- Parse a single s-expression, and error if found no sexp or multiple sexps.
--/
+/-- Parse a single s-expression, and error if found no sexp or multiple S-expressions. -/
 def parseSingleSexp (s: String) : Except SexpError Sexp := do
   match (← parseSexpList s) with
   | [x] => .ok x

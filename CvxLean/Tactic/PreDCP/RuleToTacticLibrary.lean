@@ -3,14 +3,21 @@ import CvxLean.Tactic.PreDCP.RuleToTacticCmd
 import CvxLean.Tactic.Arith.Arith
 
 /-!
+# Egg rewrite rule to tactic (library)
 
+This files associates a tactic to each rewrite name. Note that we do not use `rw` or `simp`, because
+the `pre_dcp` tactic will set-up the goal so that it corresponds exactly to the lemma.
+
+We split the rewrites into problem rewrites, if-and-only-if rewrites, and real equality rewrites.
 -/
 
 namespace CvxLean
 
 set_option linter.unreachableTactic false
 
-/- Objective function rules. -/
+section ProblemRewrites
+
+/-! Objective function rules (problem-level rewrites). -/
 
 register_objFun_rule_to_tactic
     "map_objFun_log"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (log ?a)) ?cs)" :=
@@ -20,8 +27,12 @@ register_objFun_rule_to_tactic
     "map_objFun_sq"; "(prob (objFun ?a) ?cs)" => "(prob (objFun (pow ?a 2)) ?cs)" :=
   apply Minimization.Equivalence.map_objFun_sq (by positivity!);
 
+end ProblemRewrites
 
-/- Equality rules. -/
+
+section IfAndOnlyIfRewrites
+
+/-! Equality if-and-only-if rules. -/
 
 register_rule_to_tactic "log_eq_log" ; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))" :=
   apply Real.log_eq_log (by positivity!) (by positivity!);
@@ -30,7 +41,7 @@ register_rule_to_tactic "log_eq_log-rev" ; "(eq (log ?a) (log ?b))" => "(eq ?a ?
   apply (Real.log_eq_log (by positivity!) (by positivity!)).symm;
 
 
-/- Less than or equal rules. -/
+/-! Less-than-or-equal if-and-only-if rules. -/
 
 register_rule_to_tactic "le_sub_iff_add_le" ; "(le ?a (sub ?b ?c))" => "(le (add ?a ?c) ?b)" :=
   apply le_sub_iff_add_le;
@@ -65,8 +76,12 @@ register_rule_to_tactic "pow_two_le_pow_two"; "(le (pow ?a 2) (pow ?b 2))" => "(
 register_rule_to_tactic "pow_two_le_pow_two-rev"; "(le ?a ?b)" => "(le (pow ?a 2) (pow ?b 2))" :=
   apply (Real.pow_two_le_pow_two (by positivity!) (by positivity!)).symm;
 
+end IfAndOnlyIfRewrites
 
-/- Field rules. -/
+
+section RealEqualityRewrites
+
+/-! Field rules. -/
 
 register_rule_to_tactic "neg_neg" ; "(neg (neg ?a))" => "?a" :=
   apply neg_neg (G := ℝ);
@@ -372,5 +387,7 @@ register_rule_to_tactic "norm2_fold"; "(sqrt (add (pow ?a 2) (pow ?b 2)))" => "(
 
 register_rule_to_tactic "norm2_unfold"; "(norm2 ?a ?b)" => "(sqrt (add (pow ?a 2) (pow ?b 2)))" :=
   rfl;
+
+end RealEqualityRewrites
 
 end CvxLean
