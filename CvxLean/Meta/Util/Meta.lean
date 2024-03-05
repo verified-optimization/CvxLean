@@ -22,7 +22,7 @@ def withLambdaBody (e : Expr) (x : (fvar : Expr) → (body : Expr) → MetaM α)
 /-- Add local declarations where the type constructor is trivial (non-dependant on the other
 declarations). -/
 def withLocalDeclsDNondep [Inhabited α] (declInfos : Array (Lean.Name × Expr))
-  (k : (xs : Array Expr) → m α) : m α :=
+    (k : (xs : Array Expr) → m α) : m α :=
   withLocalDeclsD (declInfos.map fun (n, t) => (n, fun _ => pure t)) k
 
 /-- Introduce let declarations into the local context. -/
@@ -34,7 +34,7 @@ where
   loop [Inhabited α] (acc : Array Expr) : m α := do
     if acc.size < declInfos.size then
       let (name, typeCtor, valCtor) := declInfos[acc.size]!
-      withLetDecl name (←typeCtor acc) (←valCtor acc) fun x => loop (acc.push x)
+      withLetDecl name (← typeCtor acc) (← valCtor acc) fun x => loop (acc.push x)
     else
       k acc
 
