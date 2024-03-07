@@ -47,7 +47,7 @@ def addAtomDataDecls (id : Name) (atomData : GraphAtomData) : CommandElabM Graph
     vcondElim := vcondElim
     optimality := optimality }
 where
-  addAtomDataDecl (name : Lean.Name) (expr : Expr) : CommandElabM Expr := do
+  addAtomDataDecl (name : Name) (expr : Expr) : CommandElabM Expr := do
     liftCoreM <| addDecl <| .defnDecl {
       name := name
       levelParams := []
@@ -64,7 +64,7 @@ This is used in `shiftingArgs`, which, in turn, is used to set up the `optimalit
 def withCopyOfMonoXs {α} [Inhabited α] (xs : Array Expr) (argKinds : Array ArgKind)
     (f : Array Expr → Array Expr → Array ArgKind → TermElabM α) : TermElabM α := do
   -- Determine subset of monotone arguments and their behavior.
-  let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
+  let mut argDeclInfo : Array (Name × (Array Expr → TermElabM Expr)) := #[]
   let mut monoXs := #[]
   let mut monoArgKind := #[]
   for i in [:xs.size] do
@@ -103,11 +103,11 @@ atom declarations. -/
 def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind)
     (f : Array Expr → Array Expr → TermElabM Expr) : TermElabM Expr := do
   -- Determine subset of non-constant arguments.
-  let mut argDeclInfo : Array (Lean.Name × (Array Expr → TermElabM Expr)) := #[]
+  let mut argDeclInfo : Array (Name × (Array Expr → TermElabM Expr)) := #[]
   for i in [:xs.size] do
     if argKinds[i]! != ArgKind.Constant then
       let ty := ← inferType xs[i]!
-      let name := Name.mkSimple ((ToString.toString (← FVarId.getDecl xs[i]!.fvarId!).userName) ++ "'")
+      let name := Name.mkSimple ((toString (← FVarId.getDecl xs[i]!.fvarId!).userName) ++ "'")
       argDeclInfo := argDeclInfo.push (name, fun _ => pure ty)
 
   withLocalDeclsD argDeclInfo fun ys => do
@@ -174,13 +174,14 @@ def elabExpr (expr : Syntax) (argDecls : Array LocalDecl) (ty : Option Expr := n
 
 /-- Conditions are just expressions (of type `Prop`) defined using the arguments. It is useful to
 have them also as a hashmap for variable condition elimination.
-TODO: Some duplication here, we essentially return the same data twice. -/
+TODO: Some duplication here, we essentially return the same data twice. There is a similar issue
+with other functions below. -/
 def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) :
     TermElabM (Array (Name × Expr) × Std.HashMap Name Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
-    let mut vcondMap : Std.HashMap Lean.Name Expr := {}
-    let mut vconds : Array (Lean.Name × Expr) := #[]
+    let mut vcondMap : Std.HashMap Name Expr := {}
+    let mut vconds : Array (Name × Expr) := #[]
     for stx in vcondStx do
       let vcond ← elabTermAndSynthesizeEnsuringType stx[3] (some <| mkSort levelZero)
       let vcond ← mkLambdaFVars xs vcond
@@ -195,43 +196,55 @@ end Signature
 
 section GraphImplementation
 
-/-- -/
+/-- The implementation variables used in the graph implementation of ana tom are given as
+identifiers with a type such as `(t : ℝ)`. Here, we get the names and types of all implementation
+variables. Their types might depend on the arguments, mainly with vectors or arrays where the type
+is, say, `Fin n → ℝ`, and `n` is an atom argument. -/
 def elabImpVars (argDecls : Array LocalDecl) (impVarsStx : Array Syntax) :
-  TermElabM (Array (Lean.Name × Expr) × Std.HashMap Lean.Name Expr) := do
+    TermElabM (Array (Name × Expr) × Std.HashMap Name Expr) := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
-    let mut impVarMap : Std.HashMap Lean.Name Expr := {}
-    let mut impVars : Array (Lean.Name × Expr) := #[]
+    let mut impVarMap : Std.HashMap Name Expr := {}
+    let mut impVars : Array (Name × Expr) := #[]
     for stx in impVarsStx do
       let impVarTy ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] none
-      let impVarTy ← mkLambdaFVars xs $ impVarTy
+      let impVarTy ← mkLambdaFVars xs <| impVarTy
       impVars := impVars.push (stx[1].getId, impVarTy)
       impVarMap := impVarMap.insert stx[1].getId impVarTy
     return (impVars, impVarMap)
 
-/-- -/
-def elabImpObj (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
+/-- The implementation objective is an expression that might depend on the atom arguments and the
+implementation variables.
+TODO: Add background conditions. -/
+def elabImpObj (argDecls : Array LocalDecl) (impVars : Array (Name × Expr))
     (impObjStx : Syntax) (bodyTy : Expr) : TermElabM Expr := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
-    withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun ts => do
+    -- `vs` are the implementation variables.
+    withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
       let impObj ← Elab.Term.elabTermAndSynthesizeEnsuringType impObjStx (some bodyTy)
-      return ← mkLambdaFVars xs $ ← mkLambdaFVars ts impObj
+      return ← mkLambdaFVars (xs ++ vs) impObj
 
-/-- -/
-def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
-    (bconds : Array (Lean.Name × Expr)) (impConstrStx : Array Syntax) :
-    TermElabM (Array (Lean.Name × Expr)) := do
+/-- The implementation constraints are expressions (of type `Prop`) that might depend on the atom
+arguments and the implementation variables. Theyc an also use background conditions. -/
+def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Name × Expr))
+    (bconds : Array (Name × Expr)) (impConstrStx : Array Syntax) :
+    TermElabM (Array (Name × Expr)) := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
     let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    -- `as` are the background conditions.
     withLocalDeclsDNondep bconds fun as => do
+      -- `vs` are the implementation variables.
       withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
-        let mut impConstrs : Array (Lean.Name × Expr) := #[]
+        let mut impConstrs : Array (Name × Expr) := #[]
         for stx in impConstrStx do
           let impConstr ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (mkSort levelZero)
-          let impConstr ← mkLambdaFVars xs <| ← mkLambdaFVars as <| ← mkLambdaFVars vs impConstr
-          trace[CvxLean.debug] "impConstr: {← inferType impConstr}"
+          let impConstr ← mkLambdaFVars (xs ++ as ++ vs) impConstr
+          trace[CvxLean.debug] "`elabImpConstrs` constraint type {← inferType impConstr}."
           impConstrs := impConstrs.push (stx[1].getId, impConstr)
         return impConstrs
 
@@ -239,31 +252,39 @@ end GraphImplementation
 
 section ProofObligations
 
-/-- -/
-def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
-    (impVarMap : Std.HashMap Lean.Name Expr) (solStx : Array Syntax) : TermElabM (Array Expr) := do
+/-- For every implementation variable, they user must provide a solution as an expression using
+the atom's arguments. These expressions are crucial to build the forward map in the equivalence
+relation. -/
+def elabSols (argDecls : Array LocalDecl) (impVars : Array (Name × Expr))
+    (impVarMap : Std.HashMap Name Expr) (solStx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
     let impVarNames := impVars.map (·.fst)
-    let mut solMap : Std.HashMap Lean.Name Expr := {}
+    let mut solMap : Std.HashMap Name Expr := {}
     for stx in solStx do
       let id ← match impVarMap.find? stx[1].getId with
-      | some id => pure id
-      | none => throwAtomDeclarationError "Unknown variable: {stx[1].getId}"
+        | some id => pure id
+        | none => throwAtomDeclarationError "unknown variable in solution {stx[1].getId}."
       let ty := mkAppNBeta id xs
-      solMap := solMap.insert stx[1].getId $ ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some ty)
+      solMap := solMap.insert stx[1].getId <|
+        ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some ty)
     let sols ← impVarNames.mapM
       fun n => match solMap.find? n with
         | some sol => pure sol
-        | none => throwAtomDeclarationError "solution not found {n}"
+        | none => throwAtomDeclarationError "solution not found for {n}."
     let sols ← sols.mapM (do return ← mkLambdaFVars xs ·)
     return sols
 
-/-- -/
-def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Expr))
+/-- Given the implementation objecitve and the user-defined solutions, the first proof obligation
+is to show that instantiating the implementation variables in the implementaiton objective with the
+solution expressions needs to be **equal** to the atom's expression. This is used later on to prove
+the needed properties of the forward map. -/
+def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Name × Expr))
     (impObj : Expr) (sols : Array Expr)
     (expr : Expr) (stx : Syntax) : TermElabM Expr := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
     let vconds := vconds.map fun (n,c) => (n, mkAppNBeta c xs)
     withLocalDeclsDNondep vconds fun cs => do
@@ -272,18 +293,25 @@ def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Exp
       let sols := sols.map (mkAppNBeta · xs)
       let impObj' := convertLambdasToLets impObj sols
       let ty ← mkEq impObj' body
-      trace[CvxLean.debug] "ensuring type {ty}"
+      trace[CvxLean.debug] "`elabSolEqAtom` ensuring type {ty}."
       let solEqAtom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
-      return ← mkLambdaFVars xs $ ← mkLambdaFVars cs solEqAtom
+      mkLambdaFVars (xs ++ cs) solEqAtom
 
-/-- -/
-def elabFeas (argDecls : Array LocalDecl) (vconds bconds : Array (Lean.Name × Expr))
-    (impConstrs : Array (Lean.Name × Expr)) (sols : Array Expr) (stx : Array Syntax) : TermElabM (Array Expr) := do
+/-- Here, we set up the second proof obligation, or rather list of proof obligations. For every
+implmentation constraints, we must show that the solutions satisfy them. This function sets up
+the proof goal for each constraint. This is used later on to prove the needed properties of the
+forward map. -/
+def elabFeas (argDecls : Array LocalDecl) (vconds bconds : Array (Name × Expr))
+    (impConstrs : Array (Name × Expr)) (sols : Array Expr) (stx : Array Syntax) :
+    TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
     let bconds := bconds.map fun (n, c) => (n, mkAppNBeta c xs)
+    -- `as` are the background conditions.
     withLocalDeclsDNondep bconds fun as => do
       let vconds := vconds.map fun (n, c) => (n, mkAppNBeta c xs)
+      -- `cs` are the variable conditions.
       withLocalDeclsDNondep vconds fun cs => do
       let impConstrs := impConstrs.map fun (n, c) => (n, mkAppNBeta c xs)
       let impConstrs := impConstrs.map fun (n, c) => (n, mkAppNBeta c as)
@@ -291,68 +319,96 @@ def elabFeas (argDecls : Array LocalDecl) (vconds bconds : Array (Lean.Name × E
       let mut feas := #[]
       for i in [:impConstrs.size] do
         if (stx[i]!)[1]!.getId != impConstrs[i]!.1 then
-          throwAtomDeclarationError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
+          throwAtomDeclarationError
+            "expected feasibility {impConstrs[i]!.1}, found {(stx[i]!)[1]!}."
         let ty := convertLambdasToLets impConstrs[i]!.2 sols
         let f ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some ty)
-        let f ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars cs f
+        let f ← mkLambdaFVars (xs ++ as ++ cs) f
         feas := feas.push f
       return feas
 
-/-- -/
-def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bconds : Array (Lean.Name × Expr))
-    (impVars : Array (Lean.Name × Expr)) (impObj : Expr) (impConstrs : Array (Lean.Name × Expr))
-    (argKinds : Array ArgKind) (stx : Syntax) : TermElabM Expr := do
+/-- This proof obligation has to do with how the implementation objective bounds the atom's
+expression in the appropriate monotone context. It depends on the curvature of the atom. It has the
+following shape. Let `x₁, ..., xₙ` and `y₁, ..., yₙ` be variables in the atom's domain (we only need
+to consider the components of the domain where the atom's function has non-trivial monotonicity
+(increasing or decreasing)). Let `v₁, ..., vₘ` be the implementation variables. We need to show:
+```
+h₁ : y₁ ~ x₁
+...
+hₙ : yₙ ~ xₙ
+h : impConstrs(x₁, ..., xₙ, v₁, ..., vₘ)
+⊢ impObj(x₁, ..., xₙ, v₁, ..., vₘ) ~ expr(y₁, ..., yₙ)
+```
+Each `~` is replaced by the appropriate relation depending on the atom's signature.
+This is used later on to prove the required properties of the backward map. -/
+def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr)
+    (bconds : Array (Name × Expr)) (impVars : Array (Name × Expr)) (impObj : Expr)
+    (impConstrs : Array (Name × Expr)) (argKinds : Array ArgKind) (stx : Syntax) :
+    TermElabM Expr := do
   withExistingLocalDecls argDecls.toList do
+    -- `xs` are the arguments of the atom.
     let xs := argDecls.map (mkFVar ·.fvarId)
     let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    -- `as` are the background conditions.
     withLocalDeclsDNondep bconds fun as => do
+      -- `vs` are the implementation variables.
       withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
         let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
         let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c as)
         let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c vs)
+        -- `is` are the implementation constraints.
         withLocalDeclsDNondep impConstrs fun is => do
           let impObj := mkAppNBeta (mkAppNBeta impObj xs) vs
           let ty ← shiftingArgs curv xs argKinds fun monoXs ys =>
             let body := mkAppNBeta expr xs
             let body := body.replaceFVars monoXs ys
             match curv with
-            | Curvature.Concave => return ← mkLe impObj body
-            | Curvature.Convex => return ← mkLe body impObj
-            | Curvature.ConvexSet => return ← mkLe impObj body
-            | _ => throwAtomDeclarationError "invalid curvature: {curv}"
-          trace[CvxLean.debug] "elabOpt ensuring {ty}"
+              | Curvature.Concave => return ← mkLe impObj body
+              | Curvature.Convex => return ← mkLe body impObj
+              | Curvature.ConvexSet => return ← mkLe impObj body
+              | _ => throwAtomDeclarationError
+                  "invalid curvature {curv} found when setting up optimality proof obligation."
+          trace[CvxLean.debug] "`elabOpt` ensuring {ty}."
           let opt ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
-          trace[CvxLean.debug] "elabOpt opt: {← inferType opt}"
-          return ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars vs $ ← mkLambdaFVars is opt
+          trace[CvxLean.debug] "`elabOpt` proof term type {← inferType opt}."
+          mkLambdaFVars (xs ++ as ++ vs ++ is) opt
 
-/-- -/
-def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds : Array (Lean.Name × Expr)) (vcondMap : Std.HashMap Lean.Name Expr)
-    (impVars : Array (Lean.Name × Expr)) (impConstrs : Array (Lean.Name × Expr)) (argKinds : Array ArgKind) (stx : Array Syntax) : TermElabM (Array Expr) := do
+/-- For every variable condition, we must show that it can be proved from the implementation
+constraints. This function sets up such goals. This is used later on to prove the required
+properties of the backward map. -/
+def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl)
+    (bconds vconds : Array (Name × Expr)) (vcondMap : Std.HashMap Name Expr)
+    (impVars : Array (Name × Expr)) (impConstrs : Array (Name × Expr)) (argKinds : Array ArgKind)
+    (stx : Array Syntax) : TermElabM (Array Expr) := do
   withExistingLocalDecls argDecls.toList do
     let xs := argDecls.map (mkFVar ·.fvarId)
     let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c xs)
     let bconds := bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+    -- `as` are the background conditions.
     withLocalDeclsDNondep bconds fun as => do
       let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c as)
+      -- `vs` are the implementation variables.
       withLocalDeclsDNondep (impVars.map fun iv => (iv.1, mkAppNBeta iv.2 xs)) fun vs => do
         let impConstrs := impConstrs.map fun (n,c) => (n, mkAppNBeta c vs)
+        -- `is` are the implementation constraints.
         withLocalDeclsDNondep impConstrs fun is => do
-          let mut vcondElimMap : Std.HashMap Lean.Name Expr := {}
+          let mut vcondElimMap : Std.HashMap Name Expr := {}
           for i in [:stx.size] do
             let ty ← shiftingArgs curv xs argKinds fun monoXs ys => do
               let id ← match vcondMap.find? (stx[i]!)[1]!.getId with
-              | some id => pure id
-              | none => throwAtomDeclarationError "Unknown vcondition: {(stx[i]!)[1]!.getId}"
+                | some id => pure id
+                | none =>
+                    throwAtomDeclarationError "unknown variable condition {(stx[i]!)[1]!.getId}."
               let body := mkAppNBeta id xs
               let body := body.replaceFVars monoXs ys
               return body
-            let vcondElim ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some $ ty)
-            let vcondElim ← mkLambdaFVars xs $ ← mkLambdaFVars vs $ ← mkLambdaFVars is vcondElim
+            let vcondElim ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some <| ty)
+            let vcondElim ← mkLambdaFVars (xs ++ vs ++ is) vcondElim
             vcondElimMap := vcondElimMap.insert (stx[i]!)[1]!.getId vcondElim
           return ← vconds.mapM
             fun (n, _) => match vcondElimMap.find? n with
               | some vcond => pure vcond
-              | none => throwAtomDeclarationError "vcondition not found: {n}"
+              | none => throwAtomDeclarationError "variable condition {n} not found."
 
 end ProofObligations
 
