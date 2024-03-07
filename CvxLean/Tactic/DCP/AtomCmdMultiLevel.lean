@@ -37,52 +37,50 @@ section MultiLevel
 
 /-- Use the DCP procedure on the optimization problem represented by the graph implementation. This
 is the first step, we only have a raw processed atom tree at this point. -/
-def processGraphImplementation (objCurv : Curvature) (atomData : GraphAtomData) :
-    MetaM (DCP.ProcessedAtomTree × Array Expr × Array LocalDecl) := do
-  -- `xs` are the arguments of the atom.
-  lambdaTelescope atomData.expr fun xs _ => do
-    -- First, we set up the optimization problem corresponding to the graph implementation as
-    -- follows. The objective function corresponds to the implementation objective, the
-    -- constraints correspond to the implmenetation constraints, and the optimization variables
-    -- correspond to the implementation variables.
-    let (objFun, constraints, originalVarsDecls) ← do
-      let impVars := atomData.impVars.map fun (n, ty) => (n, mkAppNBeta ty xs)
-      withLocalDeclsDNondep impVars fun vs => do
-          let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
-          let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
-          withLocalDeclsDNondep bconds fun bs => do
-            let originalVarsDecls := vsDecls
-            let objFun := mkAppNBeta atomData.impObjFun (xs ++ vs)
-            let constraints := atomData.impConstrs.map (`_, mkAppNBeta · (xs ++ bs ++ vs))
-            return (objFun, constraints, originalVarsDecls)
+def processGraphImplementation (objCurv : Curvature) (atomData : GraphAtomData) (xs : Array Expr) :
+    MetaM (DCP.ProcessedAtomTree × Array LocalDecl) := do
+  -- First, we set up the optimization problem corresponding to the graph implementation as
+  -- follows. The objective function corresponds to the implementation objective, the
+  -- constraints correspond to the implmenetation constraints, and the optimization variables
+  -- correspond to the implementation variables.
+  let (objFun, constraints, originalVarsDecls) ← do
+    let impVars := atomData.impVars.map fun (n, ty) => (n, mkAppNBeta ty xs)
+    withLocalDeclsDNondep impVars fun vs => do
+        let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
+        let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+        withLocalDeclsDNondep bconds fun bs => do
+          let originalVarsDecls := vsDecls
+          let objFun := mkAppNBeta atomData.impObjFun (xs ++ vs)
+          let constraints := atomData.impConstrs.map (`_, mkAppNBeta · (xs ++ bs ++ vs))
+          return (objFun, constraints, originalVarsDecls)
 
-    -- Thge atom arguments are not optimization variables, but still need to be seen as affine
-    -- expressions by the DCP procedure. Here, we collect all the non-constant arguments as the
-    -- free variable expressions that may appear in the graph implementation.
-    let xsAffPre := xs.map fun x => x.fvarId!
-    let mut xsAff := #[]
-    for i in [:xs.size] do
-      if atomData.argKinds[i]! != ArgKind.Constant then
-        xsAff := xsAff.push xsAffPre[i]!
+  -- Thge atom arguments are not optimization variables, but still need to be seen as affine
+  -- expressions by the DCP procedure. Here, we collect all the non-constant arguments as the
+  -- free variable expressions that may appear in the graph implementation.
+  let xsAffPre := xs.map fun x => x.fvarId!
+  let mut xsAff := #[]
+  for i in [:xs.size] do
+    if atomData.argKinds[i]! != ArgKind.Constant then
+      xsAff := xsAff.push xsAffPre[i]!
 
-    -- This is the key step where we ask the DCP procedure to canonize the optimization problem
-    -- corresponding to the graph implementation. We indicate that the some variables coming from
-    -- the atom arguments might be affine. We also include the background conditions, which may
-    -- be needed to canonize the problem.
-    let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
-    let pat ← withLocalDeclsDNondep bconds fun bs => do
-      let bcondsDecls ← bs.mapM (·.fvarId!.getDecl)
-      DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
-        (extraVars := xsAff) (extraDecls := bcondsDecls)
+  -- This is the key step where we ask the DCP procedure to canonize the optimization problem
+  -- corresponding to the graph implementation. We indicate that the some variables coming from
+  -- the atom arguments might be affine. We also include the background conditions, which may
+  -- be needed to canonize the problem.
+  let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+  let pat ← withLocalDeclsDNondep bconds fun bs => do
+    let bcondsDecls ← bs.mapM (·.fvarId!.getDecl)
+    DCP.mkProcessedAtomTree objCurv objFun constraints.toList originalVarsDecls
+      (extraVars := xsAff) (extraDecls := bcondsDecls)
 
-    -- We return the result from DCP, the atom arguments, and the optimization variables (as local
-    -- declarations), which, recall, are the implementation variables.
-    return (pat, xs, originalVarsDecls)
+  -- We return the result from DCP, and the optimization variables (as local declarations), which,
+  -- recall, are the implementation variables.
+  return (pat, originalVarsDecls)
 
 /-- The second step is, given the processed atom tree and the raw atom data, we need to adjust all
 the fields and proofs. -/
 def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
-    (pat : DCP.ProcessedAtomTree) (xs : Array Expr) (originalVarsDecls : Array LocalDecl) :
+    (pat : DCP.ProcessedAtomTree) (originalVarsDecls : Array LocalDecl) (xs : Array Expr) :
     MetaM GraphAtomData := do
   withExistingLocalDecls originalVarsDecls.toList do
     withExistingLocalDecls pat.newVarDecls do
@@ -114,9 +112,10 @@ def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
 
         /- 3. Adjust the implementation constraints. -/
 
-        -- Canonized implementation constraints (in conic form), filter out those marked as vconds.
+        -- Canonized implementation constraints (in conic form), filter out those marked as
+        -- vconds.
         let canonConstrs := pat.canonExprs.constrs.map Tree.val |>.filterIdx
-          (fun i => ¬ pat.isVCond[i]!)
+          (fun i => !pat.isVCond[i]!)
 
         -- DCP might have also added new constraints.
         let newConstrs := pat.newConstrs
@@ -200,7 +199,7 @@ def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
                 -- Every extra argument has an extra condition, e.g. x', x ≤ x.
                 let monoArgs := optArgs[:2 * monoArgsCount]
                 let optCondition ← mkLambdaFVars optArgs[2 * monoArgsCount:] e
-                let atomRange ← inferType atomData.expr
+                let atomRange ← inferType (mkAppNBeta atomData.expr xs)
                 -- Obtain the new condition by transitivty.
                 let newCond ←
                   if atomData.curvature == Curvature.Convex then
@@ -252,8 +251,10 @@ data in conic form. This function calls `processGraphImplementation` to apply DC
 optimization problem represented by the atom's implementation and `adjustCanonAtomData` to fix all
 the atom data, including the proofs. -/
 def canonAtomData (objCurv : Curvature) (atomData : GraphAtomData) : MetaM GraphAtomData := do
-  let (pat, xs, originalVarsDecls) ← processGraphImplementation objCurv atomData
-  adjustCanonAtomData objCurv atomData pat xs originalVarsDecls
+  -- `xs` are the arguments of the atom.
+  lambdaTelescope atomData.expr fun xs _ => do
+    let (pat, originalVarsDecls) ← processGraphImplementation objCurv atomData xs
+    adjustCanonAtomData objCurv atomData pat originalVarsDecls xs
 
 end MultiLevel
 
