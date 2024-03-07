@@ -30,7 +30,7 @@ proofs later instead of passing around the proof terms.
 TODO: This does not respect namespaces. -/
 def addAtomDataDecls (id : Name) (atomData : GraphAtomData) : CommandElabM GraphAtomData := do
   if atomData.solEqAtom.hasMVar then
-    throwDCPError "could not add auxiliary {atomData.solEqAtom} has a metavariable."
+    throwAtomDeclarationError "could not add auxiliary {atomData.solEqAtom} has a metavariable."
   let solEqAtom ← addAtomDataDecl (id.mkStr "solEqAtom") atomData.solEqAtom
   let optimality ← addAtomDataDecl (id.mkStr "optimality") atomData.optimality
   let mut feasibility := #[]
@@ -95,7 +95,7 @@ def shiftingArgs (curv : Curvature) (xs : Array Expr) (argKinds : Array ArgKind)
       | Curvature.Concave => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
       | Curvature.Convex => mkArrow (← mkLe ys[i]! monoXs[i]!) ty
       | Curvature.ConvexSet => mkArrow (← mkLe monoXs[i]! ys[i]!) ty
-      | _ => throwDCPError "invalid curvature"
+      | _ => throwAtomDeclarationError "invalid curvature"
     return ← mkForallFVars ys ty
 
 /-- Similar to `withCopyOfMonoXs` but only filtering out constant arguments. This is used in affine
@@ -126,6 +126,8 @@ end Helpers
 
 section Elaborators
 
+section Signature
+
 /-- Elaborate curvature label in `declare_atom` into a term of type `Curvature`. -/
 def elabCurvature (curv : Syntax) : TermElabM Curvature := do
   match curv.getId with
@@ -133,16 +135,7 @@ def elabCurvature (curv : Syntax) : TermElabM Curvature := do
   | `«concave» => return Curvature.Concave
   | `«affine» => return Curvature.Affine
   | `«convex_set» => return Curvature.ConvexSet
-  | _ => throwDCPError "unknown curvature {curv.getId}."
-
-/-- Elaborate atom's expression. -/
-def elabExpr (expr : Syntax) (argDecls : Array LocalDecl) (ty : Option Expr := none) :
-    TermElabM (Expr × Expr) := do
-  withExistingLocalDecls argDecls.toList do
-    let xs := argDecls.map (mkFVar ·.fvarId)
-    let body ← elabTermAndSynthesizeEnsuringType expr ty
-    let bodyTy ← inferType body
-    return (← mkLambdaFVars xs body, bodyTy)
+  | _ => throwAtomDeclarationError "unknown curvature {curv.getId}."
 
 def elabArgKindsAux : List Syntax → TermElabM (List LocalDecl × List ArgKind)
   | [] => pure ([], [])
@@ -157,19 +150,31 @@ def elabArgKindsAux : List Syntax → TermElabM (List LocalDecl × List ArgKind)
                 | `(arg_kind| -) => pure ArgKind.Decreasing
                 | `(arg_kind| ?) => pure ArgKind.Neither
                 | `(arg_kind| &) => pure ArgKind.Constant
-                | _ => throwDCPError "unknown argument kind {argkind}."
+                | _ => throwAtomDeclarationError "unknown argument kind {argkind}."
             let argDecl ← x.fvarId!.getDecl
             let (argDecls, argKinds) ← elabArgKindsAux stxs
             return (argDecl :: argDecls, argkind :: argKinds)
       | _ => throwUnsupportedSyntax
 
-/-- Given the arguments of an atom declarations (e.g., [`(x : ℝ)+`, `(y : ℝ)-`]), elaborate them into
-a list of local declarations and a list of `ArgKind` labels. -/
+/-- Given the arguments of an atom declarations (e.g., [`(x : ℝ)+`, `(y : ℝ)-`]), elaborate them
+into a list of local declarations and a list of `ArgKind` labels. -/
 def elabArgKinds (args : Array Syntax) : TermElabM (Array LocalDecl × Array ArgKind) := do
   let (argDecls, argKinds) ← elabArgKindsAux args.toList
   return (argDecls.toArray, argKinds.toArray)
 
-/-- -/
+/-- Elaborate the atom's expression. This depends on the arguments, which we assume have been
+elaborated to local declarations. -/
+def elabExpr (expr : Syntax) (argDecls : Array LocalDecl) (ty : Option Expr := none) :
+    TermElabM (Expr × Expr) := do
+  withExistingLocalDecls argDecls.toList do
+    let xs := argDecls.map (mkFVar ·.fvarId)
+    let body ← elabTermAndSynthesizeEnsuringType expr ty
+    let bodyTy ← inferType body
+    return (← mkLambdaFVars xs body, bodyTy)
+
+/-- Conditions are just expressions (of type `Prop`) defined using the arguments. It is useful to
+have them also as a hashmap for variable condition elimination.
+TODO: Some duplication here, we essentially return the same data twice. -/
 def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) :
     TermElabM (Array (Name × Expr) × Std.HashMap Name Expr) := do
   withExistingLocalDecls argDecls.toList do
@@ -185,6 +190,10 @@ def elabVConditions (argDecls : Array LocalDecl) (vcondStx : Array Syntax) :
 
 /-- Background conditions can be elaborated exactly like variable conditions. -/
 def elabBConds := elabVConditions
+
+end Signature
+
+section GraphImplementation
 
 /-- -/
 def elabImpVars (argDecls : Array LocalDecl) (impVarsStx : Array Syntax) :
@@ -222,9 +231,13 @@ def elabImpConstrs (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × E
         for stx in impConstrStx do
           let impConstr ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (mkSort levelZero)
           let impConstr ← mkLambdaFVars xs <| ← mkLambdaFVars as <| ← mkLambdaFVars vs impConstr
-          trace[Meta.debug] "impConstr: {← inferType impConstr}"
+          trace[CvxLean.debug] "impConstr: {← inferType impConstr}"
           impConstrs := impConstrs.push (stx[1].getId, impConstr)
         return impConstrs
+
+end GraphImplementation
+
+section ProofObligations
 
 /-- -/
 def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
@@ -236,13 +249,13 @@ def elabSols (argDecls : Array LocalDecl) (impVars : Array (Lean.Name × Expr))
     for stx in solStx do
       let id ← match impVarMap.find? stx[1].getId with
       | some id => pure id
-      | none => throwError "Unknown variable: {stx[1].getId}"
+      | none => throwAtomDeclarationError "Unknown variable: {stx[1].getId}"
       let ty := mkAppNBeta id xs
       solMap := solMap.insert stx[1].getId $ ← Elab.Term.elabTermAndSynthesizeEnsuringType stx[3] (some ty)
     let sols ← impVarNames.mapM
       fun n => match solMap.find? n with
         | some sol => pure sol
-        | none => throwError "solution not found {n}"
+        | none => throwAtomDeclarationError "solution not found {n}"
     let sols ← sols.mapM (do return ← mkLambdaFVars xs ·)
     return sols
 
@@ -259,7 +272,7 @@ def elabSolEqAtom (argDecls : Array LocalDecl) (vconds : Array (Lean.Name × Exp
       let sols := sols.map (mkAppNBeta · xs)
       let impObj' := convertLambdasToLets impObj sols
       let ty ← mkEq impObj' body
-      trace[Meta.debug] "ensuring type {ty}"
+      trace[CvxLean.debug] "ensuring type {ty}"
       let solEqAtom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
       return ← mkLambdaFVars xs $ ← mkLambdaFVars cs solEqAtom
 
@@ -278,7 +291,7 @@ def elabFeas (argDecls : Array LocalDecl) (vconds bconds : Array (Lean.Name × E
       let mut feas := #[]
       for i in [:impConstrs.size] do
         if (stx[i]!)[1]!.getId != impConstrs[i]!.1 then
-          throwError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
+          throwAtomDeclarationError "Feasibility: Expected {impConstrs[i]!.1}, found {(stx[i]!)[1]!}"
         let ty := convertLambdasToLets impConstrs[i]!.2 sols
         let f ← Elab.Term.elabTermAndSynthesizeEnsuringType (stx[i]!)[3]! (some ty)
         let f ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars cs f
@@ -306,10 +319,10 @@ def elabOpt (curv : Curvature) (argDecls : Array LocalDecl) (expr : Expr) (bcond
             | Curvature.Concave => return ← mkLe impObj body
             | Curvature.Convex => return ← mkLe body impObj
             | Curvature.ConvexSet => return ← mkLe impObj body
-            | _ => throwError "invalid curvature: {curv}"
-          trace[Meta.debug] "elabOpt ensuring {ty}"
+            | _ => throwAtomDeclarationError "invalid curvature: {curv}"
+          trace[CvxLean.debug] "elabOpt ensuring {ty}"
           let opt ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
-          trace[Meta.debug] "elabOpt opt: {← inferType opt}"
+          trace[CvxLean.debug] "elabOpt opt: {← inferType opt}"
           return ← mkLambdaFVars xs $ ← mkLambdaFVars as $ ← mkLambdaFVars vs $ ← mkLambdaFVars is opt
 
 /-- -/
@@ -329,7 +342,7 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
             let ty ← shiftingArgs curv xs argKinds fun monoXs ys => do
               let id ← match vcondMap.find? (stx[i]!)[1]!.getId with
               | some id => pure id
-              | none => throwError "Unknown vcondition: {(stx[i]!)[1]!.getId}"
+              | none => throwAtomDeclarationError "Unknown vcondition: {(stx[i]!)[1]!.getId}"
               let body := mkAppNBeta id xs
               let body := body.replaceFVars monoXs ys
               return body
@@ -339,7 +352,9 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl) (bconds vconds
           return ← vconds.mapM
             fun (n, _) => match vcondElimMap.find? n with
               | some vcond => pure vcond
-              | none => throwError "vcondition not found: {n}"
+              | none => throwAtomDeclarationError "vcondition not found: {n}"
+
+end ProofObligations
 
 end Elaborators
 
