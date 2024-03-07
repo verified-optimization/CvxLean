@@ -19,6 +19,25 @@ def mkAndIntro (xs : Array Expr) : MetaM Expr := do
     res ← mkAppM ``And.intro #[xs[xs.size - 2 - i]!, res]
   return res
 
+/-- Similar to `mkAndIntro` but supporting empty list.
+TODO: combine the two. -/
+def foldAndIntro (exprs : Array Expr) : MetaM Expr := do
+  if exprs.size == 0 then
+    return mkConst ``True.intro
+  let mut res := exprs[exprs.size - 1]!
+  for i in [1:exprs.size] do
+    res ← mkAppM ``And.intro #[exprs[exprs.size - 1 - i]!, res]
+  return res
+
+/-- Turn an array of expressions into a product of expressions. -/
+def foldProdMk (exprs : Array Expr) : MetaM Expr := do
+  if exprs.size == 0 then
+    throwError "cannot make a product of an empty list."
+  let mut res := exprs[exprs.size - 1]!
+  for i in [1:exprs.size] do
+    res ← mkAppM ``Prod.mk #[exprs[exprs.size - 1 - i]!, res]
+  return res
+
 /-- Make existential type. -/
 def mkExistsFVars (xs : Array Expr) (e : Expr) : MetaM Expr := do
   let mut res := e
