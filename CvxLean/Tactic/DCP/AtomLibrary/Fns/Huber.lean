@@ -19,8 +19,6 @@ namespace CvxLean
 
 open Real
 
-set_option trace.CvxLean.debug true
-
 declare_atom huber [convex] (x : ℝ)? : huber x :=
 vconditions
 implementationVars (v : ℝ) (w : ℝ)
