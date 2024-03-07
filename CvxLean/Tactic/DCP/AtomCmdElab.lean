@@ -1,3 +1,4 @@
+import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Util.Meta
@@ -121,6 +122,12 @@ def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind)
         allYs := allYs.push ys[j]!
         j := j + 1
     return ← f ys allYs
+
+/-- Apply a function to non-constant arguments. Used by affine atom elaborators. -/
+def mapNonConstant (xs : Array Expr) (argKinds : Array ArgKind) (f : Expr → TermElabM Expr) :
+  TermElabM (Array Expr) :=
+    (Array.zip xs argKinds).mapM fun (x, kind) => do
+      if kind == ArgKind.Constant then return x else return ← f x
 
 end Helpers
 
@@ -411,6 +418,44 @@ def elabVCondElim (curv : Curvature) (argDecls : Array LocalDecl)
               | none => throwAtomDeclarationError "variable condition {n} not found."
 
 end ProofObligations
+
+section AffineAtoms
+
+/-- Set up proof of homogeneity. Sanity check for affine atoms. -/
+def elabHom (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind) (stx : Syntax) :
+    TermElabM Expr := do
+  withExistingLocalDecls argDecls.toList do
+    withLocalDeclD `κ (mkConst ``Real) fun κ => do
+      let xs := argDecls.map (mkFVar ·.fvarId)
+      let zero := mkAppNBeta expr <| ← mapNonConstant xs argKinds
+        fun x => do return ← mkNumeral (← inferType x) 0
+      let lhs ← mkAdd (← mkAppM ``HSMul.hSMul #[κ, mkAppNBeta expr xs]) zero
+      let rhs ← mkAdd
+        (mkAppNBeta expr <| ← mapNonConstant xs argKinds fun x => mkAppM ``HSMul.hSMul #[κ, x])
+        (← mkAppM ``HSMul.hSMul #[κ, zero])
+      let ty ← mkEq lhs rhs
+      let hom ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
+      return ← mkLambdaFVars xs <| ← mkLambdaFVars #[κ] hom
+
+/-- Set up proof of additivity. Sanity check for affine atoms. -/
+def elabAdd (argDecls : Array LocalDecl) (expr : Expr) (argKinds : Array ArgKind) (stx : Syntax) :
+    TermElabM Expr := do
+  withExistingLocalDecls argDecls.toList do
+    let xs := argDecls.map (mkFVar ·.fvarId)
+    withCopyOfNonConstVars xs argKinds fun newYs ys => do
+      let zero := mkAppNBeta expr <| ← mapNonConstant xs argKinds
+        fun x => do return ← mkNumeral (← inferType x) 0
+      let lhs ← mkAdd (mkAppNBeta expr xs) (mkAppNBeta expr ys)
+      let rhs ← mkAdd
+        (mkAppNBeta expr <|
+          ← (Array.zip argKinds (Array.zip xs ys)).mapM fun (kind, x, y) => do
+            if kind == ArgKind.Constant then return x else mkAdd x y)
+        zero
+      let ty ← mkEq lhs rhs
+      let add ← Elab.Term.elabTermAndSynthesizeEnsuringType stx (some ty)
+      return ← mkLambdaFVars xs <| ← mkLambdaFVars newYs add
+
+end AffineAtoms
 
 end Elaborators
 
