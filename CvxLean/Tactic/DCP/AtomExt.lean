@@ -1,58 +1,19 @@
 import CvxLean.Tactic.DCP.DiscrTree
+import CvxLean.Tactic.DCP.AtomCurvRule
 
 /-!
-# Atom library (extension)
+# Atom library (environment extension)
 
-This file defines the `GraphAtomData` type, which is what is stored when declaring an atom. This
-includes defining `Curvature` and `ArgKind`, and the composition rule using them.
+This file defines the `GraphAtomData` type, which is what is stored when declaring an atom. Its
+fields are curvature and monotonicity attributes and several Lean expressions.
 
-The enviromnet extesion is also defined here.
+The enviroment extesion is also defined here. We store a discrimination tree built from all the
+atoms in the library based on the atom's expression (which is the function that the atom describes).
 -/
 
 namespace CvxLean
 
-open Lean Lean.Meta
-
-/-- An atom can be affine, concave or convex. -/
-inductive Curvature where
-  | Constant | Affine | Concave | Convex | AffineSet | ConvexSet
-deriving BEq, Inhabited
-
-/-- Arguments of an atom are increasing (+), decreasing (-), constant (&) or neither (?). -/
-inductive ArgKind where
-  | Increasing | Decreasing | Neither | Constant
-deriving BEq, Inhabited
-
-/-- Caclulate curvature depending on monotonicity. -/
-def curvatureInArg : Curvature → ArgKind → Curvature
-  | _, ArgKind.Constant => Curvature.Constant
-  | Curvature.Concave, ArgKind.Increasing => Curvature.Concave
-  | Curvature.Concave, ArgKind.Decreasing => Curvature.Convex
-  | Curvature.Convex, ArgKind.Increasing => Curvature.Convex
-  | Curvature.Convex, ArgKind.Decreasing => Curvature.Concave
-  -- This requires some explanation. The only set atom that allows non-affine arguments is `≤`. The
-  -- rest, equality and cones, require affine arguments. We say that an expression `x ≤ y` is
-  -- decreasing in `x` in the following sense: if `x' ≤ x` then `x ≤ y → x' ≤ y`, where `→` is seen
-  -- as the order relation in `Prop`.
-  | Curvature.ConvexSet, ArgKind.Increasing => Curvature.Concave
-  | Curvature.ConvexSet, ArgKind.Decreasing => Curvature.Convex
-  | _, _ => Curvature.Affine
-
-instance : ToMessageData Curvature where
-  toMessageData
-  | Curvature.Constant => "constant"
-  | Curvature.Affine => "affine"
-  | Curvature.Concave => "concave"
-  | Curvature.Convex => "convex"
-  | Curvature.AffineSet => "affine_set"
-  | Curvature.ConvexSet => "convex_set"
-
-instance : ToMessageData ArgKind where
-  toMessageData
-  | ArgKind.Increasing => "increasing"
-  | ArgKind.Decreasing => "decreasing"
-  | ArgKind.Neither => "neither"
-  | ArgKind.Constant => "constant"
+open Lean Meta
 
 section AtomData
 
@@ -62,9 +23,9 @@ structure GraphAtomData where
   curvature : Curvature
   expr : Expr
   argKinds : Array ArgKind
-  bconds : Array (Lean.Name × Expr)
-  vconds : Array (Lean.Name × Expr)
-  impVars : Array (Lean.Name × Expr)
+  bconds : Array (Name × Expr)
+  vconds : Array (Name × Expr)
+  impVars : Array (Name × Expr)
   impObjFun : Expr
   impConstrs : Array Expr
   solution : Array Expr
@@ -133,7 +94,7 @@ initialize atomExtension : AtomExtension ← do
 def addAtom (data : AtomData) : MetaM Unit := do
   let (_, _, expr) ← lambdaMetaTelescope data.expr
   let keys ← DiscrTree.mkPath expr
-  setEnv $ atomExtension.addEntry (← getEnv) (keys, data)
+  setEnv <| atomExtension.addEntry (← getEnv) (keys, data)
 
 /-- Get the atom tree. -/
 def getAtomDiscrTree : MetaM (DiscrTree AtomData) := do

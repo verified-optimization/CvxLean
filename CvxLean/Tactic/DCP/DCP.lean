@@ -9,6 +9,7 @@ import CvxLean.Lib.Equivalence
 import CvxLean.Tactic.DCP.DCPTypes
 import CvxLean.Tactic.DCP.Tree
 import CvxLean.Tactic.DCP.OC
+import CvxLean.Tactic.DCP.AtomCurvRule
 import CvxLean.Tactic.DCP.AtomExt
 import CvxLean.Tactic.Arith.Arith
 
