@@ -18,12 +18,30 @@ inductive Curvature where
   | Constant | Affine | Concave | Convex | AffineSet | ConvexSet
 deriving BEq, Inhabited
 
+instance : ToMessageData Curvature where
+  toMessageData
+  | Curvature.Constant => "constant"
+  | Curvature.Affine => "affine"
+  | Curvature.Concave => "concave"
+  | Curvature.Convex => "convex"
+  | Curvature.AffineSet => "affine_set"
+  | Curvature.ConvexSet => "convex_set"
+
 /-- Arguments of an atom are increasing (+), decreasing (-), constant (&) or neither (?). -/
 inductive ArgKind where
   | Increasing | Decreasing | Neither | Constant
 deriving BEq, Inhabited
 
-/-- Calculate curvature depending on monotonicity. -/
+instance : ToMessageData ArgKind where
+  toMessageData
+  | ArgKind.Increasing => "increasing"
+  | ArgKind.Decreasing => "decreasing"
+  | ArgKind.Neither => "neither"
+  | ArgKind.Constant => "constant"
+
+/-- Given an expression of the form `f(e₁, ..., eₙ)`, where `f` corresponds to an atom with
+curvature `c` and its `i`th argument has monotonicity (or, rather, `ArgKind`) `aᵢ`, this function
+calculates the **expected** curvature of `eᵢ` from `c` and `aᵢ`. -/
 def curvatureInArg : Curvature → ArgKind → Curvature
   | _, ArgKind.Constant => Curvature.Constant
   | Curvature.Concave, ArgKind.Increasing => Curvature.Concave
@@ -37,21 +55,5 @@ def curvatureInArg : Curvature → ArgKind → Curvature
   | Curvature.ConvexSet, ArgKind.Increasing => Curvature.Concave
   | Curvature.ConvexSet, ArgKind.Decreasing => Curvature.Convex
   | _, _ => Curvature.Affine
-
-instance : ToMessageData Curvature where
-  toMessageData
-  | Curvature.Constant => "constant"
-  | Curvature.Affine => "affine"
-  | Curvature.Concave => "concave"
-  | Curvature.Convex => "convex"
-  | Curvature.AffineSet => "affine_set"
-  | Curvature.ConvexSet => "convex_set"
-
-instance : ToMessageData ArgKind where
-  toMessageData
-  | ArgKind.Increasing => "increasing"
-  | ArgKind.Decreasing => "decreasing"
-  | ArgKind.Neither => "neither"
-  | ArgKind.Constant => "constant"
 
 end CvxLean

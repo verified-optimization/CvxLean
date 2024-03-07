@@ -90,7 +90,7 @@ initialize atomExtension : AtomExtension ← do
   }
   return atomExtension
 
-/-- Add a new atom to the library. -/
+/-- Add a new atom to the library (discrimination tree). -/
 def addAtom (data : AtomData) : MetaM Unit := do
   let (_, _, expr) ← lambdaMetaTelescope data.expr
   let keys ← DiscrTree.mkPath expr
