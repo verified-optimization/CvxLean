@@ -9,6 +9,7 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.SMul
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
+import CvxLean.Meta.Util.Debug
 
 /-!
 Unit half-with Huber loss function atom (convex).
@@ -17,6 +18,8 @@ Unit half-with Huber loss function atom (convex).
 namespace CvxLean
 
 open Real
+
+set_option trace.CvxLean.debug true
 
 declare_atom huber [convex] (x : ℝ)? : huber x :=
 vconditions
