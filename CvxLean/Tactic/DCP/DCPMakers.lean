@@ -194,7 +194,7 @@ partial def mkSolEqAtom : GraphAtomDataTree → CanonExprsWithSolutionTree → V
       let solEqAtom ← mkEqTrans solEqAtomL solEqAtomR
       return Tree.node solEqAtom childSolEqAtom
   | Tree.leaf e, Tree.leaf _, Tree.leaf _ => do return Tree.leaf (← mkEqRefl e)
-  | _, _, _ => throwDCPError "solutino-equals-atom tree mismatch."
+  | _, _, _ => throwDCPError "solution-equals-atom tree mismatch."
 
 /-- Combine all feasibility proofs. Again, we need to replace the solutions using solution-equals-
 atom so that all the feasibility proofs are with respect to the optimization variables. -/
