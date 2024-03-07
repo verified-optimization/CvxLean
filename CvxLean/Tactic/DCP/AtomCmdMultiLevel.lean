@@ -46,14 +46,14 @@ def processGraphImplementation (objCurv : Curvature) (atomData : GraphAtomData) 
   let (objFun, constraints, originalVarsDecls) ← do
     let impVars := atomData.impVars.map fun (n, ty) => (n, mkAppNBeta ty xs)
     withLocalDeclsDNondep impVars fun vs => do
-        let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
-        let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
-        withLocalDeclsDNondep bconds fun bs => do
-          let originalVarsDecls := vsDecls
-          let objFun :=  mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
-          let constraints := atomData.impConstrs.map fun c =>
-            (`_, mkAppNBeta (mkAppNBeta (mkAppNBeta c xs) bs) vs)
-          return (objFun, constraints, originalVarsDecls)
+      let vsDecls ← vs.mapM fun v => v.fvarId!.getDecl
+      let bconds := atomData.bconds.map fun (n,c) => (n, mkAppNBeta c xs)
+      withLocalDeclsDNondep bconds fun bs => do
+        let originalVarsDecls := vsDecls
+        let objFun :=  mkAppNBeta (mkAppNBeta atomData.impObjFun xs) vs
+        let constraints := atomData.impConstrs.map
+          fun c => (`_, mkAppNBeta (mkAppNBeta (mkAppNBeta c xs) bs) vs)
+        return (objFun, constraints, originalVarsDecls)
 
   -- Thge atom arguments are not optimization variables, but still need to be seen as affine
   -- expressions by the DCP procedure. Here, we collect all the non-constant arguments as the
@@ -141,7 +141,7 @@ def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
           (e.replaceFVars vs vsSol))
 
         -- The adjusted solutions, are the solutions to both `vs` abd `zs` as expressions in `xs`.
-        let adjustedSolution := vsSol ++ zsSolInTermsOfXs
+        let adjustedSolution := atomData.solution ++ zsSolInTermsOfXs
 
         let _ ← adjustedSolution.mapM check
         trace[CvxLean.debug] "adjustedSolution: {adjustedSolution}"
@@ -150,12 +150,6 @@ def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
 
         let solEqAtomProofs := pat.solEqAtom.constrs.map Tree.val
 
-        trace[CvxLean.debug] "solEqAtomProofs: {solEqAtomProofs}"
-
-        trace[CvxLean.debug] "vs1: {vs}"
-        trace[CvxLean.debug] "vs2: {zs}"
-        trace[CvxLean.debug] "vs1Sol: {vsSol}"
-        trace[CvxLean.debug] "xs: {xs}"
         -- First, we change all the existing feasibility proofs to take into account the solutions
         -- for `zs`.
         let mut oldFeasibilityAdjusted := #[]
@@ -168,14 +162,11 @@ def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
                 let feasXsVconds := mkAppNBeta feasXs cs
                 let feasXsConds := mkAppNBeta feasXsVconds bs
                 let proofAdjusted := solEqAtomProofs[i]!.replaceFVars vs vsSol
+                check proofAdjusted
                 let adjustedFeas ← mkAppM ``Eq.mpr #[proofAdjusted, feasXsConds]
 
                 mkLambdaFVars (xs ++ cs ++ bs) adjustedFeas
           oldFeasibilityAdjusted := oldFeasibilityAdjusted.push adjustedFeas
-
-        for nf in oldFeasibilityAdjusted do
-          trace[CvxLean.debug] "oldFeasibilityAdjusted: {← inferType nf}"
-          check nf
 
         -- The new feasibility proofs are in terms of `vs` so we need to replace them by their
         -- solutions.
@@ -184,10 +175,6 @@ def adjustCanonAtomData (objCurv : Curvature) (atomData : GraphAtomData)
           withLocalDeclsDNondep vconds fun cs => do
             withLocalDeclsDNondep bconds fun bs => do
               mkLambdaFVars (xs ++ cs ++ bs) (e.replaceFVars vs vsSol))
-
-        for nf in newFeasibility do
-          trace[CvxLean.debug] "newFeasibility: {← inferType nf}"
-          check nf
 
         let adjustedFeasibility := oldFeasibilityAdjusted ++ newFeasibility
 
