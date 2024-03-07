@@ -12,6 +12,10 @@ import CvxLean.Tactic.Arith.Arith
 
 /-!
 # Main DCP algorithm
+
+This file contains the main DCP algorithm (`canonize`), it can also be used as a tactic (`dcp`).
+It uses the processed atom tree from `mkProcessedAtomTree` in `CvxLean/Tactic/DCP/DCPMakers.lean` to
+build the forward and backward maps and prove the four properties of a `StrongEquivalence`.
 -/
 
 namespace CvxLean
@@ -20,29 +24,59 @@ open Lean Expr Meta
 
 namespace DCP
 
-/-- -/
-def makeForwardMap (oldDomain : Expr) (xs : Array Expr) (forwardImagesNewVars : Array Expr): MetaM Expr := do
+/-- Create the forward map (`φ`) from the forward images given by the processed atom tree. -/
+def makeForwardMap (oldDomain : Expr) (xs : Array Expr) (forwardImagesNewVars : Array Expr) :
+    MetaM Expr := do
   withLocalDeclD `p oldDomain fun p => do
     let prs := (← Meta.mkProjections oldDomain p).map (·.2.2)
     let forwardBody := xs ++ forwardImagesNewVars
-    let forwardMap ← mkLambdaFVars #[p] $ (← foldProdMk forwardBody).replaceFVars xs prs.toArray
-    trace[Meta.debug] "forwardMap: {forwardMap}"
+    let forwardMap ← mkLambdaFVars #[p] <| (← foldProdMk forwardBody).replaceFVars xs prs.toArray
+    trace[CvxLean.debug] "Forward map: {forwardMap}."
     check forwardMap
+    trace[CvxLean.debug] "Forward map checked."
+
     return forwardMap
 
-/-- -/
-def makeBackwardMap (xs : Array Expr) (mkDomainFunc : Expr → MetaM Expr) : MetaM Expr := do
-  let backwardBody ← foldProdMk $ xs
-  let backwardMap ← mkDomainFunc backwardBody
-  trace[Meta.debug] "backwardMap: {backwardMap}"
-  check backwardMap
-  trace[Meta.debug] "backwardMap checked"
-  return backwardMap
+/-- Build the proof of `StrongEquivalence.phi_feasibility`. This uses the feasibility proofs. -/
+def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars : Array LocalDecl)
+  (oldProblem : Expr) (constraints : Array Expr) (isVCond : Array Bool) (constraintsEq : Array Expr)
+  (feasibility : OC FeasibilityProofsTree) : MetaM Expr := do
+  -- `∀ {x : D}, p.feasible x → q.feasible (φ x)`.
+  withLocalDeclD `p oldDomain fun p => do
+    let prs := (← Meta.mkProjections oldDomain p).map (·.2.2)
 
-/-- -/
+    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[oldProblem, p]) fun h => do
+      let (_, cprs) := Meta.composeAndWithProj constraints.toList
+      let hProj := (cprs h).toArray
+
+      -- Old constraint proofs.
+      let mut oldConstrProofs := #[]
+      for i in [:originalConstrVars.size] do
+        if not isVCond[i]! then
+          oldConstrProofs := oldConstrProofs.push <|
+            ← mkAppM ``Eq.mpr #[constraintsEq[i]!, mkFVar originalConstrVars[i]!.fvarId]
+
+      -- New constraint proofs.
+      let newConstrProofs := feasibility.fold #[] fun acc fs =>
+          fs.fold acc Array.append
+
+      let constrForwardBody ← foldAndIntro (oldConstrProofs ++ newConstrProofs)
+      let constrForwardBody := constrForwardBody.replaceFVars
+        ((originalConstrVars).map (mkFVar ·.fvarId)) hProj
+      let constrForwardBody ← mkLambdaFVars #[h] constrForwardBody
+      let constrForwardBody := constrForwardBody.replaceFVars xs prs.toArray
+      let constrForward ← mkLambdaFVars #[p] constrForwardBody
+      trace[CvxLean.debug] "φ feasibility proof: {constrForward}."
+      trace[CvxLean.debug] "φ feasibility proof type: {← inferType constrForward}."
+      check constrForward
+
+      return constrForward
+
+/-- Build a proof of `StrongEquivalence.phi_optimality`. We can actually prove equality here, using
+the solution-equal-atom property from the top atom that unfolds the objective function. -/
 def makeObjFunForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars : Array LocalDecl)
-  (oldProblem : Expr) (constraints : Array Expr) (objFunEq : Expr) : MetaM Expr := do
-  -- ∀ {x : D}, p.constraints x → q.objFun (f x) ≤ p.objFun x
+    (oldProblem : Expr) (constraints : Array Expr) (objFunEq : Expr) : MetaM Expr := do
+  -- `∀ {x : D}, p.feasible x → q.objFun (φ x) ≤ p.objFun x`.
   withLocalDeclD `p oldDomain fun p => do
     let prs := (← Meta.mkProjections oldDomain p).map (·.2.2)
 
@@ -58,72 +92,28 @@ def makeObjFunForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars :
 
       let objFunForward := objFunForward.replaceFVars xs prs.toArray
       let objFunForward ← mkLambdaFVars #[p] objFunForward
-      trace[Meta.debug] "objFunForward: {objFunForward}"
+      trace[CvxLean.debug] "φ optimality proof: {objFunForward}."
+      trace[CvxLean.debug] "φ optimality proof type: {← inferType objFunForward}."
       check objFunForward
+
       return objFunForward
 
-/-- -/
-def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars : Array LocalDecl)
-  (oldProblem : Expr) (constraints : Array Expr) (isVCond : Array Bool) (constraintsEq : Array Expr)
-  (feasibility : OC (Tree (Array Expr) Unit)) : MetaM Expr := do
-  -- ∀ {x : D}, Minimization.constraints p x → Minimization.constraints q (f x)
+/-- Create the backward map (`ψ`), which is simply a projection. -/
+def makeBackwardMap (xs : Array Expr) (mkDomainFunc : Expr → MetaM Expr) : MetaM Expr := do
+  let backwardBody ← foldProdMk xs
+  let backwardMap ← mkDomainFunc backwardBody
+  trace[CvxLean.debug] "Backward map: {backwardMap}."
+  check backwardMap
+  trace[CvxLean.debug] "Backward map checked."
 
-  withLocalDeclD `p oldDomain fun p => do
-    let prs := (← Meta.mkProjections oldDomain p).map (·.2.2)
+  return backwardMap
 
-    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[oldProblem, p]) fun h => do
-      let (_, cprs) := Meta.composeAndWithProj constraints.toList
-      let hProj := (cprs h).toArray
-
-      -- Old constraint proofs.
-      let mut oldConstrProofs := #[]
-      for i in [:originalConstrVars.size] do
-        if not isVCond[i]! then
-          oldConstrProofs := oldConstrProofs.push $
-            ← mkAppM ``Eq.mpr #[constraintsEq[i]!, mkFVar originalConstrVars[i]!.fvarId]
-
-      -- New constraint proofs.
-      let newConstrProofs := feasibility.fold #[] fun acc fs =>
-          fs.fold acc Array.append
-
-      let constrForwardBody ← foldAndIntro $ (oldConstrProofs ++ newConstrProofs)
-      let constrForwardBody := constrForwardBody.replaceFVars
-        ((originalConstrVars).map (mkFVar ·.fvarId)) hProj
-      let constrForwardBody ← mkLambdaFVars #[h] constrForwardBody
-      let constrForwardBody := constrForwardBody.replaceFVars xs prs.toArray
-      let constrForward ← mkLambdaFVars #[p] constrForwardBody
-      trace[Meta.debug] "constrForward: {constrForward}"
-      trace[Meta.debug] "constrForwardType: {← inferType constrForward}"
-      check constrForward
-      return constrForward
-
-/-- -/
-def makeObjFunBackward (newDomain : Expr) (canonProblem : Expr) (xs : Array Expr) (ys : Array Expr) (objFunOpt : Expr)
-    (canonConstrs : Array Expr) (newConstrs : Array Expr)
-    (newConstrVars : Array LocalDecl) : MetaM Expr := do
-  -- ∀ {x : E}, Minimization.constraints q x → Minimization.objFun p (g x) ≤ Minimization.objFun q x
-
-  withLocalDeclD `p newDomain fun p => do
-    let prs := (← Meta.mkProjections newDomain p).map (·.2.2)
-
-    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[canonProblem, p]) fun h => do
-      let (_, cprs) := Meta.composeAndWithProj (canonConstrs ++ newConstrs).toList
-      let hProj := cprs h
-      let objFunBackwardBody := objFunOpt
-      let objFunBackwardBody := objFunBackwardBody.replaceFVars
-        (newConstrVars.map (mkFVar ·.fvarId)) (hProj.drop (hProj.length - newConstrVars.size)).toArray
-      let objFunBackwardBody := objFunBackwardBody.replaceFVars
-        (xs ++ ys) prs.toArray
-      let objFunBackward ← mkLambdaFVars #[p, h] objFunBackwardBody
-      trace[Meta.debug] "objFunBackward: {objFunBackward}"
-      check objFunBackward
-      return objFunBackward
-
-/-- -/
-def makeConstrBackward (vcondElimMap : Std.HashMap Nat Expr) (newDomain : Expr) (canonProblem : Expr) (xs : Array Expr) (ys : Array Expr) (constrOpt : Array Expr)
-    (canonConstrs : Array Expr) (newConstrs : Array Expr) (newConstrVars : Array LocalDecl) : MetaM Expr := do
-  -- ∀ {x : E}, Minimization.constraints q x → Minimization.constraints p (g x)
-
+/-- Build a proof of `StrongEquivalence.psi_feasibility`. The proofs here come from the optimality
+proofs and vcondition elimination. -/
+def makeConstrBackward (vcondElimMap : VCondElimMap) (newDomain : Expr) (canonProblem : Expr)
+    (xs : Array Expr) (ys : Array Expr) (constrOpt : Array Expr) (canonConstrs : Array Expr)
+    (newConstrs : Array Expr) (newConstrVars : Array LocalDecl) : MetaM Expr := do
+  -- `∀ {x : E}, q.feasible x → p.feasible (ψ x)`.
   withLocalDeclD `p newDomain fun p => do
     let prs := (← Meta.mkProjections newDomain p).map (·.2.2)
 
@@ -134,36 +124,66 @@ def makeConstrBackward (vcondElimMap : Std.HashMap Nat Expr) (newDomain : Expr) 
       let mut filteredCounter := 0
       for i in [:constrOpt.size] do
         match vcondElimMap.find? i with
-        | some p =>
-          constrBackwardProofs := constrBackwardProofs.push $ p
-        | none =>
-          constrBackwardProofs := constrBackwardProofs.push $ mkApp constrOpt[i]! hProj.toArray[filteredCounter]!
-          filteredCounter := filteredCounter + 1
+          | some p =>
+              constrBackwardProofs := constrBackwardProofs.push p
+          | none =>
+              constrBackwardProofs := constrBackwardProofs.push <|
+                mkApp constrOpt[i]! hProj.toArray[filteredCounter]!
+              filteredCounter := filteredCounter + 1
 
       let constrBackwardBody ← foldAndIntro constrBackwardProofs
-
       let constrBackwardBody := constrBackwardBody.replaceFVars
-        (newConstrVars.map (mkFVar ·.fvarId)) (hProj.drop (hProj.length - newConstrVars.size)).toArray
+        (newConstrVars.map (mkFVar ·.fvarId))
+        (hProj.drop (hProj.length - newConstrVars.size)).toArray
 
-      let constrBackwardBody := constrBackwardBody.replaceFVars
-        (xs ++ ys) prs.toArray
+      let constrBackwardBody := constrBackwardBody.replaceFVars (xs ++ ys) prs.toArray
 
       let constrBackward ← mkLambdaFVars #[p, h] constrBackwardBody
-      trace[Meta.debug] "constrBackward: {constrBackward}"
+      trace[CvxLean.debug] "ψ feasibility proof: {constrBackward}."
+      trace[CvxLean.debug] "ψ feasibility proof type: {← inferType constrBackward}."
       check constrBackward
-      trace[Meta.debug] "constrBackward checked"
+
       return constrBackward
+
+/-- Build a proof of `StrongEquivalence.psi_optimality`. The proofs here come from optimality proofs
+on the objective function component. -/
+def makeObjFunBackward (newDomain : Expr) (canonProblem : Expr) (xs : Array Expr) (ys : Array Expr)
+    (objFunOpt : Expr) (canonConstrs : Array Expr) (newConstrs : Array Expr)
+    (newConstrVars : Array LocalDecl) : MetaM Expr := do
+  -- `∀ {x : E}, q.feasible x → p.objFun (ψ x) ≤ q.objFun x`.
+  withLocalDeclD `p newDomain fun p => do
+    let prs := (← Meta.mkProjections newDomain p).map (·.2.2)
+
+    withLocalDeclD `h (← mkAppM ``Minimization.constraints #[canonProblem, p]) fun h => do
+      let (_, cprs) := Meta.composeAndWithProj (canonConstrs ++ newConstrs).toList
+      let hProj := cprs h
+      let objFunBackwardBody := objFunOpt
+
+      let objFunBackwardBody := objFunBackwardBody.replaceFVars
+        (newConstrVars.map (mkFVar ·.fvarId))
+        (hProj.drop (hProj.length - newConstrVars.size)).toArray
+
+      let objFunBackwardBody := objFunBackwardBody.replaceFVars
+        (xs ++ ys) prs.toArray
+
+      let objFunBackward ← mkLambdaFVars #[p, h] objFunBackwardBody
+      trace[CvxLean.debug] "ψ optimality proof: {objFunBackward}."
+      trace[CvxLean.debug] "ψ optimality proof type: {← inferType objFunBackward}."
+      check objFunBackward
+
+      return objFunBackward
 
 open Meta Elab Tactic
 
-/-- TODO -/
+/-- Main canonization procedure. Given a minimization expression, return the canonized problem, in
+conic form, and a proof of equivalence. -/
 def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) := do
   let ogProblemExpr := ogProblem.toExpr
   let D := ogProblem.domain
   let R := ogProblem.codomain
 
   -- Get `objFun` and `constraints` without projections (e.g., `p.1 + p.2`) but rather with
-  -- declared variables in `originalVarsDecls` (e.g.,  `x + y`).
+  -- declared variables in `originalVarsDecls` (e.g., `x + y`).
   let (objFun, constraints, originalVarsDecls) ←
     withLambdaBody ogProblem.constraints fun p constraints => do
       let pr := (← Meta.mkProjections D p).toArray
@@ -180,15 +200,15 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
         let objFun ← Meta.replaceProjections objFunP p.fvarId! xs
         return (objFun, constraints, originalVarsDecls)
 
-  -- Process the atom tree.
+  -- Make processed atom tree.
   let pat ← mkProcessedAtomTree Curvature.Convex objFun constraints originalVarsDecls
 
-  -- Create canon problem and equivalence proof.
+  -- Create canonized problem and equivalence proof.
   withExistingLocalDecls pat.originalVarsDecls.toList do
     -- Original problem variables.
     let originalVars := pat.originalVarsDecls.map fun decl => mkFVar decl.fvarId
 
-    -- Forward map: φ.
+    -- Make forward map (`φ`), with properties.
     let forwardMap ← makeForwardMap D originalVars pat.forwardImagesNewVars
 
     let (objFunForward, constrForward) ←
@@ -201,15 +221,15 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
         return (objFunForward, constrForward)
 
     withExistingLocalDecls pat.newVarDecls do
-      -- New variables added by the canonization.
+      -- New variables introduced by the canonization.
       let newVars := (pat.newVarDecls.map (mkFVar ·.fvarId)).toArray
 
-      -- Canon variables: originalVars ⊎ newVars.
+      -- Canonized variables: originalVars ⊎ newVars.
       let canonVars ← (originalVars ++ newVars).mapM fun x => do
         let decl ← x.fvarId!.getDecl
         return (decl.userName, decl.type)
 
-      -- New domain: D × T where T is the domain of the new variables.
+      -- New domain: `D × T` where `T` is the domain of the new variables.
       let E := Meta.composeDomain canonVars.toList
 
       -- Function to replace variables by projections in the new domain.
@@ -219,7 +239,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
           let e := Expr.replaceFVars e (originalVars ++ newVars) prs.toArray
           mkLambdaFVars #[p] e
 
-      -- Canon problem.
+      -- Canonize problem.
       let canonConstrs := pat.canonExprs.constrs.map Tree.val
       let canonConstrs := canonConstrs.filterIdx (fun i => ¬ pat.isVCond[i]!)
       let canonProblem : MinimizationExpr :=
@@ -229,7 +249,7 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
           constraints := ← mkDomain <| Meta.composeAnd (canonConstrs ++ pat.newConstrs).toList }
       let canonProblemExpr := canonProblem.toExpr
 
-      -- Backward map: ψ.
+      -- Make backward map (`ψ`), with properties.
       let backwardMap ← makeBackwardMap originalVars mkDomain
 
       let (objFunBackward, constrBackward) ←
@@ -243,20 +263,20 @@ def canonize (ogProblem : MinimizationExpr) : MetaM (MinimizationExpr × Expr) :
 
           return (objFunBackward, constrBackward)
 
-      -- Combine forward and backward maps into equivalence witness.
+      -- Combine forward and backward maps and their properties into an equivalence witness.
       let strongEqvProof ← mkAppOptM ``Minimization.StrongEquivalence.mk
         #[D, E, R, none, ogProblemExpr, canonProblemExpr,
-          -- phi
+          -- `phi`.
           forwardMap,
-          -- psi
+          -- `psi`.
           backwardMap,
-          -- phi_feasibility
+          -- `phi_feasibility`
           constrForward,
-          -- psi_feasibility
+          -- `psi_feasibility`
           constrBackward,
-          -- phi_optimality
+          -- `phi_optimality`
           objFunForward,
-          -- psi_optimality
+          -- `psi_optimality`
           objFunBackward]
       let eqvProof ← mkAppM ``Minimization.Equivalence.ofStrongEquivalence #[strongEqvProof]
 
@@ -266,7 +286,7 @@ def dcpBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   let ogProblem ← eqvExpr.toMinimizationExprLHS
   let (_, eqvProof) ← canonize ogProblem
   if ! (← isDefEq (mkMVar g) eqvProof) then
-    throwError "DCP failed to prove equivalence"
+    throwDCPError "failed to prove equivalence."
 
 end DCP
 
@@ -274,6 +294,9 @@ namespace Tactic
 
 open Lean.Elab Lean.Elab.Tactic
 
+/-- Tactic to canonize a problem into DCP form. It can be used directly in an `equivalence` or
+`reduction` environment. However, note, that the main use of this transformation is to solve
+problems using the `solve` command. -/
 syntax (name := dcp) "dcp" : tactic
 
 @[tactic dcp]
