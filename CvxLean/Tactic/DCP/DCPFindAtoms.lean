@@ -38,7 +38,8 @@ def findRegisteredAtoms (e : Expr) : MetaM (Array (Arguments × GraphAtomData)) 
       let args ← mvars.mapM instantiateMVars
       goodAtoms := goodAtoms.push (args, atom.graph!)
     else
-      trace[Meta.debug] "Pattern did not match. (Pattern {toString pattern}; Expression {toString e})"
+      trace[CvxLean.debug]
+        "Pattern did not match. (Pattern {toString pattern}; Expression {toString e})"
   -- Heuristic sorting of potential atoms to use: larger expressions have priority.
   goodAtoms := goodAtoms.insertionSort (fun a b => (a.2.expr.size - b.2.expr.size != 0))
   return goodAtoms

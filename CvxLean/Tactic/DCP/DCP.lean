@@ -39,8 +39,8 @@ def makeForwardMap (oldDomain : Expr) (xs : Array Expr) (forwardImagesNewVars : 
 
 /-- Build the proof of `StrongEquivalence.phi_feasibility`. This uses the feasibility proofs. -/
 def makeConstrForward (oldDomain : Expr) (xs : Array Expr) (originalConstrVars : Array LocalDecl)
-  (oldProblem : Expr) (constraints : Array Expr) (isVCond : Array Bool) (constraintsEq : Array Expr)
-  (feasibility : OC FeasibilityProofsTree) : MetaM Expr := do
+    (oldProblem : Expr) (constraints : Array Expr) (isVCond : Array Bool)
+    (constraintsEq : Array Expr) (feasibility : OC FeasibilityProofsTree) : MetaM Expr := do
   -- `∀ {x : D}, p.feasible x → q.feasible (φ x)`.
   withLocalDeclD `p oldDomain fun p => do
     let prs := (← Meta.mkProjections oldDomain p).map (·.2.2)

@@ -447,7 +447,8 @@ def mkOptimalityAndVCondElimOC (originalVarsDecls : Array LocalDecl) (newVarDecl
   withExistingLocalDecls originalVarsDecls.toList do
     withExistingLocalDecls newVarDecls do
       withExistingLocalDecls newConstrVarsArray.toList do
-        let optimalityAndVCondElim ← OC.map7M mkOptimalityAndVCondElim atoms args canonExprs newVars newConstrVars curvature bconds
+        let optimalityAndVCondElim ← OC.map7M mkOptimalityAndVCondElim atoms args canonExprs newVars
+          newConstrVars curvature bconds
         let optimality := optimalityAndVCondElim.map (fun oce => oce.map Prod.fst Prod.fst)
         let vcondElim := optimalityAndVCondElim.map (fun oce => oce.map Prod.snd Prod.snd)
         trace[CvxLean.debug] "`optimality`: {optimality}."

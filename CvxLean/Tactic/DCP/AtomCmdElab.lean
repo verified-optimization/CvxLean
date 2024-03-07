@@ -125,9 +125,9 @@ def withCopyOfNonConstVars (xs : Array Expr) (argKinds : Array ArgKind)
 
 /-- Apply a function to non-constant arguments. Used by affine atom elaborators. -/
 def mapNonConstant (xs : Array Expr) (argKinds : Array ArgKind) (f : Expr → TermElabM Expr) :
-  TermElabM (Array Expr) :=
-    (Array.zip xs argKinds).mapM fun (x, kind) => do
-      if kind == ArgKind.Constant then return x else return ← f x
+    TermElabM (Array Expr) :=
+  (Array.zip xs argKinds).mapM fun (x, kind) => do
+    if kind == ArgKind.Constant then return x else return ← f x
 
 end Helpers
 
