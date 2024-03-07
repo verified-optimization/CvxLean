@@ -48,23 +48,31 @@ abbrev BCondsTree := Tree BConds BConds
 abbrev AtomDataTrees := GraphAtomDataTree × ArgumentsTree × CurvatureTree × BCondsTree
 
 
-/-- New variables. -/
+/-- New variables and constraints. -/
 
 abbrev NewVarsTree := Tree (Array LocalDecl) Unit
+
 abbrev NewConstrVarsTree := Tree (Array LocalDecl) Unit
+
+
+/- New constraints (expressions). -/
 
 abbrev NewConstrsTree := Tree (Array Expr) Unit
 
 
 /- Variable condtions. -/
 
-abbrev PreVCond := ℕ ⊕ Expr
+abbrev PreVCond := Nat ⊕ Expr
 abbrev PreVConds := Array PreVCond
 abbrev PreVCondsTree := Tree PreVConds Unit
 
 abbrev VCond := Expr
 abbrev VConds := Array VCond
 abbrev VCondsTree := Tree VConds Unit
+
+abbrev VCondIdx := Nat
+abbrev VCondsIdxs := Array VCondIdx
+abbrev VCondsIdxsTree := Tree VCondsIdxs Unit
 
 
 /- Solutions. -/
@@ -105,6 +113,7 @@ abbrev FeasibilityProofsTree := Tree FeasibilityProofs Unit
 /- Proofs of optimality and variable condition elimination. -/
 
 abbrev OptimalityProof := Expr
+abbrev OptimalityProofsTree := Tree OptimalityProof OptimalityProof
 
 abbrev VCondElimProof := Expr
 abbrev VCondElimProofs := Array VCondElimProof
@@ -112,6 +121,8 @@ abbrev VCondElimProofs := Array VCondElimProof
 abbrev OptimalityAndVCondElimProofs := OptimalityProof × VCondElimProofs
 abbrev OptimalityAndVCondElimProofsTree :=
   Tree OptimalityAndVCondElimProofs OptimalityAndVCondElimProofs
+
+abbrev VCondElimMap := Std.HashMap Nat Expr
 
 
 /- Processed atom tree. -/
@@ -124,17 +135,16 @@ structure ProcessedAtomTree where
   newConstrs : Array Expr
   newConstrVarsArray : Array LocalDecl
   forwardImagesNewVars : Array Expr
-  constraints : List (Lean.Name × Expr)
+  constraints : List (Name × Expr)
   isVCond : Array Bool
-  vcondElimMap : Std.HashMap ℕ Expr
-  solEqAtom : OC (Tree Expr Expr)
-  feasibility : OC (Tree (Array Expr) Unit)
-  canonExprs : OC (Tree Expr Expr)
-  optimality : OC (Tree Expr Expr)
+  vcondElimMap : VCondElimMap
+  solEqAtom : OC SolEqAtomProofsTree
+  feasibility : OC FeasibilityProofsTree
+  canonExprs : OC CanonExprsTree
+  optimality : OC OptimalityProofsTree
 
 instance : Inhabited ProcessedAtomTree :=
   ⟨⟨#[], #[], [], #[], #[], #[], [], #[], {}, default, default, default, default⟩⟩
-
 
 end DCP
 

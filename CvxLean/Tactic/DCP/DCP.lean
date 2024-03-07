@@ -10,12 +10,15 @@ import CvxLean.Tactic.DCP.DCPTypes
 import CvxLean.Tactic.DCP.DCPMakers
 import CvxLean.Tactic.Arith.Arith
 
+/-!
+# Main DCP algorithm
+-/
+
 namespace CvxLean
 
 open Lean Expr Meta
 
 namespace DCP
-
 
 /-- -/
 def makeForwardMap (oldDomain : Expr) (xs : Array Expr) (forwardImagesNewVars : Array Expr): MetaM Expr := do
