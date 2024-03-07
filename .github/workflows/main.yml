@@ -38,6 +38,9 @@ jobs:
       - name: Build egg-pre-dcp and CvxLean
         run: |
           ./build.sh
+      - name: Check style 
+        run: |
+          ./scripts/style/check_style_all.sh
       - name: Test egg-pre-dcp 
         working-directory: egg-pre-dcp
         run: | 
