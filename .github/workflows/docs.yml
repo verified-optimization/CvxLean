@@ -31,11 +31,13 @@ jobs:
         with:
           repository: verified-optimization/CvxLean
           path: CvxLean
-      - name: Build egg-pre-dcp, CvxLean, and CvxLeanTest
+      - name: Build egg-pre-dcp and CvxLean
         working-directory: CvxLean
         run: |
           ./build.sh
-          lake build CvxLeanTest
+          # TODO: This fails because no MOSEK, it would be nice to generate docs for examples and 
+          # tests too, skip for now.
+          # lake build CvxLeanTest
       - name: Create dummy docs project
         run: |
           # Taken from https://github.com/leanprover-community/mathlib4_docs
