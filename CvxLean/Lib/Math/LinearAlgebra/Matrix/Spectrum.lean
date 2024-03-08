@@ -1,6 +1,10 @@
 import Mathlib.LinearAlgebra.Matrix.Spectrum
 import CvxLean.Lib.Math.Analysis.InnerProductSpace.Spectrum
 
+/-!
+Version of the spectral theorem for matrices.
+-/
+
 namespace Matrix
 
 variable {𝕜 : Type _} [IsROrC 𝕜] [DecidableEq 𝕜]

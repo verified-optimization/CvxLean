@@ -1,6 +1,11 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Atom for the operation that turns a vector into a diagonal matrix with zeros outside the diagonal
+(affine).
+-/
+
 namespace CvxLean
 
 open Matrix

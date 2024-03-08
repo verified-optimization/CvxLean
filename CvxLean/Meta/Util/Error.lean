@@ -139,6 +139,14 @@ end PreDCP
 
 section DCP
 
+/-- Throws an error coming from the `declare_atom` command. -/
+syntax "throwAtomDeclarationError " (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(throwAtomDeclarationError $msg:interpolatedStr) =>
+      `(throwError ("`declare_atom` error: " ++ (m! $msg)))
+  | `(throwAtomDeclarationError $msg:term) => `(throwError ("`declare_atom` error: " ++ $msg))
+
 /-- Throws an error coming from the `dcp` tactic or any of the auxiliary functions. -/
 syntax "throwDCPError " (interpolatedStr(term) <|> term) : term
 

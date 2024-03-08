@@ -9,6 +9,11 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.SMul
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
+import CvxLean.Meta.Util.Debug
+
+/-!
+Unit half-with Huber loss function atom (convex).
+-/
 
 namespace CvxLean
 
@@ -41,7 +46,7 @@ optimality by
   { by_cases hwx : w ≤ |x|
     { have hsq : |x| ^ (2 : ℝ) - w ^ (2 : ℝ) = (|x| + w) * (|x| - w) := by
         ring_nf; simp
-      rw [←sub_le_iff_le_add, ←sq_abs, ←rpow_two, ←rpow_two, hsq]
+      rw [← sub_le_iff_le_add, ← sq_abs, ← rpow_two, ← rpow_two, hsq]
       apply mul_le_mul <;> linarith }
     { replace hwx := not_le.mp hwx
       have hw : 0 ≤ w := by linarith [abs_nonneg x]
@@ -50,14 +55,14 @@ optimality by
         apply add_nonneg <;> norm_num [c2, hw] }
       have hcx : 0 < |x| := abs_pos.mpr hxz
       have hx2w2 := mul_lt_mul hwx (le_of_lt hwx) hcx hw
-      rw [←pow_two, sq_abs, ←pow_two] at hx2w2
+      rw [← pow_two, sq_abs, ← pow_two] at hx2w2
       have hv : 0 ≤ 2 * v := by linarith
       have hx2w22v := add_le_add (le_of_lt hx2w2) hv
       linarith } }
   { have h2xsub1 : 2 * |x| - 1  ≤ 2 * v + (2 * w - 1) := by linarith
     apply le_trans h2xsub1
     apply add_le_add (le_refl _)
-    rw [←zero_add (_ - _), ←le_sub_iff_add_le]
+    rw [← zero_add (_ - _), ← le_sub_iff_add_le]
     have hwsub12 : w * w - (2 * w - 1) = (w - 1) * (w - 1) := by ring_nf
     rw [pow_two, hwsub12]
     exact mul_self_nonneg _ }
@@ -76,37 +81,37 @@ solution
   (w := fun i => if |x i| ≤ 1 then |x i| else 1)
 solutionEqualsAtom by
   ext i
-  simp [Vec.huber, ←huber.solEqAtom (x i)]
+  simp [Vec.huber, ← huber.solEqAtom (x i)]
 feasibility
   (c1 : by
     dsimp
     intros i
     have h := huber.feasibility0 (x i)
-    unfold Real.posOrthCone at h
+    unfold Real.nonnegOrthCone at h
     simpa using h)
   (c2 : by
     dsimp
     intros i
     have h := huber.feasibility1 (x i)
-    unfold Real.posOrthCone at h
+    unfold Real.nonnegOrthCone at h
     simpa using h)
   (c3 : by
     dsimp
     intros i
     have h := huber.feasibility2 (x i)
-    unfold Real.posOrthCone at h
+    unfold Real.nonnegOrthCone at h
     simpa using h)
 optimality by
     intros i
     simp [Vec.huber]
-    rw [←rpow_two]
+    rw [← rpow_two]
     apply huber.optimality (x i) (v i) (w i) ((w i) ^ 2) (abs (x i))
-    { unfold posOrthCone; simpa using c1 i }
-    { unfold posOrthCone; simpa using c2 i }
-    { unfold posOrthCone; simpa using c3 i }
+    { unfold nonnegOrthCone; simpa using c1 i }
+    { unfold nonnegOrthCone; simpa using c2 i }
+    { unfold nonnegOrthCone; simpa using c3 i }
     { unfold rotatedSoCone; simp [sq_nonneg]; norm_num }
-    { unfold posOrthCone; simp [sub_nonneg, abs] }
-    { unfold posOrthCone; simp [← sub_le_iff_le_add, abs] }
+    { unfold nonnegOrthCone; simp [sub_nonneg, abs] }
+    { unfold nonnegOrthCone; simp [← sub_le_iff_le_add, abs] }
 
 vconditionElimination
 

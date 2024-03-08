@@ -133,7 +133,8 @@ instance : ToString Result where
     "INDEX | NAME | AT | ACTIVITY | LOWER LIMIT | UPPER LIMIT | DUAL LOWER | DUAL UPPER \n" ++
     (res.constraints.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n" ++
     "VARIABLES \n" ++
-    "INDEX | NAME | AT | ACTIVITY | LOWER LIMIT | UPPER LIMIT | DUAL LOWER | DUAL UPPER | CONIC DUAL \n" ++
+    "INDEX | NAME | AT | ACTIVITY | LOWER LIMIT | UPPER LIMIT | DUAL LOWER | DUAL UPPER | " ++
+    "CONIC DUAL \n" ++
     (res.vars.foldl (fun acc s => acc ++ (toString s) ++ "\n") "") ++ "\n" ++
     "SYMMETRIC MATRIX VARIABLES \n" ++
     "INDEX | NAME | I | J | PRIMAL | DUAL \n" ++

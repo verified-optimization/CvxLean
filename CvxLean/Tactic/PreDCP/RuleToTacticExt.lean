@@ -1,7 +1,7 @@
 import Lean
 
 /-!
-# Egg rewrite rule to tactic (extension)
+# Egg rewrite rule to tactic (environment extension)
 
 This files defines the persistent environment extension used to store translation of `egg` rewrite
 rule names to Lean tactics.

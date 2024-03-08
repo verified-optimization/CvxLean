@@ -5,6 +5,11 @@ import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Examples from geometric programming that do not quite follow the rules of DGP, but can be fixed
+by rewriting.
+-/
+
 namespace AlmostGP
 
 noncomputable section

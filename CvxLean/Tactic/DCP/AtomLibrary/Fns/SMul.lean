@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Scalar multiplication atoms (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Nat.smul [affine] (n : ℕ)& (x : ℝ)+ :
@@ -11,7 +15,7 @@ additivity by
   rw [smul_zero, add_zero, smul_add]
 optimality by
   intros y' hy
-  apply smul_le_smul_of_nonneg hy (Nat.zero_le _)
+  apply smul_le_smul_of_nonneg_left hy (Nat.zero_le _)
 
 declare_atom Nat.Vec.smul [affine] (n : ℕ)& (k : ℕ)& (x : Fin n → ℝ)+ :
   k • x :=
@@ -22,7 +26,7 @@ additivity by
   rw [smul_zero, add_zero, smul_add]
 optimality by
   intros y' hy i
-  exact smul_le_smul_of_nonneg (hy i) (Nat.zero_le _)
+  exact smul_le_smul_of_nonneg_left (hy i) (Nat.zero_le _)
 
 declare_atom Real.Vec.smul1 [affine] (n : ℕ)& (k : ℝ)& (x : Fin n → ℝ)+ :
   k • x :=
@@ -34,7 +38,7 @@ additivity by
   rw [smul_zero, add_zero, smul_add]
 optimality by
   intros y' hy
-  apply smul_le_smul_of_nonneg hy hk
+  apply smul_le_smul_of_nonneg_left hy hk
 
 declare_atom Real.Vec.smul2 [affine] (n : ℕ)& (k : ℝ)& (x : Fin n → ℝ)- :
   k • x :=
@@ -46,7 +50,7 @@ additivity by
   rw [smul_zero, add_zero, smul_add]
 optimality by
   intros y' hy
-  apply smul_le_smul_of_nonpos hy hk
+  apply smul_le_smul_of_nonpos_left hy hk
 
 declare_atom Real.Vec.smul3 [affine] (n : ℕ)& (k : ℝ)& (x : Fin n → ℝ)? :
   k • x :=

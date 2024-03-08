@@ -10,12 +10,16 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Exp
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Transpose
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Quadratic-over-linear atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
 
--- TODO(RFM): generalize to x : Fin n → ℝ
--- TODO(RFM): distinguish between nonincreasing and nondecreasing.
+-- TODO: generalize to `x : Fin n → ℝ`.
+-- TODO: distinguish between nonincreasing and nondecreasing.
 declare_atom quadOverLin [convex] (x : ℝ)? (y : ℝ)- : x ^ (2 : ℝ) / y :=
 vconditions
   (hy : 1 / 100000 ≤ y)
@@ -34,7 +38,7 @@ feasibility
     have hx2ynn : 0 ≤ x ^ (2 : ℝ) / y := by
       rw [rpow_two]; exact div_nonneg (pow_two_nonneg x) hynn
     rw [soCone_add_sub_two_mul_of_nonneg _ hynn hx2ynn]
-    rw [mul_div, mul_comm, ←mul_div, div_self (ne_of_gt hypos), mul_one])
+    rw [mul_div, mul_comm, ← mul_div, div_self (ne_of_gt hypos), mul_one])
   (c2 : by
     have hynn : 0 ≤ y := by positivity
     rw [rpow_two]
@@ -82,7 +86,7 @@ feasibility
     intros t i;
     rw [vec_soCone_apply_to_soCone_add_sub_two_mul]
     rw [soCone_add_sub_two_mul_of_nonneg _ (hynn i) (hx2ynn i)]; dsimp
-    rw [mul_div, mul_comm, ←mul_div, div_self (ne_of_gt (hypos i)), mul_one])
+    rw [mul_div, mul_comm, ← mul_div, div_self (ne_of_gt (hypos i)), mul_one])
   (c2 : by
     have hynn : 0 ≤ y := fun i => by
       have hyi := hy i

@@ -8,11 +8,15 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Exp
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Geometric mean atom (concave).
+-/
+
 namespace CvxLean
 
 open Real
 
--- TODO(RFM): generalize to x : Fin n → ℝ
+-- TODO: generalize to x : Fin n → ℝ
 declare_atom geoMean [concave] (x : ℝ)+ (y : ℝ)+ : sqrt (x * y) :=
 vconditions
   (hx : 0 ≤ x)

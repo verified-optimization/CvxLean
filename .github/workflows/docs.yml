@@ -3,9 +3,6 @@ name: docs
 on:
   push:
     branches: ["main"]
-  
-  pull_request:
-    branches: ["main"]
 
   workflow_dispatch:
 
@@ -34,10 +31,11 @@ jobs:
         with:
           repository: verified-optimization/CvxLean
           path: CvxLean
-      - name: Build egg-pre-dcp and CvxLean
+      - name: Build egg-pre-dcp, CvxLean, and CvxLeanTest
         working-directory: CvxLean
         run: |
           ./build.sh
+          lake build CvxLeanTest
       - name: Create dummy docs project
         run: |
           # Taken from https://github.com/leanprover-community/mathlib4_docs

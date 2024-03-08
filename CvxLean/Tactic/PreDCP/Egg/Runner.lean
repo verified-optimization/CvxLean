@@ -1,11 +1,19 @@
 import Lean
 import CvxLean.Tactic.PreDCP.Egg.EggTypes
 
+/-!
+# Call the `egg` sub-process and get a list of rewrites
+
+This file defines the `runEggRequest` function, which is used to call the `egg` sub-process. Some
+pre-processing is necessary to encode domains and minimization problems into the JSON. Also, some
+post-processing is needed to parse the JSON response.
+
+Taken from <https://github.com/opencompl/egg-tactic-code>/
+-/
+
 namespace CvxLean
 
 open Lean
-
--- Taken from https://github.com/opencompl/egg-tactic-code
 
 def _root_.Lean.Json.getStr! (j : Json) : String :=
   match j with
@@ -19,7 +27,7 @@ def _root_.Lean.Json.getArr! (j : Json) : Array Json :=
 
 variable {ε α}
 
-def _root_.MetaM.ofExcept [ToString ε]: Except ε α -> MetaM α :=
+def _root_.MetaM.ofExcept [ToString ε]: Except ε α → MetaM α :=
   fun e =>
     match e with
     | Except.error msg => throwError (toString msg)
@@ -33,7 +41,7 @@ instance : MonadExceptOf String MetaM := {
 def surroundQuotes (s : String) : String :=
   "\"" ++ s ++ "\""
 
-/-- TODO
+/-- JSONify an EggMinimization.
 NOTE: Tuples are lists of two elements. -/
 def EggMinimization.toJson (e : EggMinimization) : String :=
   "{" ++
@@ -54,11 +62,7 @@ def EggDomain.toJson (e : EggDomain) : String :=
   surroundQuotes e.lo_open ++
   "]"
 
-structure EggRequest where
-  domains : List (String × EggDomain) -- Tuples are lists of two elements.
-  target : EggMinimization
-
-/-- TODO
+/-- JSONify an `EggRequest`.
 NOTE: Tuples are lists of two elements. -/
 def EggRequest.toJson (e : EggRequest) : String :=
   "{" ++
@@ -72,10 +76,6 @@ def EggRequest.toJson (e : EggRequest) : String :=
   surroundQuotes "target" ++ " : " ++ (e.target.toJson) ++
   "}"
 
-inductive EggRewriteDirection where
-  | Forward
-  | Backward
-  deriving Inhabited, DecidableEq
 
 def EggRewriteDirection.toString : EggRewriteDirection → String
   | Forward => "fwd"
@@ -83,14 +83,6 @@ def EggRewriteDirection.toString : EggRewriteDirection → String
 
 instance : ToString EggRewriteDirection where
   toString := EggRewriteDirection.toString
-
-structure EggRewrite where
-  rewriteName : String
-  direction : EggRewriteDirection
-  location : String
-  subexprFrom : String
-  subexprTo : String
-  expectedTerm : String
 
 def EggRewrite.toString (e : EggRewrite) : String :=
   "{" ++
@@ -105,24 +97,27 @@ def EggRewrite.toString (e : EggRewrite) : String :=
 instance : ToString EggRewrite where
   toString := EggRewrite.toString
 
+/-- Call the `egg` sub-process by runnning the executable `egg-pre-dcp/utils/egg-pre-dcp`, generated
+by running `lake build EggPreDCP`. The input is passed via standard input. -/
 def runEggRequestRaw (requestJson : String) : MetaM String := do
-    let eggProcess ← IO.Process.spawn {
-        cmd    := "egg-pre-dcp/utils/egg-pre-dcp",
-        stdout := IO.Process.Stdio.piped,
-        stdin  := IO.Process.Stdio.piped,
-        stderr := IO.Process.Stdio.null
-      }
+  let eggProcess ← IO.Process.spawn {
+      cmd    := "egg-pre-dcp/utils/egg-pre-dcp",
+      stdout := IO.Process.Stdio.piped,
+      stdin  := IO.Process.Stdio.piped,
+      stderr := IO.Process.Stdio.null
+    }
 
-    let (stdin, eggProcess) ← eggProcess.takeStdin
-    stdin.putStr requestJson
+  let (stdin, eggProcess) ← eggProcess.takeStdin
+  stdin.putStr requestJson
 
-    let stdout ← IO.asTask eggProcess.stdout.readToEnd Task.Priority.dedicated
-    let stdout : String ← IO.ofExcept stdout.get
-    let exitCode ← eggProcess.wait
-    dbg_trace s!"Egg exit code: {exitCode}"
+  let stdout ← IO.asTask eggProcess.stdout.readToEnd Task.Priority.dedicated
+  let stdout : String ← IO.ofExcept stdout.get
+  let exitCode ← eggProcess.wait
+  dbg_trace s!"Egg exit code: {exitCode}"
 
-    return stdout
+  return stdout
 
+/-- Read `egg`'s output and trun it into an array of `EggRewrite`s. -/
 def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
   dbg_trace s!"Egg response: {responseString}"
   let outJson : Json ← match Json.parse responseString with
@@ -159,7 +154,7 @@ def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
 
     return res
 
-/-- -/
+/-- Run request to `egg` and parse the output to get an array of rewrites, if successful. -/
 def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
   dbg_trace s!"Running egg request: {request.toJson}"
   runEggRequestRaw request.toJson >>= parseEggResponse

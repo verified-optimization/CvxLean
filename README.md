@@ -68,7 +68,7 @@ reduction red/prob :
     maximize x + y
     subject to
       h : (exp x) * (exp y) ≤ 10 := by
-  conv_constr => rw [←Real.exp_add]
+  conv_constr => rw [← Real.exp_add]
 
 #print prob
 -- def prob : Minimization (Real × Real) Real :=

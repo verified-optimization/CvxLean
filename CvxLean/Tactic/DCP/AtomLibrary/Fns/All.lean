@@ -25,8 +25,6 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.MulVec
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Neg
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Norm
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Nth
-import CvxLean.Tactic.DCP.AtomLibrary.Fns.Perspective
-import CvxLean.Tactic.DCP.AtomLibrary.Fns.PosSemidef
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Power
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.QuadOverLin
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.SMul

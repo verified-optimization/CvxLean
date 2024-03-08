@@ -4,6 +4,10 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Add
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Absolute value atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
@@ -13,23 +17,23 @@ vconditions
 implementationVars (t : ℝ)
 implementationObjective t
 implementationConstraints
-  (c_pos : posOrthCone (t - x))
-  (c_neg : posOrthCone (t + x))
+  (c_pos : nonnegOrthCone (t - x))
+  (c_neg : nonnegOrthCone (t + x))
 solution (t := abs x)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by
-    unfold posOrthCone
+    unfold nonnegOrthCone
     rw [sub_nonneg]
     exact le_abs_self x)
   (c_neg : by
-    unfold posOrthCone
-    rw [←neg_le_iff_add_nonneg']
+    unfold nonnegOrthCone
+    rw [← neg_le_iff_add_nonneg']
     exact neg_abs_le x)
 optimality by
   apply abs_le.2
-  rw [←sub_nonneg, sub_neg_eq_add, add_comm, ←sub_nonneg (b := x)]
-  unfold posOrthCone at c_pos c_neg
+  rw [← sub_nonneg, sub_neg_eq_add, add_comm, ← sub_nonneg (b := x)]
+  unfold nonnegOrthCone at c_pos c_neg
   exact ⟨c_neg, c_pos⟩
 vconditionElimination
 
@@ -38,48 +42,47 @@ vconditions
 implementationVars (t : (Fin n) → ℝ)
 implementationObjective t
 implementationConstraints
-  (c_pos : Real.Vec.posOrthCone (t - x : (Fin n) → ℝ))
-  (c_neg : Real.Vec.posOrthCone (t + x : (Fin n) → ℝ))
+  (c_pos : Real.Vec.nonnegOrthCone (t - x : (Fin n) → ℝ))
+  (c_neg : Real.Vec.nonnegOrthCone (t + x : (Fin n) → ℝ))
 solution (t := abs x)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by
-    unfold Real.Vec.posOrthCone
+    unfold Real.Vec.nonnegOrthCone
     intros
     apply abs.feasibility0)
   (c_neg : by
-    unfold Real.Vec.posOrthCone
+    unfold Real.Vec.nonnegOrthCone
     intros
     apply abs.feasibility1)
 optimality by
   intros i
-  unfold Real.Vec.posOrthCone at c_pos c_neg
+  unfold Real.Vec.nonnegOrthCone at c_pos c_neg
   apply abs.optimality _ _ (c_pos i) (c_neg i)
 vconditionElimination
 
-declare_atom Matrix.abs [convex]
-  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)?
-  : M.abs :=
+declare_atom Matrix.abs [convex] (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
+  M.abs :=
 vconditions
 implementationVars (T : Matrix (Fin m) (Fin n) ℝ)
 implementationObjective T
 implementationConstraints
-  (c_pos : Real.Matrix.posOrthCone (T - M : Matrix (Fin m) (Fin n) ℝ))
-  (c_neg : Real.Matrix.posOrthCone (T + M : Matrix (Fin m) (Fin n) ℝ))
+  (c_pos : Real.Matrix.nonnegOrthCone (T - M : Matrix (Fin m) (Fin n) ℝ))
+  (c_neg : Real.Matrix.nonnegOrthCone (T + M : Matrix (Fin m) (Fin n) ℝ))
 solution (T := M.abs)
 solutionEqualsAtom rfl
 feasibility
   (c_pos : by
-    unfold Real.Matrix.posOrthCone
+    unfold Real.Matrix.nonnegOrthCone
     intros _ _ _
     apply abs.feasibility0)
   (c_neg :  by
-    unfold Real.Matrix.posOrthCone
+    unfold Real.Matrix.nonnegOrthCone
     intros _ _ _
     apply abs.feasibility1)
 optimality by
   intros i j
-  unfold Real.Matrix.posOrthCone at c_pos c_neg
+  unfold Real.Matrix.nonnegOrthCone at c_pos c_neg
   apply abs.optimality _ _ (c_pos i j) (c_neg i j)
 vconditionElimination
 

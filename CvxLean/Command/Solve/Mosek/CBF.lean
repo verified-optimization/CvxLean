@@ -567,9 +567,8 @@ def addScalarConstraintsShiftCoord (p : Problem) (i : Nat) (v : Float) : Problem
   { p with scalarConstraintsShiftCoord :=
       p.scalarConstraintsShiftCoord.stack ev}
 
-def addPSDConstraintsScalarVariablesCoord
-  (p : Problem) (i : Nat) (eml : EncodedMatrixList)
-  : Problem :=
+def addPSDConstraintsScalarVariablesCoord (p : Problem) (i : Nat) (eml : EncodedMatrixList) :
+    Problem :=
   let emll := EncodedMatrixListList.fromIndexAndEncodedMatrixList i eml
   { p with PSDConstraintsScalarVariablesCoord :=
       p.PSDConstraintsScalarVariablesCoord.stack emll }

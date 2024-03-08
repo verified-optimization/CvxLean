@@ -23,7 +23,7 @@ def mean {n : ℕ} (a : Fin n → ℝ) : ℝ := (1 / n) * ∑ i, (a i)
 `leastSquares_optimal_eq_mean`, following Marty Cohen's answer in
 https://math.stackexchange.com/questions/2554243. -/
 lemma leastSquares_alt_objFun {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ) :
-  (∑ i, ((a i - x) ^ 2)) = n * ((x - mean a) ^ 2 + (mean (a ^ 2) - (mean a) ^ 2)) := by
+    (∑ i, ((a i - x) ^ 2)) = n * ((x - mean a) ^ 2 + (mean (a ^ 2) - (mean a) ^ 2)) := by
   calc
   -- 1) Σ (aᵢ - x)² = Σ (aᵢ² - 2aᵢx + x²)
   _ = ∑ i, ((a i) ^ 2 - 2 * (a i) * x + (x ^ 2)) := by
@@ -40,7 +40,7 @@ lemma leastSquares_alt_objFun {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : �
 
 /-- Key result about least squares: `x* = mean a`. -/
 lemma leastSquares_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
-  (h : (leastSquares a).optimal x) : x = mean a := by
+    (h : (leastSquares a).optimal x) : x = mean a := by
   simp [optimal, feasible, leastSquares] at h
   replace h : ∀ y, (x - mean a) ^ 2 ≤ (y - mean a) ^ 2  := by
     intros y
@@ -60,7 +60,7 @@ def leastSquaresVec {n : ℕ} (a : Fin n → ℝ) :=
 
 /-- Same as `leastSquares_optimal_eq_mean` in vector notation. -/
 lemma leastSquaresVec_optimal_eq_mean {n : ℕ} (hn : 0 < n) (a : Fin n → ℝ) (x : ℝ)
-  (h : (leastSquaresVec a).optimal x) : x = mean a := by
+    (h : (leastSquaresVec a).optimal x) : x = mean a := by
   apply leastSquares_optimal_eq_mean hn a
   simp [leastSquaresVec, leastSquares, optimal, feasible] at h ⊢
   intros y
@@ -96,7 +96,7 @@ equivalence* eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence
       (fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2)))
-    . rintro _ h; exact le_of_lt h
+    · rintro _ h; exact le_of_lt h
   rename_vars [c, t]
   -- Clean up.
   conv_constr h₁ => dsimp
@@ -128,21 +128,21 @@ lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → �
   simp [rpow_two]
   rw [sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
   constructor
-  . intros h i
+  · intros h i
     have hi := h i (by simp)
     rwa [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero] at hi
-  . intros h i _
+  · intros h i _
     rw [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero]
     exact h i
 
 /-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
 is non-trivial. -/
 lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
-  (h_nontrivial : x ≠ Vec.const m c)
-  (h_opt : (fittingSphereConvex n m x).optimal (c, t)) : (fittingSphereT n m x).optimal (c, t) := by
+    (h_nontrivial : x ≠ Vec.const m c) (h_opt : (fittingSphereConvex n m x).optimal (c, t)) :
+    (fittingSphereT n m x).optimal (c, t) := by
   simp [fittingSphereT, fittingSphereConvex, optimal, feasible] at h_opt ⊢
   constructor
-  . let a := Vec.norm x ^ 2 - 2 * mulVec x c
+  · let a := Vec.norm x ^ 2 - 2 * mulVec x c
     have h_ls : optimal (leastSquaresVec a) t := by
       refine ⟨trivial, ?_⟩
       intros y _
@@ -177,12 +177,12 @@ lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ
         exfalso
         rw [h_t_add_c2_eq, zero_eq_mul] at h_t_add_c2_eq_zero
         rcases h_t_add_c2_eq_zero with (hc | h_sum_eq_zero)
-        . simp at hc; linarith
+        · simp at hc; linarith
         rw [vec_squared_norm_error_eq_zero_iff] at h_sum_eq_zero
         apply h_nontrivial
         funext i
         exact h_sum_eq_zero i
-  . intros c' x' _
+  · intros c' x' _
     exact h_opt c' x'
 
 /-- We express the nontriviality condition only in terms of `x` so that it can be checked. -/

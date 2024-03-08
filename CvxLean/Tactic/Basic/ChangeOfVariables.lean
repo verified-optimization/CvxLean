@@ -3,6 +3,7 @@ import CvxLean.Lib.Minimization
 import CvxLean.Lib.Equivalence
 import CvxLean.Meta.Minimization
 import CvxLean.Meta.Util.Expr
+import CvxLean.Meta.Util.Error
 import CvxLean.Meta.TacticBuilder
 import CvxLean.Tactic.Arith.Arith
 import CvxLean.Tactic.Basic.RemoveTrivialConstrs
@@ -169,7 +170,7 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     -- Find change of variables location.
     let covIdx := vars.findIdx? (fun ⟨n, _⟩ => n == varToChange)
     if covIdx.isNone then
-      throwError "Variable {varToChange} not found in domain."
+      throwChangeOfVariablesError "variable {varToChange} not found in domain."
     let covIdx := covIdx.get!
 
     -- New domain.
@@ -217,9 +218,9 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
     let toApply ← instantiateMVars toApply
     let gsAfterApply ← g.apply toApply
     if gsAfterApply.length != 1 then
-      throwError (
-        "Failed to apply `ChangeOfVariables.toEquivalence`. " ++
-        "Make sure that the change of variables is inferrable by type class resolution.")
+      throwChangeOfVariablesError (
+        "failed to apply `ChangeOfVariables.toEquivalence`, " ++
+        "make sure that the change of variables is inferrable by type class resolution.")
 
     -- Solve change of variables condition.
     let gCondition := gsAfterApply[0]!
@@ -228,7 +229,7 @@ def changeOfVariablesBuilder (newVarStx varToChangeStx : TSyntax `ident)
       (← `(tactic| (simp [ChangeOfVariables.condition] at * <;> arith))) gCondition
     if gsFinal.length != 0 then
       trace[CvxLean.debug] "Could not prove {gsFinal}."
-      throwError "Failed to solve change of variables condition."
+      throwChangeOfVariablesError "failed to solve change of variables condition."
 
 end Meta
 

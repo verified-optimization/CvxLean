@@ -1,5 +1,9 @@
 import CvxLean.Command.Solve
 
+/-!
+Testing the log-det atom.
+-/
+
 section LogDet
 
 open CvxLean Minimization Real

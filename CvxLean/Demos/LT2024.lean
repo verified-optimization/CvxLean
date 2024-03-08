@@ -1,5 +1,10 @@
 import CvxLean
 
+/-!
+This demo was used for Lean Together 2024, see the video here:
+<https://www.youtube.com/watch?v=GNOXmt5A_MQ>
+-/
+
 namespace LT2024
 
 noncomputable section
@@ -69,9 +74,6 @@ def p₃ (Awall Aflr α β γ δ : ℝ) :=
       c7 : h / w ≤ β
       c8 : γ ≤ d / w
       c9 : d / w ≤ δ
-
-
-set_option trace.Meta.debug true
 
 equivalence* eqv₃/q₃ : p₃ 100 10 0.5 2 0.5 2 := by
   change_of_variables! (h') (h ↦ exp h')

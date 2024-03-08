@@ -84,7 +84,7 @@ lemma log_eq_log {x y : ℝ} (hx : 0 < x) (hy : 0 < y) : x = y ↔ log x = log y
 
 lemma div_pow_eq_mul_pow_neg {a b c : ℝ} (hb : 0 ≤ b) :
     a / (b ^ c) = a * b ^ (-c) := by
-  rw [div_eq_mul_inv, ←rpow_neg hb]
+  rw [div_eq_mul_inv, ← rpow_neg hb]
 
 lemma one_div_eq_pow_neg_one {a : ℝ} (ha : 0 < a) : 1 / a = a ^ (-1 : ℝ) := by
   rw [rpow_neg (le_of_lt ha), rpow_one, div_eq_mul_inv, one_mul]

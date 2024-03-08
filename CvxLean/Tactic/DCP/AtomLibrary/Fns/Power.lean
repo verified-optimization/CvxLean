@@ -6,6 +6,13 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Add
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
 
+/-!
+Some power atoms:
+* x ^ 1 (affine).
+* x ^ (-1) (convex).
+* x ^ (-2) (convex).
+-/
+
 namespace CvxLean
 
 open Real
@@ -49,7 +56,7 @@ optimality by
   have hxpos : 0 < x := by
     cases (lt_or_eq_of_le c3) with
     | inl h => exact h
-    | inr h => rw [←h] at c1; linarith
+    | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
   rw [rpow_neg_one, inv_eq_one_div, div_le_iff hypos]
   apply le_trans c1
@@ -61,7 +68,7 @@ vconditionElimination
     rw [soCone_add_sub_two_of_nonneg c2 c3] at c1
     cases (lt_or_eq_of_le c3) with
       | inl h => linarith
-      | inr h => rw [←h] at c1; linarith)
+      | inr h => rw [← h] at c1; linarith)
 
 -- NOTE(RFM): It is not straightforward to express it in terms of x ^ (-1) and
 -- x ^ 2 because of vconditions.
@@ -97,7 +104,7 @@ feasibility
     have hxneg2nn := le_of_lt hxneg2
     have h1nn : 0 ≤ (1 : ℝ) := by norm_num
     rw [soCone_add_sub_two_mul_of_nonneg (x ^ (-1)) hxneg2nn h1nn]
-    rw [←rpow_mul hxnn]
+    rw [← rpow_mul hxnn]
     field_simp)
   (c3 : by
     dsimp
@@ -117,7 +124,7 @@ optimality by
   have hxpos : 0 < x := by
     cases (lt_or_eq_of_le c5) with
     | inl h => exact h
-    | inr h => rw [←h] at c1; linarith
+    | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
   have hynn := le_of_lt hypos
   have hy2pos : 0 < y ^ (2 : ℝ):= by
@@ -126,7 +133,7 @@ optimality by
   have ht₁pos : 0 < t₁ := by
     cases (lt_or_eq_of_le c4) with
     | inl h => exact h
-    | inr h => rw [←h] at c1; linarith
+    | inr h => rw [← h] at c1; linarith
   have ht₁2pos : 0 < t₁ ^ (2 : ℝ) := by
     rw [rpow_two]
     exact pow_two_pos_of_ne_zero t₁ (ne_of_gt ht₁pos)
@@ -134,18 +141,18 @@ optimality by
   have ht₀pos : 0 < t₀ := by
     cases (lt_or_eq_of_le c3) with
     | inl h => exact h
-    | inr h => rw [←h] at c2; linarith
+    | inr h => rw [← h] at c2; linarith
   -- Combine c1 and c2 appropriately to get t₀ ^ (-1) ≤ y ^ 2.
   have ht₁invx : t₁ ^ (-1 : ℝ) ≤ x := by
     rw [rpow_neg c4, rpow_one]
-    rwa [←div_le_iff ht₁pos, ←inv_eq_one_div] at c1
+    rwa [← div_le_iff ht₁pos, ← inv_eq_one_div] at c1
   have ht₁invy : t₁ ^ (-1 : ℝ) ≤ y := le_trans ht₁invx hy
   have ht₁invnn := le_of_lt ht₁inv
   have ht₁neg2y2 : t₁ ^ (-2 : ℝ) ≤ y ^ (2 : ℝ) := by
     have h := mul_le_mul ht₁invy ht₁invy ht₁invnn hynn
-    rw [←rpow_add ht₁pos] at h
+    rw [← rpow_add ht₁pos] at h
     norm_num at h
-    rw [←pow_two, ←rpow_two] at h
+    rw [← pow_two, ← rpow_two] at h
     exact h
   have ht₀invt₁neg2 : t₀ ^ (-1 : ℝ) ≤ t₁ ^ (-2 : ℝ) := by
     rw [mul_one] at c2
@@ -155,8 +162,8 @@ optimality by
   have ht₀invy2 := le_trans ht₀invt₁neg2 ht₁neg2y2
   -- Fit inequality to goal.
   rw [rpow_neg hynn, inv_eq_one_div, div_le_iff hy2pos]
-  rw [mul_comm, ←div_le_iff ht₀pos, ←inv_eq_one_div]
-  rw [←rpow_one t₀, ←rpow_neg c3]
+  rw [mul_comm, ← div_le_iff ht₀pos, ← inv_eq_one_div]
+  rw [← rpow_one t₀, ← rpow_neg c3]
   exact ht₀invy2
 vconditionElimination
   (hx : by
@@ -168,7 +175,7 @@ vconditionElimination
     have hxpos : 0 < x := by
       cases (lt_or_eq_of_le c5) with
       | inl h => exact h
-      | inr h => rw [←h] at c1; linarith
+      | inr h => rw [← h] at c1; linarith
     exact lt_of_lt_of_le hxpos hy)
 
 end CvxLean

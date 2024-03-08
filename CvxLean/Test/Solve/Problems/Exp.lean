@@ -1,5 +1,9 @@
 import CvxLean.Command.Solve
 
+/-!
+Some problems involving the exponential function.
+-/
+
 section Exp
 
 open CvxLean Minimization Real

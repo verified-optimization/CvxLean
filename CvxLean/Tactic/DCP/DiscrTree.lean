@@ -1,6 +1,9 @@
 import Lean
 
--- This is a copy of Lean's DiscrTree, but with all definitional equality checks removed.
+/-!
+This is a copy of Lean's DiscrTree, but with all definitional equality checks removed. Used to store
+and match atoms, also in real-to-float.
+-/
 
 namespace CvxLean
 
@@ -83,8 +86,9 @@ def empty : DiscrTree α := { root := {} }
 
 partial def Trie.format [ToMessageData α] : Trie α → MessageData
   | Trie.node vs cs => MessageData.group $ MessageData.paren $
-    "node" ++ (if vs.isEmpty then MessageData.nil else " " ++ toMessageData vs)
-    ++ MessageData.joinSep (cs.toList.map $ fun ⟨k, c⟩ => MessageData.paren (toMessageData k ++ " => " ++ format c)) ","
+      "node" ++ (if vs.isEmpty then MessageData.nil else " " ++ toMessageData vs) ++
+      MessageData.joinSep (cs.toList.map $ fun ⟨k, c⟩ =>
+        MessageData.paren (toMessageData k ++ " => " ++ format c)) ","
 
 instance [ToMessageData α] : ToMessageData (Trie α) := ⟨Trie.format⟩
 
@@ -143,7 +147,8 @@ private def ignoreArg (a : Expr) (i : Nat) (infos : Array Meta.ParamInfo) : Meta
   else
     isProof a
 
-private partial def pushArgsAux (infos : Array Meta.ParamInfo) : Nat → Expr → Array Expr → MetaM (Array Expr)
+private partial def pushArgsAux (infos : Array Meta.ParamInfo) :
+    Nat → Expr → Array Expr → MetaM (Array Expr)
   | i, Expr.app f a, todo => do
     if (← ignoreArg a i infos) then
       pushArgsAux infos (i-1) f (todo.push tmpStar)
@@ -157,7 +162,7 @@ def mkNoindexAnnotation (e : Expr) : Expr :=
 def hasNoindexAnnotation (e : Expr) : Bool :=
   annotation? `noindex e |>.isSome
 
-private def pushArgs (root : Bool) (todo : Array Expr) (e : Expr) : MetaM (Key × Array Expr) := do
+private def pushArgs (_root : Bool) (todo : Array Expr) (e : Expr) : MetaM (Key × Array Expr) := do
   if hasNoindexAnnotation e then
     return (Key.star, todo)
   else
@@ -246,7 +251,7 @@ def insert [BEq α] (d : DiscrTree α) (e : Expr) (v : α) : MetaM (DiscrTree α
   let keys ← mkPath e
   return d.insertCore keys v
 
-private def getKeyArgs (e : Expr) (isMatch root : Bool) : MetaM (Key × Array Expr) := do
+private def getKeyArgs (e : Expr) (isMatch _root : Bool) : MetaM (Key × Array Expr) := do
   match e.getAppFn with
   | Expr.lit v         => return (Key.lit v, #[])
   | Expr.const c _     =>
@@ -255,7 +260,7 @@ private def getKeyArgs (e : Expr) (isMatch root : Bool) : MetaM (Key × Array Ex
   | Expr.fvar fvarId   =>
     let nargs := e.getAppNumArgs
     return (Key.fvar fvarId nargs, e.getAppRevArgs)
-  | Expr.mvar mvarId   =>
+  | Expr.mvar _mvarId   =>
     if isMatch then
       return (Key.other, #[])
     else do
@@ -271,10 +276,10 @@ private def getKeyArgs (e : Expr) (isMatch root : Bool) : MetaM (Key × Array Ex
     return (Key.other, #[])
 
 private abbrev getMatchKeyArgs (e : Expr) (root : Bool) : MetaM (Key × Array Expr) :=
-  getKeyArgs e (isMatch := true) (root := root)
+  getKeyArgs e (isMatch := true) (_root := root)
 
 private abbrev getUnifyKeyArgs (e : Expr) (root : Bool) : MetaM (Key × Array Expr) :=
-  getKeyArgs e (isMatch := false) (root := root)
+  getKeyArgs e (isMatch := false) (_root := root)
 
 private def getStarResult (d : DiscrTree α) : Array α :=
   let result : Array α := Array.mkEmpty initCapacity
@@ -285,7 +290,8 @@ private def getStarResult (d : DiscrTree α) : Array α :=
 private abbrev findKey (cs : Array (Key × Trie α)) (k : Key) : Option (Key × Trie α) :=
   cs.binSearch (k, default) (fun a b => a.1 < b.1)
 
-private partial def getMatchLoop (todo : Array Expr) (c : Trie α) (result : Array α) : MetaM (Array α) := do
+private partial def getMatchLoop (todo : Array Expr) (c : Trie α) (result : Array α) :
+    MetaM (Array α) := do
   match c with
   | Trie.node vs cs =>
     if todo.isEmpty then
@@ -313,13 +319,15 @@ private partial def getMatchLoop (todo : Array Expr) (c : Trie α) (result : Arr
       match k with
       | Key.star  => pure result
       /-
-        Recall that dependent arrows are `(Key.other, #[])`, and non-dependent arrows are `(Key.arrow, #[a, b])`.
-        A non-dependent arrow may be an instance of a dependent arrow (stored at `DiscrTree`). Thus, we also visit the `Key.other` child.
+        Recall that dependent arrows are `(Key.other, #[])`, and non-dependent arrows are
+        `(Key.arrow, #[a, b])`. A non-dependent arrow may be an instance of a dependent arrow
+        (stored at `DiscrTree`). Thus, we also visit the `Key.other` child.
       -/
       | Key.arrow => visitNonStar Key.other #[] (← visitNonStar k args result)
       | _         => visitNonStar k args result
 
-private def getMatchRoot (d : DiscrTree α) (k : Key) (args : Array Expr) (result : Array α) : MetaM (Array α) :=
+private def getMatchRoot (d : DiscrTree α) (k : Key) (args : Array Expr) (result : Array α) :
+    MetaM (Array α) :=
   match d.root.find? k with
   | none   => return result
   | some c => getMatchLoop args c result
@@ -348,7 +356,7 @@ partial def getUnify (d : DiscrTree α) (e : Expr) : MetaM (Array α) := do
 where
   process (skip : Nat) (todo : Array Expr) (c : Trie α) (result : Array α) : MetaM (Array α) := do
     match skip, c with
-    | skip+1, Trie.node vs cs =>
+    | skip + 1, Trie.node _vs cs =>
       if cs.isEmpty then
         return result
       else
@@ -417,7 +425,7 @@ def foldM [Monad m] (f : σ → Array Key → α → m σ) (init : σ) (t : Disc
 def fold (f : σ → Array Key → α → σ) (init : σ) (t : DiscrTree α) : σ :=
   Id.run $ t.foldM (init := init) λ s keys a => return f s keys a
 
--- TODO inefficient since it doesn't take advantage of the Trie structure at all
+-- TODO: inefficient since it doesn't take advantage of the Trie structure at all
 @[inline]
 def merge [BEq α] (t u : DiscrTree α) : DiscrTree α :=
   if t.root.size < u.root.size then loop t u else loop u t

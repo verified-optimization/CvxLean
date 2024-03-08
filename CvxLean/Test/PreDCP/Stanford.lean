@@ -5,6 +5,11 @@ import CvxLean.Command.Util.TimeCmd
 import CvxLean.Tactic.Basic.ChangeOfVariables
 import CvxLean.Tactic.PreDCP.PreDCP
 
+/-!
+Problems from the additional exercises of the Stanford course on convex optimization:
+<https://github.com/cvxgrp/cvxbook_additional_exercises>.
+-/
+
 namespace Stanford
 
 noncomputable section

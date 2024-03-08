@@ -49,8 +49,8 @@ private lemma simp_vec_fraction (h_d_pos : StrongLT 0 d) (s : Fin n → ℝ) (i 
 private lemma fold_partial_sum [hn : Fact (0 < n)] (t : Fin n → ℝ) (i : Fin n) :
     ∑ j in [[0, i]], t j = Vec.cumsum t i := by
   simp [Vec.cumsum]; split_ifs
-  . rfl
-  . linarith [hn.out]
+  · rfl
+  · linarith [hn.out]
 
 equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
     (τmin τmax smin smax : Fin n → ℝ) (F : ℝ → ℝ) (h_n_pos : 0 < n) (h_d_pos : StrongLT 0 d)
@@ -62,7 +62,7 @@ equivalence* eqv₁/vehSpeedSchedConvex (n : ℕ) (d : Fin n → ℝ)
   -- TODO: This can be done by change of variables by detecting that the variable is a vector.
   equivalence_step =>
     apply ChangeOfVariables.toEquivalence (fun t => d / t)
-    . rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [h_smin_pos i, c_smin i, h_d_pos i]
+    · rintro s ⟨c_smin, _⟩ i; split_ands <;> linarith [h_smin_pos i, c_smin i, h_d_pos i]
   rename_vars [t]
   -- Clean up divisions introduced by the change of variables.
   conv_obj => simp only [Pi.div_apply, simp_vec_fraction d h_d_pos]
@@ -111,7 +111,7 @@ equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
   -- Add constraint to tell the system that `t` is positive.
   equivalence_step =>
     apply Equivalence.add_constraint (cs' := fun t => StrongLT 0 t)
-    . rintro t ⟨c_smin, _⟩ i
+    · rintro t ⟨c_smin, _⟩ i
       exact t_pos_of_c_smin t c_smin i
   rename_vars [t]
   rename_constrs [c_t, c_smin, c_smax, c_τmin, c_τmax]
@@ -142,26 +142,23 @@ equivalence* eqv₂/vehSpeedSchedQuadratic (n : ℕ) (d : Fin n → ℝ)
 -- Now, let's solve a concrete instance of the problem:
 -- https://github.com/cvxgrp/cvxbook_additional_exercises/blob/main/python/veh_speed_sched_data.py
 
-set_option maxRecDepth 1000000
-set_option maxHeartbeats 1000000
-
-@[optimization_param]
+@[optimization_param, reducible]
 def nₚ : ℕ := 10
 
 lemma nₚ_pos : 0 < nₚ := by unfold nₚ; norm_num
 
-@[optimization_param]
+@[optimization_param, reducible]
 def dₚ : Fin nₚ → ℝ :=
   ![1.9501, 1.2311, 1.6068, 1.4860, 1.8913, 1.7621, 1.4565, 1.0185, 1.8214, 1.4447]
 
 lemma dₚ_pos : StrongLT 0 dₚ := by
   intro i; fin_cases i <;> (simp [dₚ]; norm_num)
 
-@[optimization_param]
+@[optimization_param, reducible]
 def τminₚ : Fin nₚ → ℝ :=
   ![1.0809, 2.7265, 3.5118, 5.3038, 5.4516, 7.1648, 9.2674, 12.1543, 14.4058, 16.6258]
 
-@[optimization_param]
+@[optimization_param, reducible]
 def τmaxₚ : Fin nₚ → ℝ :=
   ![4.6528, 6.5147, 7.5178, 9.7478, 9.0641, 10.3891, 13.1540, 16.0878, 17.4352, 20.9539]
 
@@ -169,7 +166,7 @@ def τmaxₚ : Fin nₚ → ℝ :=
 def sminₚ : Fin nₚ → ℝ :=
   ![0.7828, 0.6235, 0.7155, 0.5340, 0.6329, 0.4259, 0.7798, 0.9604, 0.7298, 0.8405]
 
-@[optimization_param]
+@[optimization_param, reducible]
 def smaxₚ : Fin nₚ → ℝ :=
   ![1.9624, 1.6036, 1.6439, 1.5641, 1.7194, 1.9090, 1.3193, 1.3366, 1.9470, 2.8803]
 

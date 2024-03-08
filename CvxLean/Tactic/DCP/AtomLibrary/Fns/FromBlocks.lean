@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Atom for the operation that makes a matrix from four blocks (affine).
+-/
+
 namespace CvxLean
 
 open Matrix
@@ -19,9 +23,9 @@ additivity by
 optimality by
   intros A' B' C' D' hA hB hC hD i j
   cases i <;> cases j <;> simp [fromBlocks]
-  . exact hA _ _
-  . exact hB _ _
-  . exact hC _ _
-  . exact hD _ _
+  · exact hA _ _
+  · exact hB _ _
+  · exact hC _ _
+  · exact hD _ _
 
 end CvxLean

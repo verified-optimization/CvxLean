@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Addition atom (affine).
+-/
+
 namespace CvxLean
 
 declare_atom add [affine] (x : ℝ)+ (y : ℝ)+ : x + y :=
@@ -9,7 +13,7 @@ homogenity by
   simp [mul_add]
 additivity by
   simp only [add_zero, add_assoc, add_comm]
-  rw [add_comm x' y', ←add_assoc y y' x', add_comm _ x']
+  rw [add_comm x' y', ← add_assoc y y' x', add_comm _ x']
 optimality fun _ _ => add_le_add
 
 declare_atom Vec.add [affine] (m : Nat)&  (x : Fin m → ℝ)+ (y : Fin m → ℝ)+ : x + y :=

@@ -1,6 +1,10 @@
 import Mathlib.Data.Real.Basic
 import Mathlib.LinearAlgebra.Matrix.PosDef
 
+/-!
+Positive semidefinite cone.
+-/
+
 namespace Real
 
 /-- The cone of `n×n` positive semidefinite matrices

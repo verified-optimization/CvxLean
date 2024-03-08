@@ -9,6 +9,10 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecCons
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.VecConst
 import CvxLean.Lib.Math.LogSumExp
 
+/-!
+Log-sum-exp atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
@@ -32,7 +36,7 @@ feasibility
 optimality by
   intros y hy
   simp [Vec.sum_exp_eq_sum_div, div_le_iff (exp_pos _)] at c
-  rw [←log_exp t, log_le_log_iff (Vec.sum_exp_pos hn y) (exp_pos _)]
+  rw [← log_exp t, log_le_log_iff (Vec.sum_exp_pos hn y) (exp_pos _)]
   refine le_trans ?_ c
   apply Finset.sum_le_sum
   intros i _

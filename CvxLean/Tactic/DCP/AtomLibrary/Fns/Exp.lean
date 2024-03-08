@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Exponential function atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
@@ -19,7 +23,7 @@ feasibility
     unfold expCone; simp)
 optimality by
   intros x' hx
-  rw [←exp_iff_expCone] at c_exp
+  rw [← exp_iff_expCone] at c_exp
   have hexpleexp := exp_le_exp.2 hx
   exact hexpleexp.trans c_exp
 vconditionElimination

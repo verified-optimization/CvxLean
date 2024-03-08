@@ -5,6 +5,8 @@ import CvxLean.Lib.Math.Data.Real
 import CvxLean.Lib.Math.Data.Vec
 
 /-!
+Second-order cones.
+
 We follow the MOSEK modeling cookbook: https://docs.mosek.com/modeling-cookbook/cqo.html
 -/
 
@@ -53,8 +55,8 @@ lemma rotateSoCone_rotatedSoCone {n : ℕ} {t : ℝ} {x : Fin n.succ → ℝ} (h
     have hrw : (t + x 0) * (t - x 0) = t ^ 2 - x 0 ^ 2 := by norm_cast; ring
     rw [hrw, le_sub_iff_add_le, add_comm]
     unfold soCone at h; norm_cast at h ⊢
-    rw [←Fin.sum_univ_succ (f := fun i => (x i) ^ 2)]
-    rw [←sqrt_le_left ht]
+    rw [← Fin.sum_univ_succ (f := fun i => (x i) ^ 2)]
+    rw [← sqrt_le_left ht]
     exact h }
   { simp [le_div_iff]; linarith }
   { simp [le_div_iff]; linarith }
@@ -72,7 +74,7 @@ lemma unrotateSoCone_soCone {n : ℕ} {v w : ℝ} {x : Fin n → ℝ} (h : rotat
   { simp [le_div_iff]; linarith }
   { rw [Fin.sum_univ_succ]
     simp [Matrix.vecCons]
-    rw [add_comm, ←le_sub_iff_add_le]
+    rw [add_comm, ← le_sub_iff_add_le]
     field_simp
     have hrw : ((v + w) ^ 2 - (v - w) ^ 2) / 2 = v * w * 2 := by norm_cast; ring
     norm_cast at hrw h
@@ -86,26 +88,25 @@ section Lemmas
 `x, y ≥ 0` and `z ∈ ℝ`,
       `((x + y), (x - y, 2z)ᵀ) ∈ 𝒬ⁿ⁺¹ ↔ z ^ 2 ≤ xy`. -/
 lemma soCone_add_sub_two_mul_of_nonneg {x y : ℝ} (z : ℝ)
-  (hx : 0 ≤ x) (hy : 0 ≤ y) :
-  soCone (x + y) ![x - y, 2 * z] ↔ z ^ (2 : ℝ) ≤ x * y := by
+    (hx : 0 ≤ x) (hy : 0 ≤ y) : soCone (x + y) ![x - y, 2 * z] ↔ z ^ (2 : ℝ) ≤ x * y := by
   have hxy := add_nonneg hx hy
-  conv => lhs; unfold soCone; simp [sqrt_le_left hxy, ←le_sub_iff_add_le']
+  conv => lhs; unfold soCone; simp [sqrt_le_left hxy, ← le_sub_iff_add_le']
   ring_nf; simp
 
 /-- Same as `soCone_add_sub_two_mul_of_nonneg` with `z = 1`. -/
 lemma soCone_add_sub_two_of_nonneg {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
-  soCone (x + y) ![x - y, 2] ↔ 1 ≤ x * y := by
+    soCone (x + y) ![x - y, 2] ↔ 1 ≤ x * y := by
   have h := soCone_add_sub_two_mul_of_nonneg 1 hx hy
   rw [mul_one, one_rpow] at h
   exact h
 
 /-- Same as `soCone_add_sub_two_mul_of_nonneg` replacing `y` by `-y`. -/
 lemma soCone_sub_add_two_mul_of_nonneg {x y : ℝ} (z : ℝ) :
-  soCone (x - y) ![x + y, 2 * z] ↔ y ≤ x ∧ z ^ (2 : ℝ) ≤ -(x * y) := by
-  conv => lhs; unfold soCone; simp [sqrt_le_iff, ←le_sub_iff_add_le']
+    soCone (x - y) ![x + y, 2 * z] ↔ y ≤ x ∧ z ^ (2 : ℝ) ≤ -(x * y) := by
+  conv => lhs; unfold soCone; simp [sqrt_le_iff, ← le_sub_iff_add_le']
   apply Iff.and
-  . rfl
-  . ring_nf!; rw [←neg_mul, ←div_le_iff (by norm_num)]; simp
+  · rfl
+  · ring_nf!; rw [← neg_mul, ← div_le_iff (by norm_num)]; simp
 
 open Real Matrix
 

@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Subtraction atom (affine).
+-/
+
 namespace CvxLean
 
 declare_atom sub [affine] (x : ℝ)+ (y : ℝ)- : x - y :=

@@ -9,11 +9,39 @@ import CvxLean.Tactic.Basic.RenameConstrs
 /-!
 # Tactics for conditional rewrites
 
-TODO
+This file defines the `rw_opt`, `rw_obj`, and `rw_constr` tactics. These tactics are used to modify
+a particular component, usually by rewriting it. There is also the option of using `into` to
+specify the target expression exactly, e.g., `rw_constr c₁ into (0 ≤ x + y)`.
+
+From the point of view of the user, this is similar `CvxLean/Tactic/Basic/ConvOpt.lean` in that this
+tactic combinator allows us to focus on the objective function or one constraint, and apply tactics
+to it. The difference is that the local context contains the constraints (other than the current one
+if a constraint is being modified). This is crucial to apply rewrites that depend on conditions
+established by other constraints.
+
+For example, consider the following:
+```
+equivalence eqv/q :
+    optimization (x : ℝ)
+      minimize sqrt (x ^ 2)
+      subject to
+        c₁ : 0 ≤ x := by
+  rw_obj =>
+    -- x : ℝ, c₁ : 0 ≤ x ⊢ sqrt (x ^ 2) = ?g x
+    rw [rpow_two, sqrt_sq c₁]
+```
+In this case, we need `c₁` to be able to rewrite `sqrt (x ^ 2) = x`. The resulting problem `q` is:
+```
+optimization (x : ℝ)
+  minimize x
+  subject to
+    c₁ : 0 ≤ x
+```
 
 ### TODO
 
-* Clean up.
+* Using the lemmas of the form `rewrite_constraint_i` is ugly because we need many of them. It does
+  improve performance compared to building the lemma every time. A better approach is needed here.
 -/
 
 namespace CvxLean
@@ -22,6 +50,8 @@ open Lean Meta Elab Parser Tactic
 
 namespace Meta
 
+/-- Find appropriate lemma to rewrite the objective function depending on the number of
+constraints, which makes it easy to add them to the local context by unification. -/
 def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   match numConstrs with
   | 1  => return ``Minimization.Equivalence.rewrite_objFun_1
@@ -36,7 +66,10 @@ def rewriteObjLemma (numConstrs : Nat) : MetaM Name :=
   | 10 => return ``Minimization.Equivalence.rewrite_objFun_10
   | _  => throwRwObjError "can only rewrite problems with up to 10 constraints."
 
-/-- -/
+/-- This is the main equivalence builder to rewrite the objective function. It takes a tactic that
+can use both the current goal and the variable representing the domain of the problem. The latter
+is used in `pre_dcp` to easily build expressions. It takes care of applying the correct "congruence"
+lemma to set up the local context to rewrite the objective function, and applies the tactic. -/
 def rewriteObjBuilderFromTactic (shouldEval : Bool) (tac : MVarId → FVarId → TacticM Unit)
     (rhs? : Option Expr) : EquivalenceBuilder Unit :=
   fun eqvExpr g => g.withContext do
@@ -67,7 +100,7 @@ def rewriteObjBuilderFromTactic (shouldEval : Bool) (tac : MVarId → FVarId →
         trace[CvxLean.debug] "`rw_obj` could not close {gs}."
         throwRwObjError "could not close all goals."
 
-/-- -/
+/-- Wrapper of `rewriteObjBuilderFromTactic` that takes syntax instead. -/
 def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr) :
     EquivalenceBuilder Unit :=
   fun eqvExpr g => do
@@ -76,10 +109,13 @@ def rewriteObjBuilder (shouldEval : Bool) (tacStx : Syntax) (rhs? : Option Expr)
     let tac := fun g _ => evalTacticAt tacStx g >>= setGoals
     rewriteObjBuilderFromTactic shouldEval tac rhs? eqvExpr g
 
+/-- Same as `rewriteObjBuilder` but without a target RHS. -/
 def rewriteObjBuilderWithoutTarget (shouldEval : Bool) (tacStx : Syntax) :
     EquivalenceBuilder Unit :=
   rewriteObjBuilder shouldEval tacStx none
 
+/-- Same as `rewriteObjBuilder` but with a target RHS, given as syntax. Therefore, we need to do
+some work to create an expression over the optimization variables. -/
 def rewriteObjBuilderWithTarget (shouldEval : Bool) (tacStx : Syntax) (targetStx : Syntax) :
     EquivalenceBuilder Unit :=
   fun eqvExpr g => g.withContext do
@@ -92,7 +128,9 @@ def rewriteObjBuilderWithTarget (shouldEval : Bool) (tacStx : Syntax) (targetStx
         mkLambdaFVars #[p] ((target.replaceFVars fvars xs).replaceFVars xs prs)
     rewriteObjBuilder shouldEval tacStx (some target) eqvExpr g
 
-/-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. -/
+/-- Returns lemma to rewrite constraints at `rwIdx` and the name of the RHS parameter. Similarly to
+`rewriteObjLemma`, it depends on the number of constraints to appropriately introduce the
+constraints that the rewrite might depend on. -/
 def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :=
   if rwIdx == numConstrs then
     match rwIdx with
@@ -128,6 +166,7 @@ open Lean.Parser.Category Std.Tactic.RCases
 def nameToRintroPat (n : Name) : TSyntax `rcasesPat :=
   Unhygienic.run `(rcasesPat| $(Lean.mkIdent n):ident)
 
+/-- Trick to turn a list of names into a `rintro` pattern. -/
 def namesToRintroPat (names : List Name) : MetaM (TSyntax `rcasesPat) := do
   let ns := names.map nameToRintroPat
   match ns with
@@ -150,7 +189,9 @@ end RIntro
 
 open Term
 
-/-- -/
+/-- This is the main equivalence builder to rewrite a constraint conditionally. It operates very
+similarly to `rewriteObjBuilderFromTactic`. Some furhter work is needed here since we need to
+carefully put every *other* constraint in the local context. -/
 def rewriteConstrBuilderFromTactic (shouldEval : Bool) (constrTag : Name)
     (tac : MVarId → FVarId → TacticM Unit) (rhs? : Option Expr) : EquivalenceBuilder (List Name) :=
   fun eqvExpr g => g.withContext do
@@ -205,6 +246,7 @@ def rewriteConstrBuilderFromTactic (shouldEval : Bool) (constrTag : Name)
 
     return constrTags
 
+/-- Wrapper of `rewriteConstrBuilderFromTactic` that takes syntax instead. -/
 def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
     (rhs? : Option Expr) : EquivalenceBuilder (List Name) :=
   fun g eqvExpr => do
@@ -213,10 +255,13 @@ def rewriteConstrBuilder (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax
     let tac := fun g _ => evalTacticAt tacStx g >>= setGoals
     rewriteConstrBuilderFromTactic shouldEval constrTag tac rhs? g eqvExpr
 
+/-- Same as `rewriteConstrBuilder` but without a target RHS. -/
 def rewriteConstrBuilderWithoutTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax) :
     EquivalenceBuilder (List Name) :=
   rewriteConstrBuilder shouldEval constrTag tacStx none
 
+/-- Same as `rewriteConstrBuilder` but with a target RHS, given as syntax. Therefore, we need to do
+some work to create an expression over the optimization variables. -/
 def rewriteConstrBuilderWithTarget (shouldEval : Bool) (constrTag : Name) (tacStx : Syntax)
     (targetStx : Syntax) : EquivalenceBuilder (List Name) :=
   fun eqvExpr g => g.withContext do
@@ -233,6 +278,11 @@ end Meta
 
 namespace Tactic
 
+/-- This tactic can be used with or without a target expression as follows: `rw_obj => ...` and
+`rw_obj into rhs => ...`, where `rhs` is a term over the optimization variables. The `...` might be
+replaced by any tactic block, usually rewrites. The result is an equivalent optimization problem
+with the objective function modified as specified by the tactic block. The rewrites might be
+conditional on the constraints. -/
 syntax (name := rwObj) "rw_obj" (&" into" term)? darrow (tacticSeq)? : tactic
 
 @[tactic rwObj]
@@ -247,6 +297,11 @@ def evalRwObjFun : Tactic := fun stx => match stx with
       (rewriteObjBuilderWithTarget true tacStx targetStx).toTactic
   | _ => throwUnsupportedSyntax
 
+/-- This tactic can be used with or without a target expression as follows: `rw_constr c₁ => ...`
+and `rw_constr c₁ into rhs => ...`, where `rhs` is a term over the optimization variables. The `...`
+might be replaced by any tactic block, usually rewrites. The result is an equivalent optimization
+problem with the constraint `c₁` modified as specified by the tactic block. The rewrites might be
+conditional on the other constraints, e.g., `c₂`, ..., `cₙ`. -/
 syntax (name := rwConstr) "rw_constr " (ident)? (&" into" term)? darrow (tacticSeq)? : tactic
 
 @[tactic rwConstr]

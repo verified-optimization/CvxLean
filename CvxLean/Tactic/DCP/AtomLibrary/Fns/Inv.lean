@@ -8,13 +8,17 @@ import CvxLean.Tactic.DCP.AtomLibrary.Fns.Mul
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Power
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Transpose
 
+/-!
+Inverse function atom (convex).
+-/
+
 namespace CvxLean
 
 open Real
 
--- TODO: These are just the same as `powNegOne`. We need them for pattern
--- mathcing. The issue is that implementationConstraints does not know about
--- vconditions. If we fix that, then we can just say (c : x ^ (-1) ≤ t).
+-- TODO: These are just the same as `powNegOne`. We need them for pattern matching. The issue is
+-- that `implementationConstraints` does not know about `vconditions`. If we fix that, then we can
+-- just say `(c : x ^ (-1) ≤ t)`.
 
 declare_atom inv [convex] (x : ℝ)- : x⁻¹ :=
 vconditions
@@ -43,7 +47,7 @@ optimality by
   have hxpos : 0 < x := by
     cases (lt_or_eq_of_le c3) with
     | inl h => exact h
-    | inr h => rw [←h] at c1; linarith
+    | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
   rw [inv_eq_pow_neg_one hypos]
   rw [rpow_neg_one, inv_eq_one_div, div_le_iff hypos]
@@ -55,7 +59,7 @@ vconditionElimination
     rw [soCone_add_sub_two_of_nonneg c2 c3] at c1
     cases (lt_or_eq_of_le c3) with
       | inl h => linarith
-      | inr h => rw [←h] at c1; linarith)
+      | inr h => rw [← h] at c1; linarith)
 
 declare_atom oneDiv [convex] (x : ℝ)- : 1 / x :=
 vconditions
@@ -84,7 +88,7 @@ optimality by
   have hxpos : 0 < x := by
     cases (lt_or_eq_of_le c3) with
     | inl h => exact h
-    | inr h => rw [←h] at c1; linarith
+    | inr h => rw [← h] at c1; linarith
   have hypos := lt_of_lt_of_le hxpos hy
   rw [one_div_eq_pow_neg_one hypos]
   rw [rpow_neg_one, inv_eq_one_div, div_le_iff hypos]
@@ -96,7 +100,7 @@ vconditionElimination
     rw [soCone_add_sub_two_of_nonneg c2 c3] at c1
     cases (lt_or_eq_of_le c3) with
       | inl h => linarith
-      | inr h => rw [←h] at c1; linarith)
+      | inr h => rw [← h] at c1; linarith)
 
 open Matrix
 
@@ -135,7 +139,7 @@ optimality by
   have hxipos : 0 < x i := by
     cases (lt_or_eq_of_le (c3 i)) with
     | inl h => exact h
-    | inr h => simp [←h] at c1i; linarith
+    | inr h => simp [← h] at c1i; linarith
   have hyipos := lt_of_lt_of_le hxipos (hy i)
   rw [one_div_eq_pow_neg_one hyipos]
   rw [rpow_neg_one, inv_eq_one_div, div_le_iff hyipos]
@@ -151,6 +155,6 @@ vconditionElimination
       | inl h =>
           have hyi := hy i
           simp at h hyi ⊢; linarith
-      | inr h => simp [←h] at c1i; linarith)
+      | inr h => simp [← h] at c1i; linarith)
 
 end CvxLean

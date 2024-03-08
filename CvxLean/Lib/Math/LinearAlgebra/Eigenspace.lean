@@ -1,5 +1,9 @@
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 
+/-!
+Results about the eigenspaces of the sum of two endomorphisms.
+-/
+
 universe u v w
 
 namespace Module
@@ -17,7 +21,7 @@ lemma eigenspace_add {f g : End R M} {a b : R} :
     LinearMap.sub_apply, algebraMap_end_apply] at hf hg
   simp only [eigenspace, map_add, LinearMap.mem_ker, LinearMap.sub_apply,
     LinearMap.add_apply, algebraMap_end_apply]
-  rw [←add_sub, add_comm (a • x), ←sub_sub, hg, add_sub, add_zero, hf]
+  rw [← add_sub, add_comm (a • x), ← sub_sub, hg, add_sub, add_zero, hf]
 
 lemma eigenspace_one : eigenspace (1 : End R M) 1 = ⊤ := by
   apply eq_top_iff.2

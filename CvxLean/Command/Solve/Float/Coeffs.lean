@@ -163,15 +163,16 @@ unsafe def unrollVectors (constraints : Expr) : MetaM (Array Expr) := do
           let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
           res := res.push (← mkAppM ``Real.zeroCone #[ei])
-    -- Vector positive orthant cone.
-    | .app (.app (.app (.const ``Real.Vec.posOrthCone _) (.app (.const ``Fin _) n)) _) e =>
+    -- Vector nonnegative orthant cone.
+    | .app (.app (.app (.const ``Real.Vec.nonnegOrthCone _) (.app (.const ``Fin _) n)) _) e =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
           let idxExpr ← mkFinIdxExpr i n
           let ei := mkApp e idxExpr
-          res := res.push (← mkAppM ``Real.posOrthCone #[ei])
+          res := res.push (← mkAppM ``Real.nonnegOrthCone #[ei])
     -- Vector exponential cone.
-    | .app (.app (.app (.app (.app (.const ``Real.Vec.expCone _) (.app (.const ``Fin _) n)) _) a) b) c =>
+    | .app (.app (.app (.app (.app
+      (.const ``Real.Vec.expCone _) (.app (.const ``Fin _) n)) _) a) b) c =>
         let n : Nat ← evalExpr Nat (mkConst ``Nat) n
         for i in [:n] do
           let idxExpr ← mkFinIdxExpr i n
@@ -277,7 +278,7 @@ unsafe def determineCoeffsFromExpr (minExpr : MinimizationExpr) :
           let res ← determineScalarCoeffsAux e p floatDomain
           data := data.addZeroConstraint res.1 res.2
           idx := idx + 1
-      | .app (.const ``Real.posOrthCone _) e => do
+      | .app (.const ``Real.nonnegOrthCone _) e => do
           let e ← realToFloat e
           let res ← determineScalarCoeffsAux e p floatDomain
           data := data.addPosOrthConstraint res.1 res.2
@@ -312,7 +313,7 @@ unsafe def determineCoeffsFromExpr (minExpr : MinimizationExpr) :
             let (ea, eb) ← determineScalarCoeffsAux e p floatDomain
             data := data.addSOConstraint ea eb
             idx := idx + 1
-      | .app (.app (.app (.app (.app (.const ``Real.Matrix.posOrthCone _)
+      | .app (.app (.app (.app (.app (.const ``Real.Matrix.nonnegOrthCone _)
           (.app (.const ``Fin _) m)) (.app (.const ``Fin _) n)) _) _) e => do
           let m : Nat ← evalExpr Nat (mkConst ``Nat) m
           let n : Nat ← evalExpr Nat (mkConst ``Nat) n

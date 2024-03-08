@@ -2,6 +2,14 @@ import CvxLean.Syntax.OptimizationParam
 import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Util.Error
 import CvxLean.Tactic.DCP.DCP
+import CvxLean.Tactic.PreDCP.Egg.EggTypes
+
+/-!
+This is the first step when applying the `pre_dcp` tactic that allows us to get the AST of the
+minimization problem re-using the machinery from DCP. This file works together with
+`CvxLean/Tactic/PreDCP/Egg/FromMinimiation.lean`, which takes the AST returned by
+`uncheckedTreeFromMinimizationExpr` and turns it into an S-expression.
+-/
 
 namespace CvxLean
 
@@ -9,8 +17,11 @@ open Lean Meta
 
 namespace UncheckedDCP
 
-partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl) (oc : OC (Option (Name × Expr))) :
-  MetaM (OC (Option (String × Tree String String))) := do
+/-- We re-use the machinery from DCP to easily turn expressions into ASTs represented by a tree
+of strings. The input is simply the underlying expressions of the optimization problem (as `Expr`).
+As usual, optimization variables and parameters need to be added to the local context. -/
+partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl)
+    (oc : OC (Option (Name × Expr))) : MetaM (OC (Option (String × Tree String String))) := do
   withExistingLocalDecls (originalVarsDecls ++ paramsDecls).toList do
     let varsIds := originalVarsDecls.map fun decl => decl.fvarId
     let paramsIds := paramsDecls.map fun decl => decl.fvarId
@@ -20,6 +31,7 @@ partial def mkUncheckedTree (originalVarsDecls paramsDecls : Array LocalDecl) (o
           return some (n.toString, uncheckedAtomTree)
       | none => return none)
 where
+  /-- Like DCP's `findAtoms` but ignoring curvature checks. The result is a tree of strings. -/
   findUncheckedAtoms (e : Expr) (vars params : Array FVarId) : MetaM (Tree String String) := do
     -- Numerical constants need to be handled separately, as they are ignored by `DCP`.
     let optParamsIds := (← getAllOptimizationParams).map FVarId.mk
@@ -55,7 +67,7 @@ where
     if e.isFVar && vars.contains e.fvarId! then
       let n := (originalVarsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.node "var" #[Tree.leaf (toString n)]
-    if e.isFVar ∧ params.contains e.fvarId! then
+    if e.isFVar && params.contains e.fvarId! then
       let n := (paramsDecls.find? (fun decl => decl.fvarId == e.fvarId!)).get!.userName
       return Tree.node "param" #[Tree.leaf (toString n)]
     if e.isConst && (← isOptimizationParam e.constName) then
@@ -78,8 +90,9 @@ where
 
     return res
 
-  processUncheckedAtom (vars params : Array FVarId) (atom : GraphAtomData)
-      (args : Array Expr) : MetaM (Tree String String) := do
+  /-- Apply `findUncheckedAtoms` to children and build a tree. -/
+  processUncheckedAtom (vars params : Array FVarId) (atom : GraphAtomData) (args : Array Expr) :
+      MetaM EggTree := do
     let mut childTrees := #[]
     for i in [:args.size] do
       let arg := args[i]!
@@ -88,9 +101,9 @@ where
 
     return Tree.node (toString atom.id) childTrees
 
-/-- -/
-def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) :
-  MetaM (OC (String × Tree String String)) := do
+/-- Wrapper of `mkUncheckedTree` that takes a minimization expression, decomposes it by its
+components and returns the corresponding AST as a tree of strings. -/
+def uncheckedTreeFromMinimizationExpr (goalExprs : MinimizationExpr) : MetaM EggOCTree := do
   let (objFun, constraints, originalVarsDecls) ← withLambdaBody goalExprs.constraints
     fun p constraints => do
       let pr := (← Meta.mkProjections goalExprs.domain p).toArray

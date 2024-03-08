@@ -1,6 +1,8 @@
 import Mathlib.Data.Complex.Exponential
 
 /-!
+Exponential cones.
+
 We follow the MOSEK modeling cookbook: https://docs.mosek.com/modeling-cookbook/expo.html
 -/
 

@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Le
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sq
 
+/-!
+Atom for `x * exp(x)` (convex).
+-/
+
 namespace CvxLean
 
 open Real
@@ -20,15 +24,15 @@ feasibility
   (c1 : by
     unfold expCone
     by_cases h : 0 < x
-    . left
+    · left
       refine ⟨h, ?_⟩
-      rw [rpow_two, pow_two, ←mul_div, div_self (ne_of_lt h).symm, mul_one]
-    . right
+      rw [rpow_two, pow_two, ← mul_div, div_self (ne_of_lt h).symm, mul_one]
+    · right
       replace h := le_of_not_lt h
       have hxeq0 := le_antisymm h cond
       simp [hxeq0])
   (c2 : by norm_num)
-  (c3 : by simp [posOrthCone, cond])
+  (c3 : by simp [nonnegOrthCone, cond])
 optimality by {
     unfold expCone at c1
     simp at c2

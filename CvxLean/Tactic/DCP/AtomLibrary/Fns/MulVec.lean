@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Atom for matrix-vector multiplication (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Matrix.mulVec [affine] (n : ℕ)& (m : ℕ)&

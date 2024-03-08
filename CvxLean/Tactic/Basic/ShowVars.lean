@@ -1,14 +1,18 @@
 import CvxLean.Meta.Minimization
 
+/-!
+This tactic should ideally not be used. In some cases, it could happen that the nice problem syntax
+with named optimization variables is lost (e.g., simplifying at the wrong place). The `show_vars`
+tactic can be used to recover the names.
+-/
+
 namespace CvxLean
 
-open Lean
-
-open Meta Elab Tactic
+open Lean Meta Elab Tactic
 
 namespace Meta
 
-/-- -/
+/-- Essentially replace projections by the appropriate optimization variable names. -/
 def showVars (goal : MVarId) (p : FVarId) : MetaM MVarId := do
   -- Revert variables after p.
   let (revertedVars, goal) ← MVarId.withContext goal do
@@ -28,7 +32,7 @@ def showVars (goal : MVarId) (p : FVarId) : MetaM MVarId := do
       let mVar ← mkFreshExprMVar newTarget MetavarKind.syntheticOpaque
       MVarId.assign goal (← mkLetFVars xs mVar)
       return mVar.mvarId!
-  -- Reintroduce reverted variables.
+  -- Re-introduce reverted variables.
   let (_, goal) ← MVarId.introNP goal revertedVars.size
   return goal
 
@@ -36,27 +40,27 @@ end Meta
 
 namespace Tactic
 
+/-- Show the names of the optimization variables (useful if they have been lost for some reason). -/
 syntax (name := showVars) "show_vars" ident : tactic
 
-/-- -/
 @[tactic showVars]
-partial def evalShowVars : Tactic
-| `(tactic| show_vars $p) => do
-    replaceMainGoal [← Meta.showVars (← getMainGoal) (← withMainContext do getFVarId p)]
-| _ => throwUnsupportedSyntax
+def evalShowVars : Tactic
+  | `(tactic| show_vars $p) => do
+      replaceMainGoal [← Meta.showVars (← getMainGoal) (← withMainContext do getFVarId p)]
+  | _ => throwUnsupportedSyntax
 
 end Tactic
 
 namespace Tactic.Conv
 
+/-- Like `show_vars` but as a conv tactic. -/
 syntax (name := showVars) "show_vars" ident : conv
 
-/-- Like the basic `show_vars` but as a conv tactic. -/
 @[tactic showVars]
-partial def evalShowVars : Tactic
-| `(conv| show_vars $p) => do
-  replaceMainGoal [← Meta.showVars (← getMainGoal) (← withMainContext do getFVarId p)]
-| _ => throwUnsupportedSyntax
+def evalShowVars : Tactic
+  | `(conv| show_vars $p) => do
+    replaceMainGoal [← Meta.showVars (← getMainGoal) (← withMainContext do getFVarId p)]
+  | _ => throwUnsupportedSyntax
 
 end Tactic.Conv
 

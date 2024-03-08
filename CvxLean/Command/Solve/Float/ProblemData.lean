@@ -11,8 +11,10 @@ The procedure that creates `ProblemData` from an optimization problem can be fou
 
 namespace CvxLean
 
-/-- Cones admitting scalar affine constraints. Note that the only cone that admits matrix affine
-constraints is the PSD cone. -/
+/-- Cones admitting scalar affine constraints. The `PosOrth` type actually corresponds to the
+nonnegative orthant, but at the solver level, it is usually called the positive orthant, so we use
+that terminology here. Note that the only cone that admits matrix affine constraints is the PSD
+cone. -/
 inductive ScalarConeType
   | Zero | PosOrth | Exp | Q | QR
 

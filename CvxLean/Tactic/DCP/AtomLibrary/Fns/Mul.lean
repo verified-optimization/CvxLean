@@ -1,5 +1,9 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Multiplication atoms (affine).
+-/
+
 namespace CvxLean
 
 declare_atom mul1 [affine] (x : ℝ)& (y : ℝ)+ : x * y :=

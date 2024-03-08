@@ -50,7 +50,7 @@ open Lean.Elab Lean.Elab.Term Lean.Meta Lean.Parser.Term
 private def decomposeBracketedBinder : Syntax → TermElabM (Array (Syntax × Syntax)) :=
   fun stx => match stx[0] with
     | `(bracketedBinderF|($ids* : $ty)) => return ids.map (·.raw, ty.raw)
-    | `(ident|$id) => return #[(id.raw, (←`(_)).raw)]
+    | `(ident|$id) => return #[(id.raw, (← `(_)).raw)]
 
 /-- Get the names and types of the variables after the `optimization` keyword. -/
 def elabVars (idents : Array (TSyntax `CvxLean.Parser.minimizationVar)) :

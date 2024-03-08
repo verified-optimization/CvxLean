@@ -2,6 +2,10 @@ import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Le
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Min atom (concave).
+-/
+
 namespace CvxLean
 
 open Real

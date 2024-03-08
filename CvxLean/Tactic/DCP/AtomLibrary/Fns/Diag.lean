@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Matrix
 
+/-!
+Atom for the operation `ℝⁿˣⁿ → ℝⁿ` that outputs the diagonal of a matrix (affine).
+-/
+
 namespace CvxLean
 
 declare_atom Matrix.diag [affine] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)+ : A.diag :=

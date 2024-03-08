@@ -1,8 +1,13 @@
 import CvxLean.Tactic.DCP.AtomCmd
 
+/-!
+Dot product atom (affine).
+-/
+
 namespace CvxLean
 
-declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? : Matrix.dotProduct x y :=
+declare_atom Vec.dotProduct1 [affine] (m : Nat)& (x : Fin m → ℝ)& (y : Fin m → ℝ)? :
+  Matrix.dotProduct x y :=
 bconditions
 homogenity by
   rw [Matrix.dotProduct_zero, smul_zero, add_zero, add_zero,
@@ -11,7 +16,8 @@ additivity by
   rw [Matrix.dotProduct_zero, add_zero, Matrix.dotProduct_add]
 optimality le_refl _
 
-declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& : Matrix.dotProduct x y :=
+declare_atom Vec.dotProduct2 [affine] (m : Nat)& (x : Fin m → ℝ)? (y : Fin m → ℝ)& :
+  Matrix.dotProduct x y :=
 bconditions
 homogenity by
   rw [Matrix.zero_dotProduct, smul_zero, add_zero, add_zero,

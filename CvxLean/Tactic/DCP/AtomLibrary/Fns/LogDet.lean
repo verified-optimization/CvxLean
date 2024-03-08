@@ -1,13 +1,17 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
+import CvxLean.Tactic.DCP.AtomLibrary.Sets.PosSemidef
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sum
-import CvxLean.Tactic.DCP.AtomLibrary.Fns.PosSemidef
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.FromBlocks
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Diag
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Diagonal
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Transpose
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.ToUpperTri
 import CvxLean.Lib.Math.LogDet
+
+/-!
+Log-det atom (concave).
+-/
 
 namespace CvxLean
 
@@ -17,8 +21,7 @@ declare_atom Matrix.logDet [concave] (n : ℕ)&
 (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : Real.log A.det :=
 vconditions (hA : A.PosDef)
 implementationVars (t : Fin n → ℝ) (Y : Matrix (Fin n) (Fin n) ℝ)
--- The lower left values of `Y` are unused. CVXPY uses a vector `z` instead of a
--- matrix `Y`.
+-- The lower left values of `Y` are unused. CVXPY uses a vector `z` instead of a matrix `Y`.
 implementationObjective Vec.sum t
 implementationConstraints
   (c_exp : Real.Vec.expCone t 1 Y.diag)

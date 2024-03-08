@@ -1,6 +1,10 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Lib.Math.Data.Vec
 
+/-!
+Atom for making a constant vector (affine).
+-/
+
 namespace CvxLean
 
 open Real
