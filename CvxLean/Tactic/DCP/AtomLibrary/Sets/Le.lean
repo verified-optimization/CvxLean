@@ -1,6 +1,7 @@
 import CvxLean.Tactic.DCP.AtomCmd
 import CvxLean.Tactic.DCP.AtomLibrary.Sets.Cones
 import CvxLean.Tactic.DCP.AtomLibrary.Fns.Sub
+import CvxLean.Lib.Math.Data.Matrix
 
 /-!
 Inequality atoms (convex set).
@@ -74,6 +75,27 @@ optimality by
   intros x' y' hx hy h i
   unfold Real.Vec.nonnegOrthCone at h
   exact le.optimality _ _ _ _ (hx i) (hy i) (h i)
+vconditionElimination
+
+declare_atom Matrix.le [convex_set] (m : Nat)& (n : Nat)& (X : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)-
+    (Y : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)+ : X ≤ Y :=
+vconditions
+implementationVars
+implementationObjective Real.Matrix.nonnegOrthCone (Y - X)
+implementationConstraints
+solution
+solutionEqualsAtom by
+  unfold Real.Matrix.nonnegOrthCone Real.nonnegOrthCone
+  aesop
+feasibility
+optimality by
+  intros X' Y' hX hY h i j
+  unfold Real.Matrix.nonnegOrthCone Real.nonnegOrthCone at h
+  have hij := h i j
+  have hXij := hX i j
+  have hYij := hY i j
+  simp at hij hXij hYij
+  linarith
 vconditionElimination
 
 end CvxLean
