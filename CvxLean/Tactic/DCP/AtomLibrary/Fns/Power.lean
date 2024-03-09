@@ -27,6 +27,16 @@ optimality by
   intros _ h
   simp [h]
 
+declare_atom Vec.powOne [affine] (n : ℕ)& (x : Fin n → ℝ)+ : x ^ (1 : ℝ) :=
+bconditions
+homogenity by
+  ext i; simp
+additivity by
+  ext i; simp
+optimality by
+  intros _ h i
+  simp [h i]
+
 declare_atom powNegOne [convex] (x : ℝ)- : x ^ (-1 : ℝ) :=
 vconditions
   (hx : 0 < x)

@@ -17,6 +17,15 @@ declare_atom zeroCone [cone] (x : ℝ)? : zeroCone x :=
 optimality by
   simp [zeroCone]
 
+declare_atom Vec.zeroCone [cone] (n : ℕ)& (x : (Fin n) → ℝ)? : Vec.zeroCone x :=
+optimality by
+  simp [Vec.zeroCone]
+
+declare_atom Matrix.zeroCone [cone] (m : ℕ)& (n : ℕ)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
+  Matrix.zeroCone M :=
+optimality by
+  simp [Matrix.zeroCone]
+
 end ZeroCone
 
 /- Nonnegative orthant cone atoms. -/
@@ -27,12 +36,12 @@ optimality by
   simp [nonnegOrthCone]
 
 declare_atom Vec.nonnegOrthCone [cone]
-  (n : Nat)& (x : (Fin n) → ℝ)? : Vec.nonnegOrthCone x :=
+  (n : ℕ)& (x : (Fin n) → ℝ)? : Vec.nonnegOrthCone x :=
 optimality by
   simp [Vec.nonnegOrthCone]
 
 declare_atom Matrix.nonnegOrthCone [cone]
-  (m : Nat)& (n : Nat)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
+  (m : ℕ)& (n : ℕ)& (M : Matrix.{0,0,0} (Fin m) (Fin n) ℝ)? :
   Real.Matrix.nonnegOrthCone M :=
 optimality by
   simp [Matrix.nonnegOrthCone]
@@ -45,7 +54,7 @@ section ExpCone
 declare_atom expCone [cone] (x : ℝ)? (y : ℝ)? (z : ℝ)? : expCone x y z :=
 optimality le_refl _
 
-declare_atom Vec.expCone [cone] (n : Nat)& (x : (Fin n) → ℝ)? (y : (Fin n) → ℝ)?
+declare_atom Vec.expCone [cone] (n : ℕ)& (x : (Fin n) → ℝ)? (y : (Fin n) → ℝ)?
   (z : (Fin n) → ℝ)? : Vec.expCone x y z :=
 optimality le_refl _
 
@@ -54,19 +63,19 @@ end ExpCone
 /- Second-order cone and rotated second-order cone atoms. -/
 section SOCone
 
-declare_atom soCone [cone] (n : Nat)& (t : ℝ)? (x : (Fin n) → ℝ)? :
+declare_atom soCone [cone] (n : ℕ)& (t : ℝ)? (x : (Fin n) → ℝ)? :
   soCone t x :=
 optimality le_refl _
 
-declare_atom Vec.soCone [cone] (n : Nat)& (m : Nat)& (t : Fin m → Real)?
+declare_atom Vec.soCone [cone] (n : ℕ)& (m : ℕ)& (t : Fin m → Real)?
   (X : Matrix.{0,0,0} (Fin m) (Fin n) Real)? : Vec.soCone t X :=
 optimality le_refl _
 
-declare_atom rotatedSoCone [cone] (n : Nat)& (v : ℝ)? (w : ℝ)?
+declare_atom rotatedSoCone [cone] (n : ℕ)& (v : ℝ)? (w : ℝ)?
   (x : (Fin n) → ℝ)? : rotatedSoCone v w x :=
 optimality le_refl _
 
-declare_atom Vec.rotatedSoCone [cone] (m : Nat)& (n : Nat)& (v : (Fin n) → ℝ)?
+declare_atom Vec.rotatedSoCone [cone] (m : ℕ)& (n : ℕ)& (v : (Fin n) → ℝ)?
   (w : (Fin n) → ℝ)? (x : (Fin n) → (Fin m) → ℝ)? : Vec.rotatedSoCone v w x :=
 optimality le_refl _
 
