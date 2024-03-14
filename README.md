@@ -6,12 +6,16 @@ Problems are stated using definitions from [mathlib](https://github.com/leanprov
 
 Our main contribution is a verified version of the [disciplined convex programming (DCP)](https://web.stanford.edu/~boyd/papers/disc_cvx_prog.html) canonization algorithm.
 
+Link to docs here.
+
+Summary of main features.
+
 ## Installation
 
 You will need to install Lean 4 and MOSEK following these steps:
 1. Set up Lean 4 (see [these instructions](https://leanprover.github.io/lean4/doc/setup.html)). The easiest way is to use the `elan` version manager. 
 2. If you're using VSCode, install the [Lean 4 extension](https://marketplace.visualstudio.com/items?itemName=leanprover.lean4).
-3. Download [MOSEK 10.0.12(BETA)](https://www.mosek.com/downloads/10.0.12/) and ensure that the `mosek` binary is available on your PATH. 
+3. Download [MOSEK 10.0.12(BETA)](https://www.mosek.com/downloads/10.0.12/) and ensure that the `mosek` binary is available on your `$PATH`. To avoid any issues with this, we recommend also adding it to `CvxLean/Command/Solve/Mosek/Path.lean`.
 4. Obtain a [MOSEK license](https://www.mosek.com/license/request/?i=trl) and place it in your home directory, i.e. `$HOME/mosek/mosek.lic`.
 
 Finally, go into the top `CvxLean` directory and run:
@@ -23,6 +27,8 @@ Finally, go into the top `CvxLean` directory and run:
 ## Usage
 
 The best way to get started is to take a look at the examples in `Test/Problems`. Here we follow the example in `Test/Problems/SO.lean`.
+
+### Defining problems
 
 Consider the optimization problem:
 
@@ -37,7 +43,7 @@ $$
 In CvxLean, it is defined as follows:
 
 ```lean
-noncomputable def so1 :=
+def p :=
   optimization (x y : ℝ)
     maximize sqrt (x - y)
     subject to
@@ -45,12 +51,15 @@ noncomputable def so1 :=
       c2 : x ^ 2 ≤ 2
       c3 : 0 ≤ x - y
 ```
-There are a couple of implementation details here. The definition needs to be marked as `noncomputable` because it depends on the real numbers. Also, we require the extra condition `0 ≤ x - y` because the real square root in mathlib corresponds to the usual mathematical notion so it is only defined on nonnegative real numbers.
+There are a couple of implementation details here. 
+ we require the extra condition `0 ≤ x - y` 
 
-Once `so1` has been defined, we can ask CvxLean to solve it.
+Once `p` has been defined, we can ask CvxLean to solve it.
+
+### Solving problems
 
 ```lean
-solve so1 
+solve p 
 ```
 
 It will show MOSEK's output and its return code, which should be zero.
@@ -60,6 +69,10 @@ If successful, it will add several definitions to the environment:
 * `so1.status`: the feasibility status of the primal and the dual problem, in this case `"PRIMAL_AND_DUAL_FEASIBLE"`, i.e. optimal.
 * `so1.value`: if the problem is optimal, it corresponds to its optimal value.
 * `so1.solution`: if the problem is optimal, it corresponds to the optimal point.
+
+### Transforming problems
+
+#### Commands for user-guided transformations
 
 Problems can also be reduced interactively using the `reduction` command. As a simple example, suppose our problem has $e^x e^y$ in one of the constraints, which is not allowed by the DCP procedure, and we want to replace the expression with $e^{x+y}$. We can do it as follows:
 ```lean
@@ -79,11 +92,19 @@ reduction red/prob :
 ```
 The transformation is done in a verified way using the lemma `Real.exp_add` [from mathlib](https://github.com/leanprover-community/mathlib/blob/master/src/data/complex/exponential.lean#L408), which says that $e^{x+y} = e^x e^y$. CvxLean generates a proof of the fact that given a solution to the reduced problem we can recover a solution to the original problem.
 
-## Troubleshooting
+#### Equivalence-preserving tactics 
 
-If `./build.sh` fails:
-1. Make sure that the version in `lean-toolchain` matches the output of `lean --version`.
-2. Try running `./build.sh` again.
-3. Remove `lake-packages` and try again.
+Automated: 
+* `dcp`
+* `pre_dcp`
 
-If MOSEK outputs code 255 in VSCode, try restarting VSCode.
+User-directed:
+* `conv_constr`
+* `conv_obj`
+* ...
+
+## Contributing 
+
+Guidelines, style, commit messages, etc.
+
+Troubleshooting??? Maybe not.
