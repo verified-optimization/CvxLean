@@ -106,19 +106,26 @@ User-directed:
 ## Quick demo 
 
 We show how to rigorously transform and solve the following problem in `CvxLean`:
+
 $$
 \begin{align*}
 \textrm{minimize}   &&& -2x \\
 \textrm{subject to} &&& 0 \leq x, \\
                     &&& 1 < y, \\
                     &&& \log(y - 1) ≤ 2\sqrt{x} + 1, \\
-                    &&& 3x + 5y ≤ 10, \\
+                    &&& 3x + 5y ≤ 10. \\
 \end{align*}
 $$
-The solution is $(x^{*}, y^{*}) \approx (1.666667, 1.000000)$.
-You can find this example in `CvxLean/Demos/README.lean`.
+
+The solution is 
+
+$$
+(x^{*}, y^{*}) \approx (1.666667, 1.000000).
+$$
 
 ![Demo](CvxLean/Demos/README.gif)
+
+You can find this example in `CvxLean/Demos/README.lean`.
 
 ## Contributing 
 
