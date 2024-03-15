@@ -33,11 +33,11 @@ The best way to get started is to take a look at the examples in `Test/Problems`
 Consider the optimization problem:
 
 $$
-\begin{align}
+\begin{align*}
 \textrm{maximize}   &&& \sqrt{x - y} \\
 \textrm{subject to} &&& y = 2 x - 3, \\
                     &&& x ^ 2 \le 2.
-\end{align}
+\end{align*}
 $$
 
 In CvxLean, it is defined as follows:
@@ -102,6 +102,23 @@ User-directed:
 * `conv_constr`
 * `conv_obj`
 * ...
+
+## Quick demo 
+
+We show how to rigorously transform and solve the following problem in `CvxLean`:
+$$
+\begin{align*}
+\textrm{minimize}   &&& -2x \\
+\textrm{subject to} &&& 0 \leq x, \\
+                    &&& 1 < y, \\
+                    &&& \log(y - 1) ≤ 2\sqrt{x} + 1, \\
+                    &&& 3x + 5y ≤ 10, \\
+\end{align*}
+$$
+The solution is $(x^{*}, y^{*}) \approx (1.666667, 1.000000)$.
+You can find this example in `CvxLean/Demos/README.lean`.
+
+![Demo](CvxLean/Demos/README.gif)
 
 ## Contributing 
 
