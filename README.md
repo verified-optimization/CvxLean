@@ -117,11 +117,7 @@ $$
 \end{align*}
 $$
 
-The solution is 
-
-$$
-(x^{*}, y^{*}) \approx (1.666667, 1.000000).
-$$
+The solution is (5/3, 1).
 
 ![Demo](CvxLean/Demos/README.gif)
 
