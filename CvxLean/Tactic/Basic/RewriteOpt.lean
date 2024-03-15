@@ -291,10 +291,12 @@ def evalRwObjFun : Tactic := fun stx => match stx with
       (rewriteObjBuilderWithoutTarget false stx).toTactic
   | `(tactic|rw_obj => $tacStx) => do
       (rewriteObjBuilderWithoutTarget true tacStx).toTactic
+      saveTacticInfoForToken stx
   | `(tactic|rw_obj into $targetStx =>) => do
       (rewriteObjBuilderWithTarget false stx targetStx).toTactic
   | `(tactic|rw_obj into $targetStx => $tacStx) => do
       (rewriteObjBuilderWithTarget true tacStx targetStx).toTactic
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 /-- This tactic can be used with or without a target expression as follows: `rw_constr c₁ => ...`
@@ -311,11 +313,13 @@ def evalRwConstr : Tactic := fun stx => match stx with
   | `(tactic|rw_constr $h => $tacStx) => do
       let constrTags ← (rewriteConstrBuilderWithoutTarget true h.getId tacStx).toTactic
       (renameConstrsBuilder constrTags.toArray).toTactic
+      saveTacticInfoForToken stx
   | `(tactic|rw_constr $h into $targetStx =>) => do
       let _ ← (rewriteConstrBuilderWithTarget false h.getId stx targetStx).toTactic
   | `(tactic|rw_constr $h into $targetStx => $tacStx) => do
       let constrTags ← (rewriteConstrBuilderWithTarget true h.getId tacStx targetStx).toTactic
       (renameConstrsBuilder constrTags.toArray).toTactic
+      saveTacticInfoForToken stx
   | _ => throwUnsupportedSyntax
 
 end Tactic
