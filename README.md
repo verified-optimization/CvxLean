@@ -111,7 +111,7 @@ equivalence eqv/q :
     rw [← exp_add]
 
 #print q
--- def q : Minimization (ℝ × ℝ) Real :=
+-- def q : Minimization (ℝ × ℝ) ℝ :=
 -- optimization (x : ℝ) (y : ℝ) 
 --   maximize x + y
 --   subject to
