@@ -21,6 +21,7 @@ Auto-generated documentation can be found [here](https://verified-optimization.g
     - [Commands for user-guided transformations](#commands-for-user-guided-transformations)
     - [Equivalence-preserving tactics](#equivalence-preserving-tactics)
 - [Quick demo](#quick-demo)
+- [Citing](#citing)
 - [Contributing](#contributing)
 
 ## Installation
@@ -146,7 +147,7 @@ User-directed:
 
 ## Quick demo 
 
-We show how to rigorously transform and solve the following problem in `CvxLean`:
+We show how to rigorously transform and solve the following problem in CvxLean:
 
 $$
 \begin{align*}
@@ -163,6 +164,19 @@ Note that the solution is $\approx (5/3, 1)$.
 ![Demo](CvxLean/Demos/README.gif)
 
 You can find this example in `CvxLean/Demos/README.lean`.
+
+## Citing
+
+```
+@inproceedings{bentkamp2023verified,
+  title={Verified reductions for optimization},
+  author={Bentkamp, Alexander and Fern{\'a}ndez Mir, Ramon and Avigad, Jeremy},
+  booktitle={International Conference on Tools and Algorithms for the Construction and Analysis of Systems},
+  pages={74--92},
+  year={2023},
+  organization={Springer}
+}
+```
 
 ## Contributing 
 
