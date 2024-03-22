@@ -12,6 +12,8 @@ open CvxLean Minimization Real BigOperators Matrix Finset
 
 section LeastSquares
 
+/- We first need some preliminaries on least squares. -/
+
 def leastSquares {n : ℕ} (a : Fin n → ℝ) :=
   optimization (x : ℝ)
     minimize (∑ i, ((a i - x) ^ 2) : ℝ)
@@ -84,64 +86,81 @@ def fittingSphere :=
   optimization (c : Fin n → ℝ) (r : ℝ)
     minimize (∑ i, (‖(x i) - c‖ ^ 2 - r ^ 2) ^ 2 : ℝ)
     subject to
-      h₁ : 0 < r
+      h₁ : 0 ≤ r
 
-instance : ChangeOfVariables fun ((c, t) : (Fin n → ℝ) × ℝ) => (c, sqrt (t + ‖c‖ ^ 2)) :=
-  { inv := fun (c, r) => (c, r ^ 2 - ‖c‖ ^ 2),
-    condition := fun (_, r) => 0 ≤ r,
-    property := fun ⟨c, r⟩ h => by simp [sqrt_sq h] }
+-- Changes of variables ensuring bijection, which must also add the condition on `E` in the
+-- equivalence. TODO: Move to `CvxLean` core.
+
+structure ChangeOfVariablesBij {D E} (c : E → D) where
+  c_inv : D → E
+  cond_D : D → Prop
+  cond_E : E → Prop
+  prop_D : ∀ x, cond_D x → c (c_inv x) = x
+  prop_E : ∀ y, cond_E y → c_inv (c y) = y
+
+@[equiv]
+def ChangeOfVariablesBij.toEquivalence {D E R} [Preorder R] {f : D → R} {cs : D → Prop} (c : E → D)
+    (cov : ChangeOfVariablesBij c)
+    (hD : ∀ x, cs x → cov.cond_D x)
+    (hE : ∀ x, cs x → cov.cond_E (cov.c_inv x)) :
+    ⟨f, cs⟩ ≡ ⟨fun y => f (c y), fun y => cs (c y) ∧ cov.cond_E y⟩ :=
+  Equivalence.ofStrongEquivalence <|
+  { phi := fun x => cov.c_inv x
+    psi := fun y => c y
+    phi_feasibility := fun x hx => by simp [feasible, cov.prop_D x (hD x hx)]; exact ⟨hx, hE x hx⟩
+    psi_feasibility := fun y ⟨hy, _⟩ => hy
+    phi_optimality := fun x hx => by simp [cov.prop_D x (hD x hx)]
+    psi_optimality := fun y _ => by simp }
+
+def covBij {n} : ChangeOfVariablesBij
+    (fun ((c, t) : (Fin n → ℝ) × ℝ) => (c, sqrt (t + ‖c‖ ^ 2))) :=
+  { c_inv := fun (c, r) => (c, r ^ 2 - ‖c‖ ^ 2),
+    cond_D := fun (_, r) => 0 ≤ r,
+    cond_E := fun (c, t) => 0 ≤ t + ‖c‖ ^ 2,
+    prop_D := fun (c, r) h => by simp [sqrt_sq h],
+    prop_E := fun (c, t) h => by simp at h; simp [sq_sqrt h] }
 
 equivalence* eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fittingSphere n m x := by
-  -- Change of variables.
+  -- Change of variables (bijective) + some clean up.
+  -- TODO: Do this with `change_of_variables` (or a new command `change_of_variables_bij`).
   equivalence_step =>
-    apply ChangeOfVariables.toEquivalence
-      (fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2)))
-    · rintro _ h; exact le_of_lt h
+    apply ChangeOfVariablesBij.toEquivalence
+      (fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2))) covBij
+    · rintro cr h; exact h
+    . rintro ct _; simp [covBij, sq_nonneg]
   rename_vars [c, t]
-  -- Clean up.
+  rename_constrs [h₁, h₂]
   conv_constr h₁ => dsimp
-  conv_obj => dsimp
+  conv_constr h₂ => dsimp [covBij]
   -- Rewrite objective.
   rw_obj into (Vec.sum (((Vec.norm x) ^ 2 - 2 * (Matrix.mulVec x c) - Vec.const m t) ^ 2)) =>
-    dsimp at h₁ ⊢; simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
-    rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ le_of_lt (sqrt_pos.mp h₁))]
+    simp [Vec.sum, Vec.norm, Vec.const]; congr; funext i; congr 1;
+    rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ), sq_sqrt (rpow_two _ ▸ h₂)]
     simp [mulVec, inner, dotProduct]
+  -- Remove redundant h₁.
+  remove_constr h₁ => exact sqrt_nonneg _
 
 #print fittingSphereT
 -- optimization (c : Fin n → ℝ) (t : ℝ)
 --   minimize Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2)
 --   subject to
---     h₁ : 0 < sqrt (t + ‖c‖ ^ 2)
+--     h₂ : 0 ≤ t + ‖c‖ ^ 2
 
--- Next, we proceed to remove the non-convex constraint by arguing that any (non-trivial) point that
--- minimizes the objective function without the constraint, also satisfies the constraint. We define
--- the problem directly, but note that we could also remove the constraint using the `relaxation`
--- command.
+-- Next, we proceed to remove the non-convex constraint by arguing that any point that minimizes the
+-- objective function without the constraint, also satisfies the constraint. We define the problem
+-- directly, but note that we could also remove the constraint using the `reduction` command.
 
 def fittingSphereConvex (n m : ℕ) (x : Fin m → Fin n → ℝ) :=
   optimization (c : Fin n → ℝ) (t : ℝ)
     minimize (Vec.sum ((Vec.norm x ^ 2 - 2 * mulVec x c - Vec.const m t) ^ 2) : ℝ)
 
-/-- If the squared error is zero, then `aᵢ = x`. -/
-lemma vec_squared_norm_error_eq_zero_iff {n m : ℕ} (a : Fin m → Fin n → ℝ) (x : Fin n → ℝ) :
-    ∑ i, ‖a i - x‖ ^ 2 = 0 ↔ ∀ i, a i = x := by
-  simp [rpow_two]
-  rw [sum_eq_zero_iff_of_nonneg (fun _ _ => sq_nonneg _)]
-  constructor
-  · intros h i
-    have hi := h i (by simp)
-    rwa [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero] at hi
-  · intros h i _
-    rw [sq_eq_zero_iff, norm_eq_zero, sub_eq_zero]
-    exact h i
-
-/-- This tells us that solving the relaxed problem is sufficient for optimal points if the solution
-is non-trivial. -/
+/-- This tells us that solving the relaxed problem is sufficient (i.e., it is a valid reduction). -/
 lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ)
-    (h_nontrivial : x ≠ Vec.const m c) (h_opt : (fittingSphereConvex n m x).optimal (c, t)) :
+    (h_opt : (fittingSphereConvex n m x).optimal (c, t)) :
     (fittingSphereT n m x).optimal (c, t) := by
   simp [fittingSphereT, fittingSphereConvex, optimal, feasible] at h_opt ⊢
   constructor
+  -- Feasibility.
   · let a := Vec.norm x ^ 2 - 2 * mulVec x c
     have h_ls : optimal (leastSquaresVec a) t := by
       refine ⟨trivial, ?_⟩
@@ -161,47 +180,20 @@ lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ
       rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ)]
       congr
     -- We use the result to establish that `t + ‖c‖ ^ 2` is non-negative.
-    have h_t_add_c2_nonneg : 0 ≤ t + ‖c‖ ^ 2 := by
-      rw [h_t_add_c2_eq]
-      apply mul_nonneg (by norm_num)
-      apply sum_nonneg
-      intros i _
-      rw [rpow_two]
-      exact sq_nonneg _
-    cases (lt_or_eq_of_le h_t_add_c2_nonneg) with
-    | inl h_t_add_c2_lt_zero =>
-        -- If it is positive, we are done.
-        convert h_t_add_c2_lt_zero; simp
-    | inr h_t_add_c2_eq_zero =>
-        -- Otherwise, it contradicts the non-triviality assumption.
-        exfalso
-        rw [h_t_add_c2_eq, zero_eq_mul] at h_t_add_c2_eq_zero
-        rcases h_t_add_c2_eq_zero with (hc | h_sum_eq_zero)
-        · simp at hc; linarith
-        rw [vec_squared_norm_error_eq_zero_iff] at h_sum_eq_zero
-        apply h_nontrivial
-        funext i
-        exact h_sum_eq_zero i
+    rw [← rpow_two, h_t_add_c2_eq]
+    apply mul_nonneg (by norm_num)
+    apply sum_nonneg
+    intros i _
+    rw [rpow_two]
+    exact sq_nonneg _
+  -- Optimality.
   · intros c' x' _
     exact h_opt c' x'
 
-/-- We express the nontriviality condition only in terms of `x` so that it can be checked. -/
-lemma non_triviality_condition (c : Fin n → ℝ) (hx : ∃ i j, x i ≠ x j) : x ≠ Vec.const m c := by
-  intros h
-  conv at hx => congr; ext i; rw [← not_forall]
-  rw [← not_forall] at hx
-  apply hx
-  intros i j
-  rw [congr_fun h i, congr_fun h j]
-  simp [Vec.const]
-
 /-- We show that we have a reduction via the identity map. -/
-def red (hm : 0 < m) (hx : ∃ i j, x i ≠ x j) :
-    (fittingSphereT n m x) ≼ (fittingSphereConvex n m x) :=
+def red (hm : 0 < m) : (fittingSphereT n m x) ≼ (fittingSphereConvex n m x) :=
   { psi := id,
-    psi_optimality := fun (c, t) h_opt => by
-      have h_nontrivial := non_triviality_condition n m x c hx
-      exact optimal_convex_implies_optimal_t n m x hm c t h_nontrivial h_opt }
+    psi_optimality := fun (c, t) h_opt => optimal_convex_implies_optimal_t n m x hm c t h_opt }
 
 #print fittingSphereConvex
 -- optimization (c : Fin n → ℝ) (t : ℝ)
