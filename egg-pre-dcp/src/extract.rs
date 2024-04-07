@@ -291,6 +291,18 @@ pub fn get_steps_from_string_maybe_node_limit(
 
                 let build_time = starting_time.elapsed().as_millis();
                 println!("E-graph building time: {:.2?} ms.", build_time);
+                
+                // Iterations data.
+                let iterations = runner.iterations;
+                let num_of_iterations = iterations.len();
+                let mut num_rules_applied = 0;
+                for iteration in iterations {
+                    for (_, count) in iteration.applied.iter() {
+                        num_rules_applied += count;
+                    }
+                }
+                println!("Number of iterations: {:?}.", num_of_iterations);
+                println!("Number of rules applied: {:?}.", num_rules_applied);
             }
         } else {
             // If term is not DCP, try with the next node limit.

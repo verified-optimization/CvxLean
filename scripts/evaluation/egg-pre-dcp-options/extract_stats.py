@@ -16,6 +16,8 @@ def extract_test_results(file_path):
         num_steps_pattern = r'Number of steps: (\d+)\.'
         best_term_size_pattern = r'Best term size: (\d+)\.'
         best_num_variables_pattern = r'Best number of variables: (\d+)\.'
+        num_of_iterations = r'Number of iterations: (\d+)\.'
+        num_of_rules_applied = r'Number of rules applied: (\d+)\.'
 
         failure_pattern = r'failures:(.*?)test_(\w+)'
 
@@ -30,6 +32,8 @@ def extract_test_results(file_path):
         num_steps = re.findall(num_steps_pattern, data)
         best_term_sizes = re.findall(best_term_size_pattern, data)
         best_num_variables = re.findall(best_num_variables_pattern, data)
+        num_of_iterations = re.findall(num_of_iterations, data)
+        num_of_rules_applied = re.findall(num_of_rules_applied, data)
 
         failures = re.findall(failure_pattern, data, re.DOTALL)
         failed_tests = ["test_" + test[1] for test in failures]
@@ -43,6 +47,8 @@ def extract_test_results(file_path):
         assert len(total_times) == len(num_steps)
         assert len(total_times) == len(best_term_sizes)
         assert len(total_times) == len(best_num_variables)
+        assert len(total_times) == len(num_of_iterations)
+        assert len(total_times) == len(num_of_rules_applied)
 
         # Match test names with their total times or failure status.
         i = 0
@@ -55,7 +61,9 @@ def extract_test_results(file_path):
                     'num_of_nodes': None,
                     'steps': None,
                     'term_size': None,
-                    'num_variables': None
+                    'num_variables': None,
+                    'num_of_iterations': None,
+                    'num_of_rules_applied': None
                 }
             else:
                 test_results[test_name] = {
@@ -65,7 +73,9 @@ def extract_test_results(file_path):
                     'num_of_nodes': num_of_nodes[i],
                     'steps': int(num_steps[i]),
                     'term_size': int(best_term_sizes[i]),
-                    'num_variables': int(best_num_variables[i])
+                    'num_variables': int(best_num_variables[i]),
+                    'num_of_iterations': int(num_of_iterations[i]),
+                    'num_of_rules_applied': int(num_of_rules_applied[i])
                 }
                 i += 1
 
@@ -91,29 +101,11 @@ with open(benchmark_path, 'r') as file:
     benchmark = file.readlines()
 
 print("---- Table with key results on stop and iter ----")
-with open(data_path + 'summary.csv', 'w') as file:
-    for prob in benchmark:
-        prob = "test_" + prob.strip()
-        prob_results_stop = results["stop"][prob]
-        prob_results_iter = results["iter"][prob]
-        if prob_results_iter["steps"] < 1 or prob_results_stop["steps"] < 1:
-            continue
-        # Problem & Time (stop) & Steps (stop) & Term size (stop) & Time (iter) & Steps (iter) & Term size (iter)
-        values = [prob[5:]]
-        values += ["-" if prob_results_stop["total_time"] is None else str(prob_results_stop["total_time"]) + " ms"]
-        values += ["-" if prob_results_stop["steps"] is None else str(prob_results_stop["steps"])]
-        values += ["-" if prob_results_stop["term_size"] is None else str(prob_results_stop["term_size"])]
-        values += ["-" if prob_results_iter["total_time"] is None else str(prob_results_iter["total_time"]) + " ms"]
-        values += ["-" if prob_results_iter["steps"] is None else str(prob_results_iter["steps"])]
-        values += ["-" if prob_results_iter["term_size"] is None else str(prob_results_iter["term_size"])]
-        file.write(','.join(values) + '\n')
-        # To copy-paste into LaTeX.
-        print(' & '.join(values) + ' \\\\')
-        print('\\hline')
 
 for key, _ in files.items():
     print("----- " + key + " -----")
     with open(data_path + key + '_summary.csv', 'w') as file:
+        file.write("name,total_time,e_graph_time,step_extraction_time,num_of_nodes,steps,term_size,num_of_iterations,num_of_rules_applied\n")
         for prob in benchmark:
             prob = "test_" + prob.strip()
             prob_results = results[key][prob]
@@ -127,6 +119,8 @@ for key, _ in files.items():
             values += ["-" if prob_results["num_of_nodes"] is None else str(prob_results["num_of_nodes"])]
             values += ["-" if prob_results["steps"] is None else str(prob_results["steps"])]
             values += ["-" if prob_results["term_size"] is None else str(prob_results["term_size"])]
+            values += ["-" if prob_results["num_of_iterations"] is None else str(prob_results["num_of_iterations"])]
+            values += ["-" if prob_results["num_of_rules_applied"] is None else str(prob_results["num_of_rules_applied"])]
             file.write(','.join(values) + '\n')
             # To copy-paste into LaTeX.
             print(' & '.join(values) + ' \\\\')
