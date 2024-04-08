@@ -23,8 +23,6 @@ def p :=
 time_cmd equivalence eq/q : p := by
   pre_dcp
 
-#check congrArg
-
 #print q
 -- optimization (x : ℝ)
 --   minimize x
