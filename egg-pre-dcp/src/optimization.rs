@@ -704,6 +704,10 @@ impl Analysis<Optimization> for Meta {
             }
         }
 
+        if is_constant {
+            term_size = 1;
+        }
+
         DataWithCost { domain, is_constant, curvature, best, num_vars, term_size }
     }
 }
