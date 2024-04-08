@@ -36,12 +36,12 @@ fn test_gp3() {
 #[test]
 fn test_gp4() {
     pre_dcp_check_and_print(
-        "(div 1 (div (exp (var u)) (exp (var v))))",
+        "(div (exp (var u)) (exp (var v)))",
         vec![
             "(le 2 (exp (var u)))",
             "(le (exp (var u)) 3)",
-            "(le (add (pow (exp (var u)) 2) (div (mul 3 (exp (var v))) (exp (var w)))) (sqrt (exp (var u))))",
-            "(eq (div (exp (var u)) (exp (var v))) (pow (exp (var w)) 2))"
+            "(le (add (pow (exp (var u)) 2) (div (mul 6 (exp (var v))) (exp (var w)))) (sqrt (exp (var u))))",
+            "(eq (mul (exp (var u)) (exp (var v))) (exp (var w)))"
         ]);
 }
 

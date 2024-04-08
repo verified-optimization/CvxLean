@@ -3,6 +3,7 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 import heapq
+import csv
 
 def extract_stats_from_file(file_path):
     with open(file_path, 'r') as file:
@@ -166,6 +167,17 @@ print('Steps average', np.average(numbers_of_steps))
 print('Lean time average: ', np.average(command_times - egg_times))
 command_times_per_step = np.array([0 if numbers_of_steps[i] == 0 else command_times[i] / numbers_of_steps[i] for i in range(len(command_times))])
 print('Average command time per step: ', np.average(command_times_per_step))
+
+results = [(problem_names[i], egg_times[i], command_times[i]) for i in range(len(problem_names))]
+
+output_file = eval_dir + "/pre_dcp_eval_results.csv"
+
+with open(output_file, 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["problem_name", "egg_time", "command_time"]) 
+    writer.writerows(results)
+
+print("Results saved to:", output_file)
 
 # Remove some outliers.
 to_remove = 8
