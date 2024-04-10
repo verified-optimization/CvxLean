@@ -3,6 +3,7 @@ use egg::{rewrite as rw, *};
 use crate::optimization;
 use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
+use optimization::is_real_expr as is_real_expr;
 use optimization::is_gt_zero as is_gt_zero;
 use optimization::is_ge_zero as is_ge_zero;
 use optimization::is_le_zero as is_le_zero;
@@ -77,7 +78,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("one_mul"; "(mul 1 ?a)" => "?a"),
 
-    rw!("one_mul-rev"; "?a" => "(mul 1 ?a)"),
+    rw!("one_mul-rev"; "?a" => "(mul 1 ?a)" if is_real_expr("?a")),
+
 
     rw!("mul_zero"; "(mul 0 ?a)" => "0"),
 
@@ -201,7 +203,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
     rw!("pow_half_two"; "(pow (pow ?a 0.5) 2)" => "?a" if is_ge_zero("?a")),
 
-    rw!("pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" if is_ge_zero("?a")),
+    rw!("pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" 
+        if is_real_expr("?a") if is_ge_zero("?a")),
 
     rw!("binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
 

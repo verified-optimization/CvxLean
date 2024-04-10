@@ -54,9 +54,15 @@ pub struct Meta {
     pub domains : HashMap<String, Domain>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TermType {
+    Problem, ObjFun, Constr, Constrs, Set, Function,
+}
+
 #[cfg(not(stop_on_success))]
 #[derive(Debug, Clone)]
 pub struct Data {
+    pub term_type: TermType,
     pub domain: Option<Domain>,
     pub is_constant: bool,
 }
@@ -66,6 +72,12 @@ impl Analysis<Optimization> for Meta {
     type Data = Data;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
+        // Term type should never be different.
+        let from_term_type_diff = to.term_type != from.term_type;
+        if from_term_type_diff {
+            panic!("Unexpected term type difference.");
+        }
+
         let d_before_o = to.domain.clone();
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
@@ -113,11 +125,30 @@ impl Analysis<Optimization> for Meta {
 
         let domains_map = 
             egraph.analysis.domains.clone();
-
+        
+        let mut term_type = TermType::Function;
         let mut domain = None;
         let mut is_constant = false;
 
         match enode {
+            Optimization::Prob(_) => {
+                term_type = TermType::Problem;
+            }
+            Optimization::ObjFun(_) => {
+                term_type = TermType::ObjFun;
+            }
+            Optimization::Constr(_) => {
+                term_type = TermType::Constr;
+            }
+            Optimization::Constrs(_) => {
+                term_type = TermType::Constrs;
+            }
+            Optimization::Eq(_) => {
+                term_type = TermType::Set;
+            }
+            Optimization::Le(_) => {
+                term_type = TermType::Set;
+            }
             Optimization::Neg(a) => {
                 domain = domain::option_neg(get_domain(a));
                 is_constant = get_is_constant(a);
@@ -230,16 +261,16 @@ impl Analysis<Optimization> for Meta {
                 domain = Some(Domain::make_singleton((*f).into_inner()));
                 is_constant = true;
             }
-            _ => {}
         }
 
-        Data { domain, is_constant }
+        Data { term_type, domain, is_constant }
     }
 }
 
 #[cfg(stop_on_success)]
 #[derive(Debug, Clone)]
 pub struct DataWithCost {
+    pub term_type: TermType,
     pub domain: Option<Domain>,
     pub is_constant: bool,
     pub curvature: Curvature, 
@@ -253,6 +284,12 @@ impl Analysis<Optimization> for Meta {
     type Data = DataWithCost;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
+        // Term type should never be different.
+        let from_term_type_diff = to.term_type != from.term_type;
+        if !from_term_type_diff {
+            panic!("Unexpected term type difference.");
+        }
+
         let d_before_o = to.domain.clone();
         match (to.domain.clone(), from.domain.clone()) {
             (None, Some(_)) => { to.domain = from.domain.clone(); }
@@ -337,6 +374,7 @@ impl Analysis<Optimization> for Meta {
         let domains_map = 
             egraph.analysis.domains.clone();
 
+        let mut term_type = TermType::Function;
         let mut domain = None;
         let mut is_constant = false;
         let mut curvature = Curvature::Unknown;
@@ -346,6 +384,7 @@ impl Analysis<Optimization> for Meta {
 
         match enode {
             Optimization::Prob([a, b]) => {
+                term_type = TermType::Problem;
                 curvature = 
                     if get_curvature(a) >= get_curvature(b) {
                         get_curvature(a)
@@ -360,6 +399,7 @@ impl Analysis<Optimization> for Meta {
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::ObjFun(a) => {
+                term_type = TermType::ObjFun;
                 // It cannot be concave, because of mapping functions.
                 curvature = 
                     if get_curvature(a) <= Curvature::Convex {
@@ -372,6 +412,7 @@ impl Analysis<Optimization> for Meta {
                 term_size = 1 + get_term_size(a);
             }
             Optimization::Constr([h, c]) => {
+                term_type = TermType::Constr;
                 // It cannot be concave, because the notion of concavity at the Prop (or set) level
                 // is not well-defined.
                 curvature = 
@@ -385,6 +426,7 @@ impl Analysis<Optimization> for Meta {
                 term_size = 1 + get_term_size(c);
             }
             Optimization::Constrs(a) => {
+                term_type = TermType::Constrs;
                 curvature = Curvature::Constant;
                 term_size = 0;
                 num_vars = 0;
@@ -400,6 +442,7 @@ impl Analysis<Optimization> for Meta {
                 best = format!("(constrs {})", constrs_s_l.join(" ")).parse().unwrap();
             }
             Optimization::Eq([a, b]) => {
+                term_type = TermType::Set;
                 if get_curvature(a) <= Curvature::Affine && get_curvature(b) <= Curvature::Affine {
                     curvature = Curvature::Affine
                 }
@@ -408,6 +451,7 @@ impl Analysis<Optimization> for Meta {
                 term_size = 1 + get_term_size(a) + get_term_size(b);
             }
             Optimization::Le([a, b]) => {
+                term_type = TermType::Set;
                 curvature = curvature::of_le(get_curvature(a), get_curvature(b));
                 best = format!("(le {} {})", get_best(a), get_best(b)).parse().unwrap();
                 num_vars = get_num_vars(a) + get_num_vars(b);
@@ -704,7 +748,14 @@ impl Analysis<Optimization> for Meta {
             }
         }
 
-        DataWithCost { domain, is_constant, curvature, best, num_vars, term_size }
+        DataWithCost { term_type, domain, is_constant, curvature, best, num_vars, term_size }
+    }
+}
+
+pub fn is_real_expr(var: &str) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    let var = var.parse().unwrap();
+    move |egraph, _, subst| {
+        return egraph[subst[var]].data.term_type == TermType::Function;
     }
 }
 
