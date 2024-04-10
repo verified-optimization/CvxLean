@@ -286,7 +286,7 @@ impl Analysis<Optimization> for Meta {
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         // Term type should never be different.
         let from_term_type_diff = to.term_type != from.term_type;
-        if !from_term_type_diff {
+        if from_term_type_diff {
             panic!("Unexpected term type difference.");
         }
 
