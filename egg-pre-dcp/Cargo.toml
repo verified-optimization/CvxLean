@@ -23,7 +23,12 @@ intervals-good = "0.1.1"
 
 [profile.test]
 debug = true
-opt-level = 1
+lto = "fat"
+codegen-units = 1
+opt-level = 3
+debug-assertions = false
+overflow-checks = false
+incremental = false
 
 [profile.release]
 debug = true
