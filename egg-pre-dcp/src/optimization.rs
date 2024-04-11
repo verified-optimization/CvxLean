@@ -736,6 +736,7 @@ impl Analysis<Optimization> for Meta {
                 term_size = 1;
             }
             Optimization::Symbol(s) => {
+                term_type = TermType::Symbol;
                 best = format!("{}", s).parse().unwrap();
                 num_vars = 0;
                 term_size = 0;
