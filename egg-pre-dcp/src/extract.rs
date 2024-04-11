@@ -294,14 +294,28 @@ pub fn get_steps_from_string_maybe_node_limit(
                 
                 // Iterations data.
                 let iterations = runner.iterations;
-                let num_of_iterations = iterations.len();
-                let mut num_rules_applied = 0;
-                for iteration in iterations {
-                    for (_, count) in iteration.applied.iter() {
-                        num_rules_applied += count;
-                    }
-                }
+                let num_of_iterations = iterations.len() - 1;
                 println!("Number of iterations: {:?}.", num_of_iterations);
+
+                let mut num_rules_applied = 0;
+                let mut num_iter = 0;
+                for iteration in iterations {
+                    let mut max_count = 0;
+                    let mut max_rule = Symbol::from("");
+                    for (name, count) in iteration.applied.iter() {
+                        num_rules_applied += count;
+                        if count.clone() > max_count {
+                            max_count = count.clone();
+                            max_rule = name.clone();
+                        }
+                    }
+                    println!("--- Iteration {:?} data (cumulative) ---", num_iter);
+                    println!("Rewrites applied: {:?}", num_rules_applied);
+                    println!("E-nodes at start: {:?}", iteration.egraph_nodes);
+                    println!("Max rule applied: {:?} (count: {:?}).", max_rule, max_count);
+                    num_iter += 1;
+                }
+                println!("---");
                 println!("Number of rules applied: {:?}.", num_rules_applied);
             }
         } else {
