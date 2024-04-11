@@ -56,7 +56,7 @@ pub struct Meta {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermType {
-    Problem, ObjFun, Constr, Constrs, Set, Function,
+    Problem, Set, Function, ObjFun, Constrs, Constr, Symbol
 }
 
 #[cfg(not(stop_on_success))]
@@ -256,7 +256,9 @@ impl Analysis<Optimization> for Meta {
                 domain = Some(Domain::make_singleton(std::f64::consts::PI));
                 is_constant = true;
             }
-            Optimization::Symbol(_) => {}
+            Optimization::Symbol(_) => {
+                term_type = TermType::Symbol;
+            }
             Optimization::Constant(f) => {
                 domain = Some(Domain::make_singleton((*f).into_inner()));
                 is_constant = true;
