@@ -638,7 +638,6 @@ fn perform_mult(
 }
 
 // For multiplication, opennes of endpoints depends on the values.
-// NOTE(RFM): For the case splitting part, c.f. with `classify`.
 pub fn mul(d1: &Domain, d2: &Domain) -> Domain {
     let d1_pos = is_pos(d1);
     let d1_neg = is_neg(d1);

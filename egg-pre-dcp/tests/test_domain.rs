@@ -10,12 +10,39 @@ use egg_pre_dcp::domain;
 use domain::Domain as Domain; 
 
 
-/* Tests for +, *, -, / and ^ on critical intervals: 
-    * Positive (0, +inf),
-    * Non-negative [0, +inf),
-    * Non-positive (-inf, 0],
-    * Negative (-inf, 0).
-*/
+
+/* Some useful intervals for testing apart from pos, nonneg, nonpos, neg. */
+
+// gt_one 
+
+// ge_one 
+
+fn gt_two_lt_three() {
+    Domain::make_oo(domain::make_float(2.0), domain::make_float(3.0));
+}
+
+// TODO: more
+
+
+
+/* Operations */
+
+
+// Negation (TODO).
+
+
+// Absolute value (TODO).
+
+
+
+
+// Square root (TODO).
+
+
+// Min (TODO).
+
+
+// Max (TODO).
 
 
 // Addition (16 tests).
@@ -404,7 +431,7 @@ fn sub_neg_neg() {
 }
 
 
-// Division (16 tests).
+// Division (18 tests).
 
 #[test]
 fn div_pos_pos() {
@@ -534,8 +561,24 @@ fn div_neg_neg() {
     assert!(result.eq(&expected));
 }
 
+#[test]
+fn div_free_pos() {
+    // (-inf, +inf) / (-inf, 0) = (-inf, +inf)
+    let result = domain::div(&domain::free_dom(), &domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// Powers (16 tests).
+#[test]
+fn div_one_pos() {
+    // [1, 1] / (0, +inf) = (0, +inf)
+    let result = domain::div(&Domain::make_singleton(1.0), &domain::pos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+
+// Power (16 tests).
 
 #[test]
 fn pow_pos_pos() {
@@ -666,31 +709,7 @@ fn pow_neg_neg() {
 }
 
 
-/* Other tests. */
-
-
-
-#[test]
-fn div_free_pos() {
-    // (-inf, +inf) / (-inf, 0) = (-inf, +inf)
-    let result = domain::div(&domain::free_dom(), &domain::neg_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn div_one_pos() {
-    // [1, 1] / (0, +inf) = (0, +inf)
-    let result = domain::div(&Domain::make_singleton(1.0), &domain::pos_dom());
-    let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-
-/* More power tests. */
-
-
-/* Logarithm tests. */
+// Logarithm (6 tests).
 
 #[test]
 fn log_pos() {
@@ -711,7 +730,7 @@ fn log_nonneg() {
 #[test]
 fn log_ge_one() {
     // log([1, +inf)) = [0, +inf)
-    let result = domain::log(&Domain::make_co(domain::one(), domain::inf()));
+    let result = domain::log(&Domain::make_ci(domain::one()));
     let expected = domain::nonneg_dom();
     assert!(result.eq(&expected));
 }
@@ -741,7 +760,7 @@ fn log_lt_one() {
 }
 
 
-/* Exponential tests. */
+// Exponential (6 tests).
 
 #[test]
 fn exp_free() {
@@ -784,13 +803,20 @@ fn exp_neg() {
 }
 
 
-/* Checkers tests. */
 
-// is_zero
+/* Checkers */
 
-// is_one
 
-// is_pos
+// is_zero (TODO).
+
+
+// is_one (TODO).
+
+
+// is_pos (TODO).
+
+
+// is_nonneg (TODO: more).
 
 #[test]
 fn is_nonneg_1() {
@@ -798,10 +824,13 @@ fn is_nonneg_1() {
     assert!(domain::is_nonneg(&Domain::make_singleton(1.0)));
 }
 
-// is_nonpos 
+// is_nonpos (TODO).
 
-// is_neg 
 
-// does_not_contain_zero
+// is_neg (TODO).
+
+
+// does_not_contain_zero (TODO).
+
 
 }
