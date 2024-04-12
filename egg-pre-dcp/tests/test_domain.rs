@@ -18,7 +18,7 @@ use domain::Domain as Domain;
 */
 
 
-// Addition (10 tests, commutative).
+// Addition (16 tests).
 
 #[test]
 fn add_pos_pos() {
@@ -53,6 +53,14 @@ fn add_pos_neg() {
 }
 
 #[test]
+fn add_nonneg_pos() {
+    // [0, +inf) + (0, +inf) = (0, +inf)
+    let result = domain::add(&domain::nonneg_dom(), &domain::pos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
 fn add_nonneg_nonneg() {
     // [0, +inf) + [0, +inf) = [0, +inf)
     let result = domain::add(&domain::nonneg_dom(), &domain::nonneg_dom());
@@ -77,6 +85,22 @@ fn add_nonneg_neg() {
 }
 
 #[test]
+fn add_nonpos_pos() {
+    // (-inf, 0] + (0, +inf) = (-inf, +inf)
+    let result = domain::add(&domain::nonpos_dom(), &domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn add_nonpos_nonneg() {
+    // (-inf, 0] + [0, +inf) = (-inf, +inf)
+    let result = domain::add(&domain::nonpos_dom(), &domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
 fn add_nonpos_nonpos() {
     // (-inf, 0] + (-inf, 0] = (-inf, 0]
     let result = domain::add(&domain::nonpos_dom(), &domain::nonpos_dom());
@@ -93,6 +117,30 @@ fn add_nonpos_neg() {
 }
 
 #[test]
+fn add_neg_pos() {
+    // (-inf, 0) + (0, +inf) = (-inf, +inf)
+    let result = domain::add(&domain::neg_dom(), &domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn add_neg_nonneg() {
+    // (-inf, 0) + [0, +inf) = (-inf, +inf)
+    let result = domain::add(&domain::neg_dom(), &domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn add_neg_nonpos() {
+    // (-inf, 0) + (-inf, 0] = (-inf, 0)
+    let result = domain::add(&domain::neg_dom(), &domain::nonpos_dom());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
 fn add_neg_neg() {
     // (-inf, 0) + (-inf, 0) = (-inf, 0)
     let result = domain::add(&domain::neg_dom(), &domain::neg_dom());
@@ -101,7 +149,7 @@ fn add_neg_neg() {
 }
 
 
-// Multiplication (16 tests, commutative).
+// Multiplication (16 tests).
 
 #[test]
 fn mul_pos_pos() {
@@ -137,6 +185,14 @@ fn mul_pos_neg() {
 }
 
 #[test]
+fn mul_nonneg_pos() {
+    // [0, +inf) * (0, +inf) = [0, +inf)
+    let result = domain::mul(&domain::nonneg_dom(), &domain::pos_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
 fn mul_nonneg_nonneg() {
     // [0, +inf) * [0, +inf) = [0, +inf)
     let result = domain::mul(&domain::nonneg_dom(), &domain::nonneg_dom());
@@ -161,6 +217,22 @@ fn mul_nonneg_neg() {
 }
 
 #[test]
+fn mul_nonpos_pos() {
+    // (-inf, 0] * (0, +inf) = (-inf, 0]
+    let result = domain::mul(&domain::nonpos_dom(), &domain::pos_dom());
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_nonnpos_nonneg() {
+    // (-inf, 0] * [0, +inf) = (-inf, 0]
+    let result = domain::mul(&domain::nonpos_dom(), &domain::nonneg_dom());
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
 fn mul_nonpos_nonpos() {
     // (-inf, 0] * (-inf, 0] = [0, +inf)
     let result = domain::mul(&domain::nonpos_dom(), &domain::nonpos_dom());
@@ -177,6 +249,30 @@ fn mul_nonpos_neg() {
 }
 
 #[test]
+fn mul_neg_pos() {
+    // (-inf, 0) * (0, +inf) = (-inf, 0)
+    let result = domain::mul(&domain::neg_dom(), &domain::pos_dom());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_neg_nonneg() {
+    // (-inf, 0) * [0, +inf) = (-inf, 0]
+    let result = domain::mul(&domain::neg_dom(), &domain::nonneg_dom());
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_neg_nonpos() {
+    // (-inf, 0) * (-inf, 0] = [0, +inf)
+    let result = domain::mul(&domain::neg_dom(), &domain::nonpos_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
 fn mul_neg_neg() {
     // (-inf, 0) * (-inf, 0) = (0, +inf)
     let result = domain::mul(&domain::neg_dom(), &domain::neg_dom());
@@ -185,15 +281,7 @@ fn mul_neg_neg() {
 }
 
 
-// Subtraction (16 tests, not commutative).
-
-#[test]
-fn sub_pos_pos() {
-    // (0, +inf) - (0, +inf) = (-inf, +inf)
-    let result = domain::sub(&domain::pos_dom(), &domain::pos_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
+// Subtraction (16 tests).
 
 #[test]
 fn sub_pos_nonneg() {
@@ -316,7 +404,7 @@ fn sub_neg_neg() {
 }
 
 
-// Division (17 tests, not commutative).
+// Division (16 tests).
 
 #[test]
 fn div_pos_pos() {
@@ -446,15 +534,8 @@ fn div_neg_neg() {
     assert!(result.eq(&expected));
 }
 
-#[test]
-fn div_free_pos() {
-    // (-inf, +inf) / (-inf, 0) = (-inf, +inf)
-    let result = domain::div(&domain::free_dom(), &domain::neg_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
 
-// Powers (16 tests, not commutative).
+// Powers (16 tests).
 
 #[test]
 fn pow_pos_pos() {
@@ -587,13 +668,26 @@ fn pow_neg_neg() {
 
 /* Other tests. */
 
+
+
 #[test]
-fn one_div_pos() {
+fn div_free_pos() {
+    // (-inf, +inf) / (-inf, 0) = (-inf, +inf)
+    let result = domain::div(&domain::free_dom(), &domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_one_pos() {
     // [1, 1] / (0, +inf) = (0, +inf)
     let result = domain::div(&Domain::make_singleton(1.0), &domain::pos_dom());
     let expected = domain::pos_dom();
     assert!(result.eq(&expected));
 }
+
+
+/* More power tests. */
 
 
 /* Logarithm tests. */
@@ -689,12 +783,25 @@ fn exp_neg() {
     assert!(result.eq(&expected));
 }
 
-/* Checkers tests. TODO: more. */
+
+/* Checkers tests. */
+
+// is_zero
+
+// is_one
+
+// is_pos
 
 #[test]
 fn is_nonneg_1() {
     // [1, 1] is non-negative
     assert!(domain::is_nonneg(&Domain::make_singleton(1.0)));
 }
+
+// is_nonpos 
+
+// is_neg 
+
+// does_not_contain_zero
 
 }
