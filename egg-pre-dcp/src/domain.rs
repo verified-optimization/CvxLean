@@ -339,7 +339,7 @@ pub fn zero_dom() -> Domain {
 }
 
 pub fn is_zero(d: &Domain) -> bool {
-    d.subseteq(&zero_dom())
+    d.subseteq(&zero_dom()) && zero_dom().subseteq(&d)
 }
 
 pub fn option_is_zero(d: Option<&Domain>) -> bool {
@@ -351,7 +351,7 @@ pub fn one_dom() -> Domain {
 }
 
 pub fn is_one(d: &Domain) -> bool {
-    d.subseteq(&one_dom())
+    d.subseteq(&one_dom()) && one_dom().subseteq(&d)
 }
 
 pub fn option_is_one(d: Option<&Domain>) -> bool {
@@ -360,6 +360,22 @@ pub fn option_is_one(d: Option<&Domain>) -> bool {
 
 pub fn free_dom() -> Domain { 
     Domain::make_ii()
+}
+
+pub fn empty_dom() -> Domain { 
+    Domain::make_oo(zero(), zero())
+}
+
+pub fn pos_dom() -> Domain { 
+    Domain::make_oi(zero())
+}
+
+pub fn is_pos(d: &Domain) -> bool {
+    d.subseteq(&pos_dom())
+}
+
+pub fn option_is_pos(d: Option<&Domain>) -> bool {
+    d.map_or(false, is_pos)
 }
 
 pub fn nonneg_dom() -> Domain { 
@@ -384,18 +400,6 @@ pub fn is_nonpos(d: &Domain) -> bool {
 
 pub fn option_is_nonpos(d: Option<&Domain>) -> bool {
     d.map_or(false, is_nonpos)
-}
-
-pub fn pos_dom() -> Domain { 
-    Domain::make_oi(zero())
-}
-
-pub fn is_pos(d: &Domain) -> bool {
-    d.subseteq(&pos_dom())
-}
-
-pub fn option_is_pos(d: Option<&Domain>) -> bool {
-    d.map_or(false, is_pos)
 }
 
 pub fn neg_dom() -> Domain { 
