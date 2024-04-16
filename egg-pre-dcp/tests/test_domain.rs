@@ -13,9 +13,13 @@ use domain::Domain as Domain;
 
 /* Some useful intervals for testing apart from pos, nonneg, nonpos, neg. */
 
-// gt_one 
+fn gt_one() {
+    Domain::make_oi(domain::one());
+}
 
-// ge_one 
+fn ge_one() {
+    Domain::make_ci(domain::one());
+}
 
 fn gt_two_lt_three() {
     Domain::make_oo(domain::make_float(2.0), domain::make_float(3.0));
@@ -807,30 +811,288 @@ fn exp_neg() {
 /* Checkers */
 
 
-// is_zero (TODO).
-
-
-// is_one (TODO).
-
-
-// is_pos (TODO).
-
-
-// is_nonneg (TODO: more).
+// Is zero?
 
 #[test]
-fn is_nonneg_1() {
+fn is_zero_zero() {
+    // [0, 0] is zero
+    assert!(domain::is_zero(&Domain::make_singleton(0.0)));
+}
+
+#[test]
+fn not_is_zero_one() {
+    // [1, 1] is not zero
+    assert!(!domain::is_zero(&Domain::make_singleton(1.0)));
+}
+
+#[test]
+fn not_is_zero_free() {
+    // (-inf, +inf) is not zero
+    assert!(!domain::is_zero(&domain::free_dom()));
+}
+
+#[test]
+fn not_is_zero_empty() {
+    // Empty set is not zero
+    assert!(!domain::is_zero(&domain::empty_dom()));
+}
+
+
+// Is one?
+
+#[test]
+fn is_one_one() {
+    // [1, 1] is one
+    assert!(domain::is_one(&Domain::make_singleton(1.0)));
+}
+
+#[test]
+fn not_is_one_zero() {
+    // [0, 0] is not one
+    assert!(!domain::is_one(&Domain::make_singleton(0.0)));
+}
+
+#[test]
+fn not_is_one_free() {
+    // (-inf, +inf) is not one
+    assert!(!domain::is_one(&domain::free_dom()));
+}
+
+#[test]
+fn not_is_one_empty() {
+    // Empty set is not one
+    assert!(!domain::is_one(&domain::empty_dom()));
+}
+
+
+// Is positive?
+
+#[test]
+fn is_pos_pos() {
+    // (0, +inf) is positive
+    assert!(domain::is_pos(&domain::pos_dom()));
+}
+
+#[test]
+fn is_pos_one() {
+    // [1, 1] is positive
+    assert!(domain::is_pos(&Domain::make_singleton(1.0)));
+}
+
+#[test]
+fn is_pos_empty() {
+    // Empty set is positive
+    assert!(domain::is_pos(&domain::empty_dom()));
+}
+
+#[test]
+fn not_is_pos_nonneg() {
+    // [0, +inf) is not positive
+    assert!(!domain::is_pos(&domain::nonneg_dom()));
+}
+
+#[test]
+fn not_is_pos_free() {
+    // (-inf, +inf) is not positive
+    assert!(!domain::is_pos(&domain::free_dom()));
+}
+
+#[test]
+fn not_is_pos_zero() {
+    // [0, 0] is not positive
+    assert!(!domain::is_pos(&Domain::make_singleton(0.0)));
+}
+
+
+// Is non-negative?
+
+#[test]
+fn is_nonneg_pos() {
+    // (0, +inf) is non-negative
+    assert!(domain::is_nonneg(&domain::pos_dom()));
+}
+
+#[test]
+fn is_nonneg_nonneg() {
+    // [0, +inf) is non-negative
+    assert!(domain::is_nonneg(&domain::nonneg_dom()));
+}
+
+#[test]
+fn is_nonneg_zero() {
+    // [0, 0] is non-negative
+    assert!(domain::is_nonneg(&Domain::make_singleton(0.0)));
+}
+
+#[test]
+fn is_nonneg_one() {
     // [1, 1] is non-negative
     assert!(domain::is_nonneg(&Domain::make_singleton(1.0)));
 }
 
-// is_nonpos (TODO).
+#[test]
+fn is_nonneg_empty() {
+    // Empty set is non-negative
+    assert!(domain::is_nonneg(&domain::empty_dom()));
+}
+
+#[test]
+fn not_is_nonneg_free() {
+    // (-inf, +inf) is not non-negative
+    assert!(!domain::is_nonneg(&domain::free_dom()));
+}
+
+#[test]
+fn not_is_nonneg_minus_one() {
+    // [-1, -1] is not non-negative
+    assert!(!domain::is_nonneg(&Domain::make_singleton(-1.0)));
+}
 
 
-// is_neg (TODO).
+// Is non-positive?
+
+#[test]
+fn is_nonpos_nonpos() {
+    // (-inf, 0] is non-positive
+    assert!(domain::is_nonpos(&domain::nonpos_dom()));
+}
+
+#[test]
+fn is_nonpos_neg() {
+    // (-inf, 0) is non-positive
+    assert!(domain::is_nonpos(&domain::neg_dom()));
+}
+
+#[test]
+fn is_nonpos_zero() {
+    // [0, 0] is non-positive
+    assert!(domain::is_nonpos(&Domain::make_singleton(0.0)));
+}
+
+#[test]
+fn is_nonpos_minus_one() {
+    // [-1, -1] is non-positive
+    assert!(domain::is_nonpos(&Domain::make_singleton(-1.0)));
+}
+
+#[test]
+fn is_nonpos_empty() {
+    // Empty set is non-positive
+    assert!(domain::is_nonpos(&domain::empty_dom()));
+}
+
+#[test]
+fn not_is_nonpos_free() {
+    // (-inf, +inf) is not non-positive
+    assert!(!domain::is_nonpos(&domain::free_dom()));
+}
+
+#[test]
+fn not_is_nonpos_one() {
+    // [1, 1] is not non-positive
+    assert!(!domain::is_nonpos(&Domain::make_singleton(1.0)));
+}
 
 
-// does_not_contain_zero (TODO).
+// Is negative?
 
+#[test]
+fn is_neg_neg() {
+    // (-inf, 0) is negative
+    assert!(domain::is_neg(&domain::neg_dom()));
+}
+
+#[test]
+fn is_neg_minus_one() {
+    // [-1, -1] is negative
+    assert!(domain::is_neg(&Domain::make_singleton(-1.0)));
+}
+
+#[test]
+fn is_neg_empty() {
+    // Empty set is negative
+    assert!(domain::is_neg(&domain::empty_dom()));
+}
+
+#[test]
+fn not_is_neg_nonpos() {
+    // (-inf, 0] is not negative
+    assert!(!domain::is_neg(&domain::nonpos_dom()));
+}
+
+#[test]
+fn not_is_neg_free() {
+    // (-inf, +inf) is not negative
+    assert!(!domain::is_neg(&domain::free_dom()));
+}
+
+#[test]
+fn not_is_neg_zero() {
+    // [0, 0] is not negative
+    assert!(!domain::is_neg(&Domain::make_singleton(0.0)));
+}
+
+#[test]
+fn not_is_neg_one() {
+    // [1, 1] is not negative
+    assert!(!domain::is_neg(&Domain::make_singleton(1.0)));
+}
+
+
+// Does not contain zero?
+
+#[test]
+fn does_not_contain_zero_pos() {
+    // (0, +inf) does not contain zero
+    assert!(domain::does_not_contain_zero(&domain::pos_dom()));
+}
+
+#[test]
+fn does_not_contain_zero_neg() {
+    // (-inf, 0) does not contain zero
+    assert!(domain::does_not_contain_zero(&domain::neg_dom()));
+}
+
+#[test]
+fn does_not_contain_zero_one() {
+    // [1, 1] does not contain zero
+    assert!(domain::does_not_contain_zero(&Domain::make_singleton(1.0)));
+}
+
+#[test]
+fn does_not_contain_zero_minus_one() {
+    // [-1, -1] does not contain zero
+    assert!(domain::does_not_contain_zero(&Domain::make_singleton(-1.0)));
+}
+
+#[test]
+fn does_not_contain_zero_empty() {
+    // Empty set does not contain zero
+    assert!(domain::does_not_contain_zero(&domain::empty_dom()));
+}
+
+#[test]
+fn not_does_not_contain_zero_free() {
+    // (-inf, +inf) contains zero
+    assert!(!domain::does_not_contain_zero(&domain::free_dom()));
+}
+
+#[test]
+fn not_does_not_contain_zero_nonneg() {
+    // [0, +inf) contains zero
+    assert!(!domain::does_not_contain_zero(&domain::nonneg_dom()));
+}
+
+#[test]
+fn not_does_not_contain_zero_nonpos() {
+    // (-inf, 0] contains zero
+    assert!(!domain::does_not_contain_zero(&domain::nonpos_dom()));
+}
+
+#[test]
+fn not_does_not_contain_zero_zero() {
+    // [0, 0] contains zero
+    assert!(!domain::does_not_contain_zero(&Domain::make_singleton(0.0)));
+}
 
 }
