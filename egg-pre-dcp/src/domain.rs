@@ -496,7 +496,11 @@ pub fn option_abs(d_o: Option<Domain>) -> Option<Domain> {
 }
 
 pub fn sqrt(d: &Domain) -> Domain {
-    Domain::make(d.interval.sqrt(), d.lo_open, d.hi_open)
+    if is_nonneg(d) {
+        Domain::make(d.interval.sqrt(), d.lo_open, d.hi_open)
+    } else {
+        free_dom()
+    }
 }
 
 pub fn option_sqrt(d_o: Option<Domain>) -> Option<Domain> {
