@@ -188,6 +188,47 @@ fn abs_gt_minus_two_lt_two() {
 
 // Square root (TODO).
 
+#[test]
+fn sqrt_pos() {
+    // sqrt((0, +inf)) = (0, +inf)
+    let result = domain::sqrt(&domain::pos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sqrt_nonneg() {
+    // sqrt([0, +inf)) = [0, +inf)
+    let result = domain::sqrt(&domain::nonneg_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sqrt_nonpos() {
+    // sqrt((-inf, 0]) = (-inf, +inf)
+    let result = domain::sqrt(&domain::nonpos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sqrt_neg() {
+    // sqrt((-inf, 0)) = (-inf, +inf)
+    let result = domain::sqrt(&domain::neg_dom());
+    let expected = domain::free_dom();
+    println!("{:?}", result);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sqrt_gt_two_lt_three_subseteq() {
+    // sqrt((2, 3)) \subseteq (1.41, 1.74)
+    let result = domain::sqrt(&gt_two_lt_three());
+    let enclosure = Domain::make_oo(domain::make_float(1.41), domain::make_float(1.74));
+    assert!(result.subseteq(&enclosure));
+}
+
 
 // Min (TODO).
 
