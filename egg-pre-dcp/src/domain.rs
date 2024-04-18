@@ -479,11 +479,11 @@ pub fn abs(d: &Domain) -> Domain {
             Domain::make_from_endpoints(-b, -a, r, l)
         } else {
             if a_abs < b_abs {
-                Domain::make_from_endpoints(zero(), b, false, r)
+                Domain::make_from_endpoints(zero(), b_abs, false, r)
             } else if b_abs < a_abs {
-                Domain::make_from_endpoints(zero(), a, false, l)
+                Domain::make_from_endpoints(zero(), a_abs, false, l)
             } else {
-                Domain::make_from_endpoints(zero(), a, false, l && r)
+                Domain::make_from_endpoints(zero(), a_abs, false, l && r)
             }
         }
     } else {
