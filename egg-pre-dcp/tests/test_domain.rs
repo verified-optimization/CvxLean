@@ -11,7 +11,22 @@ use domain::Domain as Domain;
 
 
 
-/* Some useful intervals for testing apart from pos, nonneg, nonpos, neg. */
+/* Some useful intervals for testing apart from pos, nonneg, nonpos, neg, free. */
+
+// (-3, -2)
+fn gt_minus_three_lt_minus_two() -> Domain {
+    Domain::make_oo(domain::make_float(-3.0), domain::make_float(-2.0))
+}
+
+// (-3, 2)
+fn gt_minus_three_lt_two() -> Domain {
+    Domain::make_oo(domain::make_float(-3.0), domain::make_float(2.0))
+}
+
+// (-3, 3)
+fn gt_minus_three_lt_three() -> Domain {
+    Domain::make_oo(domain::make_float(-3.0), domain::make_float(3.0))
+}
 
 // (-2, 2)
 fn gt_minus_two_lt_two() -> Domain {
@@ -26,16 +41,6 @@ fn gt_minus_two_le_two() -> Domain {
 // (-2, 3)
 fn gt_minus_two_lt_three() -> Domain {
     Domain::make_oo(domain::make_float(-2.0), domain::make_float(3.0))
-}
-
-// (-3, -2)
-fn gt_minus_three_lt_minus_two() -> Domain {
-    Domain::make_oo(domain::make_float(-3.0), domain::make_float(-2.0))
-}
-
-// (-3, 2)
-fn gt_minus_three_lt_two() -> Domain {
-    Domain::make_oo(domain::make_float(-3.0), domain::make_float(2.0))
 }
 
 // [0, 1)
@@ -186,7 +191,7 @@ fn abs_gt_minus_two_lt_two() {
 }
 
 
-// Square root (TODO).
+// Square root (5 tests).
 
 #[test]
 fn sqrt_pos() {
@@ -230,13 +235,133 @@ fn sqrt_gt_two_lt_three_subseteq() {
 }
 
 
-// Min (TODO).
+// Logarithm (9 tests).
+
+#[test]
+fn log_pos() {
+    // log((0, +inf)) = (-inf, +inf)
+    let result = domain::log(&domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_nonneg() {
+    // log([0, +inf)) = (-inf, +inf)
+    let result = domain::log(&domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_nonpos() {
+    // log((-inf, 0]) = (-inf, +inf)
+    let result = domain::log(&domain::nonpos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_neg() {
+    // log((-inf, 0)) = (-inf, +inf)
+    let result = domain::log(&domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_ge_one() {
+    // log([1, +inf)) = [0, +inf)
+    let result = domain::log(&ge_one());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_gt_one() {
+    // log((1, +inf)) = (0, +inf)
+    let result = domain::log(&gt_one());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_ge_zero_le_one() {
+    // log([0, 1]) = (-inf, 0]
+    let result = domain::log(&ge_zero_le_one());
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_ge_zero_lt_one() {
+    // log([0, 1)) = (-inf, 0)
+    let result = domain::log(&ge_zero_lt_one());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn log_gt_two_lt_three_subseteq() {
+    // log((2, 3)) \subseteq (0.69, 1.10)
+    let result = domain::log(&gt_two_lt_three());
+    let enclosure = Domain::make_oo(domain::make_float(0.69), domain::make_float(1.10));
+    assert!(result.subseteq(&enclosure));
+}
 
 
-// Max (TODO).
+// Exponential (7 tests).
+
+#[test]
+fn exp_free() {
+    // exp((-inf, +inf)) = (0, +inf)
+    let result = domain::exp(&domain::free_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn exp_pos() {
+    // exp((0, +inf)) = (1, +inf)
+    let result = domain::exp(&domain::pos_dom());
+    let expected = Domain::make_oi(domain::one());
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn exp_nonneg() {
+    // exp([0, +inf)) = [1, +inf)
+    let result = domain::exp(&domain::nonneg_dom());
+    let expected = Domain::make_ci(domain::one());
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn exp_nonpos() {
+    // exp((-inf, 0]) = (0, 1]
+    let result = domain::exp(&domain::nonpos_dom());
+    let expected = Domain::make_oc(domain::zero(), domain::one());
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn exp_neg() {
+    // exp((-inf, 0)) = (0, 1)
+    let result = domain::exp(&domain::neg_dom());
+    let expected = Domain::make_oo(domain::zero(), domain::one());
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn exp_gt_two_lt_three_subseteq() {
+    // exp((2, 3)) \subseteq (7.38, 20.09)
+    let result = domain::exp(&gt_two_lt_three());
+    let enclosure = Domain::make_oo(domain::make_float(7.38), domain::make_float(20.09));
+    assert!(result.subseteq(&enclosure));
+}
 
 
-// Addition (16 tests).
+// Addition (17 tests).
 
 #[test]
 fn add_pos_pos() {
@@ -363,6 +488,145 @@ fn add_neg_neg() {
     // (-inf, 0) + (-inf, 0) = (-inf, 0)
     let result = domain::add(&domain::neg_dom(), &domain::neg_dom());
     let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn add_gt_minus_two_le_two_ge_zero_lt_one() {
+    // (-2, 2] + [0, 1) = (-2, 3)
+    let result = domain::add(&gt_minus_two_le_two(), &ge_zero_lt_one());
+    let expected = gt_minus_two_lt_three();
+    assert!(result.eq(&expected));
+}
+
+
+// Subtraction (16 tests).
+
+#[test]
+fn sub_pos_nonneg() {
+    // (0, +inf) - [0, +inf) = (-inf, +inf)
+    let result = domain::sub(&domain::pos_dom(), &domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_pos_nonpos() {
+    // (0, +inf) - (-inf, 0] = (0, +inf)
+    let result = domain::sub(&domain::pos_dom(), &domain::nonpos_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_pos_neg() {
+    // (0, +inf) - (-inf, 0) = (0, +inf)
+    let result = domain::sub(&domain::pos_dom(), &domain::neg_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonneg_pos() {
+    // [0, +inf) - (0, +inf) = (-inf, +inf)
+    let result = domain::sub(&domain::nonneg_dom(), &domain::pos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonneg_nonneg() {
+    // [0, +inf) - [0, +inf) = (-inf, +inf)
+    let result = domain::sub(&domain::nonneg_dom(), &domain::nonneg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonneg_nonpos() {
+    // [0, +inf) - (-inf, 0] = [0, +inf)
+    let result = domain::sub(&domain::nonneg_dom(), &domain::nonpos_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonneg_neg() {
+    // [0, +inf) - (-inf, 0) = [0, +inf)
+    let result = domain::sub(&domain::nonneg_dom(), &domain::neg_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonpos_pos() {
+    // (-inf, 0] - (0, +inf) = (-inf, 0)
+    let result = domain::sub(&domain::nonpos_dom(), &domain::pos_dom());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonpos_nonneg() {
+    // (-inf, 0] - [0, +inf) = (-inf, 0]
+    let result = domain::sub(&domain::nonpos_dom(), &domain::nonneg_dom());
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonpos_nonpos() {
+    // (-inf, 0] - (-inf, 0] = (-inf, +inf)
+    let result = domain::sub(&domain::nonpos_dom(), &domain::nonpos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_nonpos_neg() {
+    // (-inf, 0] - (-inf, 0) = (-inf, +inf)
+    let result = domain::sub(&domain::nonpos_dom(), &domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_neg_pos() {
+    // (-inf, 0) - (0, +inf) = (-inf, 0)
+    let result = domain::sub(&domain::neg_dom(), &domain::pos_dom());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_neg_nonneg() {
+    // (-inf, 0) - [0, +inf) = (-inf, 0)
+    let result = domain::sub(&domain::neg_dom(), &domain::nonneg_dom());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_neg_nonpos() {
+    // (-inf, 0) - (-inf, 0] = (-inf, +inf)
+    let result = domain::sub(&domain::neg_dom(), &domain::nonpos_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_neg_neg() {
+    // (-inf, 0) - (-inf, 0) = (-inf, +inf)
+    let result = domain::sub(&domain::neg_dom(), &domain::neg_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn sub_gt_minus_two_lt_three_ge_zero_le_one() {
+    // (-2, 3) - [0, 1] = (-3, 3)
+    let result = domain::sub(&gt_minus_two_lt_three(), &ge_zero_le_one());
+    let expected = gt_minus_three_lt_three();
     assert!(result.eq(&expected));
 }
 
@@ -495,129 +759,6 @@ fn mul_neg_neg() {
     // (-inf, 0) * (-inf, 0) = (0, +inf)
     let result = domain::mul(&domain::neg_dom(), &domain::neg_dom());
     let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-
-// Subtraction (16 tests).
-
-#[test]
-fn sub_pos_nonneg() {
-    // (0, +inf) - [0, +inf) = (-inf, +inf)
-    let result = domain::sub(&domain::pos_dom(), &domain::nonneg_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_pos_nonpos() {
-    // (0, +inf) - (-inf, 0] = (0, +inf)
-    let result = domain::sub(&domain::pos_dom(), &domain::nonpos_dom());
-    let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_pos_neg() {
-    // (0, +inf) - (-inf, 0) = (0, +inf)
-    let result = domain::sub(&domain::pos_dom(), &domain::neg_dom());
-    let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonneg_pos() {
-    // [0, +inf) - (0, +inf) = (-inf, +inf)
-    let result = domain::sub(&domain::nonneg_dom(), &domain::pos_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonneg_nonneg() {
-    // [0, +inf) - [0, +inf) = (-inf, +inf)
-    let result = domain::sub(&domain::nonneg_dom(), &domain::nonneg_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonneg_nonpos() {
-    // [0, +inf) - (-inf, 0] = [0, +inf)
-    let result = domain::sub(&domain::nonneg_dom(), &domain::nonpos_dom());
-    let expected = domain::nonneg_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonneg_neg() {
-    // [0, +inf) - (-inf, 0) = [0, +inf)
-    let result = domain::sub(&domain::nonneg_dom(), &domain::neg_dom());
-    let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonpos_pos() {
-    // (-inf, 0] - (0, +inf) = (-inf, 0)
-    let result = domain::sub(&domain::nonpos_dom(), &domain::pos_dom());
-    let expected = domain::neg_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonpos_nonneg() {
-    // (-inf, 0] - [0, +inf) = (-inf, 0]
-    let result = domain::sub(&domain::nonpos_dom(), &domain::nonneg_dom());
-    let expected = domain::nonpos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonpos_nonpos() {
-    // (-inf, 0] - (-inf, 0] = (-inf, +inf)
-    let result = domain::sub(&domain::nonpos_dom(), &domain::nonpos_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_nonpos_neg() {
-    // (-inf, 0] - (-inf, 0) = (-inf, +inf)
-    let result = domain::sub(&domain::nonpos_dom(), &domain::neg_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_neg_pos() {
-    // (-inf, 0) - (0, +inf) = (-inf, 0)
-    let result = domain::sub(&domain::neg_dom(), &domain::pos_dom());
-    let expected = domain::neg_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_neg_nonneg() {
-    // (-inf, 0) - [0, +inf) = (-inf, 0)
-    let result = domain::sub(&domain::neg_dom(), &domain::nonneg_dom());
-    let expected = domain::neg_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_neg_nonpos() {
-    // (-inf, 0) - (-inf, 0] = (-inf, +inf)
-    let result = domain::sub(&domain::neg_dom(), &domain::nonpos_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn sub_neg_neg() {
-    // (-inf, 0) - (-inf, 0) = (-inf, +inf)
-    let result = domain::sub(&domain::neg_dom(), &domain::neg_dom());
-    let expected = domain::free_dom();
     assert!(result.eq(&expected));
 }
 
@@ -769,6 +910,12 @@ fn div_one_pos() {
 }
 
 
+// Min (TODO).
+
+
+// Max (TODO).
+
+
 // Power (16 tests).
 
 #[test]
@@ -897,116 +1044,6 @@ fn pow_neg_neg() {
     let result = domain::pow(&domain::neg_dom(), &domain::neg_dom());
     let expected = domain::free_dom();
     assert!(result.eq(&expected));
-}
-
-
-// Logarithm (7 tests).
-
-#[test]
-fn log_pos() {
-    // log((0, +inf)) = (-inf, +inf)
-    let result = domain::log(&domain::pos_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn log_nonneg() {
-    // log([0, +inf)) = (-inf, +inf)
-    let result = domain::log(&domain::nonneg_dom());
-    let expected = domain::free_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn log_ge_one() {
-    // log([1, +inf)) = [0, +inf)
-    let result = domain::log(&ge_one());
-    let expected = domain::nonneg_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn log_gt_one() {
-    // log((1, +inf)) = (0, +inf)
-    let result = domain::log(&gt_one());
-    let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn log_ge_zero_le_one() {
-    // log([0, 1]) = (-inf, 0]
-    let result = domain::log(&ge_zero_le_one());
-    let expected = domain::nonpos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn log_ge_zero_lt_one() {
-    // log([0, 1)) = (-inf, 0)
-    let result = domain::log(&ge_zero_lt_one());
-    let expected = domain::neg_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn log_gt_two_lt_three_subseteq() {
-    // log((2, 3)) \subseteq (0.69, 1.10)
-    let result = domain::log(&gt_two_lt_three());
-    let enclosure = Domain::make_oo(domain::make_float(0.69), domain::make_float(1.10));
-    assert!(result.subseteq(&enclosure));
-}
-
-
-// Exponential (7 tests).
-
-#[test]
-fn exp_free() {
-    // exp((-inf, +inf)) = (0, +inf)
-    let result = domain::exp(&domain::free_dom());
-    let expected = domain::pos_dom();
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn exp_pos() {
-    // exp((0, +inf)) = (1, +inf)
-    let result = domain::exp(&domain::pos_dom());
-    let expected = Domain::make_oi(domain::one());
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn exp_nonneg() {
-    // exp([0, +inf)) = [1, +inf)
-    let result = domain::exp(&domain::nonneg_dom());
-    let expected = Domain::make_ci(domain::one());
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn exp_nonpos() {
-    // exp((-inf, 0]) = (0, 1]
-    let result = domain::exp(&domain::nonpos_dom());
-    let expected = Domain::make_oc(domain::zero(), domain::one());
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn exp_neg() {
-    // exp((-inf, 0)) = (0, 1)
-    let result = domain::exp(&domain::neg_dom());
-    let expected = Domain::make_oo(domain::zero(), domain::one());
-    assert!(result.eq(&expected));
-}
-
-#[test]
-fn exp_gt_two_lt_three_subseteq() {
-    // exp((2, 3)) \subseteq (7.38, 20.09)
-    let result = domain::exp(&gt_two_lt_three());
-    let enclosure = Domain::make_oo(domain::make_float(7.38), domain::make_float(20.09));
-    assert!(result.subseteq(&enclosure));
 }
 
 
