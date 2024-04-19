@@ -250,7 +250,6 @@ fn abs_gt_minus_three_lt_two() {
     // abs((-3, 2)) = [0, 3)
     let result = domain::abs(&gt_minus_three_lt_two());
     let expected = ge_zero_lt_three();
-    println!("{:?}", result);
     assert!(result.eq(&expected));
 }
 
@@ -302,7 +301,6 @@ fn sqrt_neg() {
     // sqrt((-inf, 0)) = (-inf, +inf)
     let result = domain::sqrt(&domain::neg_dom());
     let expected = domain::free_dom();
-    println!("{:?}", result);
     assert!(result.eq(&expected));
 }
 
