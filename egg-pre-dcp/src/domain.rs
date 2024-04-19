@@ -339,7 +339,7 @@ pub fn zero_dom() -> Domain {
 }
 
 pub fn is_zero(d: &Domain) -> bool {
-    d.subseteq(&zero_dom()) && zero_dom().subseteq(&d)
+    d.eq(&zero_dom())
 }
 
 pub fn option_is_zero(d: Option<&Domain>) -> bool {
@@ -351,7 +351,7 @@ pub fn one_dom() -> Domain {
 }
 
 pub fn is_one(d: &Domain) -> bool {
-    d.subseteq(&one_dom()) && one_dom().subseteq(&d)
+    d.eq(&one_dom())
 }
 
 pub fn option_is_one(d: Option<&Domain>) -> bool {
