@@ -13,6 +13,56 @@ use domain::Domain as Domain;
 
 /* Some useful intervals for testing apart from pos, nonneg, nonpos, neg, free. */
 
+// [-9, 6)
+fn ge_minus_nine_lt_six() -> Domain {
+    Domain::make_co(domain::make_float(-9.0), domain::make_float(6.0))
+}
+
+// (-9, 6]
+fn gt_minus_nine_le_six() -> Domain {
+    Domain::make_oc(domain::make_float(-9.0), domain::make_float(6.0))
+}
+
+// [-6, 0]
+fn ge_minus_six_le_zero() -> Domain {
+    Domain::make_cc(domain::make_float(-6.0), domain::neg_zero())
+}
+
+// (-6, 0]
+fn gt_minus_six_le_zero() -> Domain {
+    Domain::make_oc(domain::make_float(-6.0), domain::zero())
+}
+
+// (-6, 6)
+fn gt_minus_six_lt_six() -> Domain {
+    Domain::make_oo(domain::make_float(-6.0), domain::make_float(6.0))
+}
+
+// (-6, 6]
+fn gt_minus_six_le_six() -> Domain {
+    Domain::make_oc(domain::make_float(-6.0), domain::make_float(6.0))
+}
+
+// (-6, 9)
+fn gt_minus_six_lt_nine() -> Domain {
+    Domain::make_oo(domain::make_float(-6.0), domain::make_float(9.0))
+}
+
+// [-4, 4)
+fn ge_minus_four_lt_four() -> Domain {
+    Domain::make_co(domain::make_float(-4.0), domain::make_float(4.0))
+}
+
+// (-4, 4]
+fn gt_minus_four_le_four() -> Domain {
+    Domain::make_oc(domain::make_float(-4.0), domain::make_float(4.0))
+}
+
+// [-3, -2)
+fn ge_minus_three_lt_minus_two() -> Domain {
+    Domain::make_co(domain::make_float(-3.0), domain::make_float(-2.0))
+}
+
 // (-3, -2)
 fn gt_minus_three_lt_minus_two() -> Domain {
     Domain::make_oo(domain::make_float(-3.0), domain::make_float(-2.0))
@@ -28,6 +78,16 @@ fn gt_minus_three_lt_three() -> Domain {
     Domain::make_oo(domain::make_float(-3.0), domain::make_float(3.0))
 }
 
+// [-2, 0]
+fn ge_minus_two_le_zero() -> Domain {
+    Domain::make_cc(domain::make_float(-2.0), domain::zero())
+}
+
+// [-2, 3)
+fn ge_minus_two_lt_three() -> Domain {
+    Domain::make_co(domain::make_float(-2.0), domain::make_float(3.0))
+}
+
 // (-2, 2)
 fn gt_minus_two_lt_two() -> Domain {
     Domain::make_oo(domain::make_float(-2.0), domain::make_float(2.0))
@@ -41,6 +101,11 @@ fn gt_minus_two_le_two() -> Domain {
 // (-2, 3)
 fn gt_minus_two_lt_three() -> Domain {
     Domain::make_oo(domain::make_float(-2.0), domain::make_float(3.0))
+}
+
+// (-2, 3]
+fn gt_minus_two_le_three() -> Domain {
+    Domain::make_oc(domain::make_float(-2.0), domain::make_float(3.0))
 }
 
 // [0, 1)
@@ -68,6 +133,16 @@ fn ge_zero_lt_three() -> Domain {
     Domain::make_co(domain::zero(), domain::make_float(3.0))
 }
 
+// [0, 6)
+fn ge_zero_lt_six() -> Domain {
+    Domain::make_co(domain::zero(), domain::make_float(6.0))
+}
+
+// [0, 6]
+fn ge_zero_le_six() -> Domain {
+    Domain::make_cc(domain::zero(), domain::make_float(6.0))
+}
+
 // (1, +inf)
 fn gt_one() -> Domain {
     Domain::make_oi(domain::one())
@@ -81,6 +156,11 @@ fn ge_one() -> Domain {
 // (2, 3)
 fn gt_two_lt_three() -> Domain {
     Domain::make_oo(domain::make_float(2.0), domain::make_float(3.0))
+}
+
+// (4, 9)
+fn gt_four_lt_nine() -> Domain {
+    Domain::make_oo(domain::make_float(4.0), domain::make_float(9.0))
 }
 
 
@@ -631,7 +711,7 @@ fn sub_gt_minus_two_lt_three_ge_zero_le_one() {
 }
 
 
-// Multiplication (16 tests).
+// Multiplication (30 tests).
 
 #[test]
 fn mul_pos_pos() {
@@ -759,6 +839,118 @@ fn mul_neg_neg() {
     // (-inf, 0) * (-inf, 0) = (0, +inf)
     let result = domain::mul(&domain::neg_dom(), &domain::neg_dom());
     let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_two_lt_three_gt_two_lt_three() {
+    // (2, 3) * (2, 3) = (4, 9)
+    let result = domain::mul(&gt_two_lt_three(), &gt_two_lt_three());
+    let expected = gt_four_lt_nine();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_ge_minus_three_lt_minus_two_gt_minus_three_lt_minus_two() {
+    // [-3, -2) * (-3, -2) = (4, 9)
+    let result = domain::mul(&ge_minus_three_lt_minus_two(), &gt_minus_three_lt_minus_two());
+    let expected = gt_four_lt_nine();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_two_lt_three_ge_zero_le_two() {
+    // (2, 3) * [0, 2] = [0, 6)
+    let result = domain::mul(&gt_two_lt_three(), &ge_zero_le_two());
+    let expected = ge_zero_lt_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_two_lt_three_ge_minus_two_le_zero() {
+    // (2, 3) * [-2, 0] = (-6, 0]
+    let result = domain::mul(&gt_two_lt_three(), &ge_minus_two_le_zero());
+    let expected = gt_minus_six_le_zero();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_two_lt_three_gt_minus_two_le_three() {
+    // (2, 3) * (-2, 3] = (-6, 9)
+    let result = domain::mul(&gt_two_lt_three(), &gt_minus_two_le_three());
+    let expected = gt_minus_six_lt_nine();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_two_lt_three_ge_minus_two_lt_three() {
+    // (2, 3) * [-2, 3) = (-6, 9)
+    let result = domain::mul(&gt_two_lt_three(), &ge_minus_two_lt_three());
+    let expected = gt_minus_six_lt_nine();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_ge_minus_three_lt_minus_two_ge_zero_le_two() {
+    // [-3, -2) * [0, 2] = [-6, 0]
+    let result = domain::mul(&ge_minus_three_lt_minus_two(), &ge_zero_le_two());
+    let expected = ge_minus_six_le_zero();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_ge_minus_three_lt_minus_two_ge_minus_two_le_zero() {
+    // [-3, -2) * [-2, 0] = [0, 6]
+    let result = domain::mul(&ge_minus_three_lt_minus_two(), &ge_minus_two_le_zero());
+    let expected = ge_zero_le_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_ge_minus_three_lt_minus_two_gt_minus_two_le_three() {
+    // [-3, -2) * (-2, 3] = [-9, 6)
+    let result = domain::mul(&ge_minus_three_lt_minus_two(), &gt_minus_two_le_three());
+    let expected = ge_minus_nine_lt_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_ge_minus_three_lt_minus_two_ge_minus_two_lt_three() {
+    // [-3, -2) * [-2, 3) = (-9, 6]
+    let result = domain::mul(&ge_minus_three_lt_minus_two(), &ge_minus_two_lt_three());
+    let expected = gt_minus_nine_le_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_minus_two_le_two_ge_zero_le_two() {
+    // (-2, 2] * [0, 2] = (-4, 4]
+    let result = domain::mul(&gt_minus_two_le_two(), &ge_zero_le_two());
+    let expected = gt_minus_four_le_four();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_minus_two_le_two_ge_minus_two_le_zero() {
+    // (-2, 2] * [-2, 0] = [-4, 4)
+    let result = domain::mul(&gt_minus_two_le_two(), &ge_minus_two_le_zero());
+    let expected = ge_minus_four_lt_four();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_minus_two_le_two_gt_minus_two_le_three() {
+    // (-2, 2] * (-2, 3] = (-6, 6]
+    let result = domain::mul(&gt_minus_two_le_two(), &gt_minus_two_le_three());
+    let expected = gt_minus_six_le_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn mul_gt_minus_two_le_two_ge_minus_two_lt_three() {
+    // (-2, 2] * [-2, 3) = (-6, 6)
+    let result = domain::mul(&gt_minus_two_le_two(), &ge_minus_two_lt_three());
+    let expected = gt_minus_six_lt_six();
     assert!(result.eq(&expected));
 }
 
