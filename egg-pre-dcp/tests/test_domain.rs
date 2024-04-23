@@ -6,6 +6,10 @@ mod test_domain {
 
 use egg_pre_dcp;
 
+use egg_pre_dcp::CC as CC;
+use egg_pre_dcp::CO as CO;
+use egg_pre_dcp::OC as OC;
+use egg_pre_dcp::OO as OO;
 use egg_pre_dcp::domain;
 use domain::Domain as Domain; 
 
@@ -14,159 +18,130 @@ use domain::Domain as Domain;
 /* Some useful intervals for testing apart from pos, nonneg, nonpos, neg, free. */
 
 // [-9, 6)
-fn ge_minus_nine_lt_six() -> Domain {
-    Domain::make_co(domain::make_float(-9.0), domain::make_float(6.0))
-}
+fn ge_minus_nine_lt_six() -> Domain { CO!(-9.0, 6.0) }
 
 // (-9, 6]
-fn gt_minus_nine_le_six() -> Domain {
-    Domain::make_oc(domain::make_float(-9.0), domain::make_float(6.0))
-}
+fn gt_minus_nine_le_six() -> Domain { OC!(-9.0, 6.0) }
 
 // [-6, 0]
-fn ge_minus_six_le_zero() -> Domain {
-    Domain::make_cc(domain::make_float(-6.0), domain::neg_zero())
-}
+fn ge_minus_six_le_zero() -> Domain { CC!(-6.0, 0.0) }
 
 // (-6, 0]
-fn gt_minus_six_le_zero() -> Domain {
-    Domain::make_oc(domain::make_float(-6.0), domain::zero())
-}
+fn gt_minus_six_le_zero() -> Domain { OC!(-6.0, 0.0) }
 
 // (-6, 6)
-fn gt_minus_six_lt_six() -> Domain {
-    Domain::make_oo(domain::make_float(-6.0), domain::make_float(6.0))
-}
+fn gt_minus_six_lt_six() -> Domain { OO!(-6.0, 6.0) }
 
 // (-6, 6]
-fn gt_minus_six_le_six() -> Domain {
-    Domain::make_oc(domain::make_float(-6.0), domain::make_float(6.0))
-}
+fn gt_minus_six_le_six() -> Domain { OC!(-6.0, 6.0) }
 
 // (-6, 9)
-fn gt_minus_six_lt_nine() -> Domain {
-    Domain::make_oo(domain::make_float(-6.0), domain::make_float(9.0))
-}
+fn gt_minus_six_lt_nine() -> Domain { OO!(-6.0, 9.0) }
+
+// [-4, -1)
+fn ge_minus_four_lt_minus_one() -> Domain { CO!(-4.0, -1.0) }
+
+// [-4, 2)
+fn ge_minus_four_lt_two() -> Domain { CO!(-4.0, 2.0) }
 
 // [-4, 4)
-fn ge_minus_four_lt_four() -> Domain {
-    Domain::make_co(domain::make_float(-4.0), domain::make_float(4.0))
-}
+fn ge_minus_four_lt_four() -> Domain { CO!(-4.0, 4.0) }
+
+// (-4, -2)
+fn gt_minus_four_lt_minus_two() -> Domain { OO!(-4.0, -2.0) }
 
 // (-4, 4]
-fn gt_minus_four_le_four() -> Domain {
-    Domain::make_oc(domain::make_float(-4.0), domain::make_float(4.0))
-}
+fn gt_minus_four_le_four() -> Domain { OC!(-4.0, 4.0) }
 
 // [-3, -2)
-fn ge_minus_three_lt_minus_two() -> Domain {
-    Domain::make_co(domain::make_float(-3.0), domain::make_float(-2.0))
-}
+fn ge_minus_three_lt_minus_two() -> Domain { CO!(-3.0, -2.0) }
 
 // (-3, -2)
-fn gt_minus_three_lt_minus_two() -> Domain {
-    Domain::make_oo(domain::make_float(-3.0), domain::make_float(-2.0))
-}
+fn gt_minus_three_lt_minus_two() -> Domain { OO!(-3.0, -2.0) }
 
 // (-3, 0]
-fn gt_minus_three_le_zero() -> Domain {
-    Domain::make_oc(domain::make_float(-3.0), domain::zero())
-}
+fn gt_minus_three_le_zero() -> Domain { OC!(-3.0, 0.0) }
 
 // (-3, 2)
-fn gt_minus_three_lt_two() -> Domain {
-    Domain::make_oo(domain::make_float(-3.0), domain::make_float(2.0))
-}
+fn gt_minus_three_lt_two() -> Domain { OO!(-3.0, 2.0) }
 
 // (-3, 3)
-fn gt_minus_three_lt_three() -> Domain {
-    Domain::make_oo(domain::make_float(-3.0), domain::make_float(3.0))
-}
+fn gt_minus_three_lt_three() -> Domain { OO!(-3.0, 3.0) }
+
+// [-2, -1]
+fn ge_minus_two_le_minus_one() -> Domain { CC!(-2.0, -1.0) }
 
 // [-2, 0]
-fn ge_minus_two_le_zero() -> Domain {
-    Domain::make_cc(domain::make_float(-2.0), domain::zero())
-}
+fn ge_minus_two_le_zero() -> Domain { CC!(-2.0, 0.0) }
 
 // [-2, 3)
-fn ge_minus_two_lt_three() -> Domain {
-    Domain::make_co(domain::make_float(-2.0), domain::make_float(3.0))
-}
+fn ge_minus_two_lt_three() -> Domain { CO!(-2.0, 3.0) }
 
 // (-2, 2)
-fn gt_minus_two_lt_two() -> Domain {
-    Domain::make_oo(domain::make_float(-2.0), domain::make_float(2.0))
-}
+fn gt_minus_two_lt_two() -> Domain { OO!(-2.0, 2.0) }
 
 // (-2, 2]
-fn gt_minus_two_le_two() -> Domain {
-    Domain::make_oc(domain::make_float(-2.0), domain::make_float(2.0))
-}
+fn gt_minus_two_le_two() -> Domain { OC!(-2.0, 2.0) }
 
 // (-2, 3)
-fn gt_minus_two_lt_three() -> Domain {
-    Domain::make_oo(domain::make_float(-2.0), domain::make_float(3.0))
-}
+fn gt_minus_two_lt_three() -> Domain { OO!(-2.0, 3.0) }
 
 // (-2, 3]
-fn gt_minus_two_le_three() -> Domain {
-    Domain::make_oc(domain::make_float(-2.0), domain::make_float(3.0))
-}
+fn gt_minus_two_le_three() -> Domain { OC!(-2.0, 3.0) }
+
+// (-2, 4]
+fn gt_minus_two_le_four() -> Domain { OC!(-2.0, 4.0) }
+
+// (-1, 1)
+fn gt_minus_one_le_one() -> Domain { OO!(-1.0, 1.0) }
 
 // [0, 1)
-fn ge_zero_lt_one() -> Domain {
-    Domain::make_co(domain::zero(), domain::one())
-}
+fn ge_zero_lt_one() -> Domain { CO!(0.0, 1.0) }
 
 // [0, 1]
-fn ge_zero_le_one() -> Domain {
-    Domain::make_cc(domain::zero(), domain::one())
-}
+fn ge_zero_le_one() -> Domain { CC!(0.0, 1.0) }
 
 // [0, 2)
-fn ge_zero_lt_two() -> Domain {
-    Domain::make_co(domain::zero(), domain::make_float(2.0))
-}
+fn ge_zero_lt_two() -> Domain { CO!(0.0, 2.0) }
 
 // [0, 2]
-fn ge_zero_le_two() -> Domain {
-    Domain::make_cc(domain::zero(), domain::make_float(2.0))
-}
+fn ge_zero_le_two() -> Domain { CC!(0.0, 2.0) }
 
 // [0, 3)
-fn ge_zero_lt_three() -> Domain {
-    Domain::make_co(domain::zero(), domain::make_float(3.0))
-}
+fn ge_zero_lt_three() -> Domain { CO!(0.0, 3.0) }
 
 // [0, 6)
-fn ge_zero_lt_six() -> Domain {
-    Domain::make_co(domain::zero(), domain::make_float(6.0))
-}
+fn ge_zero_lt_six() -> Domain { CO!(0.0, 6.0) }
 
 // [0, 6]
-fn ge_zero_le_six() -> Domain {
-    Domain::make_cc(domain::zero(), domain::make_float(6.0))
-}
+fn ge_zero_le_six() -> Domain { CC!(0.0, 6.0) }
+
+// [1, 2]
+fn ge_one_le_two() -> Domain { CC!(1.0, 2.0) }
 
 // (1, +inf)
-fn gt_one() -> Domain {
-    Domain::make_oi(domain::one())
-}
+fn gt_one() -> Domain { Domain::make_oi(domain::one()) }
 
 // [1, +inf)
-fn ge_one() -> Domain {
-    Domain::make_ci(domain::one())
-}
+fn ge_one() -> Domain { Domain::make_ci(domain::one()) }
+
+// (1, 4]
+fn gt_one_le_four() -> Domain { OC!(1.0, 4.0) }
+
+// [2, 4]
+fn ge_two_le_four() -> Domain { CC!(2.0, 4.0) }
 
 // (2, 3)
-fn gt_two_lt_three() -> Domain {
-    Domain::make_oo(domain::make_float(2.0), domain::make_float(3.0))
-}
+fn gt_two_lt_three() -> Domain { OO!(2.0, 3.0) }
+
+// (2, 4)
+fn gt_two_lt_four() -> Domain { OO!(2.0, 4.0) }
+
+// (2, 4]
+fn gt_two_le_four() -> Domain { OC!(2.0, 4.0) }
 
 // (4, 9)
-fn gt_four_lt_nine() -> Domain {
-    Domain::make_oo(domain::make_float(4.0), domain::make_float(9.0))
-}
+fn gt_four_lt_nine() -> Domain { OO!(4.0, 9.0) }
 
 
 
@@ -224,7 +199,7 @@ fn neg_gt_two_lt_three() {
 }
 
 
-// Absolute value (TODO).
+// Absolute value (6 tests).
 
 #[test]
 fn abs_gt_two_lt_three() {
@@ -958,7 +933,7 @@ fn mul_gt_minus_two_le_two_ge_minus_two_lt_three() {
 }
 
 
-// Division (18 tests).
+// Division (26 tests).
 
 #[test]
 fn div_pos_pos() {
@@ -1101,6 +1076,70 @@ fn div_one_pos() {
     // [1, 1] / (0, +inf) = (0, +inf)
     let result = domain::div(&Domain::make_singleton(1.0), &domain::pos_dom());
     let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_gt_two_le_four_ge_one_le_two() {
+    // (2, 4] / [1, 2] = (1, 4]
+    let result = domain::div(&gt_two_le_four(), &ge_one_le_two());
+    let expected = gt_one_le_four();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_gt_two_le_four_ge_minus_two_le_minus_one() {
+    // (2, 4] / [-2, -1] = [-4, -1)
+    let result = domain::div(&gt_two_le_four(), &ge_minus_two_le_minus_one());
+    let expected = ge_minus_four_lt_minus_one();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_ge_minus_four_lt_two_ge_one_le_two() {
+    // [-4, 2) / [1, 2] = [-4, 2)
+    let result = domain::div(&ge_minus_four_lt_two(), &ge_one_le_two());
+    let expected = ge_minus_four_lt_two();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_ge_minus_four_lt_two_ge_minus_two_le_minus_one() {
+    // [-4, 2) / [-2, -1] = (-2, 4]
+    let result = domain::div(&ge_minus_four_lt_two(), &ge_minus_two_le_minus_one());
+    let expected = gt_minus_two_le_four();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_gt_minus_two_lt_two_ge_two_le_four() {
+    // (-2, 2) / [2, 4] = (-1, 1)
+    let result = domain::div(&gt_minus_two_lt_two(), &ge_two_le_four());
+    let expected = gt_minus_one_le_one();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_ge_zero_le_two_gt_two_lt_four() {
+    // [0, 2] / (2, 4) = [0, 1)
+    let result = domain::div(&ge_zero_le_two(), &gt_two_lt_four());
+    let expected = ge_zero_lt_one();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_gt_minus_two_lt_two_ge_minus_two_le_minus_one() {
+    // (-2, 2) / [-2, -1] = (-2, 2)
+    let result = domain::div(&gt_minus_two_lt_two(), &ge_minus_two_le_minus_one());
+    let expected = gt_minus_two_lt_two();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn div_ge_minus_two_le_zero_gt_minus_four_lt_minus_two() {
+    // [-2, 0] / (-4, -2) = [0, 1) 
+    let result = domain::div(&ge_minus_two_le_zero(), &gt_minus_four_lt_minus_two());
+    let expected = ge_zero_lt_one();
     assert!(result.eq(&expected));
 }
 
