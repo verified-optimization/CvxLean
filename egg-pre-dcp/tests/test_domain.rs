@@ -6,10 +6,12 @@ mod test_domain {
 
 use egg_pre_dcp;
 
-use egg_pre_dcp::CC as CC;
-use egg_pre_dcp::CO as CO;
-use egg_pre_dcp::OC as OC;
-use egg_pre_dcp::OO as OO;
+use egg_pre_dcp::CC;
+use egg_pre_dcp::CO;
+use egg_pre_dcp::CI;
+use egg_pre_dcp::OC;
+use egg_pre_dcp::OO;
+use egg_pre_dcp::OI;
 use egg_pre_dcp::domain;
 use domain::Domain as Domain; 
 
@@ -120,10 +122,10 @@ fn ge_zero_le_six() -> Domain { CC!(0.0, 6.0) }
 fn ge_one_le_two() -> Domain { CC!(1.0, 2.0) }
 
 // (1, +inf)
-fn gt_one() -> Domain { Domain::make_oi(domain::one()) }
+fn gt_one() -> Domain { OI!(1.0) }
 
 // [1, +inf)
-fn ge_one() -> Domain { Domain::make_ci(domain::one()) }
+fn ge_one() -> Domain { CI!(1.0) }
 
 // (1, 4]
 fn gt_one_le_four() -> Domain { OC!(1.0, 4.0) }

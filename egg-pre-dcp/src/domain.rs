@@ -243,30 +243,42 @@ impl Domain {
 
 #[macro_export]
 macro_rules! CC {
-    ($start:expr, $end:expr) => {
-        Domain::make_cc(domain::make_float($start), domain::make_float($end))
-    };
+    ($a:expr, $b:expr) => { Domain::make_cc(domain::make_float($a), domain::make_float($b)) };
 }
 
 #[macro_export]
 macro_rules! CO {
-    ($start:expr, $end:expr) => {
-        Domain::make_co(domain::make_float($start), domain::make_float($end))
-    };
+    ($a:expr, $b:expr) => { Domain::make_co(domain::make_float($a), domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! CI {
+    ($a:expr) => { Domain::make_ci(domain::make_float($a)) };
 }
 
 #[macro_export]
 macro_rules! OC {
-    ($start:expr, $end:expr) => {
-        Domain::make_oc(domain::make_float($start), domain::make_float($end))
-    };
+    ($a:expr, $b:expr) => { Domain::make_oc(domain::make_float($a), domain::make_float($b)) };
 }
 
 #[macro_export]
 macro_rules! OO {
-    ($start:expr, $end:expr) => {
-        Domain::make_oo(domain::make_float($start), domain::make_float($end))
-    };
+    ($a:expr, $b:expr) => { Domain::make_oo(domain::make_float($a), domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! OI {
+    ($b:expr) => { Domain::make_oi(domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! IC {
+    ($b:expr) => { Domain::make_ic(domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! IO {
+    ($b:expr) => { Domain::make_io(domain::make_float($b)) };
 }
 
 impl PartialOrd for Domain {
