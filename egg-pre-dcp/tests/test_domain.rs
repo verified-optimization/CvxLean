@@ -5,13 +5,13 @@ Tests for extended interval arithmetic.
 mod test_domain {
 
 use egg_pre_dcp;
-
 use egg_pre_dcp::CC;
 use egg_pre_dcp::CO;
 use egg_pre_dcp::CI;
 use egg_pre_dcp::OC;
 use egg_pre_dcp::OO;
 use egg_pre_dcp::OI;
+
 use egg_pre_dcp::domain;
 use domain::Domain as Domain; 
 
@@ -1086,7 +1086,7 @@ fn max_gt_minus_three_lt_three_ge_minus_two_le_zero() {
 }
 
 
-// Power (TODO tests).
+// Power (56 tests).
 
 #[test]
 fn pow_pos_pos() {
@@ -1216,29 +1216,326 @@ fn pow_neg_neg() {
     assert!(result.eq(&expected));
 }
 
-// (-inf, inf) ^ [0, 0] = (-inf, +inf)
-// [0, 0] ^ [0, 0] = (-inf, +inf)
-// (2, 4] ^ [0, 0] = [1, 1]
-// [-3, -2) ^ [0, 0] = [1, 1]
+#[test]
+fn pow_free_zero() {
+    // (-inf, inf) ^ [0, 0] = [1, 1]
+    let result = domain::pow(&domain::free_dom(), &domain::zero_dom());
+    let expected = domain::one_dom();
+    assert!(result.eq(&expected));
+}
 
-// (-inf, inf) ^ [1, 1] = (-inf, +inf)
-// [0, 0] ^ [1, 1] = [0, 0]
-// (2, 4] ^ [1, 1] = (2, 4]
-// [-3, -2) ^ [1, 1] = [-3, -2)
+#[test]
+fn pow_zero_zero() {
+    // [0, 0] ^ [0, 0] = [1, 1]
+    let result = domain::pow(&domain::zero_dom(), &domain::zero_dom());
+    let expected = domain::one_dom();
+    assert!(result.eq(&expected));
+}
 
-// (-inf, inf) ^ [2, 2] = [0, +inf)
-// [0, 0] ^ [2, 2] = [0, 0]
-// (2, 4] ^ [2, 2] = (4, 16]
-// [-3, -2) ^ [2, 2] = (4, 9]
-// (2, 4] ^ [4, 4] = (16, 256]
-// [-3, -2) ^ [4, 4] = (16, 81]
+#[test]
+fn pow_gt_two_le_four_zero() {
+    // (2, 4] ^ [0, 0] = [1, 1]
+    let result = domain::pow(&OC!(2.0, 4.0), &domain::zero_dom());
+    let expected = domain::one_dom();
+    assert!(result.eq(&expected));
+}
 
-// (2, 4] ^ [2, 3)
-// (2, 4] ^ [-3, 
+#[test]
+fn pow_ge_minus_three_lt_minus_two_zero() {
+    // [-3, -2) ^ [0, 0] = [1, 1]
+    let result = domain::pow(&CO!(-3.0, -2.0), &domain::zero_dom());
+    let expected = domain::one_dom();
+    assert!(result.eq(&expected));
+}
 
-// (0, 0.5]
+#[test]
+fn pow_free_one() {
+    // (-inf, inf) ^ [1, 1] = (-inf, +inf)
+    let result = domain::pow(&domain::free_dom(), &domain::one_dom());
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
 
-// [0.5, 3)
+#[test]
+fn pow_zero_one() {
+    // [0, 0] ^ [1, 1] = [0, 0]
+    let result = domain::pow(&domain::zero_dom(), &domain::one_dom());
+    let expected = domain::zero_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_le_four_one() {
+    // (2, 4] ^ [1, 1] = (2, 4]
+    let result = domain::pow(&OC!(2.0, 4.0), &domain::one_dom());
+    let expected = OC!(2.0, 4.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_minus_three_lt_minus_two_one() {
+    // [-3, -2) ^ [1, 1] = [-3, -2)
+    let result = domain::pow(&CO!(-3.0, -2.0), &domain::one_dom());
+    let expected = CO!(-3.0, -2.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_free_two() {
+    // (-inf, inf) ^ [2, 2] = [0, +inf)
+    let result = domain::pow(&domain::free_dom(), &CC!(2.0, 2.0));
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_zero_two() {
+    // [0, 0] ^ [2, 2] = [0, 0]
+    let result = domain::pow(&domain::zero_dom(), &CC!(2.0, 2.0));
+    let expected = domain::zero_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_le_four_two() {
+    // (2, 4] ^ [2, 2] = (4, 16]
+    let result = domain::pow(&OC!(2.0, 4.0), &CC!(2.0, 2.0));
+    let expected = OC!(4.0, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_minus_three_lt_minus_two_two() {
+    // [-3, -2) ^ [2, 2] = (4, 9]
+    let result = domain::pow(&CO!(-3.0, -2.0), &CC!(2.0, 2.0));
+    let expected = OC!(4.0, 9.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_le_four_four() {
+    // (2, 4] ^ [4, 4] = (16, 256]
+    let result = domain::pow(&OC!(2.0, 4.0), &CC!(4.0, 4.0));
+    let expected = OC!(16.0, 256.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_minus_three_lt_minus_two_four() {
+    // [-3, -2) ^ [4, 4] = (16, 81]
+    let result = domain::pow(&CO!(-3.0, -2.0), &CC!(4.0, 4.0));
+    let expected = OC!(16.0, 81.0);
+    assert!(result.eq(&expected));
+} 
+
+#[test]
+fn pow_gt_minus_two_le_four_ge_two_lt_three() {
+    // (-2, 4] ^ [2, 3) = (-inf, +inf)
+    let result = domain::pow(&OC!(-2.0, 4.0), &CO!(2.0, 3.0));
+    let expected = domain::free_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_le_four_ge_two_lt_three() {
+    // (2, 4] ^ [2, 3) = (4, 64)
+    let result = domain::pow(&OC!(2.0, 4.0), &CO!(2.0, 3.0));
+    let expected = OO!(4.0, 64.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_le_four_ge_minus_three_lt_minus_two() {
+    // (2, 4] ^ [-3, -2) = [0.015625, 0.25)
+    let result = domain::pow(&OC!(2.0, 4.0), &CO!(-3.0, -2.0));
+    let expected = CO!(0.015625, 0.25);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_le_four_ge_minus_three_lt_two() {
+    // (2, 4] ^ [-3, 2) = [0.015625, 16)
+    let result = domain::pow(&OC!(2.0, 4.0), &CO!(-3.0, 2.0));
+    let expected = CO!(0.015625, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_lt_four_ge_minus_three_le_zero() {
+    // (2, 4) ^ [-3, 0] = (0.015625, 1]
+    let result = domain::pow(&OO!(2.0, 4.0), &CC!(-3.0, 0.0));
+    let expected = OC!(0.015625, 1.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_two_lt_four_ge_zero_lt_two() {
+    // (2, 4) ^ [0, 2) = [1, 16)
+    let result = domain::pow(&OO!(2.0, 4.0), &CO!(0.0, 2.0));
+    let expected = CO!(1.0, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_point_one_two_five_le_point_five_ge_two_lt_three() {
+    // (0.125, 0.5] ^ [2, 3) = (0.001953125, 0.25]
+    let result = domain::pow(&OC!(0.125, 0.5), &CO!(2.0, 3.0));
+    let expected = OC!(0.001953125, 0.25);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_point_one_two_five_le_point_five_ge_minus_three_lt_minus_two() {
+    // (0.125, 0.5] ^ [-3, -2) = (4, 512)
+    let result = domain::pow(&OC!(0.125, 0.5), &CO!(-3.0, -2.0));
+    let expected = OO!(4.0, 512.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_point_one_two_five_le_point_five_ge_minus_three_lt_two() {
+    // (0.125, 0.5] ^ [-3, 2) = (0.015625, 512)
+    let result = domain::pow(&OC!(0.125, 0.5), &CO!(-3.0, 2.0));
+    let expected = OO!(0.015625, 512.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_point_one_two_five_le_point_five_ge_minus_three_le_zero() {
+    // (0.125, 0.5] ^ [-3, 0] = [1, 512)
+    let result = domain::pow(&OC!(0.125, 0.5), &CC!(-3.0, 0.0));
+    let expected = CO!(1.0, 512.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_gt_point_one_two_five_le_point_five_ge_zero_lt_two() {
+    // (0.125, 0.5] ^ [0, 2) = (0.015625, 1]
+    let result = domain::pow(&OC!(0.125, 0.5), &CO!(0.0, 2.0));
+    let expected = OC!(0.015625, 1.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_point_five_lt_four_ge_two_lt_three() {
+    // [0.5, 4) ^ [2, 3) = (0.125, 64)
+    let result = domain::pow(&CO!(0.5, 4.0), &CO!(2.0, 3.0));
+    let expected = OO!(0.125, 64.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_point_five_lt_four_ge_minus_three_lt_minus_two() {
+    // [0.5, 4) ^ [-3, -2) = (0.015625, 8]
+    let result = domain::pow(&CO!(0.5, 4.0), &CO!(-3.0, -2.0));
+    let expected = OC!(0.015625, 8.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_point_five_lt_four_ge_minus_three_lt_two() {
+    // [0.5, 4) ^ [-3, 2) = (0.015625, 16)
+    let result = domain::pow(&CO!(0.5, 4.0), &CO!(-3.0, 2.0));
+    let expected = OO!(0.015625, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_point_five_lt_four_ge_minus_three_lt_zero() {
+    // [0.5, 4) ^ [-3, 0) = (0.015625, 8]
+    let result = domain::pow(&CO!(0.5, 4.0), &CO!(-3.0, 0.0));
+    let expected = OC!(0.015625, 8.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_point_five_lt_four_ge_zero_lt_two() {
+    // [0.5, 4) ^ [0, 2) = (0.25, 16)
+    let result = domain::pow(&CO!(0.5, 4.0), &CO!(0.0, 2.0));
+    let expected = OO!(0.25, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_zero_lt_four_ge_two_lt_three() {
+    // [0, 4) ^ [2, 3) = [0, 64)
+    let result = domain::pow(&CO!(0.0, 4.0), &CO!(2.0, 3.0));
+    let expected = CO!(0.0, 64.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_zero_lt_four_ge_minus_three_lt_minus_two() {
+    // [0, 4) ^ [-3, -2) = (0.015625, +inf)
+    let result = domain::pow(&CO!(0.0, 4.0), &CO!(-3.0, -2.0));
+    let expected = OI!(0.015625);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_zero_lt_four_ge_minus_three_lt_two() {
+    // [0, 4) ^ [-3, 2) = [0, +inf)
+    let result = domain::pow(&CO!(0.0, 4.0), &CO!(-3.0, 2.0));
+    let expected = CI!(0.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_zero_lt_four_ge_minus_three_lt_zero() {
+    // [0, 4) ^ [-3, 0) = (0.015625, +inf)
+    let result = domain::pow(&CO!(0.0, 4.0), &CO!(-3.0, 0.0));
+    let expected = OI!(0.015625);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_zero_lt_four_ge_zero_lt_two() {
+    // [0, 4) ^ [0, 2) = [0, 16)
+    let result = domain::pow(&CO!(0.0, 4.0), &CO!(0.0, 2.0));
+    let expected = CO!(0.0, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_one_lt_four_ge_two_lt_three() {
+    // [1, 4) ^ [2, 3) = [1, 64)
+    let result = domain::pow(&CO!(1.0, 4.0), &CO!(2.0, 3.0));
+    let expected = CO!(1.0, 64.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_one_lt_four_ge_minus_three_lt_minus_two() {
+    // [1, 4) ^ [-3, -2) = (0.015625, 1]
+    let result = domain::pow(&CO!(1.0, 4.0), &CO!(-3.0, -2.0));
+    let expected = OC!(0.015625, 1.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_one_lt_four_ge_minus_three_lt_two() {
+    // [1, 4) ^ [-3, 2) = (0.015625, 16)
+    let result = domain::pow(&CO!(1.0, 4.0), &CO!(-3.0, 2.0));
+    let expected = OO!(0.015625, 16.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_one_lt_four_ge_minus_three_lt_zero() {
+    // [1, 4) ^ [-3, 0) = (0.015625, 1)
+    let result = domain::pow(&CO!(1.0, 4.0), &CO!(-3.0, 0.0));
+    let expected = OC!(0.015625, 1.0);
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn pow_ge_one_lt_four_ge_zero_lt_two() {
+    // [1, 4) ^ [0, 2) = [1, 16)
+    let result = domain::pow(&CO!(1.0, 4.0), &CO!(0.0, 2.0));
+    let expected = CO!(1.0, 16.0);
+    assert!(result.eq(&expected));
+}
+
 
 
 /* Checkers */
