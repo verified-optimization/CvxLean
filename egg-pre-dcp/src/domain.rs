@@ -241,6 +241,33 @@ impl Domain {
     }
 }
 
+#[macro_export]
+macro_rules! CC {
+    ($start:expr, $end:expr) => {
+        Domain::make_cc(domain::make_float($start), domain::make_float($end))
+    };
+}
+
+#[macro_export]
+macro_rules! CO {
+    ($start:expr, $end:expr) => {
+        Domain::make_co(domain::make_float($start), domain::make_float($end))
+    };
+}
+
+#[macro_export]
+macro_rules! OC {
+    ($start:expr, $end:expr) => {
+        Domain::make_oc(domain::make_float($start), domain::make_float($end))
+    };
+}
+
+#[macro_export]
+macro_rules! OO {
+    ($start:expr, $end:expr) => {
+        Domain::make_oo(domain::make_float($start), domain::make_float($end))
+    };
+}
 
 impl PartialOrd for Domain {
     fn partial_cmp(&self, other: &Domain) -> Option<Ordering> {
