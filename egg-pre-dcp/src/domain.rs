@@ -899,7 +899,7 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
                         return Domain::make_singleton(1.0);
                     } else if n == 1 {
                         return d1.clone();
-                    } else if n % 2 == 0 {
+                    } else if n > 0 && n % 2 == 0 {
                         let d = abs(d1);
                         let lo = d.lo_float();
                         let hi = d.hi_float();
