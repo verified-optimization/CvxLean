@@ -895,7 +895,7 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
             Some(f) => {
                 if ((f as u32) as f64) == f {
                     let n = f as u32;
-                    if n == 0 && does_not_contain_zero(d1) {
+                    if n == 0 {
                         return Domain::make_singleton(1.0);
                     } else if n == 1 {
                         return d1.clone();
