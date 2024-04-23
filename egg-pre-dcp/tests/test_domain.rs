@@ -68,6 +68,11 @@ fn gt_minus_three_lt_minus_two() -> Domain {
     Domain::make_oo(domain::make_float(-3.0), domain::make_float(-2.0))
 }
 
+// (-3, 0]
+fn gt_minus_three_le_zero() -> Domain {
+    Domain::make_oc(domain::make_float(-3.0), domain::zero())
+}
+
 // (-3, 2)
 fn gt_minus_three_lt_two() -> Domain {
     Domain::make_oo(domain::make_float(-3.0), domain::make_float(2.0))
@@ -1100,10 +1105,74 @@ fn div_one_pos() {
 }
 
 
-// Min (TODO).
+// Min (4 tests).
+
+#[test]
+fn min_pos_nonneg() {
+    // min((0, +inf), [0, +inf)) = [0, +inf)
+    let result = domain::min(&domain::pos_dom(), &domain::nonneg_dom());
+    let expected = domain::nonneg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn min_nonpos_neg() {
+    // min((-inf, 0], (-inf, 0)) = (-inf, 0)
+    let result = domain::min(&domain::nonpos_dom(), &domain::neg_dom());
+    let expected = domain::neg_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn min_ge_minus_nine_lt_six_gt_minus_nine_le_six() {
+    // min([-9, 6), (-9, 6]) = [-9, 6)
+    let result = domain::min(&ge_minus_nine_lt_six(), &gt_minus_nine_le_six());
+    let expected = ge_minus_nine_lt_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn min_gt_minus_three_lt_three_ge_minus_two_le_zero() {
+    // min((-3, 3), [-2, 0]) = (-3, 0] 
+    let result = domain::min(&gt_minus_three_lt_three(), &ge_minus_two_le_zero());
+    let expected = gt_minus_three_le_zero();
+    assert!(result.eq(&expected));
+}
 
 
-// Max (TODO).
+// Max (4 tests).
+
+#[test] 
+fn max_pos_nonneg() {
+    // max((0, +inf), [0, +inf)) = (0, +inf)
+    let result = domain::max(&domain::pos_dom(), &domain::nonneg_dom());
+    let expected = domain::pos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn max_nonpos_neg() {
+    // max((-inf, 0], (-inf, 0)) = (-inf, 0]
+    let result = domain::max(&domain::nonpos_dom(), &domain::neg_dom());
+    let expected = domain::nonpos_dom();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn max_ge_minus_nine_lt_six_gt_minus_nine_le_six() {
+    // max([-9, 6), (-9, 6]) = (-9, 6]
+    let result = domain::max(&ge_minus_nine_lt_six(), &gt_minus_nine_le_six());
+    let expected = gt_minus_nine_le_six();
+    assert!(result.eq(&expected));
+}
+
+#[test]
+fn max_gt_minus_three_lt_three_ge_minus_two_le_zero() {
+    // max((-3, 3), [-2, 0]) = [-2, 3)
+    let result = domain::max(&gt_minus_three_lt_three(), &ge_minus_two_le_zero());
+    let expected = ge_minus_two_lt_three();
+    assert!(result.eq(&expected));
+}
 
 
 // Power (16 tests).
