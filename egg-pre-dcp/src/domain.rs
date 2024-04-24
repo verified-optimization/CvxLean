@@ -241,6 +241,45 @@ impl Domain {
     }
 }
 
+#[macro_export]
+macro_rules! CC {
+    ($a:expr, $b:expr) => { Domain::make_cc(domain::make_float($a), domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! CO {
+    ($a:expr, $b:expr) => { Domain::make_co(domain::make_float($a), domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! CI {
+    ($a:expr) => { Domain::make_ci(domain::make_float($a)) };
+}
+
+#[macro_export]
+macro_rules! OC {
+    ($a:expr, $b:expr) => { Domain::make_oc(domain::make_float($a), domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! OO {
+    ($a:expr, $b:expr) => { Domain::make_oo(domain::make_float($a), domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! OI {
+    ($b:expr) => { Domain::make_oi(domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! IC {
+    ($b:expr) => { Domain::make_ic(domain::make_float($b)) };
+}
+
+#[macro_export]
+macro_rules! IO {
+    ($b:expr) => { Domain::make_io(domain::make_float($b)) };
+}
 
 impl PartialOrd for Domain {
     fn partial_cmp(&self, other: &Domain) -> Option<Ordering> {
@@ -339,7 +378,7 @@ pub fn zero_dom() -> Domain {
 }
 
 pub fn is_zero(d: &Domain) -> bool {
-    d.subseteq(&zero_dom())
+    d.eq(&zero_dom())
 }
 
 pub fn option_is_zero(d: Option<&Domain>) -> bool {
@@ -351,7 +390,7 @@ pub fn one_dom() -> Domain {
 }
 
 pub fn is_one(d: &Domain) -> bool {
-    d.subseteq(&one_dom())
+    d.eq(&one_dom())
 }
 
 pub fn option_is_one(d: Option<&Domain>) -> bool {
@@ -360,6 +399,22 @@ pub fn option_is_one(d: Option<&Domain>) -> bool {
 
 pub fn free_dom() -> Domain { 
     Domain::make_ii()
+}
+
+pub fn empty_dom() -> Domain { 
+    Domain::make_oo(zero(), zero())
+}
+
+pub fn pos_dom() -> Domain { 
+    Domain::make_oi(zero())
+}
+
+pub fn is_pos(d: &Domain) -> bool {
+    d.subseteq(&pos_dom())
+}
+
+pub fn option_is_pos(d: Option<&Domain>) -> bool {
+    d.map_or(false, is_pos)
 }
 
 pub fn nonneg_dom() -> Domain { 
@@ -384,18 +439,6 @@ pub fn is_nonpos(d: &Domain) -> bool {
 
 pub fn option_is_nonpos(d: Option<&Domain>) -> bool {
     d.map_or(false, is_nonpos)
-}
-
-pub fn pos_dom() -> Domain { 
-    Domain::make_oi(zero())
-}
-
-pub fn is_pos(d: &Domain) -> bool {
-    d.subseteq(&pos_dom())
-}
-
-pub fn option_is_pos(d: Option<&Domain>) -> bool {
-    d.map_or(false, is_pos)
 }
 
 pub fn neg_dom() -> Domain { 
@@ -475,11 +518,11 @@ pub fn abs(d: &Domain) -> Domain {
             Domain::make_from_endpoints(-b, -a, r, l)
         } else {
             if a_abs < b_abs {
-                Domain::make_from_endpoints(zero(), b, false, r)
+                Domain::make_from_endpoints(zero(), b_abs, false, r)
             } else if b_abs < a_abs {
-                Domain::make_from_endpoints(zero(), a, false, l)
+                Domain::make_from_endpoints(zero(), a_abs, false, l)
             } else {
-                Domain::make_from_endpoints(zero(), a, false, l && r)
+                Domain::make_from_endpoints(zero(), a_abs, false, l && r)
             }
         }
     } else {
@@ -492,7 +535,11 @@ pub fn option_abs(d_o: Option<Domain>) -> Option<Domain> {
 }
 
 pub fn sqrt(d: &Domain) -> Domain {
-    Domain::make(d.interval.sqrt(), d.lo_open, d.hi_open)
+    if is_nonneg(d) {
+        Domain::make(d.interval.sqrt(), d.lo_open, d.hi_open)
+    } else {
+        free_dom()
+    }
 }
 
 pub fn option_sqrt(d_o: Option<Domain>) -> Option<Domain> {
@@ -500,7 +547,11 @@ pub fn option_sqrt(d_o: Option<Domain>) -> Option<Domain> {
 }
 
 pub fn log(d: &Domain) -> Domain {
-    Domain::make(d.interval.ln(), d.lo_open, d.hi_open)
+    if is_nonneg(d) {
+        Domain::make(d.interval.ln(), d.lo_open, d.hi_open)
+    } else {
+        free_dom()
+    }
 }
 
 pub fn option_log(d_o: Option<Domain>) -> Option<Domain> {
@@ -638,7 +689,6 @@ fn perform_mult(
 }
 
 // For multiplication, opennes of endpoints depends on the values.
-// NOTE(RFM): For the case splitting part, c.f. with `classify`.
 pub fn mul(d1: &Domain, d2: &Domain) -> Domain {
     let d1_pos = is_pos(d1);
     let d1_neg = is_neg(d1);
@@ -845,11 +895,11 @@ pub fn pow(d1: &Domain, d2: &Domain) -> Domain {
             Some(f) => {
                 if ((f as u32) as f64) == f {
                     let n = f as u32;
-                    if n == 0 && does_not_contain_zero(d1) {
+                    if n == 0 {
                         return Domain::make_singleton(1.0);
                     } else if n == 1 {
                         return d1.clone();
-                    } else if n % 2 == 0 {
+                    } else if n > 0 && n % 2 == 0 {
                         let d = abs(d1);
                         let lo = d.lo_float();
                         let hi = d.hi_float();
