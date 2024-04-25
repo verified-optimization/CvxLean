@@ -67,6 +67,7 @@ NOTE: Tuples are lists of two elements. -/
 def EggRequest.toJson (e : EggRequest) : String :=
   "{" ++
   surroundQuotes "request" ++ " : " ++ surroundQuotes "PerformRewrite" ++ ", " ++
+  surroundQuotes "prob_name" ++ " : " ++ surroundQuotes e.probName ++ ", " ++
   surroundQuotes "domains" ++ " : " ++
     "[" ++
       (", ".intercalate <| e.domains.map (fun domain =>

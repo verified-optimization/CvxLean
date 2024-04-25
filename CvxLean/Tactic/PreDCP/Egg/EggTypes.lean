@@ -54,6 +54,7 @@ def EggOCTreeExtended := EggOCTree × Array EggDomainIdentified
 
 /-- A request consists of an `EggMinimization` and a list of domains per variable (or parameter). -/
 structure EggRequest where
+  probName : String
   domains : List (String × EggDomain)
   target : EggMinimization
 

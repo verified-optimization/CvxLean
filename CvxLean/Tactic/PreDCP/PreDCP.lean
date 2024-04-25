@@ -207,7 +207,8 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   -- Prepare `egg` request.
   let eggMinimization := EggMinimization.ofEggOCTree gStr
   let eggRequest : EggRequest :=
-    { domains := (varDomainConstrs ++ paramDomains).data,
+    { probName := "lean_prob",
+      domains := (varDomainConstrs ++ paramDomains).data,
       target := eggMinimization }
 
   try
