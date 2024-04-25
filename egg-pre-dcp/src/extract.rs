@@ -198,7 +198,8 @@ pub fn get_steps_from_string_maybe_node_limit(
     // NOTE: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
     report.set_initial_term_size(3 * (domains_len as u32));
 
-    // Go through the components.    
+    // Go through the components. 
+    // TODO: Opportunity to parallelize this loop (e.g., using rayon).
     for (component_name, component_s) in prob.iter() {
         let component_starting_time = Instant::now();
 
