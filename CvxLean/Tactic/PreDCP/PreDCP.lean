@@ -225,6 +225,8 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
     let mut stepsCount := 0
     let mut g := g
     for (_componentName, steps) in stepsByComponent do
+      -- TODO: Since rewrites are now split by component, we could apply the corresponding
+      -- congruence rule just once.
       for step in steps do
         stepsCount := stepsCount + 1
         let gs ← Tactic.run g <| (evalStep step varsNames paramsNames paramsDecls tagsMap).toTactic
