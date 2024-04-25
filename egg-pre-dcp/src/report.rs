@@ -164,7 +164,8 @@ impl Report {
             total_steps: 0,
             best_curvature: Curvature::Unknown,
             best_num_vars: 0,
-            best_term_size: 0,
+            // Account for the "prob" node.
+            best_term_size: 1,
             best_term: MinimizationOrExpr::Expr(String::new()),
             component_reports: Vec::new(),
         }
@@ -188,9 +189,9 @@ impl Report {
             self.best_curvature = component_report.best_curvature.clone();
         } 
 
-        // Number of vars and term size are just summed.
+        // Number of vars and term size (+1 for the constr / objFun component) are just summed.
         self.best_num_vars += component_report.best_num_vars;
-        self.best_term_size += component_report.best_term_size;
+        self.best_term_size += 1 + component_report.best_term_size;
 
         // A little more work is needed to place the best term from the component / expression into 
         // the best term of the report.
