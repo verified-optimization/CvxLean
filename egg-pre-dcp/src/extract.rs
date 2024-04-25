@@ -142,32 +142,60 @@ impl ToString for Minimization {
     fn to_string(&self) -> String {
         let obj_fun_s: String = format!("(objFun {})", self.obj_fun);
         let constrs_s_l : Vec<String> = 
-            self.constrs.iter().map(|(h, c)| format!("(constr {} {})", h, c)).collect();
+            self.constrs.iter().map(
+                |(h, c)| format!("(constr {} {})", h, c)).collect();
         let constr_s = format!("(constrs {})", constrs_s_l.join(" "));
         return format!("(prob {} {})", obj_fun_s, constr_s);
     }
 }
 
-// Return the rewrite steps if egg successfully found a chain of rewrites to
-// transform the term into DCP form. Return `None` if it didn't.
+pub struct MinimizationIter {
+    min_iter : Vec<(String, String)>,
+}
+
+impl Minimization {
+    pub fn iter(&self) -> MinimizationIter {
+        let mut min_iter = vec![("objFun".to_string(), self.obj_fun.clone())];
+        min_iter.append(&mut self.constrs.clone());
+        MinimizationIter { min_iter }
+    }
+}
+
+impl Iterator for MinimizationIter {
+    type Item = (String, String);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.min_iter.is_empty() {
+            None
+        } else {
+            Some(self.min_iter.remove(0))
+        }
+    }
+}
+
+// Return the rewrite steps if egg successfully found a chain of rewrites to transform the term 
+// into DCP form. Return `None` if it didn't.
 #[allow(unused)]
-pub fn get_steps_maybe_node_limit(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool, node_limit: Option<usize>) -> Option<Vec<Step>> {
-    get_steps_from_string_maybe_node_limit(&prob.to_string(), domains_vec, debug, node_limit)
+pub fn get_steps_maybe_node_limit(
+        prob: Minimization, 
+        domains_vec: Vec<(String, Domain)>, 
+        debug: bool, 
+        node_limit: Option<usize>) -> Option<HashMap<String, Vec<Step>>>  {
+    get_steps_from_string_maybe_node_limit(prob, domains_vec, debug, node_limit)
 }
 
-pub fn get_steps(prob: Minimization, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
-    get_steps_from_string(&prob.to_string(), domains_vec, debug)
-}
-
-pub fn get_steps_from_string(prob_s: &str, domains_vec: Vec<(String, Domain)>, debug: bool) -> Option<Vec<Step>> {
-    get_steps_from_string_maybe_node_limit(prob_s, domains_vec, debug, None)
+pub fn get_steps(
+        prob: Minimization, 
+        domains_vec: Vec<(String, Domain)>, 
+        debug: bool) -> Option<HashMap<String, Vec<Step>>> {
+    get_steps_from_string_maybe_node_limit(prob, domains_vec, debug, None)
 }
 
 pub fn get_steps_from_string_maybe_node_limit(
-    prob_s: &str, 
-    domains_vec: Vec<(String, Domain)>, 
-    debug: bool, 
-    node_limit: Option<usize>) -> Option<Vec<Step>> {
+        prob: Minimization, 
+        domains_vec: Vec<(String, Domain)>, 
+        debug: bool, 
+        node_limit: Option<usize>) -> Option<HashMap<String, Vec<Step>>> {
     let starting_time: Instant = Instant::now();
     let expr: RecExpr<Optimization> = prob_s.parse().unwrap();
     
@@ -277,7 +305,7 @@ pub fn get_steps_from_string_maybe_node_limit(
         let curvature = best_curvature;
         let num_vars = best_num_vars;
 
-        // Note: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
+        // NOTE: each domain constraint is an expression with 3 nodes, e.g. `0 <= x`.
         let term_size = best_term_size + 3 * (domains_len as u32); 
         
         if curvature <= Curvature::Convex {
