@@ -11,6 +11,8 @@ pub mod cost;
 
 pub mod explain_util;
 
+pub mod report;
+
 pub mod extract;
 
 pub mod test_util;
