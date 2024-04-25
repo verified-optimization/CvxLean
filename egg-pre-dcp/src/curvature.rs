@@ -1,5 +1,6 @@
 use core::cmp::Ordering;
 use std::fmt;
+use serde::Serialize;
 
 use crate::domain;
 use domain::Domain as Domain;
@@ -75,6 +76,12 @@ impl fmt::Display for Curvature {
             Affine   => write!(f, "Affine"),
             Constant => write!(f, "Constant"),
         }
+    }
+}
+
+impl Serialize for Curvature {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
