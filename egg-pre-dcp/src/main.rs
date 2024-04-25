@@ -36,6 +36,7 @@ enum Request {
 }
 
 #[derive(Serialize, Debug)]
+#[serde(tag = "response")]
 enum Response {
     Success { steps: HashMap<String, Vec<Step>> },
     Error { error: String }
