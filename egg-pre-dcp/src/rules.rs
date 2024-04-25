@@ -24,9 +24,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
 
 
     /* Equality rules. */
-    // NOTE: many more rules could apply here, but in our examples, equalities
-    // were either already affine or required applying logarithms to remove
-    // exponentials and make them affine.
+    // NOTE: many more rules could apply here, but in our examples, equalities were either already 
+    // affine or required applying logarithms to remove exponentials and make them affine.
 
     rw!("log_eq_log"; "(eq ?a ?b)" => "(eq (log ?a) (log ?b))"
         if is_gt_zero("?a") if is_gt_zero("?b")),
@@ -206,7 +205,8 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
     rw!("pow_half_two-rev"; "?a" => "(pow (pow ?a 0.5) 2)" 
         if is_real_expr("?a") if is_ge_zero("?a")),
 
-    rw!("binomial_two"; "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
+    rw!("binomial_two"; 
+        "(pow (add ?a ?b) 2)" => "(add (pow ?a 2) (add (mul 2 (mul ?a ?b)) (pow ?b 2)))"),
 
     rw!("inv_eq_pow_neg_one"; "(inv ?a)" => "(pow ?a (neg 1))" if is_not_zero("?a")),
 
