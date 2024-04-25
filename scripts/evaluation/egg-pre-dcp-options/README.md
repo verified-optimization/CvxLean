@@ -1,3 +1,6 @@
+WARNING: These scripts are obsolete, there is better reporting infrastructure now. 
+They will be removed.
+
 Here, we compare `egg-pre-dcp` with different options (iterative node limits and stop-on-success).
 
 Run this from the root of the repository.
