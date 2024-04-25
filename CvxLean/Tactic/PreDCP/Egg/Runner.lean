@@ -118,7 +118,8 @@ def runEggRequestRaw (requestJson : String) : MetaM String := do
   return stdout
 
 /-- Read `egg`'s output and trun it into an array of `EggRewrite`s. -/
-def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
+def parseEggResponse (responseString : String) :
+    MetaM (HashMap String (Array EggRewrite)) := do
   dbg_trace s!"Egg response: {responseString}"
   let outJson : Json ← match Json.parse responseString with
     | Except.error e => throwError (s!"error calling `egg`, JSON parsing error ({e}).")
@@ -133,29 +134,33 @@ def parseEggResponse (responseString : String) : MetaM (Array EggRewrite) := do
 
   else
     let steps ← liftExcept <| outJson.getObjVal? "steps"
-    let steps ← liftExcept <| Json.getArr? steps
+    let steps ← liftExcept <| Json.getObj? steps
 
-    let res := steps.map fun step =>
-      let rewriteName := (step.getObjValD "rewrite_name").getStr!
-      let direction := match (step.getObjValD "direction").getStr! with
-        | "Forward" => EggRewriteDirection.Forward
-        | "Backward" => EggRewriteDirection.Backward
-        | _ => panic! "Unexpected rewrite direction."
-      let location := (step.getObjValD "location").getStr!
-      let subexprFrom := (step.getObjValD "subexpr_from").getStr!
-      let subexprTo := (step.getObjValD "subexpr_to").getStr!
-      let expectedTerm := (step.getObjValD "expected_term").getStr!
-      { rewriteName  := rewriteName,
-        direction    := direction,
-        location     := location,
-        subexprFrom  := subexprFrom,
-        subexprTo    := subexprTo,
-        expectedTerm := expectedTerm }
+    let mut res := HashMap.empty
+    for ⟨componentName, componentSteps⟩ in steps.toArray do
+      let componentSteps ← liftExcept <| Json.getArr? componentSteps
+      let componentStepsParsed : Array EggRewrite := componentSteps.map fun step =>
+        let rewriteName := (step.getObjValD "rewrite_name").getStr!
+        let direction := match (step.getObjValD "direction").getStr! with
+          | "Forward" => EggRewriteDirection.Forward
+          | "Backward" => EggRewriteDirection.Backward
+          | _ => panic! "Unexpected rewrite direction."
+        let location := (step.getObjValD "location").getStr!
+        let subexprFrom := (step.getObjValD "subexpr_from").getStr!
+        let subexprTo := (step.getObjValD "subexpr_to").getStr!
+        let expectedTerm := (step.getObjValD "expected_term").getStr!
+        { rewriteName  := rewriteName,
+          direction    := direction,
+          location     := location,
+          subexprFrom  := subexprFrom,
+          subexprTo    := subexprTo,
+          expectedTerm := expectedTerm }
+      res := res.insert componentName componentStepsParsed
 
     return res
 
 /-- Run request to `egg` and parse the output to get an array of rewrites, if successful. -/
-def runEggRequest (request : EggRequest) : MetaM (Array EggRewrite) :=
+def runEggRequest (request : EggRequest) : MetaM (HashMap String (Array EggRewrite)) :=
   dbg_trace s!"Running egg request: {request.toJson}"
   runEggRequestRaw request.toJson >>= parseEggResponse
 
