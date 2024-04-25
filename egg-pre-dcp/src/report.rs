@@ -8,6 +8,7 @@ use crate::curvature;
 use curvature::Curvature as Curvature;
 
 use crate::explain_util;
+use crate::explain_util::Minimization as Minimization;
 use explain_util::MinimizationOrExpr as MinimizationOrExpr;
 
 #[derive(Debug, Serialize)]
@@ -198,7 +199,9 @@ impl Report {
         } else if component_report.component_name.eq("objFun") {
             match &mut self.best_term {
                 MinimizationOrExpr::Expr(_) => {
-                    panic!("Minimization expected.");
+                    let obj_fun = component_report.best_term.clone();
+                    let min = Minimization { obj_fun, constrs: Vec::new() };
+                    self.best_term = MinimizationOrExpr::Min(min);
                 },
                 MinimizationOrExpr::Min(min) => {
                     min.obj_fun = component_report.best_term.clone();
