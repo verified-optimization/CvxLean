@@ -72,7 +72,7 @@ pub fn pre_dcp_check_and_print(prob_name : &str, obj: &str, constrs: Vec<&str>) 
 fn pre_dcp_check_expression_with_domain_maybe_print_maybe_node_limit(
         prob_name : &str, 
         domains : Vec<(&str, Domain)>, 
-        prob_s: &str, 
+        expr_s: &str, 
         print: bool, 
         node_limit: Option<usize>) {
     // NOTE: Even if the node limit is passed as an argument, the environment variable is used if it 
@@ -87,7 +87,7 @@ fn pre_dcp_check_expression_with_domain_maybe_print_maybe_node_limit(
             node_limit
         }
     };
-    let expr = MinimizationOrExpr::Expr(prob_s.to_string());
+    let expr = MinimizationOrExpr::Expr(expr_s.to_string());
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
     let steps = get_steps_from_string_maybe_node_limit(prob_name, expr, domains, true, node_limit);

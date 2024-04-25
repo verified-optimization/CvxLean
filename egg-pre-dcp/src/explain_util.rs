@@ -39,7 +39,8 @@ pub struct MinimizationIter {
 
 impl Minimization {
     pub fn iter(&self) -> MinimizationIter {
-        let mut min_iter = vec![("objFun".to_string(), self.obj_fun.clone())];
+        let obj_fun_s = format!("(objFun {})", self.obj_fun);
+        let mut min_iter = vec![("objFun".to_string(), obj_fun_s.clone())];
         min_iter.append(&mut self.constrs.clone());
         MinimizationIter { min_iter }
     }

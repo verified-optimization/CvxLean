@@ -144,6 +144,7 @@ fn get_step(current: &FlatTerm<Optimization>, next: &FlatTerm<Optimization>) -> 
 // Return the rewrite steps if egg successfully found a chain of rewrites to transform the term into
 // DCP form. Return `None` if it didn't.
 
+#[allow(unused)]
 pub fn get_steps_maybe_node_limit(
         prob_name : &str, 
         prob: Minimization, 
@@ -218,6 +219,7 @@ pub fn get_steps_from_string_maybe_node_limit(
                     vec![2500, 5000, 10000, 20000, 40000, 80000] 
                 }
             };
+        let mut success = false;
 
         for node_limit in node_limits  {
             let mut component_report = ComponentReport::new(component_name.clone());
@@ -362,10 +364,15 @@ pub fn get_steps_from_string_maybe_node_limit(
             report.add_component_report(component_report);
 
             res.insert(component_name.clone(), steps);
+
+            success = true;
+            break;
         }
 
         // It failed for all node limits.
-        return None;
+        if !success {
+            return None;
+        }
     }
 
     // Craft final report.
