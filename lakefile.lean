@@ -39,12 +39,15 @@ def compileCargo (name : String) (manifestFile : FilePath) (cargo : FilePath := 
   }
 
 def buildCargo (targetFile : FilePath) (manifestFile : FilePath) (targetDest : FilePath)
-    (oFileJobs : Array (BuildJob FilePath)) : SchedulerM (BuildJob FilePath) :=
+    (oFileJobs : Array (BuildJob FilePath)) (stopOnSuccess : Bool) :
+    SchedulerM (BuildJob FilePath) :=
   let name := targetFile.fileName.getD targetFile.toString
   buildFileAfterDepArray targetFile oFileJobs fun _ => do
     compileCargo name manifestFile
     createParentDirs targetDest
+    let env := if stopOnSuccess then #[("RUSTFLAGS", some "\"--cfg stop_on_success\"" )] else #[]
     proc {
+      env := env
       cmd := "cp"
       args := #[targetFile.toString, targetDest.toString]
     }
@@ -55,7 +58,15 @@ target EggPreDCP (pkg) : FilePath := do
   let binFile := buildDir / "target" / "release" / "egg-pre-dcp"
   let dest := buildDir / "utils" / "egg-pre-dcp"
   let manifestFile := buildDir / "Cargo.toml"
-  buildCargo binFile manifestFile dest #[]
+  buildCargo binFile manifestFile dest #[] false
+
+@[default_target]
+target EggPreDCPStopOnSuccess (pkg) : FilePath := do
+  let buildDir := pkg.dir / "egg-pre-dcp"
+  let binFile := buildDir / "target" / "release" / "egg-pre-dcp"
+  let dest := buildDir / "utils" / "egg-pre-dcp"
+  let manifestFile := buildDir / "Cargo.toml"
+  buildCargo binFile manifestFile dest #[] true
 
 script EggClean := do
   let targetDir : FilePath := "." / "egg-pre-dcp" / "target"
