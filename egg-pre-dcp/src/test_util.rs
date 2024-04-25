@@ -1,13 +1,11 @@
-use egg::{*};
-
 use crate::domain;
 use domain::Domain as Domain;
 
-use crate::optimization;
-use optimization::Optimization as Optimization;
+use crate::explain_util;
+use explain_util::Minimization as Minimization;
+use explain_util::MinimizationOrExpr as MinimizationOrExpr;
 
 use crate::extract;
-use extract::Minimization as Minimization;
 use extract::get_steps as get_steps;
 use extract::get_steps_maybe_node_limit as get_steps_maybe_node_limit;
 use extract::get_steps_from_string_maybe_node_limit as get_steps_from_string_maybe_node_limit; 
@@ -89,10 +87,10 @@ fn pre_dcp_check_expression_with_domain_maybe_print_maybe_node_limit(
             node_limit
         }
     };
-    let prob: RecExpr<Optimization> = prob_s.parse().unwrap();
+    let expr = MinimizationOrExpr::Expr(prob_s.to_string());
     let domains = 
         domains.iter().map(|(s, d)| ((*s).to_string(), d.clone())).collect();
-    let steps = get_steps_from_string_maybe_node_limit(prob_name, prob, domains, true, node_limit);
+    let steps = get_steps_from_string_maybe_node_limit(prob_name, expr, domains, true, node_limit);
     if steps.is_none() {
         panic!("Test failed, could not rewrite target into DCP form.");
     }
