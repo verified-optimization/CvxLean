@@ -30,10 +30,11 @@ lean_lib CvxLean
 @[default_target]
 lean_lib CvxLeanTest
 
-def compileCargo (name : String) (manifestFile : FilePath) (cargo : FilePath := "cargo") :
-    LogIO Unit := do
+def compileCargo (name : String) (manifestFile : FilePath) (cargo : FilePath := "cargo")
+    (env : Array (String × Option String)) : LogIO Unit := do
   logInfo s!"Creating {name}"
   proc {
+    env := env
     cmd := cargo.toString
     args := #["build", "--release", "--manifest-path", manifestFile.toString]
   }
@@ -43,11 +44,10 @@ def buildCargo (targetFile : FilePath) (manifestFile : FilePath) (targetDest : F
     SchedulerM (BuildJob FilePath) :=
   let name := targetFile.fileName.getD targetFile.toString
   buildFileAfterDepArray targetFile oFileJobs fun _ => do
-    compileCargo name manifestFile
+    let env := if stopOnSuccess then #[("RUSTFLAGS", some "--cfg stop_on_success")] else #[]
+    compileCargo name manifestFile (env := env)
     createParentDirs targetDest
-    let env := if stopOnSuccess then #[("RUSTFLAGS", some "\"--cfg stop_on_success\"" )] else #[]
     proc {
-      env := env
       cmd := "cp"
       args := #[targetFile.toString, targetDest.toString]
     }
