@@ -349,7 +349,12 @@ pub fn get_steps_from_string_maybe_node_limit(
                 let current = &flat_explanation[i];
                 let next = &flat_explanation[i + 1];
                 match get_step(current, next) {
-                    Some(step) => { steps.push(step); }
+                    Some(mut step) => {
+                        // TODO: `get_step_aux` can be simplified, since we know the location 
+                        // directly.
+                        step.location = component_name.clone();
+                        steps.push(step); 
+                    }
                     None => {
                         panic!("Failed to extract step.");
                     }
