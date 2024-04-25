@@ -11,6 +11,7 @@ use egg_pre_dcp::test_util::{*};
 #[test]
 fn test_main_example() {
     pre_dcp_check_with_domain_and_print(
+        "main_example",
         vec![("x", domain::pos_dom())],
         "(var x)", 
         vec![

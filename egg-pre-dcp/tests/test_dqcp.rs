@@ -13,6 +13,7 @@ use egg_pre_dcp::test_util::{*};
 #[test]
 fn test_qcp1() {
     pre_dcp_check_with_domain_and_print(
+        "qcp1",
         vec![("x", domain::pos_dom())], 
         "(var x)", 
         vec![
@@ -24,6 +25,7 @@ fn test_qcp1() {
 fn test_qcp2() {
     let d = Domain::make_oc(domain::zero(), domain::one());
     pre_dcp_check_with_domain_and_print(
+        "qcp2",
         vec![("x", d)], 
         "(sqrt (sub (div 1 (pow (var x) 2)) 1))",
         vec![
@@ -36,6 +38,7 @@ fn test_qcp3() {
     let dx = Domain::make_singleton(12.0);
     let dy = Domain::make_cc(domain::make_float(0.001), domain::make_float(6.0));
     pre_dcp_check_with_domain_and_print(
+        "qcp3",
         vec![("x", dx), ("y", dy)], 
         "0",
         vec![
@@ -47,6 +50,7 @@ fn test_qcp3() {
 fn test_qcp4() {
     let dx = Domain::make_ci(domain::make_float(10.0));
     pre_dcp_check_with_domain_and_print(
+        "qcp4",
         vec![("x", dx)], 
         "(neg (var x))",
         vec![
@@ -69,6 +73,7 @@ fn test_qcp2_with_params() {
     let da = Domain::make_ci(domain::zero());
     let db = Domain::make_io(domain::one());
     pre_dcp_check_with_domain(
+        "qcp2_with_params",
         vec![("x", dx), ("a", da), ("b", db)], 
         "(sqrt (sub (div 1 (pow (var x) 2)) 1))",
         vec![
