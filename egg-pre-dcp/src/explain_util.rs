@@ -1,12 +1,92 @@
 use egg::{*};
 use std::collections::HashMap;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::optimization;
 use optimization::Optimization as Optimization;
 use optimization::Meta as Meta;
 
 pub type Rewrite = egg::Rewrite<Optimization, Meta>;
+
+// Representation of an optimization problem by its components.
+
+#[derive(Deserialize, Debug)]
+pub struct Minimization {
+    pub obj_fun : String,
+    pub constrs : Vec<(String, String)>,
+}
+
+impl ToString for Minimization {
+    fn to_string(&self) -> String {
+        let obj_fun_s: String = format!("(objFun {})", self.obj_fun);
+        let constrs_s_l : Vec<String> = 
+            self.constrs.iter().map(
+                |(h, c)| format!("(constr {} {})", h, c)).collect();
+        let constr_s = format!("(constrs {})", constrs_s_l.join(" "));
+        return format!("(prob {} {})", obj_fun_s, constr_s);
+    }
+}
+
+impl Serialize for Minimization {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+pub struct MinimizationIter {
+    min_iter : Vec<(String, String)>,
+}
+
+impl Minimization {
+    pub fn iter(&self) -> MinimizationIter {
+        let obj_fun_s = format!("(objFun {})", self.obj_fun);
+        let mut min_iter = vec![("objFun".to_string(), obj_fun_s.clone())];
+        min_iter.append(&mut self.constrs.clone());
+        MinimizationIter { min_iter }
+    }
+}
+
+impl Iterator for MinimizationIter {
+    type Item = (String, String);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.min_iter.is_empty() {
+            None
+        } else {
+            Some(self.min_iter.remove(0))
+        }
+    }
+}
+
+// Since sometimes we want to rewrite a full optimization problem, and sometimes just an expression.
+#[derive(Deserialize, Debug)]
+pub enum MinimizationOrExpr {
+    Min(Minimization),
+    Expr(String),
+}
+
+impl Serialize for MinimizationOrExpr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        match self {
+            MinimizationOrExpr::Min(min) => min.serialize(serializer),
+            MinimizationOrExpr::Expr(expr) => expr.serialize(serializer),
+        }
+    }
+}
+
+impl MinimizationOrExpr {
+    pub fn iter(&self) -> MinimizationIter {
+        match self {
+            MinimizationOrExpr::Min(min) => min.iter(),
+            MinimizationOrExpr::Expr(expr) => {
+                let min_iter = vec![("expr".to_string(), expr.clone())];
+                MinimizationIter { min_iter }
+            }
+        }
+    }
+}
+
+// Reading flat terms.
 
 #[derive(Clone, Copy, Serialize, Debug)]
 pub enum Direction {

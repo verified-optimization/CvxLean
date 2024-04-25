@@ -1,4 +1,5 @@
 use std::io;
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
@@ -14,9 +15,11 @@ mod rules;
 mod cost;
 
 mod explain_util;
+use explain_util::Minimization as Minimization;
+
+mod report;
 
 mod extract;
-use extract::Minimization as Minimization;
 use extract::Step as Step;
 use extract::get_steps as get_steps;
 
@@ -25,7 +28,8 @@ use extract::get_steps as get_steps;
 #[derive(Deserialize, Debug)]
 #[serde(tag = "request")]
 enum Request {
-    PerformRewrite {
+    PerformRewrite {    
+        prob_name : String,
         domains : Vec<(String, Domain)>,
         target : Minimization,
     }
@@ -34,7 +38,7 @@ enum Request {
 #[derive(Serialize, Debug)]
 #[serde(tag = "response")]
 enum Response {
-    Success { steps: Vec<Step> },
+    Success { steps: HashMap<String, Vec<Step>> },
     Error { error: String }
 }
 
@@ -53,8 +57,8 @@ fn main_json() -> io::Result<()> {
             Ok(req) => {
                 match req {
                     Request::PerformRewrite 
-                        { domains, target } => 
-                    match get_steps(target, domains, false) {
+                        { prob_name, domains, target } => 
+                    match get_steps(&prob_name, target, domains, false) {
                         Some(steps) => Response::Success { steps },
                         None => Response::Error {
                             error: format!("Could not rewrite target into DCP form.")

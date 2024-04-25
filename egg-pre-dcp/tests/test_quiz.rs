@@ -12,6 +12,7 @@ use egg_pre_dcp::test_util::{*};
 #[test]
 fn test_quiz1() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz1",
         vec![("x", domain::pos_dom())], 
         "(inv (inv (var x)))");
 }
@@ -19,6 +20,7 @@ fn test_quiz1() {
 #[test]
 fn test_quiz2() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz2",
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
         "(neg (lse (log (var x)) (log (var y))))");
 }
@@ -26,6 +28,7 @@ fn test_quiz2() {
 #[test]
 fn test_quiz3() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz3",
         vec![("x", domain::nonneg_dom())], 
         "(pow (sqrt (var x)) 2)");
 }
@@ -33,6 +36,7 @@ fn test_quiz3() {
 #[test]
 fn test_quiz4() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz4",
         vec![("x", domain::nonneg_dom())], 
         "(neg (abs (sqrt (abs (var x)))))");
 }
@@ -40,13 +44,15 @@ fn test_quiz4() {
 #[test]
 fn test_quiz5() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz5",
         vec![("x", domain::free_dom())], 
         "(div 1 (exp (var x)))");
 }
 
 #[test]
 fn test_quiz6() {
-    pre_dcp_check_expression_with_domain_and_print(
+    pre_dcp_check_expression_with_domain_and_print( 
+        "quiz6",
         vec![("x", domain::nonneg_dom())], 
         "(neg (log (pow (mul 364 (var x)) 2)))");
 }
@@ -54,6 +60,7 @@ fn test_quiz6() {
 #[test]
 fn test_quiz7() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz7",
         vec![("x", domain::pos_dom())], 
         "(pow (geo (add (var x) 2) (div 1 (var x))) 2)");
 }
@@ -61,6 +68,7 @@ fn test_quiz7() {
 #[test]
 fn test_quiz8() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz8",
         vec![("x", domain::nonneg_dom())], 
         "(neg (log (abs (var x))))");
 }
@@ -68,6 +76,7 @@ fn test_quiz8() {
 #[test]
 fn test_quiz9() {
     pre_dcp_check_expression_with_domain_and_print(
+        "quiz9",
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())], 
         "(div 1 (qol (inv (var x)) (inv (var y)))))");
 }
@@ -75,6 +84,7 @@ fn test_quiz9() {
 #[test]
 fn test_quiz10() {
     pre_dcp_check_expression_and_print(
+        "quiz10",
         "(pow (log (exp (var x))) 2)");
 }
 

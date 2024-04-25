@@ -13,8 +13,9 @@ use egg_pre_dcp::test_util::{*};
 fn test_stan1() {
     // log(e^(2x + 3) + e^(4y + 5)) = lse(2x + 3, 4y + 5)
     pre_dcp_check_expression_with_domain_and_print(
+        "stan1",
         vec![("x", domain::free_dom()), ("y", domain::free_dom())],
-         "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
+        "(log (add (exp (add (mul 2 (var x)) 3)) (exp (add (mul 4 (var y)) 5))))");
 }
 
 // Exercise 3.38 (e).
@@ -23,24 +24,27 @@ fn test_stan2() {
     // (sqrt(x) + sqrt(y))^2 = x + y + 2sqrt(xy)
     //                   ... = x + y + 2geo(x, y)
     pre_dcp_check_expression_with_domain_and_print(
+        "stan2",
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom())],
-         "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
+        "(neg (pow (add (sqrt (var x)) (sqrt (var y))) 2))");
 }
 
 // Exercise 3.67 with n = 3.
 #[test]
 fn test_stan3() {
     pre_dcp_check_expression_with_domain_and_print(
+        "stan3",
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom())],
-         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (sqrt (var z)))) 2))");
+        "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (sqrt (var z)))) 2))");
 }
 
 // Exercise 3.67 with n = 4.
 #[test]
 fn test_stan4() {
     pre_dcp_check_expression_with_domain_and_print(
+        "stan4",
         vec![("x", domain::pos_dom()), ("y", domain::pos_dom()), ("z", domain::pos_dom()), ("w", domain::pos_dom())],
-         "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (add (sqrt (var z)) (sqrt (var w))))) 2))");
+        "(neg (pow (add (sqrt (var x)) (add (sqrt (var y)) (add (sqrt (var z)) (sqrt (var w))))) 2))");
 }
 
 // TODO: Failing because of qol curvature check simplification.
@@ -85,6 +89,7 @@ fn test_stan_hard_aux(n: usize, node_limit: usize) {
     // Generalizaiton of 3.28. Works for n = 3,4,5,6,7
     // (sqrt(x_1) + ... + sqrt(x_n))^2
     //               ... = sum_{i <= n} x_i + 2 * sum_{i < j <= n} geo(x_i, x_j)
+    let prob_name = format!("stan_hard_{}", n);
     let build_domain = |n| {
         if n < 2 {
             panic!("n must be >= 2");
@@ -118,7 +123,8 @@ fn test_stan_hard_aux(n: usize, node_limit: usize) {
             .iter()
             .map(|(s,d)| (s.as_str(), d.clone()))
             .collect::<Vec<_>>();
-        pre_dcp_check_expression_with_domain_and_node_limit(domain, &build_term(n), node_limit);
+        pre_dcp_check_expression_with_domain_and_node_limit(
+            &prob_name, domain, &build_term(n), node_limit);
 }
 
 // Exercise 3.67.

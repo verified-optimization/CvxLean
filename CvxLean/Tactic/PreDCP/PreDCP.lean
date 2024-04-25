@@ -207,30 +207,37 @@ def preDCPBuilder : EquivalenceBuilder Unit := fun eqvExpr g => g.withContext do
   -- Prepare `egg` request.
   let eggMinimization := EggMinimization.ofEggOCTree gStr
   let eggRequest : EggRequest :=
-    { domains := (varDomainConstrs ++ paramDomains).data,
+    { probName := "lean_prob",
+      domains := (varDomainConstrs ++ paramDomains).data,
       target := eggMinimization }
 
   try
     -- Call `egg` (time it for evaluation).
     let bef ← BaseIO.toIO IO.monoMsNow
-    let steps ← runEggRequest eggRequest
+    let stepsByComponent ← runEggRequest eggRequest
     let aft ← BaseIO.toIO IO.monoMsNow
     let diff := aft - bef
     dbg_trace s!"Egg time: {diff} ms."
-    dbg_trace s!"Number of steps: {steps.size}."
     dbg_trace s!"Term size: {probSize}."
     dbg_trace s!"Term JSON: {eggMinimization.toJson}."
 
     -- Apply steps.
+    let mut stepsCount := 0
     let mut g := g
-    for step in steps do
-      let gs ← Tactic.run g <| (evalStep step varsNames paramsNames paramsDecls tagsMap).toTactic
-      if gs.length != 1 then
-        trace[CvxLean.debug] "Remaining goals: {gs}."
-        throwPreDCPError "failed to rewrite {step.rewriteName} ({gs.length} goals remaining)."
-      else
-        trace[CvxLean.debug] "Rewrote {step.rewriteName}."
-        g := gs[0]!
+    for (_componentName, steps) in stepsByComponent do
+      -- TODO: Since rewrites are now split by component, we could apply the corresponding
+      -- congruence rule just once.
+      for step in steps do
+        stepsCount := stepsCount + 1
+        let gs ← Tactic.run g <| (evalStep step varsNames paramsNames paramsDecls tagsMap).toTactic
+        if gs.length != 1 then
+          trace[CvxLean.debug] "Remaining goals: {gs}."
+          throwPreDCPError "failed to rewrite {step.rewriteName} ({gs.length} goals remaining)."
+        else
+          trace[CvxLean.debug] "Rewrote {step.rewriteName}."
+          g := gs[0]!
+
+    dbg_trace s!"Number of steps: {stepsCount}."
 
     let gsFinal ← evalTacticAt (← `(tactic| equivalence_rfl)) g
     if gsFinal.length != 0 then

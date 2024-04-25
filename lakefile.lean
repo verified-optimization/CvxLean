@@ -30,19 +30,22 @@ lean_lib CvxLean
 @[default_target]
 lean_lib CvxLeanTest
 
-def compileCargo (name : String) (manifestFile : FilePath) (cargo : FilePath := "cargo") :
-    LogIO Unit := do
+def compileCargo (name : String) (manifestFile : FilePath) (cargo : FilePath := "cargo")
+    (env : Array (String × Option String)) : LogIO Unit := do
   logInfo s!"Creating {name}"
   proc {
+    env := env
     cmd := cargo.toString
     args := #["build", "--release", "--manifest-path", manifestFile.toString]
   }
 
 def buildCargo (targetFile : FilePath) (manifestFile : FilePath) (targetDest : FilePath)
-    (oFileJobs : Array (BuildJob FilePath)) : SchedulerM (BuildJob FilePath) :=
+    (oFileJobs : Array (BuildJob FilePath)) (stopOnSuccess : Bool) :
+    SchedulerM (BuildJob FilePath) :=
   let name := targetFile.fileName.getD targetFile.toString
   buildFileAfterDepArray targetFile oFileJobs fun _ => do
-    compileCargo name manifestFile
+    let env := if stopOnSuccess then #[("RUSTFLAGS", some "--cfg stop_on_success")] else #[]
+    compileCargo name manifestFile (env := env)
     createParentDirs targetDest
     proc {
       cmd := "cp"
@@ -55,7 +58,15 @@ target EggPreDCP (pkg) : FilePath := do
   let binFile := buildDir / "target" / "release" / "egg-pre-dcp"
   let dest := buildDir / "utils" / "egg-pre-dcp"
   let manifestFile := buildDir / "Cargo.toml"
-  buildCargo binFile manifestFile dest #[]
+  buildCargo binFile manifestFile dest #[] false
+
+@[default_target]
+target EggPreDCPStopOnSuccess (pkg) : FilePath := do
+  let buildDir := pkg.dir / "egg-pre-dcp"
+  let binFile := buildDir / "target" / "release" / "egg-pre-dcp"
+  let dest := buildDir / "utils" / "egg-pre-dcp"
+  let manifestFile := buildDir / "Cargo.toml"
+  buildCargo binFile manifestFile dest #[] true
 
 script EggClean := do
   let targetDir : FilePath := "." / "egg-pre-dcp" / "target"
