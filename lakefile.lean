@@ -41,7 +41,7 @@ def compileCargo (name : String) (manifestFile : FilePath) (cargo : FilePath := 
 
 def buildCargo (targetFile : FilePath) (manifestFile : FilePath) (targetDest : FilePath)
     (oFileJobs : Array (BuildJob FilePath)) (stopOnSuccess : Bool) :
-    SchedulerM (BuildJob FilePath) :=
+    SpawnM (BuildJob FilePath) :=
   let name := targetFile.fileName.getD targetFile.toString
   buildFileAfterDepArray targetFile oFileJobs fun _ => do
     let env := if stopOnSuccess then #[("RUSTFLAGS", some "--cfg stop_on_success")] else #[]
