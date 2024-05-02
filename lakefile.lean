@@ -12,7 +12,7 @@ package CvxLean where
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @
-  "c838d28fb418158125f1551662ef55113d22eeec"
+  "efad919b6687484ee26ac7c65a29c972d2112b8d"
 
 meta if get_config? env = some "scilean" then
 require scilean from git
@@ -52,7 +52,6 @@ def buildCargo (targetFile : FilePath) (manifestFile : FilePath) (targetDest : F
       args := #[targetFile.toString, targetDest.toString]
     }
 
-@[default_target]
 target EggPreDCP (pkg) : FilePath := do
   let buildDir := pkg.dir / "egg-pre-dcp"
   let binFile := buildDir / "target" / "release" / "egg-pre-dcp"
@@ -60,7 +59,6 @@ target EggPreDCP (pkg) : FilePath := do
   let manifestFile := buildDir / "Cargo.toml"
   buildCargo binFile manifestFile dest #[] false
 
-@[default_target]
 target EggPreDCPStopOnSuccess (pkg) : FilePath := do
   let buildDir := pkg.dir / "egg-pre-dcp"
   let binFile := buildDir / "target" / "release" / "egg-pre-dcp"
