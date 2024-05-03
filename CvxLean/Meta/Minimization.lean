@@ -192,7 +192,8 @@ partial def generateNewName (base : String) (set : HashSet Name) : MetaM Name :=
   tryNumber 1 set
 where
   tryNumber (i : Nat) vars : MetaM Name :=
-    let name := s!"{base}{i}"; if vars.contains name then tryNumber (i + 1) vars else return name
+    let name := Name.mkSimple s!"{base}{i}"
+    if vars.contains name then tryNumber (i + 1) vars else return name
 
 end Meta
 

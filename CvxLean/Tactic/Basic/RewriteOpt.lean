@@ -161,7 +161,7 @@ def rewriteConstrLemma (rwIdx : Nat) (numConstrs : Nat) : MetaM (Name × Name) :
 
 section RIntro
 
-open Lean.Parser.Category Std.Tactic.RCases
+open Lean.Parser.Category
 
 def nameToRintroPat (n : Name) : TSyntax `rcasesPat :=
   Unhygienic.run `(rcasesPat| $(Lean.mkIdent n):ident)
@@ -233,7 +233,7 @@ def rewriteConstrBuilderFromTactic (shouldEval : Bool) (constrTag : Name)
       else
         let toRIntro ← namesToRintroPat constrTagsAfter
         let (gsAfterRIntro, _) ← TermElabM.run <|
-          Std.Tactic.RCases.rintro #[toRIntro] none gAfterIntros1
+          RCases.rintro #[toRIntro] none gAfterIntros1
         if gsAfterRIntro.length != 1 then
           throwRwConstrError "could not introduce optimization variables."
         return (fvarIds[0]!, gsAfterRIntro[0]!)

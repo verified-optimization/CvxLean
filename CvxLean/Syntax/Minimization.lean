@@ -195,7 +195,7 @@ partial def delabConstraints : DelabM (List (TSyntax ``Parser.constraint)) := do
 /-- Delaborate with variable names replaced. -/
 def withDomainBinding {α} [Inhabited α] (domain : Expr) (x : DelabM α) : DelabM α := do
   guard (← getExpr).isLambda
-  withBindingBody' `p fun p => do
+  withBindingBody' (x := pure) `p fun p => do
     withDomainLocalDecls domain p fun xs _prs => do
       let e ← getExpr
       let e ← replaceProjections e p.fvarId! xs

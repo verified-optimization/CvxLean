@@ -8,7 +8,7 @@ import CvxLean.Lib.Math.LinearAlgebra.Matrix.Triangular
 More results about LDL factorization (see `Mathlib.LinearAlgebra.Matrix.LDL`).
 -/
 
-variable {𝕜 : Type _} [IsROrC 𝕜]
+variable {𝕜 : Type _} [RCLike 𝕜]
 variable {n : Type _} [LinearOrder n] [IsWellOrder n (· < · : n → n → Prop)]
 variable [LocallyFiniteOrderBot n]
 
