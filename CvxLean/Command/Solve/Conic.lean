@@ -79,13 +79,13 @@ unsafe def solutionDataFromProblemData (minExpr : MinimizationExpr) (data : Prob
 
         match Sol.Parser.parse output with
         | Except.ok res =>
-          return Except.ok <| Sol.Result.toSolutionData res
+            return Except.ok <| Sol.Result.toSolutionData res
         | Except.error err =>
-          return Except.error ("MOSEK output parsing failed. " ++ err)
+            return Except.error ("MOSEK output parsing failed. " ++ err)
 
-    match res with
-    | Except.ok res => return res
-    | Except.error err => throwSolveError err
+  match res with
+  | Except.ok res => return res
+  | Except.error err => throwSolveError err
 
 /-- -/
 unsafe def exprFromSolutionData (minExpr : MinimizationExpr) (solData : SolutionData) :

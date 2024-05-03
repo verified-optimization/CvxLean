@@ -17,8 +17,10 @@ namespace CvxLean
 
 open Matrix
 
-declare_atom Matrix.logDet [concave] (n : ℕ)&
-(A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? : Real.log A.det :=
+set_option maxHeartbeats 400000
+
+declare_atom Matrix.logDet [concave] (n : ℕ)& (A : Matrix.{0,0,0} (Fin n) (Fin n) ℝ)? :
+  Real.log A.det :=
 vconditions (hA : A.PosDef)
 implementationVars (t : Fin n → ℝ) (Y : Matrix (Fin n) (Fin n) ℝ)
 -- The lower left values of `Y` are unused. CVXPY uses a vector `z` instead of a matrix `Y`.
@@ -63,9 +65,7 @@ optimality by
     apply c_exp
   dsimp at c_posdef
   -- NOTE: Not matching instances, hence `convert` not `exact`.
-  have h := Matrix.LogDetAtom.optimality
-    (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef)
-  convert h
+  convert Matrix.LogDetAtom.optimality (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef)
 vconditionElimination
   (hA : by
     have ht : ∀ (i : Fin n), Real.exp (t i) ≤ Matrix.diag Y i := by
@@ -73,7 +73,6 @@ vconditionElimination
       rw [Real.exp_iff_expCone]
       unfold Real.Vec.expCone at c_exp
       apply c_exp
-    exact Matrix.LogDetAtom.cond_elim
-      (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef))
+    exact Matrix.LogDetAtom.cond_elim (A := A) (t := t) (Y := Y) ht rfl rfl (by convert c_posdef))
 
 end CvxLean

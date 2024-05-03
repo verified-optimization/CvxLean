@@ -139,14 +139,14 @@ optimality by
   have hynn := le_of_lt hypos
   have hy2pos : 0 < y ^ (2 : ℝ):= by
     rw [rpow_two]
-    exact pow_two_pos_of_ne_zero y (ne_of_gt hypos)
+    exact pow_two_pos_of_ne_zero (ne_of_gt hypos)
   have ht₁pos : 0 < t₁ := by
     cases (lt_or_eq_of_le c4) with
     | inl h => exact h
     | inr h => rw [← h] at c1; linarith
   have ht₁2pos : 0 < t₁ ^ (2 : ℝ) := by
     rw [rpow_two]
-    exact pow_two_pos_of_ne_zero t₁ (ne_of_gt ht₁pos)
+    exact pow_two_pos_of_ne_zero (ne_of_gt ht₁pos)
   have ht₁inv : 0 < t₁ ^ (-1 : ℝ) := by rwa [rpow_neg_one, inv_pos]
   have ht₀pos : 0 < t₀ := by
     cases (lt_or_eq_of_le c3) with

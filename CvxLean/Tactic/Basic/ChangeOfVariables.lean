@@ -122,7 +122,7 @@ instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a * x) :=
 instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => a / x) :=
   { inv := fun x => a / x
     condition := fun x => x ≠ 0 ∧ a ≠ 0
-    property := fun _ ⟨_, ha⟩ => by field_simp; rw [mul_comm] }
+    property := fun _ ⟨_, ha⟩ => by field_simp }
 
 instance {a : ℝ} : ChangeOfVariables (fun x : ℝ => x + a) :=
   { inv := fun x => x - a
