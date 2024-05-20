@@ -26,8 +26,7 @@ feasibility
     dsimp
     unfold rotatedSoCone
     refine ⟨?_, cond, by norm_num⟩
-    simp
-    rw [sq_sqrt cond])
+    simp [sq_sqrt cond])
 optimality by
   intros y hy
   unfold rotatedSoCone at c1

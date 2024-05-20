@@ -109,7 +109,7 @@ optimality by
     { unfold nonnegOrthCone; simpa using c1 i }
     { unfold nonnegOrthCone; simpa using c2 i }
     { unfold nonnegOrthCone; simpa using c3 i }
-    { unfold rotatedSoCone; simp [sq_nonneg]; norm_num }
+    { unfold rotatedSoCone; simp [sq_nonneg] }
     { unfold nonnegOrthCone; simp [sub_nonneg, abs] }
     { unfold nonnegOrthCone; simp [← sub_le_iff_le_add, abs] }
 

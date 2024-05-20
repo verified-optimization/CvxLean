@@ -24,9 +24,7 @@ solution
 solutionEqualsAtom rfl
 feasibility
   (c1 : by
-    unfold rotatedSoCone
-    simp
-    exact ⟨sq_nonneg x, zero_le_two⟩)
+    simp [rotatedSoCone, sq_nonneg x])
 optimality by
   unfold rotatedSoCone at c1
   have h := c1.1

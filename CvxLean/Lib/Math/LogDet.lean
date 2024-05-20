@@ -18,7 +18,7 @@ namespace Matrix
 open Matrix BigOperators
 
 variable {n : Type} [Fintype n] [LinearOrder n] [LocallyFiniteOrderBot n]
-variable {𝕜 : Type} [IsROrC 𝕜]
+variable {𝕜 : Type} [RCLike 𝕜]
 variable {A : Matrix n n ℝ} (hA : A.PosDef)
 
 noncomputable instance LDL.invertible_diag : Invertible (LDL.diag hA) := by
@@ -51,7 +51,7 @@ lemma LogDetAtom.feasibility_PosDef {D Z : Matrix n n ℝ} (hD : D = LDL.diag hA
 
 lemma LogDetAtom.feasibility_PosDef' {D Z Y : Matrix n n ℝ} (hY : Y = LDL.diag hA * (LDL.lower hA)ᵀ)
     (hD : D = diagonal Y.diag) (hZ : Z = Y.toUpperTri) : (fromBlocks D Z Zᵀ A).PosSemidef := by
-  have hY_tri : upperTriangular Y
+  have hY_tri : upperTriangular Y := by
   { rw [hY]
     apply upperTriangular.mul
     apply BlockTriangular_diagonal
@@ -113,7 +113,7 @@ lemma LogDetAtom.optimality_Ddet_le_Adet {t : n → ℝ} {Y Z D : Matrix n n ℝ
   by_cases h_nonempty : Nonempty n
   { have h_D_pd : D.PosDef := LogDetAtom.optimality_D_posdef ht hD hZ hPSD
     haveI h_D_invertible : Invertible D := h_D_pd.Invertible
-    have h_Zdet : Z.det = D.det
+    have h_Zdet : Z.det = D.det := by
     { rw [hZ, det_of_upperTriangular (upperTriangular_toUpperTri Y), hD, det_diagonal]
       simp [toUpperTri] }
     have h_ZDZ_semidef : (Zᴴ * D⁻¹ * Z).PosSemidef :=

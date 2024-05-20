@@ -20,8 +20,7 @@ solutionEqualsAtom by
   rfl;
 feasibility (c_exp : by
   unfold expCone
-  simp
-  rw [Real.exp_log cond])
+  simp [Real.exp_log cond])
 optimality by
   intros y hy
   unfold expCone at c_exp

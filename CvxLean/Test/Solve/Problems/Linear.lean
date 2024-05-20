@@ -35,7 +35,7 @@ example : linear2 =
       (fun p => 12 ≤ p.1 + p.2 ∧ 16 ≤ 2 * p.1 + p.2) :=
   rfl
 
-lemma linear2Solution : Solution linear2 :=
+def linear2Solution : Solution linear2 :=
   { point := ⟨4, 8⟩,
     isOptimal := by
       split_ands <;> try norm_num

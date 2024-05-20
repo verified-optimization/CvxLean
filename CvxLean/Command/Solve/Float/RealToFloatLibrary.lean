@@ -17,25 +17,25 @@ section Basic
 add_real_to_float : Real :=
   Float
 
-add_real_to_float : Real.instInhabitedReal :=
+add_real_to_float : Real.instInhabited :=
   instInhabitedFloat
 
-add_real_to_float : Real.instZeroReal :=
+add_real_to_float : Real.instZero :=
   Zero.mk (0 : Float)
 
-add_real_to_float : Real.instOneReal :=
+add_real_to_float : Real.instOne :=
   One.mk (1 : Float)
 
-add_real_to_float : Real.instLEReal :=
+add_real_to_float : Real.instLE :=
   instLEFloat
 
-add_real_to_float : Real.instLTReal :=
+add_real_to_float : Real.instLT :=
   instLTFloat
 
 add_real_to_float : Real.instDivReal  :=
   instDivFloat
 
-add_real_to_float : Real.instPowReal :=
+add_real_to_float : Real.instPow :=
   Pow.mk Float.pow
 
 add_real_to_float (n : Nat) (i) : @OfNat.ofNat Real n i :=
@@ -54,9 +54,9 @@ add_real_to_float (k : Nat) :
 add_real_to_float (i) : @Ring.toNeg Real i :=
   Neg.mk Float.neg
 
-add_real_to_float : Real.instNegReal := instNegFloat
+add_real_to_float : Real.instNeg := instNegFloat
 
-add_real_to_float : Real.instAddReal := instAddFloat
+add_real_to_float : Real.instAdd := instAddFloat
 
 add_real_to_float (i) : @HAdd.hAdd Real Real Real i :=
   Float.add
@@ -64,7 +64,7 @@ add_real_to_float (i) : @HAdd.hAdd Real Real Real i :=
 add_real_to_float (i) : @instHAdd Real i :=
   @HAdd.mk Float Float Float Float.add
 
-add_real_to_float : Real.instSubReal := instSubFloat
+add_real_to_float : Real.instSub := instSubFloat
 
 add_real_to_float (i) : @HSub.hSub Real Real Real i :=
   Float.sub
@@ -72,7 +72,7 @@ add_real_to_float (i) : @HSub.hSub Real Real Real i :=
 add_real_to_float (i) : @instHSub Real i :=
   @HSub.mk Float Float Float Float.sub
 
-add_real_to_float : Real.instMulReal := instMulFloat
+add_real_to_float : Real.instMul := instMulFloat
 
 add_real_to_float (i) : @HMul.hMul Real Real Real i :=
   Float.mul
@@ -128,7 +128,7 @@ add_real_to_float (n) (i) : @Norm.norm.{0} (Fin n → ℝ) i :=
 add_real_to_float (i) : @OfScientific.ofScientific Real i :=
   Float.ofScientific
 
-add_real_to_float : Real.natCast :=
+add_real_to_float : Real.instNatCast :=
   NatCast.mk Float.ofNat
 
 end Basic

@@ -121,12 +121,12 @@ feasibility
   (c1 : by
     intros t i
     rw [vec_soCone_apply_to_soCone_add_sub_two]
-    dsimp
+    dsimp [t]
     rw [Real.one_div_eq_pow_neg_one (hx i)]
     exact powNegOne.feasibility0 (x i) (hx i))
   (c2 : by
     intros t i
-    dsimp
+    dsimp [t]
     rw [Real.one_div_eq_pow_neg_one (hx i)]
     have hinv : 0 < (x i) ^ (-1 : ℝ) := by rw [rpow_neg_one, inv_pos]; exact hx i
     exact le_of_lt hinv)

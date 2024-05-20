@@ -91,7 +91,7 @@ feasibility
     have hynn : 0 ≤ y := fun i => by
       have hyi := hy i
       simp at hyi; positivity
-    intros t i; dsimp;
+    intros t i; dsimp [t];
     rw [rpow_two]
     exact div_nonneg (pow_two_nonneg (x i)) (hynn i))
   (c3 : by

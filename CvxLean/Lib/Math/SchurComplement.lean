@@ -21,7 +21,7 @@ namespace Matrix
 
 open scoped Matrix ComplexOrder
 
-variable {n : Type _} {m : Type _} {𝕜 : Type _} [IsROrC 𝕜]
+variable {n : Type _} {m : Type _} {𝕜 : Type _} [RCLike 𝕜]
 
 scoped infix:65 " ⊕ᵥ " => Sum.elim
 
@@ -50,17 +50,17 @@ lemma schur_complement_eq₂₂ [Fintype m] [Fintype n] [DecidableEq n] (A : Mat
 lemma IsHermitian.fromBlocks₁₁ [Fintype m] [DecidableEq m] {A : Matrix m m 𝕜} (B : Matrix m n 𝕜)
     (D : Matrix n n 𝕜) (hA : A.IsHermitian) :
     (Matrix.fromBlocks A B Bᴴ D).IsHermitian ↔ (D - Bᴴ * A⁻¹ * B).IsHermitian := by
-  have hBAB : (Bᴴ * A⁻¹ * B).IsHermitian
-  { apply isHermitian_conjTranspose_mul_mul
-    apply hA.inv }
+  have hBAB : (Bᴴ * A⁻¹ * B).IsHermitian := by
+    apply isHermitian_conjTranspose_mul_mul
+    apply hA.inv
   rw [isHermitian_fromBlocks_iff]
   constructor
-  { intro h
-    apply IsHermitian.sub h.2.2.2 hBAB }
-  { intro h
+  · intro h
+    apply IsHermitian.sub h.2.2.2 hBAB
+  · intro h
     refine' ⟨hA, rfl, conjTranspose_conjTranspose B, _⟩
     rw [← sub_add_cancel D]
-    apply IsHermitian.add h hBAB }
+    apply IsHermitian.add h hBAB
 
 lemma IsHermitian.fromBlocks₂₂ [Fintype n] [DecidableEq n] (A : Matrix m m 𝕜) (B : Matrix m n 𝕜)
     {D : Matrix n n 𝕜} (hD : D.IsHermitian) :

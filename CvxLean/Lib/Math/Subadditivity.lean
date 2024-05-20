@@ -41,14 +41,14 @@ open BigOperators Matrix
 
 namespace IsHermitian
 
-variable {𝕜 : Type _} [DecidableEq 𝕜] [IsROrC 𝕜] {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+variable {𝕜 : Type _} [DecidableEq 𝕜] [RCLike 𝕜] {A : Matrix n n 𝕜} (hA : A.IsHermitian)
 
 lemma eigenvectorMatrix_inv_mul : hA.eigenvectorMatrixInv * hA.eigenvectorMatrix = 1 := by
   apply Basis.toMatrix_mul_toMatrix_flip
 
 -- NOTE: There is a `spectral_theorem'`.
 theorem spectral_theorem'' :
-    hA.eigenvectorMatrix * diagonal (IsROrC.ofReal ∘ hA.eigenvalues) * hA.eigenvectorMatrixᴴ =
+    hA.eigenvectorMatrix * diagonal (RCLike.ofReal ∘ hA.eigenvalues) * hA.eigenvectorMatrixᴴ =
     A := by
   rw [conjTranspose_eigenvectorMatrix, Matrix.mul_assoc, ← spectral_theorem,
     ← Matrix.mul_assoc, eigenvectorMatrix_mul_inv, Matrix.one_mul]
@@ -109,7 +109,7 @@ lemma PosSemidef.PosDef_iff_det_ne_zero [DecidableEq n] {M : Matrix n n ℝ} (hM
   rw [← hM.sqrt_mul_sqrt, ← mulVec_mulVec, dotProduct_mulVec, ← transpose_transpose hM.1.sqrt,
     vecMul_transpose, transpose_transpose, ← conjTranspose_eq_transpose,
     hM.PosSemidef_sqrt.1.eq]
-  simp only [IsROrC.re_to_real, star, id]
+  simp only [RCLike.re_to_real, star, id]
   change @inner ℝ (EuclideanSpace ℝ _) _ (hM.1.sqrt.mulVec x) (hM.1.sqrt.mulVec x) ≠ 0
   intro hinner
   have sqrtMdet0 : hM.1.sqrt.det = 0 := by
@@ -130,7 +130,7 @@ lemma det_add_det_le_det_add' [Nonempty n] (A B : Matrix n n ℝ) (hA : A.PosDef
     isUnit_iff_ne_zero.2 hA.PosDef_sqrt.det_ne_zero
   have : IsUnit sqrtA :=
     (isUnit_iff_isUnit_det _).2 isUnit_det_sqrtA
-  have IsHermitian_sqrtA : sqrtA⁻¹.IsHermitian
+  have IsHermitian_sqrtA : sqrtA⁻¹.IsHermitian := by
   { apply IsHermitian.nonsingular_inv (hA.posSemidef.PosSemidef_sqrt.1)
     exact isUnit_det_sqrtA }
   have PosSemidef_ABA : (sqrtA⁻¹ * B * sqrtA⁻¹).PosSemidef :=

@@ -152,7 +152,7 @@ def dₚ : Fin nₚ → ℝ :=
   ![1.9501, 1.2311, 1.6068, 1.4860, 1.8913, 1.7621, 1.4565, 1.0185, 1.8214, 1.4447]
 
 lemma dₚ_pos : StrongLT 0 dₚ := by
-  intro i; fin_cases i <;> (simp [dₚ]; norm_num)
+  intro i; fin_cases i <;> (dsimp [dₚ]; norm_num)
 
 @[optimization_param, reducible]
 def τminₚ : Fin nₚ → ℝ :=
@@ -177,7 +177,7 @@ lemma sminₚ_pos : StrongLT 0 sminₚ := by
 lemma sminₚ_nonneg : 0 ≤ sminₚ := le_of_strongLT sminₚ_pos
 
 lemma sminₚ_le_smaxₚ : sminₚ ≤ smaxₚ := by
-  intro i; fin_cases i <;> (simp [sminₚ, smaxₚ]; norm_num)
+  intro i; fin_cases i <;> (dsimp [sminₚ, smaxₚ]; norm_num)
 
 @[simp]
 lemma smaxₚ_nonneg : 0 ≤ smaxₚ := le_trans sminₚ_nonneg sminₚ_le_smaxₚ
@@ -190,7 +190,7 @@ lemma aₚ_nonneg : 0 ≤ aₚ := by unfold aₚ; norm_num
 
 @[simp]
 lemma aₚdₚ2_nonneg : 0 ≤ aₚ • (dₚ ^ (2 : ℝ)) := by
-  intros i; fin_cases i <;> (simp [aₚ, dₚ]; norm_num)
+  intros i; fin_cases i <;> (dsimp [aₚ, dₚ]; norm_num)
 
 @[optimization_param]
 def bₚ : ℝ := 6

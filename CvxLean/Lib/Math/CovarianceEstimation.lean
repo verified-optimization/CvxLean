@@ -58,14 +58,13 @@ lemma sum_quadForm {n : ℕ} (R : Matrix (Fin n) (Fin n) ℝ) {m : ℕ} (y : Fin
   { subst h; simp }
   simp only [Matrix.quadForm, Matrix.trace, covarianceMatrix, diag, mul_apply, Finset.sum_mul,
     Finset.sum_div]
-  simp_rw [@Finset.sum_comm _ (Fin m), Finset.mul_sum]
-  apply congr_arg
-  ext i
-  unfold dotProduct
-  have : (m : ℝ) ≠ 0 := by simp [h]
-  simp_rw [← mul_assoc, mul_div_cancel' _ this]
-  apply congr_arg
-  ext j
+  erw [Finset.sum_comm (γ := Fin m)]
+  simp_rw [Finset.mul_sum]
+  congr; ext i
+  have hmnz : (m : ℝ) ≠ 0 := by simp [h]
+  simp_rw [← mul_assoc, mul_div_cancel₀ _ hmnz]
+  erw [Finset.sum_comm (α := Fin m)]
+  congr; ext j
   simp_rw [mul_assoc, ← Finset.mul_sum]
   apply congr_arg
   unfold Matrix.mulVec

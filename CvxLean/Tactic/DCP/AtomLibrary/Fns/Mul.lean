@@ -73,8 +73,8 @@ homogenity by
 additivity by
   ring
 optimality by
-  intros y' hy
-  apply mul_le_mul_of_nonpos_left hy hx
+  intros y' hy i
+  simpa using mul_le_mul_of_nonpos_left (hy i) (hx i)
 
 declare_atom Vec.mul4 [affine] (n : ℕ)& (x : Fin n → ℝ)- (y : Fin n → ℝ)& : x * y :=
 bconditions (hy : y ≤ 0)
@@ -83,7 +83,7 @@ homogenity by
 additivity by
   ring
 optimality by
-  intros y' hx
-  apply mul_le_mul_of_nonpos_right hx hy
+  intros y' hx i
+  simpa using mul_le_mul_of_nonpos_right (hx i) (hy i)
 
 end CvxLean

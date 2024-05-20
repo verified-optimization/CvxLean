@@ -62,20 +62,19 @@ partial def EggTree.toExpr (vars params : List String) : EggTree → MetaM Expr
       match Json.Parser.num s.mkIterator with
       | Parsec.ParseResult.success _ res => do
           -- NOTE: not ideal, but `norm_num` should get us to where we want.
-          let divisionRingToOfScientific :=
-            mkApp2 (mkConst ``DivisionRing.toOfScientific [levelZero])
-              (mkConst ``Real)
-              (mkConst ``Real.instDivisionRingReal)
+          let nnRatCastToOfScientific :=
+            mkApp2 (mkConst ``NNRatCast.toOfScientific ([levelZero] : List Level))
+              (mkConst ``Real) (mkConst ``Real.instNNRatCast)
           let realOfScientific :=
             mkApp2 (mkConst ``OfScientific.ofScientific [levelZero])
               (mkConst ``Real)
-              divisionRingToOfScientific
+              nnRatCastToOfScientific
           let num := mkApp3 realOfScientific
             (mkNatLit res.mantissa.natAbs) (Lean.toExpr true) (mkNatLit res.exponent)
           let expr :=
             if res.mantissa < 0 then
               mkApp3
-                (mkConst ``Neg.neg [levelZero]) (mkConst ``Real) (mkConst ``Real.instNegReal) num
+                (mkConst ``Neg.neg [levelZero]) (mkConst ``Real) (mkConst ``Real.instNeg) num
             else num
           let simpResult ←
             Mathlib.Meta.NormNum.deriveSimp (ctx := ← Simp.Context.mkDefault) (e := expr)
@@ -104,25 +103,25 @@ partial def EggTree.toExpr (vars params : List String) : EggTree → MetaM Expr
       let t2 ← toExpr vars params t2
       return mkAppN
         (mkConst ``LE.le [levelZero])
-        #[(mkConst `Real), (mkConst `Real.instLEReal), t1, t2]
+        #[(mkConst `Real), (mkConst ``Real.instLE), t1, t2]
   -- Negation.
   | Tree.node "neg" #[t] => do
       let t ← toExpr vars params t
       return mkAppN
         (mkConst ``Neg.neg [levelZero])
-        #[(mkConst ``Real), (mkConst ``Real.instNegReal), t]
+        #[(mkConst ``Real), (mkConst ``Real.instNeg), t]
   -- Inverse.
   | Tree.node "inv" #[t] => do
       let t ← toExpr vars params t
       return mkAppN
         (mkConst ``Inv.inv [levelZero])
-        #[(mkConst ``Real), (mkConst ``Real.instInvReal), t]
+        #[(mkConst ``Real), (mkConst ``Real.instInv), t]
   -- Absolute value.
   | Tree.node "abs" #[t] => do
       let t ← toExpr vars params t
       return mkAppN
         (mkConst ``abs [levelZero])
-        #[(mkConst ``Real), (mkConst ``Real.lattice), (mkConst ``Real.instAddGroupReal), t]
+        #[(mkConst ``Real), (mkConst ``Real.lattice), (mkConst ``Real.instAddGroup), t]
   -- Square root.
   | Tree.node "sqrt" #[t] => do
       let t ← toExpr vars params t
@@ -159,17 +158,17 @@ partial def EggTree.toExpr (vars params : List String) : EggTree → MetaM Expr
   | Tree.node "add" #[t1, t2] => do
       let t1 ← toExpr vars params t1
       let t2 ← toExpr vars params t2
-      return mkRealHBinAppExpr ``HAdd.hAdd ``instHAdd 1 ``Real.instAddReal t1 t2
+      return mkRealHBinAppExpr ``HAdd.hAdd ``instHAdd 1 ``Real.instAdd t1 t2
   -- Subtraction.
   | Tree.node "sub" #[t1, t2] => do
       let t1 ← toExpr vars params t1
       let t2 ← toExpr vars params t2
-      return mkRealHBinAppExpr ``HSub.hSub ``instHSub 1 ``Real.instSubReal t1 t2
+      return mkRealHBinAppExpr ``HSub.hSub ``instHSub 1 ``Real.instSub t1 t2
   -- Multiplication.
   | Tree.node "mul" #[t1, t2] => do
       let t1 ← toExpr vars params t1
       let t2 ← toExpr vars params t2
-      return mkRealHBinAppExpr ``HMul.hMul ``instHMul 1 ``Real.instMulReal t1 t2
+      return mkRealHBinAppExpr ``HMul.hMul ``instHMul 1 ``Real.instMul t1 t2
   -- Division.
   | Tree.node "div" #[t1, t2] => do
       let t1 ← toExpr vars params t1
@@ -179,7 +178,7 @@ partial def EggTree.toExpr (vars params : List String) : EggTree → MetaM Expr
   | Tree.node "pow" #[t1, t2] => do
       let t1 ← toExpr vars params t1
       let t2 ← toExpr vars params t2
-      return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPowReal t1 t2
+      return mkRealHBinAppExpr ``HPow.hPow ``instHPow 2 ``Real.instPow t1 t2
   -- Quad over Lin.
   | Tree.node "qol" #[t1, t2] =>
       EggTree.toExpr vars params (Tree.node "div" #[Tree.node "pow" #[t1, Tree.leaf "2"], t2])

@@ -10,8 +10,8 @@ namespace Matrix
 
 variable {m n : Type _} [Fintype m] [Fintype n]
 variable {𝕜 : Type _}
-variable [NormedField 𝕜] [PartialOrder 𝕜] [StarOrderedRing 𝕜]
-variable [IsROrC 𝕜]
+variable [NormedField 𝕜] [PartialOrder 𝕜] [StarRing 𝕜] [StarOrderedRing 𝕜]
+variable [RCLike 𝕜]
 
 lemma PosSemidef.det_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) [DecidableEq n] : 0 ≤ det M := by
   rw [hM.1.det_eq_prod_eigenvalues]
@@ -39,7 +39,7 @@ lemma PosSemidef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 ≤ f i
     (diagonal f).PosSemidef := by
   refine' ⟨isHermitian_diagonal _, _⟩
   intro x
-  simp only [star, id.def, IsROrC.re_to_real]
+  simp only [star, id_def, RCLike.re_to_real]
   apply Finset.sum_nonneg'
   intro i
   rw [mulVec_diagonal f x i, mul_comm, mul_assoc]
@@ -48,7 +48,7 @@ lemma PosSemidef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 ≤ f i
 lemma PosDef_diagonal [DecidableEq n] {f : n → ℝ} (hf : ∀ i, 0 < f i) : (diagonal f).PosDef := by
   refine' ⟨isHermitian_diagonal _, _⟩
   intros x hx
-  simp only [star, id.def, IsROrC.re_to_real]
+  simp only [star, id_def, RCLike.re_to_real]
   apply Finset.sum_pos'
   { intros i _
     rw [mulVec_diagonal f x i, mul_comm, mul_assoc]
