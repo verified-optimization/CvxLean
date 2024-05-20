@@ -84,15 +84,15 @@ equivalence* eqv₁/trussDesignGP (hmin hmax wmin wmax Rmax σ F₁ F₂ : ℝ) 
   -- Simplify objective function.
   rw_obj into (2 * A * sqrt (w ^ 2 + h ^ 2)) =>
     rw [rpow_two, sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
-    ring_nf; field_simp; ring
+    ring_nf; field_simp
   -- Simplify constraint `c_F₁`.
   rw_constr c_F₁ into (F₁ * sqrt (w ^ 2 + h ^ 2) / (2 * h) ≤ σ * A) =>
     rw [rpow_two (sqrt (_ + r ^ 2)), sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
-    rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
+    rw [iff_eq_eq]; congr; ring_nf; field_simp
   -- Simplify constraint `c_F₂`.
   rw_constr c_F₂ into (F₂ * sqrt (w ^ 2 + h ^ 2) / (2 * w) ≤ σ * A) =>
     rw [rpow_two (sqrt (_ + r ^ 2)), sq_sqrt (h_A_div_2π_add_r2_nonneg r A c_r c_R_lb)]
-    rw [iff_eq_eq]; congr; ring_nf; field_simp; ring
+    rw [iff_eq_eq]; congr; ring_nf; field_simp
 
 #print trussDesignGP
 -- minimize 2 * A * sqrt (w ^ 2 + h ^ 2)
@@ -246,6 +246,7 @@ def wₚ_opt := sol.2.1
 def rₚ_opt := sol.2.2.1
 def Rₚ_opt := sol.2.2.2
 
+-- NOTE: These numbers may differ slighlty depending on the rewrites found by `pre_dcp`.
 #eval hₚ_opt -- 1.000000
 #eval wₚ_opt -- 1.000517
 #eval rₚ_opt -- 0.010162
