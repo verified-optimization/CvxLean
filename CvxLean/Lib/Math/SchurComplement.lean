@@ -55,9 +55,9 @@ lemma IsHermitian.fromBlocks₁₁ [Fintype m] [DecidableEq m] {A : Matrix m m �
     apply hA.inv
   rw [isHermitian_fromBlocks_iff]
   constructor
-  . intro h
+  · intro h
     apply IsHermitian.sub h.2.2.2 hBAB
-  . intro h
+  · intro h
     refine' ⟨hA, rfl, conjTranspose_conjTranspose B, _⟩
     rw [← sub_add_cancel D]
     apply IsHermitian.add h hBAB

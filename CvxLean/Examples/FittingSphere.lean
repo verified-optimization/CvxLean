@@ -127,7 +127,7 @@ equivalence* eqv/fittingSphereT (n m : ℕ) (x : Fin m → Fin n → ℝ) : fitt
     apply ChangeOfVariablesBij.toEquivalence
       (fun (ct : (Fin n → ℝ) × ℝ) => (ct.1, sqrt (ct.2 + ‖ct.1‖ ^ 2))) covBij
     · rintro cr h; exact h
-    . rintro ct _; simp [covBij, sq_nonneg]
+    · rintro ct _; simp [covBij, sq_nonneg]
   rename_vars [c, t]
   rename_constrs [h₁, h₂]
   conv_constr h₁ => dsimp
