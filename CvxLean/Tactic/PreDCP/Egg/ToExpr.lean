@@ -103,7 +103,7 @@ partial def EggTree.toExpr (vars params : List String) : EggTree → MetaM Expr
       let t2 ← toExpr vars params t2
       return mkAppN
         (mkConst ``LE.le [levelZero])
-        #[(mkConst `Real), (mkConst `Real.instLEReal), t1, t2]
+        #[(mkConst `Real), (mkConst ``Real.instLE), t1, t2]
   -- Negation.
   | Tree.node "neg" #[t] => do
       let t ← toExpr vars params t
