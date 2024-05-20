@@ -171,14 +171,14 @@ lemma optimal_convex_implies_optimal_t (hm : 0 < m) (c : Fin n → ℝ) (t : ℝ
     have h_t_eq := leastSquaresVec_optimal_eq_mean hm a t h_ls
     have h_c2_eq : ‖c‖ ^ 2 = (1 / m) * ∑ i : Fin m, ‖c‖ ^ 2 := by
       simp [sum_const]
-      field_simp; ring
+      field_simp
     have h_t_add_c2_eq : t + ‖c‖ ^ 2 = (1 / m) * ∑ i, ‖(x i) - c‖ ^ 2 := by
       rw [h_t_eq]; dsimp [mean]
       rw [h_c2_eq, mul_sum, mul_sum, mul_sum, ← sum_add_distrib]
       congr; funext i; rw [← mul_add]
       congr; simp [Vec.norm]
       rw [norm_sub_sq (𝕜 := ℝ) (E := Fin n → ℝ)]
-      congr
+      simp [a]; congr
     -- We use the result to establish that `t + ‖c‖ ^ 2` is non-negative.
     rw [← rpow_two, h_t_add_c2_eq]
     apply mul_nonneg (by norm_num)
