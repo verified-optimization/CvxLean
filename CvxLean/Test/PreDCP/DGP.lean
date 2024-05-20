@@ -29,10 +29,10 @@ time_cmd reduction red1/dcp1 : gp1 := by
   pre_dcp
 
 #print dcp1
--- optimization (x : ℝ)
---   minimize x
+-- optimization (u : ℝ)
+--   minimize u
 --   subject to
---     h2 : x * 2 ≤ log (10123 / 1000)
+--     h2 : u ≤ log (sqrt (10123 / 1000))
 
 solve dcp1
 
