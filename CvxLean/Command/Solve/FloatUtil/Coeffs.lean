@@ -3,8 +3,8 @@ import CvxLean.Lib.Cones.All
 import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Debug
 import CvxLean.Syntax.Minimization
-import CvxLean.Command.Solve.Float.ProblemData
-import CvxLean.Command.Solve.Float.RealToFloatLibrary
+import CvxLean.Command.Solve.Data.ProblemData
+import CvxLean.Command.Solve.FloatUtil.RealToFloatLibrary
 
 /-!
 # Extract coefficients from problem to generate problem data

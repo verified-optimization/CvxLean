@@ -1,8 +1,8 @@
 import CvxLean.Lib.Math.Data.Real
 import CvxLean.Meta.Minimization
 import CvxLean.Meta.Util.Error
-import CvxLean.Command.Solve.Float.ProblemData
-import CvxLean.Command.Solve.Mosek.CBF
+import CvxLean.Command.Solve.Data.ProblemData
+import CvxLean.Command.Solve.Solvers.MOSEK.CBF
 
 /-!
 Convert a `CBF.Problem` to a `ProblemData`. The main definition is `CBF.ofProblemData`.

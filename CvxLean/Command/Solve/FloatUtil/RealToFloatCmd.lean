@@ -8,7 +8,7 @@ import CvxLean.Meta.Util.Expr
 import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Minimization
 import CvxLean.Syntax.OptimizationParam
-import CvxLean.Command.Solve.Float.RealToFloatExt
+import CvxLean.Command.Solve.FloatUtil.RealToFloatExt
 
 /-!
 # Conversion of Real to Float (command)

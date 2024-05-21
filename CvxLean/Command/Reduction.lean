@@ -7,7 +7,7 @@ import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Debug
 import CvxLean.Meta.Reduction
 import CvxLean.Meta.TacticBuilder
-import CvxLean.Command.Solve.Float.RealToFloatLibrary
+import CvxLean.Command.Solve.FloatUtil.RealToFloatLibrary
 
 /-!
 # The `reduction` command

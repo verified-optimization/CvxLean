@@ -8,11 +8,11 @@ import CvxLean.Meta.Util.Error
 import CvxLean.Meta.Util.Debug
 import CvxLean.Meta.Minimization
 import CvxLean.Syntax.Minimization
-import CvxLean.Command.Solve.Float.Coeffs
-import CvxLean.Command.Solve.Float.FloatToReal
-import CvxLean.Command.Solve.Mosek.SolToSolutionData
-import CvxLean.Command.Solve.Mosek.CBFOfProblemData
-import CvxLean.Command.Solve.Mosek.Path
+import CvxLean.Command.Solve.FloatUtil.Coeffs
+import CvxLean.Command.Solve.FloatUtil.FloatToReal
+import CvxLean.Command.Solve.Solvers.MOSEK.SolToSolutionData
+import CvxLean.Command.Solve.Solvers.MOSEK.CBFOfProblemData
+import CvxLean.Command.Solve.Solvers.MOSEK.Path
 
 /-!
 # Procedure to solve a minimization problem

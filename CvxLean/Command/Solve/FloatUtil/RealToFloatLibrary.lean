@@ -1,4 +1,4 @@
-import CvxLean.Command.Solve.Float.RealToFloatCmd
+import CvxLean.Command.Solve.FloatUtil.RealToFloatCmd
 
 /-!
 # Conversion of Real to Float (library)

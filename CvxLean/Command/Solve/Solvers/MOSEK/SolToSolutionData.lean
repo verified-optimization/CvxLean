@@ -1,6 +1,6 @@
 import CvxLean.Meta.Util.Error
-import CvxLean.Command.Solve.Float.SolutionData
-import CvxLean.Command.Solve.Mosek.Sol
+import CvxLean.Command.Solve.Data.SolutionData
+import CvxLean.Command.Solve.Solvers.MOSEK.Sol
 
 /-!
 Convert a `Sol.Result` to a `SolutionData`. The main definition is `Sol.toSolutionData`.
