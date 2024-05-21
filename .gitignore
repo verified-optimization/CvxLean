@@ -13,4 +13,4 @@
 /scripts/evaluation/data
 /plots
 
-/CvxLean/Command/Solve/Mosek/Path.lean
+/CvxLean/Command/Solve/Solvers/MOSEK/Path.lean
