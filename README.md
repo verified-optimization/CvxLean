@@ -27,7 +27,7 @@ Auto-generated documentation can be found [here](https://verified-optimization.g
 ## Installation
 
 You will need to install Lean, Rust and MOSEK following these steps:
-1. Set up Lean 4 (see [these instructions](https://leanprover.github.io/lean4/doc/setup.html)). 
+1. Set up Lean 4 (see [these instructions](https://leanprover.github.io/lean4/doc/setup.html)), using the version from `lean-toolchain`. 
     * The easiest way is to use the `elan` version manager. 
     * If you're using VSCode, install the [Lean 4 extension](https://marketplace.visualstudio.com/items?itemName=leanprover.lean4).
 2. Install Rust (see [these instructions](https://www.rust-lang.org/tools/install)). This step is only necessary to enable the `pre_dcp` tactic.
