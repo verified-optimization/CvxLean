@@ -33,7 +33,7 @@ You will need to install Lean, Rust and MOSEK following these steps:
 2. Install Rust (see [these instructions](https://www.rust-lang.org/tools/install)). This step is only necessary to enable the `pre_dcp` tactic.
 3. Download [MOSEK 10.0.12(BETA)](https://www.mosek.com/downloads/10.0.12/).
     * Make sure that the directory containing the `mosek` binary is in your `$PATH`. 
-    * To avoid any issues with this, we recommend also adding it to `CvxLean/Command/Solve/Mosek/Path.lean`. 
+    * To avoid any issues with this, we recommend also adding it to `CvxLean/Command/Solve/Solvers/MOSEK/Path.lean`. 
     * Obtain a [MOSEK license](https://www.mosek.com/license/request/?i=trl) and place it in your home directory, i.e. `$HOME/mosek/mosek.lic`.
 
 Finally, go into the top `CvxLean` directory and run:
