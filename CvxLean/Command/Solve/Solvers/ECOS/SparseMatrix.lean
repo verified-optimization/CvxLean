@@ -1,4 +1,6 @@
-/-! Sparse matrix representation and basic operations. -/
+/-!
+Sparse matrix representation and basic operations.
+-/
 
 /-- Sparse matrix in Compressed Column Storage (CCS).
 See http://netlib.org/linalg/html_templates/node92.html
