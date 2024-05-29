@@ -17,9 +17,9 @@ def p₁ :=
   optimization (x y : ℝ)
     maximize sqrt (x - y)
     subject to
-      c1 : y = 2 * x - 3
-      c2 : x ^ 2 ≤ 2
-      c3 : 0 ≤ x - y
+      c₁ : y = 2 * x - 3
+      c₂ : x ^ 2 ≤ 2
+      c₃ : 0 ≤ x - y
 
 #check p₁
 
