@@ -36,12 +36,12 @@ solve p₁
 
 def p₂ :=
   optimization (x y : ℝ)
-    minimize -2 * x
+    minimize -x
     subject to
       c₁ : 0 ≤ x
       c₂ : 1 < y
       c₃ : log (y - 1) ≤ 2 * sqrt x + 1
-      c₄ : 3 * x + 5 * y ≤ 10
+      c₄ : exp x ≤ y - 1
 
 -- Transform (proving `p₂ ≡ q`).
 equivalence* eqv/q : p₂ := by
@@ -53,6 +53,8 @@ equivalence* eqv/q : p₂ := by
   -- pre_dcp
   -- Or, manually:
   rw_constr c₃ into (w ≤ 2 * sqrt x + 1) =>
+    field_simp
+  rw_constr c₄ into (x ≤ w) =>
     field_simp
 
 #print q
