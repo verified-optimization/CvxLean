@@ -4,7 +4,7 @@ import CvxLean
 Demo for my PhD viva (31st of May, 2024).
 -/
 
-namespace Viva
+section Viva
 
 noncomputable section
 
