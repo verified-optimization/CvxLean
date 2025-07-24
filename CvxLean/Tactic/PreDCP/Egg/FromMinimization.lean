@@ -36,6 +36,7 @@ def opMap : HashMap String (String × Array EggTreeOpArgTag) :=
     ("param",       ("param",   #[.arg])),
     ("eq",          ("eq",      #[.arg, .arg])),
     ("le",          ("le",      #[.arg, .arg])),
+    ("ge",          ("ge",      #[.arg, .arg])),
     ("lt",          ("lt",      #[.arg, .arg])),
     ("neg",         ("neg",     #[.arg])),
     ("inv",         ("inv",     #[.arg])),

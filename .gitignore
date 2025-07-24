@@ -12,5 +12,6 @@
 /playground
 /scripts/evaluation/data
 /plots
+**/__pycache__/
 
 /CvxLean/Command/Solve/Mosek/Path.lean

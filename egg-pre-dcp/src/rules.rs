@@ -63,6 +63,13 @@ pub fn rules() -> Vec<Rewrite<Optimization, Meta>> { vec![
         if is_ge_zero("?a") if is_ge_zero("?b")),
 
 
+    /* Greater than or equal rules. */
+
+    rw!("ge_iff_le"; "(ge ?a ?b)" => "(le ?b ?a)"),
+
+    rw!("ge_iff_le-rev"; "(le ?b ?a)" => "(ge ?a ?b)"),
+
+
     /* Field rules. */
 
     rw!("neg_neg"; "(neg (neg ?a))" => "?a"),

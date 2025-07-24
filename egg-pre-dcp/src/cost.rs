@@ -133,6 +133,11 @@ impl<'a> CostFunction<Optimization> for DCPCost<'a> {
                 num_vars = get_num_vars!(a) + get_num_vars!(b);
                 term_size = 1 + get_term_size!(a) + get_term_size!(b);
             }
+            Optimization::Ge([a, b]) => {
+                curvature = curvature::of_le(get_curvature!(b), get_curvature!(a));
+                num_vars = get_num_vars!(a) + get_num_vars!(b);
+                term_size = 1 + get_term_size!(a) + get_term_size!(b);
+            }
             Optimization::Neg(a) => {
                 curvature = curvature::of_neg(get_curvature!(a));
                 num_vars = get_num_vars!(a);

@@ -28,6 +28,23 @@ optimality by
   exact (hx.trans h).trans hy
 vconditionElimination
 
+declare_atom ge [convex_set] (x : ℝ)+ (y : ℝ)- : x ≥ y :=
+vconditions
+implementationVars
+implementationObjective Real.nonnegOrthCone (x - y)
+implementationConstraints
+solution
+solutionEqualsAtom by
+  unfold Real.nonnegOrthCone
+  simp
+feasibility
+optimality by
+  intros x' y' hx hy h
+  unfold Real.nonnegOrthCone at h
+  simp at h
+  exact (hy.trans h).trans hx
+vconditionElimination
+
 declare_atom Vec.le [convex_set] (n : Nat)& (x : (Fin n) → ℝ)- (y : (Fin n) → ℝ)+ : x ≤ y :=
 vconditions
 implementationVars

@@ -20,6 +20,7 @@ define_language! {
         "constrs" = Constrs(Box<[Id]>),
         "eq" = Eq([Id; 2]),
         "le" = Le([Id; 2]),
+        "ge" = Ge([Id; 2]),
         "neg" = Neg(Id),
         "inv" = Inv(Id),
         "abs" = Abs(Id),
@@ -147,6 +148,9 @@ impl Analysis<Optimization> for Meta {
                 term_type = TermType::Set;
             }
             Optimization::Le(_) => {
+                term_type = TermType::Set;
+            }
+            Optimization::Ge(_) => {
                 term_type = TermType::Set;
             }
             Optimization::Neg(a) => {
